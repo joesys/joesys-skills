@@ -1,0 +1,31 @@
+{
+  "name": "joesys-skills",
+  "description": "Custom Claude Code skills by joesys — Codex, Gemini, and Claude CLI delegation, AI council multi-model synthesis, and structured git commits",
+  "version": "2.0.0",
+  "author": {
+    "name": "joesys",
+    "url": "https://github.com/joesys"
+  },
+  "homepage": "https://github.com/joesys/joesys-skills",
+  "repository": "https://github.com/joesys/joesys-skills",
+  "license": "MIT",
+  "keywords": [
+    "claude-code",
+    "plugin",
+    "skill",
+    "codex",
+    "openai",
+    "gemini",
+    "google",
+    "claude",
+    "anthropic",
+    "ai-council",
+    "multi-model",
+    "synthesis",
+    "automation",
+    "git",
+    "commit",
+    "conventional-commits",
+    "oneflow"
+  ]
+}

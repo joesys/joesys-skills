@@ -1,0 +1,31 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "joesys-skills",
+  "description": "Custom Claude Code skills and plugins by joesys",
+  "owner": {
+    "name": "joesys",
+    "url": "https://github.com/joesys"
+  },
+  "plugins": [
+    {
+      "name": "joesys-skills",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/joesys/joesys-skills.git"
+      },
+      "description": "Custom Claude Code skills — Codex CLI delegation and structured git commits",
+      "version": "2.0.0",
+      "category": "development",
+      "homepage": "https://github.com/joesys/joesys-skills",
+      "tags": [
+        "skill",
+        "codex",
+        "openai",
+        "automation",
+        "git",
+        "commit",
+        "conventional-commits"
+      ]
+    }
+  ]
+}
