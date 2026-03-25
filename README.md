@@ -99,6 +99,32 @@ Dispatch 6 parallel domain-expert subagents to analyze code for violations acros
 /code-review --min-severity P1        # Only show P1+ findings (combinable with any mode)
 ```
 
+### explain
+
+Dispatch 5 parallel domain-lens subagents to analyze a codebase across structure, behavior, domain & data, external dependencies, and health & risk. Produces a layered report from TL;DR to deep understanding with an orientation cheat sheet and fastest-path-to-competence recommendations. Supports whole projects, directories, single files, symbols, and natural language feature traces.
+
+#### Analysis Lenses
+
+| Lens | Focus |
+|---|---|
+| Structure & Entry Points | Module boundaries, organization pattern, entry points, dependency graph |
+| Behavior — Key Workflows | End-to-end traces of the 3 most important workflows |
+| Domain & Data | Data models, state transitions, domain glossary, storage mapping |
+| External Dependencies | External services, infrastructure config, integration patterns |
+| Health & Risk | Hotspots, churn, debt, test signals, git archaeology, onboarding path |
+
+#### Usage
+
+```
+/explain                                  # Explain the whole project (default)
+/explain src/auth/                        # Explain a directory/module
+/explain src/auth/oauth.ts                # Explain a single file
+/explain MyClassName                      # Explain a class/symbol
+/explain "how does payment work?"         # Trace a feature across the codebase
+/explain --save                           # Save report to docs/explain/
+/explain src/api/ --save --path docs/     # Explain directory, save to custom path
+```
+
 ### commit
 
 Structured git commits following Conventional Commits with a three-part body (intent, changes, AI review). Supports OneFlow Option 3 branching for multi-commit changesets. Auto-recovers from 1Password signing failures.
