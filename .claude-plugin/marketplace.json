@@ -13,8 +13,8 @@
         "source": "url",
         "url": "https://github.com/joesys/joesys-skills.git"
       },
-      "description": "Custom Claude Code skills — Codex CLI delegation and structured git commits",
-      "version": "2.0.0",
+      "description": "Custom Claude Code skills — multi-model AI delegation, structured git commits, code review, and codebase explanation",
+      "version": "3.0.0",
       "category": "development",
       "homepage": "https://github.com/joesys/joesys-skills",
       "tags": [
@@ -24,7 +24,12 @@
         "automation",
         "git",
         "commit",
-        "conventional-commits"
+        "conventional-commits",
+        "explain",
+        "codebase",
+        "onboarding",
+        "documentation",
+        "orientation"
       ]
     }
   ]
