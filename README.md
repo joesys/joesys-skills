@@ -73,6 +73,32 @@ Consult three frontier AI models (Claude, GPT, Gemini) in parallel on the same q
 /ai-council --path ./notes "Compare REST vs GraphQL for this use case"
 ```
 
+### code-review
+
+Dispatch 6 parallel domain-expert subagents to analyze code for violations across correctness, clean code, architecture, reliability, security, and performance. Produces a severity-grouped report (P0-P4) with concrete before/after fixes in the target language. Supports branch diffs, directory scans, single files, PR reviews, and commit reviews.
+
+#### Analysis Domains
+
+| Domain | Focus |
+|---|---|
+| Correctness | Actual bugs — wrong logic, off-by-one, null dereferences, race conditions |
+| Clean Code | Naming, DRY (Rule of Three), nesting depth, function length, KISS/YAGNI |
+| Architecture | Coupling, cohesion, layering violations, dependency direction, god classes |
+| Reliability | Error handling, silent failures, resource leaks, missing validation |
+| Security | Injection, hardcoded secrets, auth gaps, input sanitization, data exposure |
+| Performance | Algorithmic complexity, N+1 queries, missing caching, unnecessary allocations |
+
+#### Usage
+
+```
+/code-review                          # Review current branch diff vs. base
+/code-review src/                     # Scan all files in a directory
+/code-review --file src/main.py       # Review a single file
+/code-review --pr 123                 # Review files changed in a GitHub PR
+/code-review --commit abc123          # Review files changed in a specific commit
+/code-review --min-severity P1        # Only show P1+ findings (combinable with any mode)
+```
+
 ### commit
 
 Structured git commits following Conventional Commits with a three-part body (intent, changes, AI review). Supports OneFlow Option 3 branching for multi-commit changesets. Auto-recovers from 1Password signing failures.
