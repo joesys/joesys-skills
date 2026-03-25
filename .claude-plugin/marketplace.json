@@ -9,10 +9,7 @@
   "plugins": [
     {
       "name": "joesys-skills",
-      "source": {
-        "source": "url",
-        "url": "https://github.com/joesys/joesys-skills.git"
-      },
+      "source": "./",
       "description": "Custom Claude Code skills — multi-model AI delegation, structured git commits, code review, and codebase explanation",
       "version": "3.0.0",
       "category": "development",

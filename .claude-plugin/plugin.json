@@ -1,7 +1,7 @@
 {
   "name": "joesys-skills",
-  "description": "Custom Claude Code skills by joesys — Codex, Gemini, and Claude CLI delegation, AI council multi-model synthesis, structured git commits, and multi-domain code review",
-  "version": "2.0.0",
+  "description": "Custom Claude Code skills — multi-model AI delegation, structured git commits, code review, and codebase explanation",
+  "version": "3.0.0",
   "author": {
     "name": "joesys",
     "url": "https://github.com/joesys"
@@ -24,6 +24,9 @@
     "synthesis",
     "automation",
     "code-review",
+    "explain",
+    "codebase",
+    "onboarding",
     "git",
     "commit",
     "conventional-commits",
