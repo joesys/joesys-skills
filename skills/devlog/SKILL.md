@@ -102,7 +102,7 @@ Each subagent receives a prompt containing:
 
 ### Agent 1: Git Miner
 
-```
+~~~
 <GUIDING_PRINCIPLES>
 
 You are a senior developer analyzing git history to find interesting development moments — decisions, pivots, surprises, and dead ends.
@@ -130,11 +130,11 @@ Return structured markdown with:
 - Highlighted decision points (with commit hashes for reference)
 - Extracted code snippets for the most interesting changes
 - Your inference of what was interesting and why (clearly labeled as inference)
-```
+~~~
 
 ### Agent 2: Conversation Miner
 
-```
+~~~
 <GUIDING_PRINCIPLES>
 
 You are a senior analyst reading Claude Code conversation transcripts to find moments of insight, decision-making, and surprise.
@@ -166,11 +166,11 @@ Return structured markdown with:
 - Highlighted key exchanges (quote the actual messages, attributed to "Developer" and "AI")
 - Decision points with your inference of the developer's reasoning (labeled as inference)
 - Any unresolved questions or tensions you noticed
-```
+~~~
 
 ### Agent 3: Scrap Scanner
 
-```
+~~~
 <GUIDING_PRINCIPLES>
 
 You are scanning existing devlog content scraps to find material related to the current topic.
@@ -204,7 +204,7 @@ Return structured markdown with:
 - Recommendation: which scraps should be incorporated vs. which are tangential
 
 If the scraps directory does not exist or is empty, report: "No existing scraps found."
-```
+~~~
 
 ### Gathering Synthesis
 
@@ -238,7 +238,7 @@ Triggered when the first argument is `scrap`. After the gathering phase, scrap m
 
 Write the scrap file with this structure:
 
-````markdown
+```markdown
 ---
 date: <YYYY-MM-DD>
 topic: <topic slug>
@@ -264,7 +264,7 @@ status: unwritten
 
 ## Open Questions
 <Bulleted list of things the skill couldn't infer — gaps to fill when writing the full post. These become conversation starters for Write Mode.>
-````
+```
 
 ### Empty Results
 
