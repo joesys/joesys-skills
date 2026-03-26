@@ -125,6 +125,29 @@ Dispatch 5 parallel domain-lens subagents to analyze a codebase across structure
 /explain src/api/ --save --path docs/     # Explain directory, save to custom path
 ```
 
+### devlog
+
+Capture development insights and turn them into devlog posts for budding programmers. Mines git history, Claude Code conversation transcripts, and content scraps to reconstruct your thinking, then brainstorms with you to find the real insight before drafting. Supports quick content scraps for when you're in the flow.
+
+#### Modes
+
+| Mode | Description |
+|---|---|
+| Write | Brainstorm and draft a full devlog post |
+| Scrap | Auto-capture a rich content scrap (no questions asked) |
+| List | Show scrap backlog and published posts |
+
+#### Usage
+
+```
+/devlog "the recursive clone bug"            # Write a post about a topic
+/devlog --since yesterday                    # Mine recent sessions for a post
+/devlog --from-scrap recursive-fix           # Write from an existing scrap
+/devlog scrap "signing workaround"           # Quick-capture a scrap
+/devlog scrap                                # Auto-detect and capture a scrap
+/devlog list                                 # Show scraps and published posts
+```
+
 ### commit
 
 Structured git commits following Conventional Commits with a three-part body (intent, changes, AI review). Supports OneFlow Option 3 branching for multi-commit changesets. Auto-recovers from 1Password signing failures.
