@@ -336,3 +336,30 @@ git log --oneline --graph -10
 ---
 
 The result across all paths is a clean history where `git log --oneline` reads linearly, but `git log --graph` shows merge bubbles grouping related commits together. Any grouped feature can be reverted with a single `git revert -m 1 <merge-commit>`.
+
+---
+
+## Post-Commit: Devlog Scrap Capture
+
+After a successful commit (any path), evaluate whether the commit is worth capturing as a devlog scrap for future writing.
+
+### When to Capture
+
+**Capture if ALL of these are true:**
+
+1. **The commit is significant.** Heuristics:
+   - Type is `feat`, `fix`, or `refactor`
+   - OR it's a `--no-ff` merge commit (Path B or C) — these represent a complete feature
+   - `docs`, `chore`, `style`, `ci`, `build`, `test`, `perf` commits are generally NOT significant unless they represent a non-trivial decision or pivot
+
+2. **The commit does not already contain devlog content.** Check if any of the committed files match:
+   - `docs/devlog/.scraps/*` — the commit includes a devlog scrap
+   - `docs/devlog/*/` — the commit includes a published devlog post
+
+   If either matches, skip — this commit is already about devlog content.
+
+### How to Capture
+
+If both conditions are met, auto-invoke `/devlog scrap` after the commit completes. Do not ask the user — this should be seamless. The scrap skill will analyze the current session and git history to produce a rich content scrap.
+
+If the `/devlog` skill is not available (plugin not installed in the target project), silently skip this step.
