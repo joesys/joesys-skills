@@ -81,6 +81,8 @@ A feature branch is used in two scenarios:
 
 **When neither applies (single, standalone commit):** commit directly on the current branch — no branch needed.
 
+**Minimum bubble size:** A merge bubble requires at least 2 commits on the feature branch. If the branch ends up with only 1 commit, fast-forward merge instead of `--no-ff` — a bubble around a single commit adds noise without grouping value.
+
 ### Branch Naming
 
 Use a descriptive, kebab-case name derived from the overall theme of the changeset:
@@ -219,10 +221,16 @@ Suggest: git rebase -i <parent-branch>
 
 > `git rebase -i` opens an editor and requires manual interaction — do not run it directly. Either skip this step (the default) or ask the user to run it.
 
-**B4.** Switch back and merge with `--no-ff`:
+**B4.** Switch back and merge. Count the commits on the feature branch first:
 
 ```bash
 git checkout <parent-branch>
+git rev-list --count <parent-branch>..<type>/<short-description>
+```
+
+- **If 2+ commits** — merge with `--no-ff` to create a bubble:
+
+```bash
 git merge --no-ff <type>/<short-description> -m "$(cat <<'EOF'
 <type>(<scope>): <merge description summarizing the overall change>
 
@@ -240,6 +248,12 @@ Intent paragraph — summarize the logical unit these commits form together.
 Assessment of the feature as a whole.
 EOF
 )"
+```
+
+- **If 1 commit** — fast-forward merge (no bubble needed for a single commit):
+
+```bash
+git merge <type>/<short-description>
 ```
 
 **B5.** Delete the temporary branch and verify:
@@ -293,11 +307,17 @@ Suggest: git rebase -i <base-commit-hash>
 >
 > **Important:** The rebase target must be `<base-commit-hash>` (where the feature branch started), NOT `<parent-branch>`. The parent still has the original commits that were cherry-picked; rebasing onto it risks duplicate commits if patch-ids diverge.
 
-**C7.** Switch back to the parent branch, reset it to the base commit, and merge with `--no-ff`:
+**C7.** Switch back to the parent branch, reset it to the base commit, and merge. Count the commits on the feature branch first:
 
 ```bash
 git checkout <parent-branch>
 git reset --hard <base-commit-hash>
+git rev-list --count <base-commit-hash>..<type>/<short-description>
+```
+
+- **If 2+ commits** — merge with `--no-ff` to create a bubble:
+
+```bash
 git merge --no-ff <type>/<short-description> -m "$(cat <<'EOF'
 <type>(<scope>): <merge description summarizing the logical unit>
 
@@ -315,6 +335,12 @@ Intent paragraph — why these commits belong together as one logical feature.
 Assessment of the grouped feature as a whole.
 EOF
 )"
+```
+
+- **If 1 commit** — fast-forward merge (no bubble needed for a single commit):
+
+```bash
+git merge <type>/<short-description>
 ```
 
 **C8.** If the branch has a remote upstream, force push to update the remote (retroactive grouping rewrites history):
