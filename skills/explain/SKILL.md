@@ -110,6 +110,7 @@ Each subagent receives a prompt containing:
 3. **Use LSP tools if available, fall back to Glob/Grep/Read.** Do not fail if LSP is unavailable.
 4. **Respect scope boundaries.** Focus on the requested scope. Reference external context where necessary ("this module is called from `src/api/routes.ts`") but don't produce full analysis of unrelated modules.
 5. **Don't reproduce source code.** Reference code with `file:line_number` pointers and short snippets for clarity. The user has the code — they need understanding, not a copy.
+6. **ASCII graphs must follow the shared ASCII Graph Standards.** Use box-drawing characters (`┌ ─ ┐ │ └ ┘ ┬ ┴ ▶ ▼ ◀ ▲`), enforce alignment (box internal width = longest label + 2 padding), and scale detail to project size per the adaptive rules. Verify character alignment before finalizing — off-by-one errors in box borders vs content are not acceptable.
 
 ### Subagent Roster
 
@@ -123,7 +124,7 @@ Each subagent receives a prompt containing:
 
 ### Subagent Prompt Templates
 
-Each template below shows the domain-specific portion. When constructing the actual prompt, **prepend the full Guiding Principles block** (the 5-item list above) before the role line. The abbreviated instructions in each template are intentionally kept as reinforcement — the full principles block provides the authoritative version.
+Each template below shows the domain-specific portion. When constructing the actual prompt, **prepend the full Guiding Principles block** (the 6-item list above) before the role line. The abbreviated instructions in each template are intentionally kept as reinforcement — the full principles block provides the authoritative version.
 
 #### Agent 1: Structure & Entry Points
 
@@ -145,9 +146,11 @@ You are a senior software architect analyzing a codebase for structural understa
 - **Entry points**: main files, route registrations, CLI commands, public exports, event handlers
 - **Dependency relationships**: how modules depend on each other (imports/requires graph)
 - **File conventions**: naming patterns, co-location patterns (tests next to source? separate tree?)
+- **Module dependency graph**: Include an ASCII graph showing how the major modules/packages depend on each other. Follow the ASCII Graph Standards. This graph will also be used by the synthesizer to compose the top-level Architecture Overview.
 
 ## Output Format
 Return structured markdown with clear headings for each area above.
+Include the module dependency graph near the top of your output under a `### Module Dependency Graph` heading.
 Reference specific files with `file:line_number` format.
 If something is unclear or you cannot determine it, say so explicitly.
 ~~~
@@ -181,6 +184,7 @@ If fewer than 3 distinct workflows/paths exist at this scope, trace what's avail
 
 ## For Each Workflow, Report
 - The complete call chain: `file:function → file:function → ...`
+- **Flow diagram**: An ASCII flow diagram showing the call chain for this workflow. Use horizontal flow for the primary path, vertical branches for error/alternate paths. Follow the ASCII Graph Standards.
 - Key business logic decisions (branches that matter)
 - External dependencies touched (DB queries, API calls, queue publishes)
 - Error handling approach at each step
@@ -216,6 +220,7 @@ You are a senior domain analyst mapping the data model and business concepts of 
 - **Domain glossary**: map code names to business concepts — especially non-obvious ones where the code name differs from the business term
 - **Storage mapping**: what data lives where (relational DB, document store, cache, queue, file system, in-memory)
 - **Validation and constraints**: invariants, required fields, business rules enforced at the data layer
+- **State transition diagram** (optional): If domain objects have clear lifecycle states (e.g., Order: draft → confirmed → shipped → delivered), include an ASCII state transition diagram. Follow the ASCII Graph Standards. If no clear state transitions exist, skip — don't force a graph where prose is clearer.
 
 ## Output Format
 Return structured markdown with clear headings for each area above.
@@ -245,9 +250,26 @@ You are a senior infrastructure engineer mapping how this system integrates with
 - **Infrastructure config**: Terraform, CloudFormation, Docker, Kubernetes, Helm charts — what infrastructure is defined in code
 - **Sync vs async**: which integrations are synchronous (blocking) vs asynchronous (queues, events, webhooks)
 - **Resilience patterns**: retry logic, circuit breakers, fallbacks, timeouts — or their absence
+- **Integration map**: Include an ASCII integration map with the system at center and external services arranged around it. Follow the ASCII Graph Standards. Example:
+
+```
+              ┌─────┐
+              │ CDN │
+              └──┬──┘
+                 │
+┌──────┐   ┌─────▼────┐   ┌──────────┐
+│ Auth │◀──│  System  │──▶│ Postgres │
+└──────┘   └─────┬────┘   └──────────┘
+                 │
+             ┌───▼───┐
+             │ Redis │
+             └───────┘
+```
+
+Column alignment verification: all vertical connectors (`┬`, `│`, `▼`) sit at column 17.
 
 ## Output Format
-Return structured markdown. Include a text-based integration map showing this system and what it connects to.
+Return structured markdown.
 Reference specific files with `file:line_number` format.
 If you find config references to services but cannot determine their purpose, note them as "unclear."
 ~~~
@@ -317,6 +339,7 @@ After all agents complete (or after handling failures — see Graceful Degradati
 3. **Deduplication**: If multiple agents mention the same file or concept, merge into the most relevant section. Don't repeat.
 4. **Uncertainty preservation**: If an agent flagged something as uncertain, preserve that flag in the synthesis. Don't silently upgrade "seems like" to "definitely."
 5. **Section ordering**: Always present in the fixed order below — the layering is intentional (overview → specifics → actionable).
+6. **Graph composition**: Combine Agent 1 and Agent 4 graphs into the top-level Architecture Overview. Deduplicate shared nodes (e.g., if both agents reference "Postgres," show it once). Internal modules at center, external services at periphery. Preserve agent-produced inline graphs in their respective sections as-is — only the top-level overview is a synthesizer composition.
 
 ### Output Structure
 
@@ -340,17 +363,22 @@ After all agents complete (or after handling failures — see Graceful Degradati
 | What's the most fragile part? | from Health agent |
 | What should I not touch without care? | from Health agent |
 
+## Architecture Overview
+(omitted for single file and symbol scopes)
+[Composed from Agent 1 module dependency graph + Agent 4 integration map.
+Internal modules at center, external services at periphery. Deduplicate shared nodes.]
+
 ## Structure & Entry Points
-[Agent 1 findings, edited for flow and deduplication]
+[Agent 1 findings, edited for flow and deduplication — includes module dependency graph inline]
 
 ## Behavior — Key Workflows
-[Agent 2 findings — the 3 traced flows with call chains]
+[Agent 2 findings — the 3 traced flows with call chains and flow diagrams]
 
 ## Domain & Data
-[Agent 3 findings — models, glossary, state transitions]
+[Agent 3 findings — models, glossary, state transitions, state transition diagram if applicable]
 
 ## External Dependencies
-[Agent 4 findings — integration map]
+[Agent 4 findings — includes integration map inline]
 
 ## Health & Risk
 [Agent 5 findings — hotspots, debt, uncertainty]
@@ -400,6 +428,58 @@ Scope name derivation:
 | Massive repo (1000+ files at scope) | Agents focus on the most significant files. Structure maps top 2 levels. Behavior traces 3 flows without exhaustive coverage. Health focuses on top hotspots. |
 | Binary/generated files in scope | Skip and note their presence |
 | LSP unavailable | Agents fall back to Glob/Grep/Read. No degradation in output structure, only in precision of navigation. |
+
+---
+
+## ASCII Graph Standards
+
+A shared visual vocabulary for all ASCII diagrams in the report. These standards are prepended to every subagent prompt that produces graphs.
+
+### Box Characters
+
+```
+┌───────┐
+│ Label │
+└───────┘
+```
+
+### Arrow Conventions
+
+| Symbol | Meaning |
+|---|---|
+| `────▶` | Horizontal flow (left-to-right) |
+| `◀────` | Reverse horizontal flow |
+| `│` / `▼` / `▲` | Vertical connection / downward / upward |
+| `───` | Plain connection (no direction) |
+| `┬` | Top branch point (connects down) |
+| `┴` | Bottom branch point (connects up) |
+
+### Alignment Rules
+
+- Box internal width = longest label + 2 (1 space padding each side)
+- Vertical connectors (`│`, `▼`, `▲`) must align to the exact center character of the `┬` or `┴` they connect to
+- All boxes in the same row share the same height
+- Minimum 3 characters horizontal gap between adjacent boxes
+- Verify alignment before finalizing — count characters explicitly
+
+### Adaptive Detail Rules
+
+| Source files in scope | Top-level overview | Inline diagrams |
+|---|---|---|
+| < 20 files | Show all modules, entry points, and data stores | Full detail per section |
+| 20-100 files | Major modules + key entry points (up to ~12 boxes) | Moderate detail |
+| 100-500 files | High-level layers/modules only (up to ~8 boxes) | Key paths only |
+| 500+ files | Top-level architectural layers (~5 boxes) | Abbreviated |
+
+### Graph Types by Section
+
+| Section | Graph type | What it shows |
+|---|---|---|
+| Architecture Overview (top-level) | Dependency/layer graph | Modules, data stores, external services, flow between them |
+| Structure & Entry Points | Module dependency graph | How modules import/depend on each other |
+| Behavior — Key Workflows | Flow/sequence diagram | Call chain per workflow, with branching |
+| Domain & Data | State transition diagram (optional) | Lifecycle states if they exist |
+| External Dependencies | Integration map | System at center, external services around it |
 
 ---
 
