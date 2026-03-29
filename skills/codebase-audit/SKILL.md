@@ -618,3 +618,153 @@ Return JSON:
 - **Helper script failure:** Agent falls back to qualitative-only. Metrics marked "Not measured."
 - **No test runner:** Tests agent does static analysis only.
 - **Live commands declined:** Agents fall back to static analysis. Metrics marked "Skipped (live commands declined)."
+
+---
+
+## Phase 2 — Display & Gate
+
+### Step 1: Assemble Results
+
+Collect structured JSON from each agent. For each criterion, compute a grade using the principle file rubric + benchmark data.
+
+**Audit Confidence Model:**
+
+Each criterion gets a confidence level:
+- **high** — deterministic measurements from helpers + live commands
+- **medium** — partial measurement (helper ran but live commands skipped)
+- **low** — qualitative-only (helper failed or Python not available)
+
+Overall audit confidence = lowest confidence among all measured criteria.
+
+Display: append `~` to grades with low confidence (e.g., "B~" = approximate).
+
+### Step 2: Risk Heat Map
+
+Cross-reference complexity data (Quality agent) with churn data (Git/Velocity agent):
+
+```
+              High Churn
+                  │
+   ┌──────────────┼──────────────┐
+   │  Refactor    │  Danger Zone │
+   │  candidates  │  (act now)   │
+   │              │              │
+───┼──────────────┼──────────────┼─── High Complexity
+   │              │              │
+   │  Stable      │  Monitor     │
+   │  (leave it)  │  (watch)     │
+   │              │              │
+   └──────────────┼──────────────┘
+              Low Churn
+```
+
+"Danger Zone" files (high complexity + high churn) are named explicitly.
+
+### Grading Scale
+
+| Grade | Meaning |
+|---|---|
+| A+ | Exceeds industry best practice |
+| A | Meets best practice |
+| B | Acceptable, minor improvements possible |
+| C | Below average, attention needed |
+| D | Significant issues, action required |
+| F | Critical deficiencies |
+
+Grading is relative to resolved benchmarks (language-specific → general fallback).
+
+In metrics-only mode, all criteria get equal weight. In full mode, preliminary equal-weight grades are computed for console display; the author may adjust in Phase 4.
+
+### Step 3: Console Display
+
+Print a summary table directly in the conversation:
+
+```
+╔══════════════════════════════════════════════════════════════╗
+║  CODEBASE AUDIT — {Project Name}                           ║
+║  {Domain Summary} · {Language} · {Date}                    ║
+╠══════════════════════════════════════════════════════════════╣
+║  Overall Grade: {GRADE} (confidence: {CONFIDENCE})         ║
+╠══════════════════════════════════════════════════════════════╣
+║  #  Criterion        Grade  Key Metric         Benchmark   ║
+║  ── ──────────────── ────── ────────────────── ─────────── ║
+║   1 Maintainability    B    CC avg: 8.2        ≤ 10        ║
+║   2 Evolvability       B+   Fan-out avg: 3.1   ≤ 5         ║
+║  ...                                                       ║
+║  ── ──────────────── ────── ────────────────── ─────────── ║
+║  12 Velocity           —    +2.1k lines/30d    —           ║
+╠══════════════════════════════════════════════════════════════╣
+║  Top Risk: {criterion} ({grade}) — {reason}                ║
+║  Top Strength: {criterion} ({grade}) — {reason}            ║
+║  Danger Zone: {file} (CC:{N}, {N} changes)                 ║
+╚══════════════════════════════════════════════════════════════╝
+```
+
+Dynamically generated — only measured criteria appear. Failed/skipped agents show "—" with a note.
+
+### Step 4: Gate
+
+After displaying the table:
+
+> **Metrics collected.** What would you like to do?
+> 1. **Write both** — metrics.json + metrics.md + full analysis with benchmarks and recommendations
+> 2. **Metrics only** — write metrics.json + metrics.md (numbers, no commentary)
+> 3. **Done** — just the console display, no files
+
+**Routing rules:**
+- `/codebase-audit metrics` → skip gate, write metrics.json + metrics.md directly (no user context needed)
+- `/codebase-audit analysis` → skip Phase 1, load most recent metrics.json, proceed to Phase 3
+- User selects option 1 → proceed to Phase 3
+- User selects option 2 → skip to Phase 5 (write metrics only, rank/weight = null)
+- User selects option 3 → stop
+
+---
+
+## Phase 3 — User Context Interview
+
+Gathers context the code alone can't reveal. Sits between collection and analysis.
+
+### First Audit — Build the Profile
+
+Ask 3-5 questions maximum:
+
+1. **Project phase:** "What phase is this project in?"
+   - Prototype / MVP / Active growth / Mature / Maintenance
+
+2. **Team size:** "How many developers actively work on this?"
+   - Solo / 2-5 / 6-15 / 16+
+
+3. **Deployment cadence:** "How often do you deploy/release?"
+   - Continuous / Weekly / Monthly / Release-based / Not yet deploying
+
+4. **Business priority:** "What matters most right now?"
+   - Speed to market / Reliability / Compliance / Cost reduction / Feature completeness
+
+5. **Known trade-offs:** "Anything you'd like the audit to know? For example: intentional tech debt, upcoming migrations, constraints."
+   - Free text
+
+Also ask **informed questions** based on Phase 1 findings. For example, if the Tests agent found zero tests:
+
+> "I noticed there are no tests. Is this intentional for now (prototype phase), or is it a gap you want highlighted?"
+
+### Returning Audits — Confirm the Profile
+
+Check for existing profile at `docs/reports/codebase-audit/project-context.md`. If found, read it and ask:
+
+> "I found your project profile from the last audit ({DATE}). Here's what I have:
+> - Phase: {PHASE} | Team: {TEAM} | Priority: {PRIORITY}
+> - Known trade-off: {TRADE_OFF}
+>
+> Still accurate, or has anything changed?"
+
+User confirms or updates. Quick on repeat audits.
+
+### How User Context Shapes the Analysis
+
+| User Context | Analysis Effect |
+|---|---|
+| Solo + Prototype | Lighter on process (CI/CD), heavier on "what to invest in first" |
+| Team of 10 + Mature | Heavier on consistency, modularity, onboarding friction |
+| "Speed to market" priority | Recommendations framed as "do this now" vs. "do this before scaling" |
+| "Low test coverage intentional" | Testability acknowledges trade-off rather than flagging as surprise |
+| "Migrating to Postgres soon" | Operability factors in upcoming migration |
