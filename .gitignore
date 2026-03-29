@@ -11,3 +11,12 @@ Thumbs.db
 
 # Claude Code local settings
 .claude/settings.local.json
+
+# Local docs
+docs/reinstall-plugin.md
+
+# Temporary files
+temp/
+
+# Git worktrees
+.worktrees/
