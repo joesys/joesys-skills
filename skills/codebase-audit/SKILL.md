@@ -768,3 +768,380 @@ User confirms or updates. Quick on repeat audits.
 | "Speed to market" priority | Recommendations framed as "do this now" vs. "do this before scaling" |
 | "Low test coverage intentional" | Testability acknowledges trade-off rather than flagging as surprise |
 | "Migrating to Postgres soon" | Operability factors in upcoming migration |
+
+---
+
+## Phase 4 — Analysis Writing
+
+A single author agent writes the full analysis in one pass. Uses `model: "opus"`.
+
+### Dynamic Author Persona
+
+Composed from Phase 0 detection:
+
+> "You are a senior {language} engineer with deep knowledge of {language} idioms, ecosystem tooling, and community standards. You have extensive experience building {domain} systems and understand the specific quality trade-offs, failure modes, and performance characteristics of this domain."
+
+### Dynamic Criteria Weighting
+
+The author assigns a **priority rank** (1-11) and **weight** (High/Medium/Low) to each criterion based on language + domain expertise. This affects:
+
+1. **Priority order** — criteria sections sorted by priority, not fixed 1-11
+2. **Overall grade** — higher-weighted criteria influence overall grade more
+3. **Analysis depth** — top 3-4 get deeper analysis
+4. **Recommended actions** — higher-priority criteria surfaced first
+
+Users can override via `criteria_priority` in `audit.yaml`.
+
+### Author Agent Prompt
+
+~~~
+{DYNAMIC_AUTHOR_PERSONA}
+
+You are writing a comprehensive codebase quality audit report.
+
+## Inputs
+
+1. **Metrics JSON** — all measured values from Phase 1 collection agents:
+{ASSEMBLED_METRICS_JSON}
+
+2. **Project Context:**
+{PROJECT_CONTEXT_BLOCK}
+
+3. **User Context:**
+{USER_CONTEXT}
+
+4. **Risk Heat Map — Danger Zone files:**
+{DANGER_ZONE_LIST}
+
+5. **Previous Audit:** {PREVIOUS_METRICS_JSON_OR_NULL}
+
+## Principle Files
+Read ALL 11 principle files from `skills/codebase-audit/principles/`:
+maintainability.md, evolvability.md, correctness.md, testability.md, reliability.md,
+performance.md, readability.md, modularity.md, consistency.md, operability.md, security.md
+
+## Benchmark Files
+Read: `skills/codebase-audit/benchmarks/{language}.md` and `skills/codebase-audit/benchmarks/general.md`
+
+## Analysis Template
+Read: `skills/codebase-audit/templates/analysis-template.md` — follow this structure exactly.
+
+## Instructions
+
+1. **Assign priority ranks and weights** to all 11 criteria based on your language + domain expertise. Show your reasoning in the "Criteria Priority Rationale" section.
+
+2. **Write the full analysis report** following the template structure. For each criterion:
+   - Grade it using the principle file's rubric + benchmark data
+   - Include measured metrics with benchmarks and sources
+   - Provide qualitative analysis referencing specific files
+   - List actionable improvements with effort estimates (considering team size and codebase size)
+
+3. **Benchmark integration** — for every metric, resolve benchmarks in priority order:
+   Language + domain specific → Language specific → Domain specific → General.
+   Every benchmark must have a source citation.
+
+4. **Risk heat map** — include the complexity × churn cross-reference with Danger Zone files named.
+
+5. **Recommended actions** — group by Immediate / Near-term / Future. Each includes: affected criteria, description, risk of inaction, effort estimate.
+
+6. **Delta comparison** — if previous audit data is provided, include the delta section.
+
+7. **Return two outputs:**
+   a. The complete analysis report (markdown)
+   b. The final priority rankings as JSON: `{"rankings": [{"criterion": "...", "rank": N, "weight": "high|medium|low"}], "overall_grade": "...", "overall_grade_rationale": "..."}`
+~~~
+
+### Transparency Requirements
+
+- Show criteria priority rationale at the top of the report
+- Every benchmark has a source citation in footnotes
+- Every grade references at least one measured metric
+- Effort estimates reference codebase size and team context
+- User context trade-offs acknowledged in relevant sections
+
+---
+
+## Phase 5 — Write & Output
+
+### Output Directory
+
+```
+docs/reports/codebase-audit/
+├── project-context.md              # Persistent project profile
+└── YYYYMMDD/
+    ├── metrics.json                # Machine-readable metrics
+    ├── metrics.md                  # Human-readable metrics table
+    └── analysis.md                 # Full qualitative report
+```
+
+Date-stamped directories. If today's directory exists, append suffix: `YYYYMMDD-2`.
+
+### metrics.json Structure
+
+```json
+{
+  "version": 1,
+  "date": "{YYYY-MM-DD}",
+  "branch": "{branch}",
+  "commit": "{short_hash}",
+  "languages": {"primary": "{lang}", "additional": ["typescript"]},
+  "domain": "{domain_summary}",
+  "overall_grade": "B+",
+  "overall_confidence": "high",
+  "criteria": {
+    "maintainability": {
+      "rank": 1,
+      "weight": "high",
+      "confidence": "high",
+      "grade": "B",
+      "metrics": {
+        "cyclomatic_complexity_avg": {
+          "value": 8.2,
+          "by_language": {"python": 7.1, "typescript": 9.8},
+          "benchmark": 10,
+          "source": "Carnegie Mellon SEI",
+          "assessment": "good"
+        },
+        "function_length_median": {
+          "value": 24,
+          "benchmark": 50,
+          "source": "Clean Code, Robert C. Martin",
+          "assessment": "good"
+        }
+      }
+    }
+  },
+  "risk_heat_map": [
+    {"file": "src/payment/processor.py", "complexity": 18, "churn_30d": 23, "quadrant": "danger_zone"}
+  ],
+  "velocity": {
+    "lines_added": 1200,
+    "lines_deleted": 800,
+    "net_change": 400,
+    "files_changed": 42,
+    "most_churned_files": [
+      {"file": "src/main.py", "added": 150, "deleted": 80, "total_churn": 230}
+    ]
+  },
+  "knowledge_concentration": [
+    {"module": "src/payment/", "primary_contributor": "alice", "commit_pct": 94, "bus_factor_risk": "high"}
+  ],
+  "collection_metadata": {
+    "agents_dispatched": 6,
+    "agents_succeeded": 6,
+    "config_source": "auto-detected",
+    "benchmarks_source": "cached"
+  },
+  "methodology": {
+    "commands_run": [
+      {"agent": "structural", "command": "python helpers/compute_structure.py --lang python --source src/", "status": "success"},
+      {"agent": "tests", "command": "pytest --tb=short", "status": "declined_by_user"}
+    ],
+    "commands_skipped": [],
+    "benchmarks": {
+      "sources": ["benchmarks/python.md", "benchmarks/general.md"],
+      "web_searched": true,
+      "citations": [
+        {"id": 1, "text": "Carnegie Mellon SEI, 'Cyclomatic Complexity Thresholds', 2018", "url": null}
+      ]
+    },
+    "python_available": true,
+    "static_only": false
+  },
+  "audit_scope": {
+    "branch": "main",
+    "criteria_measured": ["maintainability", "evolvability", "correctness"],
+    "source_paths": ["src/"],
+    "test_paths": ["tests/"],
+    "exclude_patterns": ["vendor/", "node_modules/"],
+    "static_only": false,
+    "invocation": "full"
+  }
+}
+```
+
+**Schema notes:**
+- `rank` and `weight` are `null` in metrics-only mode; populated after Phase 4.
+- `confidence` per criterion: `"high"`, `"medium"`, or `"low"`.
+- `by_language` inside metric objects is present only for polyglot repos. For single-language repos, omit it.
+- `audit_scope` captures what was measured and how — used for delta comparability checks.
+- After Phase 4 completes: **rewrite metrics.json and metrics.md** with final ranks, weights, and adjusted overall grade.
+
+### metrics.md
+
+Pure data, no commentary. Dynamically generated from `metrics.json`. The following is the complete template:
+
+```markdown
+# Codebase Metrics — {Project Name}
+
+**Date:** {DATE}
+**Branch:** `{BRANCH}` @ `{COMMIT_SHORT}`
+**Languages:** {Primary Language} (primary), {Additional Languages}
+**Domain:** {Domain Summary}
+
+## Overall Grade: {GRADE} (confidence: {CONFIDENCE})
+
+## Criteria Summary
+
+| Rank | Criterion | Grade | Weight | Key Metric | Measured | Benchmark | Source |
+|---|---|---|---|---|---|---|---|
+| #1 | {Criterion} | {Grade} | High | {Metric} | {Value} | {Benchmark} | {Source} |
+| ... |
+
+## Risk Heat Map
+
+| File | Complexity (CC avg) | Churn (30d changes) | Quadrant |
+|---|---|---|---|
+| {path} | {CC} | {changes} | Danger Zone / Monitor / Refactor / Stable |
+
+## Detailed Metrics
+
+### {Criterion Name}
+
+| Metric | Measured | Benchmark | Source | Assessment |
+|---|---|---|---|---|
+| {metric} | {value} | {benchmark} | {citation} | Good / Watch / Action needed |
+
+*(repeated for each measured criterion)*
+
+## Development Velocity
+
+| Metric | Value |
+|---|---|
+| Lines added (30d) | {N} |
+| Lines deleted (30d) | {N} |
+| Net change | {N} |
+| Files changed | {N} |
+| Most-churned file | {path} ({N} changes) |
+
+## Knowledge Concentration
+
+| Module | Primary contributor | % of commits | Bus factor risk |
+|---|---|---|---|
+| {module} | {contributor} | {pct}% | High / Medium / Low |
+
+## Collection Metadata
+
+- **Agents dispatched:** {N}
+- **Agents succeeded:** {N}
+- **Language detected:** {Language}
+- **Config source:** {.claude/audit.yaml | auto-detected}
+- **Benchmarks source:** {cached | cached + web-searched}
+```
+
+Only include sections for which data was actually collected. Omit empty sections rather than showing "N/A."
+
+### analysis.md
+
+Written by the author agent per `templates/analysis-template.md`.
+
+### project-context.md
+
+Update/create the persistent profile:
+
+```markdown
+# Project Context — {Project Name}
+
+Last updated: {DATE}
+
+## Profile
+- **Phase:** {phase}
+- **Team:** {team_size}
+- **Deployment:** {cadence}
+- **Priority:** {priority}
+- **Domain:** {domain_summary}
+
+## Known Trade-offs
+{user_provided_trade_offs}
+
+## Audit History
+- {DATE}: {mode} audit ({grade})
+```
+
+### Execution Flows
+
+**`/codebase-audit analysis`:**
+1. Find most recent `metrics.json` in `docs/reports/codebase-audit/*/`
+2. If not found: "No previous metrics found. Run `/codebase-audit` first."
+3. Parse metrics.json
+4. Run Phase 3 (user context)
+5. Run Phase 4 (analysis writing)
+6. Rewrite metrics.json and metrics.md with final ranks/weights
+7. Write analysis.md into the same directory
+
+**`/codebase-audit delta`:**
+1. Find two most recent `metrics.json` files
+2. If <2 found: "Need at least 2 audits for delta comparison. Found {N}."
+3. **Comparability check** on `audit_scope`:
+   - **Fully compatible** (same `criteria_measured`, `source_paths`, `test_paths`, `exclude_patterns`, `branch`) → full delta with overall grade
+   - **Partially compatible** — proceed with overlap, but display warnings:
+     - Different `criteria_measured`: compare only overlapping criteria, suppress overall grade delta. Warn: "These audits measured different criteria. Comparing {N} overlapping criteria only."
+     - Different `source_paths`/`test_paths`/`exclude_patterns`: compare but warn: "Source scope changed — structural/churn metrics may not be directly comparable."
+     - Different `branch`: warn: "Audits are from different branches ({previous} vs {current})."
+     - Different `static_only` or `confidence`: warn: "Audit conditions differ — previous was {full/static-only}; current is {full/static-only}. Delta may not be directly comparable."
+   - **No overlap** → "These audits share no common criteria and cannot be compared."
+4. Display delta table on console
+5. Ask if user wants narrative delta analysis
+
+### Cleanup
+
+Remove any temp files. Report output paths:
+
+> Audit complete.
+> - Metrics: `docs/reports/codebase-audit/{DATE}/metrics.md`
+> - Analysis: `docs/reports/codebase-audit/{DATE}/analysis.md`
+> - Overall grade: **{GRADE}**
+
+Notify completion:
+
+```bash
+powershell.exe -c "[Console]::Beep(800, 300)"
+```
+
+---
+
+## Guardrails
+
+1. **Never present a benchmark without a source citation.** Unsourced benchmarks look made up.
+2. **Never grade a criterion without at least one measured metric.** Grades based on vibes are worthless.
+3. **Never claim "no issues found" without having actually measured.** False confidence is worse than no audit.
+4. **If a helper script fails, mark affected metrics as "Not measured" — not "Good."** Absence of evidence ≠ evidence of absence.
+5. **Always show delta direction (improved/declined/stable) when comparing.** Raw numbers without trend are incomplete.
+6. **Domain inference must be stated explicitly** so the user can challenge it.
+7. **Criteria priority rationale must be shown in the report.** Weighting should be auditable.
+8. **Effort estimates must reference codebase size and team context.** Generic "improve this" is not actionable.
+9. **All Danger Zone files must be named explicitly.** Abstract risk warnings don't drive action.
+10. **User context trade-offs must be acknowledged** in relevant criterion sections.
+
+---
+
+## Graceful Degradation
+
+| Situation | Behavior |
+|---|---|
+| 1-2 agents fail or time out | Proceed with available data. Note missing agents. Offer to retry. |
+| All agents fail | Report failure. Suggest retrying or narrowing scope. |
+| No git history | Git/Velocity agent skips. Churn/bus factor marked "No git history." |
+| No test runner detected | Tests agent does static analysis only. |
+| Helper script fails | Agent falls back to qualitative-only. Metrics marked "Not measured." |
+| No internet (WebSearch unavailable) | Use cached benchmarks. Note "cached benchmarks only" in methodology. |
+| Unknown language | Use general benchmarks. Extension-count fallback. |
+| Massive repo (1000+ files) | Warn user. Agents focus on most significant files. |
+| No `.claude/audit.yaml` | Fully auto-detected. Note in methodology. |
+| Python not available | Qualitative-only for helper-dependent metrics. |
+| No previous audit for delta | "Need at least 2 audits for delta comparison." |
+| Live commands declined | Static analysis fallback. Mark as "Skipped (live commands declined)." |
+
+---
+
+## Error Handling
+
+| Error | Behavior |
+|---|---|
+| Invalid criterion name in arguments | Print valid names, stop |
+| `.claude/audit.yaml` is malformed | Report parse error, proceed with auto-detection |
+| No source files found | "No source files found in detected paths. Check project structure." |
+| metrics.json not found for `analysis` mode | "No previous metrics found. Run `/codebase-audit` first." |
+| <2 metrics.json for `delta` mode | "Need at least 2 audits for delta comparison. Found {N}." |
+| Output directory creation fails | Report error, suggest alternative path |
+| Agent returns malformed JSON | Use what's parseable, note the issue |
