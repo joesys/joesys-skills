@@ -111,3 +111,257 @@ Before mining the current period, check whether the previous retro's action item
 - **Irrelevant items:** Items that no longer apply (e.g., related to a removed feature) should be retired with a reason, not silently dropped.
 
 ---
+
+## Phase 1: Mine via Parallel Channel Agents
+
+Dispatch **5 subagents simultaneously** via the Agent tool — all 5 in a single response (5 parallel Agent tool calls). Each agent mines a specific data source within the retro time boundary.
+
+**IMPORTANT:** Every Agent tool call **must** use `model: "opus"` to ensure high-quality analysis.
+
+Each subagent receives:
+- The retro time boundary (start ref/date → end ref/date)
+- The carry-forward findings from Phase 0 (if any)
+- The Guiding Principles block (prepended to every prompt)
+- Its specific mining instructions
+
+### Guiding Principles (included in every subagent prompt)
+
+1. **Evidence over guesswork.** Every claim must reference a specific commit, conversation exchange, file, or timestamp. No vague assertions.
+2. **Flag uncertainty.** Distinguish what definitely happened vs. what seems likely vs. what is unclear. Uncertainty is valid output — say "unclear" rather than speculate.
+3. **Focus on friction and surprise.** The goal is to find moments where something didn't go as expected, where the developer changed direction, or where a process broke down. Routine work is not interesting for a retrospective.
+4. **Quantify when possible.** Prefer "12 commits touched auth/ in 3 days" over "lots of churn in the auth module."
+5. **Infer reasoning, but mark it.** When you infer *why* something happened, explicitly label it: "Likely because..." or "This suggests..."
+
+### Context Budgets
+
+Each agent operates within a **~4,000 line read budget** to prevent context exhaustion. The budget guides how deep to go — agents should prioritize breadth of coverage within the budget rather than exhaustive depth on one area.
+
+### Agent 1: Git History
+
+~~~
+<GUIDING_PRINCIPLES>
+
+You are analyzing git history for a retrospective. Your job is to extract the timeline, patterns, and notable events from the commit history.
+
+## Instructions
+1. Analyze the git history within the specified time boundary.
+2. If commit messages follow Conventional Commits with structured bodies (intent paragraph, changes changelog, AI review), mine the intent paragraphs and AI review sections — they contain reasoning and critical assessment.
+3. Stay within the ~4,000 line read budget.
+
+## Time Boundary
+<START_REF> to <END_REF>
+
+## Commands to Run
+- `git log --oneline --since="<start>" --until="<end>"` for the full timeline
+- `git shortlog -sn --since="<start>" --until="<end>"` for contributor breakdown
+- `git diff --stat <start-ref>...<end-ref>` for overall change volume (if refs are available)
+- `git log --diff-filter=A --name-only --since="<start>"` for new files
+- `git log --diff-filter=D --name-only --since="<start>"` for deleted files
+
+## Carry-Forward Context (if provided)
+<CARRY_FORWARD_SUMMARY or "None — this is the first retrospective.">
+
+## Extract and Organize
+
+- **Timeline**: chronological narrative of what happened (first X, then Y, finally Z)
+- **Velocity metrics**: total commits, files changed, insertions/deletions, new files created, files deleted
+- **Hotspots**: files/directories with the most churn (modified in 3+ commits)
+- **Commit patterns**: burst vs. steady work, time-of-day patterns if visible, large commits that may indicate code dumps
+- **Notable commits**: commits that introduced new approaches, reverted work, or stand out as pivots
+- **Dependency changes**: new dependencies added, removed, or upgraded (look at lockfile/manifest changes)
+
+## Output Format
+
+Return structured markdown with clear section headers for each category above. Include specific commit hashes for notable items.
+~~~
+
+### Agent 2: Conversation History
+
+~~~
+<GUIDING_PRINCIPLES>
+
+You are reading Claude Code conversation transcripts to find moments of human correction, decision-making, and friction for a retrospective.
+
+## Instructions
+1. Read the specified JSONL session files.
+2. Focus on user and assistant messages (type: "user" and "assistant"). Skip tool results, file-history-snapshots, and progress messages — they are bulk data that obscures the thinking.
+3. Stay within the ~4,000 line read budget. Scan all sessions but read deeply only the most signal-rich exchanges.
+
+## Session Resolution
+Determine the active project's session files:
+1. The project directory is derived from the current working directory with path separators replaced by `--` (e.g., `D:\joesys\Projects\my-project` becomes `D--joesys-Projects-my-project`).
+2. Session JSONL files are at `~/.claude/projects/<project-dir>/<sessionId>.jsonl`
+3. Filter sessions to those with timestamps within the retro time boundary. Check the first entry's `timestamp` field in each JSONL file.
+
+## Time Boundary
+<START_DATE> to <END_DATE>
+
+## What to Look For
+
+- **Human corrections**: moments where the user said "no", "not that", "actually", "stop", or redirected the AI — these reveal what the human knew that the AI didn't
+- **Pivots**: points where the conversation changed direction — the user abandoned one approach for another
+- **Repeated friction**: the same kind of problem or miscommunication happening across multiple sessions
+- **AI failures**: questions the AI couldn't answer, wrong suggestions that had to be corrected, hallucinated solutions
+- **Workflow bottlenecks**: long conversations that should have been short, indicating process friction
+- **Successful patterns**: approaches that worked well and should be continued
+
+## Output Format
+
+Return structured markdown with:
+- Summary statistics: sessions analyzed, total exchanges, correction count
+- Highlighted key exchanges (quote the actual messages, attributed to "Developer" and "AI")
+- Patterns observed across sessions (not just individual moments)
+- Specific friction points with session references
+~~~
+
+### Agent 3: Code Quality Delta
+
+~~~
+<GUIDING_PRINCIPLES>
+
+You are analyzing how the codebase's structural quality changed during the retro period.
+
+## Instructions
+1. Compare the codebase structure at the start vs. end of the retro period.
+2. Focus on structural indicators, not code content.
+3. Stay within the ~4,000 line read budget.
+
+## Time Boundary
+<START_REF> to <END_REF>
+
+## Baseline (if available)
+<CODEBASE_AUDIT_METRICS_JSON or "No previous codebase audit available — estimate from git history.">
+
+If a `/codebase-audit` metrics.json exists from before the retro period, use it as a baseline. Otherwise, estimate the delta from git history (files added/removed, test files added/removed).
+
+## Analyze
+
+- **File count delta**: source files, test files, config files — created vs. deleted
+- **Test-to-production ratio**: ratio of test code added vs. production code added
+- **Complexity indicators**: large files that grew larger, new files that are already large (>300 lines), deeply nested directory structures created
+- **Dependency changes**: new dependencies added to manifests/lockfiles, dependencies removed or upgraded
+- **Tech debt signals**: TODO/FIXME/HACK comments added vs. removed (use `git log -p --since="<start>" | grep -c "^\+.*TODO\|FIXME\|HACK"` and similar for removals)
+- **What got better**: tests added, large files split, dead code removed, types added
+- **What got worse**: new dependencies without justification, growing god files, test coverage gaps in high-churn areas
+
+## Output Format
+
+Return structured markdown with quantified deltas where possible. Use "+N" / "-N" notation for changes.
+~~~
+
+### Agent 4: Planning vs. Reality
+
+~~~
+<GUIDING_PRINCIPLES>
+
+You are comparing what was planned against what was actually delivered during the retro period.
+
+## Instructions
+1. Read plan and spec documents that fall within the retro period.
+2. Cross-reference against the git history to determine what was actually implemented.
+3. Stay within the ~4,000 line read budget.
+
+## Time Boundary
+<START_DATE> to <END_DATE>
+
+## Where to Find Plans
+Check these locations for plan and spec documents (date-filtered to the retro period):
+- `docs/superpowers/plans/` — implementation plans
+- `docs/superpowers/specs/` — design specs
+- Any other planning directories discovered in the project
+
+Use file modification dates and git log to filter to the retro period.
+
+## Analyze
+
+- **Plans completed**: which plans were fully implemented (all checkboxes checked or equivalent)
+- **Plans partially completed**: which plans were started but not finished — what remains
+- **Plans abandoned**: which plans were created but never started or explicitly abandoned
+- **Unplanned work**: significant commits or features that don't trace to any plan — these represent reactive or emergent work
+- **Scope drift**: where implementation diverged from the plan — features added, features cut, approach changed mid-implementation
+- **Estimate accuracy**: if plans have time estimates, compare against actual (infer from commit timestamps)
+
+## Output Format
+
+Return structured markdown. For each plan found, state: title, status (complete/partial/abandoned), and notable divergences. End with an "Unplanned Work" section listing significant work that wasn't in any plan.
+~~~
+
+### Agent 5: Testing & Reliability
+
+~~~
+<GUIDING_PRINCIPLES>
+
+You are analyzing the health and trajectory of the project's test suite during the retro period.
+
+## Instructions
+1. Analyze test file changes during the retro period.
+2. If possible, run the test suite to get current pass/fail status.
+3. Stay within the ~4,000 line read budget.
+
+## Time Boundary
+<START_REF> to <END_REF>
+
+## Analyze
+
+- **Test suite status**: attempt to run the project's test suite. Common commands to try:
+  - `npm test`, `npx jest`, `npx vitest` (JavaScript/TypeScript)
+  - `pytest`, `python -m pytest` (Python)
+  - `go test ./...` (Go)
+  - `cargo test` (Rust)
+  - `dotnet test` (C#)
+  If the test command is documented in `package.json`, `Makefile`, `pyproject.toml`, or similar, use that. If tests can't be run, note why and proceed with static analysis.
+- **Test file changes**: new test files created, test files modified, test files deleted during the period
+- **Test-to-production ratio**: for files changed in the period, how many had corresponding test changes
+- **Flaky test indicators**: test files with high churn (modified 3+ times), tests that were added then quickly modified
+- **Coverage gaps**: production files with high churn during the period that have no corresponding test file
+- **Testing patterns**: what testing conventions emerged or were followed (naming, structure, assertion style)
+
+## Output Format
+
+Return structured markdown with:
+- Current test suite status (if runnable): total, passing, failing, skipped
+- Test delta during retro period: tests added, modified, deleted
+- Coverage gap analysis: high-churn production files without tests
+- Notable testing patterns or anti-patterns observed
+~~~
+
+### Output Assembly
+
+After all 5 agents return, the facilitator (main agent) assembles their findings into a single consolidated file: `<retro-dir>/01-digest.md`
+
+The digest preserves each channel's findings under its own heading, with a facilitator-written preamble that includes:
+- **Period**: start → end (with dates)
+- **Key metrics**: commits, files changed, tests delta (pulled from channel findings)
+- **Narrative arc**: one-sentence story of the period ("from X to Y")
+
+### Topic Derivation
+
+After assembling the digest, **derive 4-7 discussion topics** from the channel findings. Topics are emergent from the data — not from a fixed template.
+
+**How to derive topics:**
+1. Scan all channel findings for recurring themes, tensions, and high-signal observations
+2. Group related findings into candidate topics
+3. Rank candidates by signal strength — how much evidence supports the topic, how many channels flagged it
+4. Drop candidates with thin evidence (only one channel, one data point)
+5. Merge overlapping candidates into a single topic
+6. Aim for 4-7 topics — enough to cover the important themes, few enough to discuss each meaningfully
+
+**Each topic needs:**
+- A descriptive name (e.g., "Testing Gaps in High-Churn Code", "AI Workflow Friction", "Scope Drift from Original Plan")
+- A one-line justification citing which channels surfaced evidence for it
+
+### Human Check-In
+
+Present to the human:
+- The narrative arc
+- Key metrics (commits, files, tests delta)
+- The proposed topic list with one-line justifications
+
+Ask using `AskUserQuestion`:
+- **Proceed with these topics** — "Topics look good, start the discussion"
+- **Adjust topics** — "I want to add/remove/reorder topics"
+- **Add context** — "I have observations to include before we start"
+
+If the human adjusts topics, update the list accordingly before proceeding to Phase 2.
+
+---
