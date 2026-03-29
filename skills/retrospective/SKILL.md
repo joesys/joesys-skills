@@ -444,3 +444,130 @@ Each topic is appended to `02-topic-discussions.md` in this format:
 When all topics are complete, update the status header to `status: complete`.
 
 ---
+
+## Phase 3: Synthesize & Deliver
+
+Phase 3 re-reads only `02-topic-discussions.md` — everything upstream is already distilled into that file. Do not re-read the digest, channel findings, or any source files. Produce three output files.
+
+### 3a: Retrospective Summary
+
+Consolidate all topic discussions into a single readable document.
+
+**Save to:** `<retro-dir>/03-retro-summary.md`
+
+**Format:**
+
+~~~~markdown
+# Retrospective — <narrative arc summary>
+
+**Period:** <start date/ref> → <end date/ref>
+**Date:** YYYY-MM-DD
+
+## Metrics
+- Commits: X
+- Files changed: X (+N new, -N deleted)
+- Tests: +N added, -N removed (X total passing, X failing)
+- Insertions/Deletions: +X / -X
+
+## Narrative Arc
+[One-sentence story of the period — from the digest]
+
+## Notable Human Corrections
+[Explicitly listed — where the human overruled the analysis and why. These are the highest-signal moments in the retro.]
+- **[Topic Name]**: [What the analysis got wrong] → [What's actually true]
+
+## Topic Insights
+
+### 1. [Topic Name]
+**Key Insights:** [2-3 sentences on what we learned]
+**Human's Perspective:** [What the human added]
+- Start: [items]
+- Stop: [items]
+- Continue: [items]
+
+[...repeated for each topic...]
+
+## Top Takeaways
+[3-5 most impactful learnings from the entire retro, ranked by impact on future work]
+1. [Takeaway] — [Why it matters]
+2. [Takeaway] — [Why it matters]
+3. [Takeaway] — [Why it matters]
+~~~~
+
+### 3b: Action Items
+
+Extract all Start/Stop/Continue items from the topic discussions and organize into actionable changes.
+
+**Save to:** `<retro-dir>/03-action-items.md`
+
+**Format:**
+
+~~~~markdown
+# Retrospective Action Items — YYYY-MM-DD
+
+## [Category]
+- [ ] [Specific, actionable item] — [Why, referencing topic] — Priority: high/medium/low
+
+## [Category]
+- [ ] [Item] — [Why] — Priority: high/medium/low
+
+## Deferred / Watch List
+- [Items noted but not actionable yet — revisit next retro]
+~~~~
+
+Categories are **not fixed** — use whichever categories fit the actual action items. Common categories include:
+
+| Category | When to use |
+|---|---|
+| **Workflow Changes** | Process or habit changes |
+| **Tooling** | New tools, hooks, CI changes, skill additions |
+| **Testing** | Test additions, coverage improvements, convention changes |
+| **Documentation** | README updates, onboarding docs, architecture docs |
+| **Technical Debt** | Refactoring, cleanup, dependency upgrades |
+| **Deferred / Watch List** | Not actionable yet — track for next retro |
+
+Every action item must be **specific and verifiable**. "Improve testing" is not an action. "Add integration tests for the payment API endpoint" is.
+
+### 3c: Process & Skill Improvements
+
+Draft concrete proposals for changes to the project's environment and AI tooling.
+
+**Save to:** `<retro-dir>/03-improvements.md`
+
+**Format:**
+
+~~~~markdown
+# Retrospective — Improvement Proposals
+
+## Process Improvements
+
+### Proposal 1: [Brief Description]
+**Target:** [What to change — CLAUDE.md, .gitignore, hook, CI config, etc.]
+**Change:** [Specific change to make]
+**Why:** [Grounded in retro evidence — reference the topic and finding]
+**Status:** Proposed
+
+### Proposal 2: [Brief Description]
+[...repeat...]
+
+## Skill Improvements
+
+### Proposal N: [Skill Name] — [Brief Description]
+**Skill:** [Skill name or path]
+**Change:** [What specifically to add/remove/modify]
+**Why:** [Grounded in retro evidence — reference the topic and finding]
+**Status:** Proposed
+~~~~
+
+### Human Review Gate
+
+After writing all three files, present the improvement proposals (from 3c) to the human **one by one** using `AskUserQuestion`:
+- **Approve** — "Apply this change"
+- **Reject** — "Skip this one"
+- **Modify** — "I want to adjust this proposal"
+
+Update the status in `03-improvements.md` for each proposal (Approved / Rejected / Modified + description of modification).
+
+**Do NOT apply any changes without explicit approval.** Only implement approved proposals after all proposals have been reviewed.
+
+---
