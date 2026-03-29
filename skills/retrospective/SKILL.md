@@ -649,3 +649,71 @@ Retrospective complete. Artifacts saved to <retro-dir>/.
 ```
 
 ---
+
+## Session Resumption
+
+If a session is interrupted, use file-existence and topic-granularity recovery to resume exactly where work stopped.
+
+**Invocation:** `/retrospective continue`
+
+### Recovery Procedure
+
+1. **Find today's retro directory.** Check `docs/retros/` for a directory matching today's date (`YYYY-MM-DD`). If none exists, check for the most recent incomplete retro (one without `04-retro-narrative.md`).
+
+2. **File inventory.** Check which files exist in the retro directory:
+
+| Files Found | Resume Point |
+|---|---|
+| No retro directory | Start from Phase 0 |
+| `00-carry-forward.md` exists | Phase 0 complete → resume at Phase 1 |
+| `01-digest.md` exists | Phase 1 complete → resume at Phase 2 |
+| `02-topic-discussions.md` exists | Check YAML status header (see step 3) |
+| `03-retro-summary.md` exists | Phase 3 complete → resume at Phase 4 |
+| `04-retro-narrative.md` exists | All phases complete — run Final Steps only if artifacts are uncommitted |
+
+3. **Topic-granularity check (Phase 2).** If `02-topic-discussions.md` exists, read its YAML front matter:
+   - `status: complete` → Phase 2 done, resume at Phase 3
+   - `status: in-progress`, `topics_completed: N` → resume at topic N+1
+
+4. **What to read per phase on resume:**
+   - **Resuming Phase 0:** Read previous retro's action items only
+   - **Resuming Phase 1:** Read `00-carry-forward.md` (if exists) + determine time boundary from directory name
+   - **Resuming Phase 2:** Read YAML status header + topic list from `01-digest.md` (just the topic names and justifications, not the full channel findings) + the next incomplete topic's relevant channel data only. Do NOT re-read completed topic discussions beyond their Start/Stop/Continue.
+   - **Resuming Phase 3:** Read `02-topic-discussions.md` only — everything upstream is distilled there
+   - **Resuming Phase 4:** Read `03-retro-summary.md` + `02-topic-discussions.md` (fresh context agent, same as normal Phase 4)
+
+5. **What NOT to read on resume:** Do not re-read source files, git logs, or session transcripts already synthesized into the digest. Do not re-read completed topic discussions beyond their Start/Stop/Continue items.
+
+---
+
+## Red Flags
+
+Watch for these signs during the retrospective — they indicate the process is going wrong:
+
+| Sign | Problem | Fix |
+|---|---|---|
+| All channels agree on everything | Manufactured consensus. Real retros surface friction. | Re-examine the channel findings for tensions you glossed over. |
+| No human corrections captured | Either the period was unusually smooth or the conversation mining missed them. | Ask the human directly: "Were there moments where you had to correct the AI or override a suggestion?" |
+| Action items are vague | "Improve testing" is not an action. | Rewrite with specifics: "Add integration tests for the payment API endpoint." |
+| Improvement proposals not grounded in evidence | Every proposal must reference specific retro findings. | Go back to the topic discussions and cite the evidence. |
+| Skipping the human reaction step | The human perspective is the most valuable input. Never skip the interleave. | Always use `AskUserQuestion` — even if you think the topic is clear-cut. |
+| Topic list doesn't reflect what actually happened | Topics emerge from data, not a template. | Re-examine the channel findings for the real themes. |
+| Narrative is just a reformatted summary | The narrative should be engaging prose. | The fresh-context agent should prevent this. If it happens, the writing rules weren't passed correctly. |
+| Phase 3 contradicts Phase 2 discussions | Synthesis must faithfully represent what was discussed, including corrections. | Re-read `02-topic-discussions.md` and fix the contradictions. |
+| Empty topics run anyway | If a channel found nothing for a proposed topic, drop it. | Fewer, richer topics are better than padding with empty ones. |
+
+---
+
+## Context Management
+
+The retrospective is a long-running process with human-in-the-loop at every topic. These budgets and practices prevent context exhaustion:
+
+**Phase 1 channel agents:** ~4,000 lines each. Agents should prioritize breadth within this budget.
+
+**Phase 2 topic discussions:** After saving a topic to disk, retain only its Start/Stop/Continue items and one-sentence key insight. The full discussion is on disk — do not accumulate completed topics in working memory.
+
+**Phase 3 synthesis:** Reads only `02-topic-discussions.md`. Everything upstream (git logs, session transcripts, channel findings) is already distilled.
+
+**Phase 4 narrative:** Always runs in a fresh context agent. Never attempt the narrative in the same context as Phases 0-3.
+
+**Incremental saves:** Every topic discussion is written to disk immediately after the human's reaction. This is both a context management strategy and a session resumption enabler.
