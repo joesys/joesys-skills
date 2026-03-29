@@ -57,7 +57,21 @@ Reword the user's question into a clear, logical form with explicit framing (con
 
 ### Prompt Size Safety
 
-If the assembled prompt exceeds shell argument limits, write the prompt to a temporary file and pipe it to the CLI tool (e.g., `cat /tmp/council-codex-prompt.txt | codex exec --model gpt-5.4 ... 2>/dev/null`). Clean up temporary files after all legs complete.
+**Always** write prompts to temporary files and pipe them to CLI tools. This avoids shell quoting issues regardless of prompt content (quotes, backticks, dollar signs, newlines, etc.):
+
+Write prompts using heredocs with **single-quoted delimiters** to prevent shell expansion:
+```bash
+cat > /tmp/council-<leg>-prompt.txt << 'PROMPT_EOF'
+<prompt content>
+PROMPT_EOF
+```
+
+Then pipe to each tool:
+- **Codex:** `cat /tmp/council-codex-prompt.txt | codex exec --model gpt-5.4 -c model_reasoning_effort="xhigh" --sandbox read-only --skip-git-repo-check 2>/dev/null`
+- **Gemini:** `cat /tmp/council-gemini-prompt.txt | gemini -m gemini-3.1-pro-preview --approval-mode plan -p "" 2>/dev/null` (`-p ""` triggers non-interactive mode, stdin provides the prompt)
+- **Claude CLI:** `cat /tmp/council-claude-prompt.txt | claude --model opus --effort high --permission-mode plan --name "council-<topic>" -p "" 2>/dev/null`
+
+Clean up temporary files after all legs complete.
 
 ## Phase 3: Parallel Dispatch
 
@@ -65,17 +79,19 @@ Launch all three legs simultaneously in a single response (three parallel tool i
 
 ### Codex Leg (Bash, 600000ms timeout)
 
+**Always deliver the prompt via stdin pipe** (see Prompt Size Safety).
+
 ```bash
-codex exec --model gpt-5.4 -c model_reasoning_effort="xhigh" \
-  --sandbox read-only --skip-git-repo-check "<prompt>" 2>/dev/null
+cat /tmp/council-codex-prompt.txt | codex exec --model gpt-5.4 -c model_reasoning_effort="xhigh" \
+  --sandbox read-only --skip-git-repo-check 2>/dev/null
 ```
 
 ### Gemini Leg (Bash, 600000ms timeout)
 
-The `-p` flag is mandatory for non-interactive execution. Without it, Gemini enters interactive mode and hangs.
+The `-p` flag is mandatory for non-interactive execution. Without it, Gemini enters interactive mode and hangs. **Always deliver the prompt via stdin pipe** — never pass long prompts as a direct `-p` argument (shell metacharacters break argument passing).
 
 ```bash
-gemini -m gemini-3.1-pro-preview --approval-mode plan -p "<prompt>" 2>/dev/null
+cat /tmp/council-gemini-prompt.txt | gemini -m gemini-3.1-pro-preview --approval-mode plan -p "" 2>/dev/null
 ```
 
 ### Claude Leg (Heuristic)
@@ -87,8 +103,8 @@ Choose the mechanism based on whether the prompt is self-contained:
 **Use CLI** when the question references specific files or codepaths that Phase 1 could not fully resolve, and the Claude leg would benefit from tool access to explore further. When using CLI, include `--name` for resumability:
 
 ```bash
-claude --model opus --effort high --permission-mode plan \
-  --name "council-<topic>" -p "<prompt>" 2>/dev/null
+cat /tmp/council-claude-prompt.txt | claude --model opus --effort high --permission-mode plan \
+  --name "council-<topic>" -p "" 2>/dev/null
 ```
 
 ### Fallback Behavior

@@ -19,10 +19,17 @@ Delegate prompts to Google's Gemini CLI and critically evaluate the output.
    - `--model <MODEL>` overrides the default model
    - `--approval-mode <MODE>` overrides the default approval mode (`default`, `auto_edit`, `yolo`)
    - Any remaining text is the prompt
-2. Assemble and run the command (use 600000ms timeout on the Bash tool):
+2. Write the prompt to a temporary file and pipe it to Gemini (use 600000ms timeout on the Bash tool):
    ```bash
-   gemini -m gemini-3.1-pro-preview --approval-mode plan -p "<USER_PROMPT>" 2>/dev/null
+   cat > /tmp/gemini-prompt.txt << 'PROMPT_EOF'
+   <USER_PROMPT>
+   PROMPT_EOF
+   cat /tmp/gemini-prompt.txt | gemini -m gemini-3.1-pro-preview --approval-mode plan -p "" 2>/dev/null
+   rm -f /tmp/gemini-prompt.txt
    ```
+   **Why stdin pipe instead of direct `-p` argument?** Shell argument passing breaks when prompts contain quotes, backticks, dollar signs, or other metacharacters. Piping via stdin is reliable regardless of prompt content. The `-p ""` flag triggers non-interactive mode while stdin provides the actual prompt.
+
+   For short, simple follow-up prompts (e.g., session resume) that contain no special characters, direct `-p "<text>"` is acceptable.
 3. Present the output clearly labeled as **Gemini's response**.
 4. Critically evaluate the output (see Critical Evaluation below).
 5. Provide a brief summary: "Here's what Gemini said, here's what I think."
