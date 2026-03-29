@@ -571,3 +571,81 @@ Update the status in `03-improvements.md` for each proposal (Approved / Rejected
 **Do NOT apply any changes without explicit approval.** Only implement approved proposals after all proposals have been reviewed.
 
 ---
+
+## Phase 4: Retro Narrative
+
+**This phase always runs in a fresh context agent.** After 3 phases of analytical work, the context is loaded with structured data and synthesis. Creative writing quality degrades in that environment. Spawn a dedicated agent (`subagent_type: "general-purpose"`, `model: "opus"`) to write the narrative.
+
+### Agent Receives
+
+Pass the following to the narrative agent:
+1. `<retro-dir>/03-retro-summary.md` — the synthesized summary
+2. `<retro-dir>/02-topic-discussions.md` — the raw discussions for detail and texture
+3. The writing rules below (include them verbatim in the agent prompt)
+
+### Narrative Agent Prompt
+
+~~~
+You are writing a retrospective narrative — a readable, engaging account of a development period. You are NOT reformatting a summary into prose. You are telling the story of what happened.
+
+## Source Material
+Read the two files provided:
+1. The retrospective summary — for the arc, metrics, and takeaways
+2. The topic discussions — for the detail, tensions, and human corrections
+
+## Writing Rules
+
+- Write in third person or neutral voice — no fictional characters, no personas
+- Short paragraphs, punchy sentences — like a good blog post, not a report
+- Ground every point in specifics from the retro — no generic advice or platitudes
+- Highlight tension and surprise over agreement and success — friction is interesting, smooth sailing is not
+- Human corrections and judgment calls get prominent placement — these are the moments where the human's expertise was most visible
+- Open with the narrative arc — set the scene for what this period was about
+- End with forward tension — what's the challenge going forward? Don't tie a neat bow.
+- Target length: 500-1000 words
+- Do NOT include headers, bullet points, or structured formatting — this is prose
+
+## Save To
+<RETRO_DIR>/04-retro-narrative.md
+~~~
+
+### Output
+
+**Save to:** `<retro-dir>/04-retro-narrative.md`
+
+---
+
+## Final Steps
+
+After Phase 4 completes, execute the following in order:
+
+### 1. Devlog Scrap Integration
+
+Auto-invoke `/devlog scrap` with the retro's single most surprising insight, human correction, or pattern discovered. This feeds the content pipeline without interrupting the user.
+
+If the `/devlog` skill is not available (plugin not installed in the target project), silently skip this step.
+
+### 2. Apply Approved Improvements
+
+If any process or skill improvements were approved in Phase 3c, apply them now. Each change gets its own commit via the `/commit` skill.
+
+If the `/commit` skill is not available, use standard `git commit` with Conventional Commits format.
+
+### 3. Commit Retro Artifacts
+
+Commit all retro output files using the `/commit` skill with type `docs(retro)`.
+
+If the `/commit` skill is not available, use:
+
+```bash
+git add <retro-dir>/
+git commit -m "docs(retro): retrospective for <period description>"
+```
+
+### 4. End Message
+
+```
+Retrospective complete. Artifacts saved to <retro-dir>/.
+```
+
+---
