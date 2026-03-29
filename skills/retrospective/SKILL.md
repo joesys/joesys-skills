@@ -365,3 +365,82 @@ Ask using `AskUserQuestion`:
 If the human adjusts topics, update the list accordingly before proceeding to Phase 2.
 
 ---
+
+## Phase 2: Topic-by-Topic Discussion with Human Interleave
+
+This is the core of the retrospective — where raw findings become actionable insights through human judgment.
+
+### Step 1: Initialize Discussion File
+
+Create `<retro-dir>/02-topic-discussions.md` with a YAML status header:
+
+```yaml
+---
+status: in-progress
+topics_completed: 0
+topics_total: <N>
+---
+
+# Retrospective — Topic Discussions
+```
+
+### Step 2: For Each Topic
+
+Process topics in order. For each topic:
+
+1. **Present findings.** Synthesize what the channel agents found about this topic. Do not dump raw data — the facilitator interprets and connects the findings into a coherent picture:
+   - **What the data shows** — facts from the relevant channels, with specific evidence (commit hashes, session references, file paths, metrics)
+   - **Patterns and tensions** — what's interesting, contradictory, or surprising about these findings
+   - **Blind spots** — what the data can't tell us (only the human knows the context behind certain decisions)
+
+2. **Ask the human to react** using `AskUserQuestion`:
+   - **Agree** — "This captures it well"
+   - **Correct something** — "The analysis missed or got something wrong"
+   - **Add perspective** — "I have context that only I would know"
+   - **Skip** — "Nothing interesting here, move on"
+
+3. **Capture the discussion outcome.** After the human responds, synthesize the topic into:
+   - Key insights (what we learned — 2-3 sentences)
+   - Human's perspective (what the human added or corrected — if the human corrected the analysis, tag it explicitly as `**[Human Correction]**`)
+   - **Start** items — things to begin doing
+   - **Stop** items — things to stop doing
+   - **Continue** items — things that are working
+
+4. **Save immediately.** Append this topic's discussion to `02-topic-discussions.md` and update the YAML header (`topics_completed: N`). Do not wait until all topics are finished.
+
+5. **Context management.** After saving a topic to disk, retain only its Start/Stop/Continue items and one-sentence key insight in working memory. The full discussion is on disk — do not keep it in context.
+
+6. Move to the next topic.
+
+### Human Corrections Are Highest Signal
+
+When the human corrects the analysis ("no, that's not why we did that", "you're missing the real issue", "actually the problem was..."), these moments are the most valuable data in the entire retro. They reveal where the AI's model of the project was wrong. Tag every correction with `**[Human Correction]**` in the discussion file and surface them prominently in the Phase 3 summary.
+
+### Topic Discussion Format
+
+Each topic is appended to `02-topic-discussions.md` in this format:
+
+```markdown
+## N. [Topic Name]
+
+### Channel Findings
+[Synthesized findings from relevant channels — what the data shows, with specific evidence]
+
+### Patterns & Tensions
+[What's interesting, contradictory, or surprising]
+
+### Human's Perspective
+[What the human added/corrected]
+**[Human Correction]** [If the human corrected the analysis, describe what was wrong and what's actually true]
+
+### Start / Stop / Continue
+- **Start:** [items]
+- **Stop:** [items]
+- **Continue:** [items]
+
+---
+```
+
+When all topics are complete, update the status header to `status: complete`.
+
+---
