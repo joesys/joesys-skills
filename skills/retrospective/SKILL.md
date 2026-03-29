@@ -59,3 +59,55 @@ ls -d docs/retros/*/  # list retro directories, sorted by name (dates sort natur
 Take the last entry. Read its `03-retro-summary.md` to extract the period end date — this becomes the start boundary for the current retro.
 
 ---
+
+## Phase 0: Carry-Forward Check
+
+Before mining the current period, check whether the previous retro's action items were completed. This closes the feedback loop — without it, action items are write-only documents nobody reads.
+
+**First retro?** If no previous retro directory exists in `docs/retros/`, skip this phase silently. No output file, no message.
+
+**Otherwise:** Read the most recent previous retro's output directly (no agent spawn — these are small files):
+- `<previous-retro-dir>/03-action-items.md`
+- `<previous-retro-dir>/03-retro-summary.md` (Top Takeaways section only)
+
+**For each action item, determine status:**
+- **Completed** — evidence exists (committed code, updated config, merged PR). Cite the evidence with commit hash or file path.
+- **Incomplete** — not done or partially done. Carry forward with its original category.
+- **Retired** — no longer relevant. Note the reason.
+
+**Staleness rule:** Items carried forward for 3+ consecutive retros get a `[STALE]` flag. Stale items force a decision: do it, retire it, or escalate to the human.
+
+**Chain property:** Each retro carries forward from the immediately previous retro only. The previous retro already accumulated older items, so the chain is implicit — no need to walk the entire history.
+
+**Output:** Save to `<retro-dir>/00-carry-forward.md`
+
+**No checkpoint pause** — carry-forward is informational. Incomplete items and staleness flags feed directly into Phase 1 mining as additional context.
+
+### Carry-Forward Format
+
+```markdown
+# Carry-Forward from <previous retro date>
+
+## Completed Items
+- [x] [Item] — [Evidence: commit hash, file path, or PR link]
+
+## Incomplete Items
+
+### [Category from original action items]
+- [ ] [Item] — [Why incomplete]
+
+## Retired Items
+- [Item] — [Reason for retirement]
+
+## Staleness Flags
+- [STALE] [Item] — carried since <date> (3+ retros)
+
+## Top Takeaways Still Relevant
+- [From previous retro's top takeaways — which still apply?]
+```
+
+### Edge Cases
+- **Incomplete previous retro:** If the previous retro directory exists but is missing `03-action-items.md`, warn: "Previous retro appears incomplete — no action items file found. Proceeding without carry-forward." Then skip to Phase 1.
+- **Irrelevant items:** Items that no longer apply (e.g., related to a removed feature) should be retired with a reason, not silently dropped.
+
+---
