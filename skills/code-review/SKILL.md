@@ -95,6 +95,27 @@ Infer the primary language from file extensions:
 
 If the changeset is polyglot, note all languages and instruct each subagent to use the correct language per file. Subagents must **never** emit before/after examples in a language other than the target file's language.
 
+### 1.6 Static Analysis Tooling
+
+Read the shared tooling registry and per-language profiles:
+- `shared/tooling-registry.md` — for detection protocol and safety rules
+- `shared/tooling/{language}.md` — for each detected language
+- `shared/tooling/general.md` — for cross-language tools
+
+Follow the detection flow from the registry:
+
+1. **Detect config files**: Glob for each tool's detection markers.
+2. **Check availability**: Run `which`/`where` for each tool's binary.
+3. **Classify**: Mark each tool as `available`, `configured-but-unavailable`, or `absent`.
+4. **Build scoped commands**: For `available` tools, construct report-only commands targeting only the changed files using the tool's scope-to-files flag from the per-language profile.
+5. **Safety Gate**: Present scoped tool commands to the user for approval (alongside any other live commands).
+6. **Execute approved tools**: Run each tool. Respect timeouts (from `audit.yaml` if present, else adaptive: <10k LOC = 30s, 10-100k = 60s, >100k = 120s per tool).
+7. **Build TOOLING_CONTEXT**: Assemble the slim version (findings only — no gap analysis, no build-integrated detection).
+
+For large output (>50 findings from a single tool): summarize as "{tool} reported N violations: X errors, Y warnings", include top 3 most severe, tell user: "Run `{exact command}` for full results."
+
+If a tool fails (crash, not a findings exit code): report error, skip tool, continue.
+
 ---
 
 ## Phase 2: Parallel Analysis
@@ -132,6 +153,13 @@ You are a senior <DOMAIN> reviewer.
 
 ## Diff Context
 <DIFF_CONTENT>
+
+## Static Analysis Results
+{TOOLING_CONTEXT}
+
+Use these tool findings to corroborate or supplement your analysis. If a tool flagged
+the same issue you found, note it in your finding. If a tool found something you missed,
+include it in your output with "[{tool_name}]" prefix.
 
 ## Output Format
 For each violation:
@@ -194,6 +222,27 @@ Deduplication heuristics:
 - Same file + overlapping line range (within 3 lines) = likely duplicate
 - Same file + same code pattern but different principle = merge if the fix is identical, keep separate if fixes differ
 - Different files + same pattern = not duplicates (each gets its own finding)
+
+### Tool-AI Finding Merge
+
+When static analysis tools produced findings (from TOOLING_CONTEXT):
+
+**Overlapping findings** (tool and AI flag same file + overlapping line range within 3 lines):
+- Merge into one finding
+- Keep the AI finding's explanation (richer context)
+- Add "**Confirmed by**: {tool_name} ({rule_id})" annotation
+- This boosts confidence — machine and AI agree
+
+**Tool-only findings** (tool found something no AI agent flagged):
+- Include as its own finding with "[{tool_name}]" prefix in the principle name
+- Map tool severity to P0-P4:
+  - tool `error` → P1 (P0 if security-related)
+  - tool `warning` → P2
+  - tool `style` / `info` → P3
+- The `--min-severity` filter applies to tool findings too
+
+**AI-only findings** (AI found something no tool flagged):
+- No change — these appear as normal findings
 
 ### 3.3 Apply Severity Filter
 
@@ -323,3 +372,7 @@ These constraints prevent the review from producing unhelpful or misleading find
 | No violations found | "No violations detected. Code looks solid." |
 | File not found (single file mode) | "File `<path>` not found. Check the path and try again." |
 | Too many files (>100) | Warn the user about scope size, suggest narrowing with `--file` or a subdirectory, proceed if confirmed. |
+| Tool binary not found | Classify as `configured-but-unavailable`, skip, continue review |
+| Tool crashes or times out | Report error, skip tool, continue with remaining tools |
+| Tool output unparseable | Include raw summary in report, skip structured merge |
+| All tools declined in gate | Review proceeds without tool findings — AI analysis only |
