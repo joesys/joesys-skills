@@ -180,9 +180,9 @@ Each action includes: affected criteria, description, risk of inaction, effort e
 
 ### Measurement Commands
 
-| Agent | Command | Status |
+| Agent / Tool | Command | Status |
 |---|---|---|
-| {Agent} | {Command} | success / failed / declined / skipped |
+| {Agent} | {Command} | success / failed / declined / skipped / not-installed |
 
 ### Audit Metadata
 
@@ -191,6 +191,7 @@ Each action includes: affected criteria, description, risk of inaction, effort e
 - **Config source:** {.claude/audit.yaml or auto-detected}
 - **Benchmarks source:** {cached / cached + web-searched}
 - **User context source:** {new interview / confirmed profile from YYYY-MM-DD}
+- **Static analysis tools:** {N} detected, {N} available, {N} executed
 
 ### Benchmark Sources
 
