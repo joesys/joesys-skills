@@ -112,9 +112,9 @@ These patterns indicate that static analysis is woven into the development workf
 
 When detected tooling is absent for a category, recommend using this table.
 
-| If Missing | Best-in-Class | Popular OSS | Cost |
-|:--|:--|:--|:--|
-| No type checking | **tsc** — built-in, enable `"strict": true` + `"noEmit": true` | — | Free (bundled with TypeScript) |
-| No linter | **eslint** — dominant, huge ecosystem, typescript-eslint support | **Biome** — fast, unified lint+format | Free |
-| No formatter | **prettier** — universal, opinionated, zero debate | **Biome** — also formats, one less tool | Free |
-| No security scanner | **Semgrep** — TypeScript-aware rules, free CLI | — | Free (CLI) |
+| If Missing | Best-in-Class | Popular OSS |
+|:--|:--|:--|
+| No type checking | **tsc** — built-in, enable `"strict": true` + `"noEmit": true` | — (tsc is already free/included) |
+| No linter | **eslint** — dominant, huge ecosystem, typescript-eslint support | **Biome** — fast, unified lint+format |
+| No formatter | **prettier** — universal, opinionated, zero debate | **Biome** — also formats, one less tool |
+| No security scanner | **Semgrep** — TypeScript-aware rules, free CLI | — (Semgrep CLI is already free/OSS) |

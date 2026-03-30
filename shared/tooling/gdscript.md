@@ -57,8 +57,8 @@ These patterns indicate that static analysis is already woven into the project's
 
 When the orchestrator identifies missing tooling categories, recommend alternatives using this table.
 
-| If Missing | Recommendation |
-|:--|:--|
-| No linter | **gdlint** from gdtoolkit — the only option. Install via `pip install gdtoolkit`. |
-| No formatter | **gdformat** from gdtoolkit — the only option. Install via `pip install gdtoolkit`. |
-| No security scanner | **N/A** — no dedicated GDScript security scanner exists. Rely on AI-assisted code analysis for security review. |
+| If Missing | Best-in-Class | Popular OSS |
+|:--|:--|:--|
+| No linter | **gdlint** from gdtoolkit (`pip install gdtoolkit`) — the only GDScript linter | — (no alternative exists) |
+| No formatter | **gdformat** from gdtoolkit (`pip install gdtoolkit`) — the only GDScript formatter | — (no alternative exists) |
+| No security scanner | N/A — no dedicated GDScript security scanner exists. Rely on AI analysis. | — |
