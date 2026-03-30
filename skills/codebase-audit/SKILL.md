@@ -120,26 +120,46 @@ Apply per-language defaults for patterns, test runner, and file extension. These
 | C# | .cs | dotnet test | `(public\|private).*\w+\(` |
 | GDScript | .gd | gdUnit4 | `^(static )?func ` |
 
-### Step 5: Auto-Detect Paths
+### Step 5: Static Analysis Tooling Detection
+
+Read the shared tooling registry and per-language profiles:
+- `shared/tooling-registry.md` — for detection protocol and safety rules
+- `shared/tooling/{primary_language}.md` — for detected primary language
+- `shared/tooling/{additional_language}.md` — for each additional language (polyglot repos)
+- `shared/tooling/general.md` — for cross-language tools and patterns
+
+Follow the detection flow from the registry:
+
+1. **Detect config files**: Glob for each tool's detection markers from the per-language profiles.
+2. **Check availability**: Run `which`/`where` for each tool's binary.
+3. **Classify**: Mark each tool as `available`, `configured-but-unavailable`, or `absent`.
+4. **Detect build-integrated analysis**: Grep for compiler flags, build plugins, CI-integrated patterns listed in the per-language profiles.
+5. **Build gap recommendations**: For `absent` tools, collect the best-in-class and popular OSS recommendations from the per-language profiles.
+
+Available tools' report-only commands are added to the Live Command Safety Gate in Phase 1. The results are assembled into a `TOOLING_CONTEXT` block (see the registry for the full template) and passed to all agents alongside the `PROJECT_CONTEXT_BLOCK`.
+
+If `--static-only` was passed, skip tool execution but still detect and classify tools (detection is read-only). Report tools as detected but not executed.
+
+### Step 6: Auto-Detect Paths
 
 - **Source:** Check for `src/`, `lib/`, `app/` (use all found; project root if none). For monorepos: `packages/*/src/`, `backend/`, `frontend/`, `services/*/`.
 - **Tests:** Check for `tests/`, `test/`, `__tests__/`, `spec/` (including within source roots).
 - **Auto-excluded:** `vendor/`, `node_modules/`, `dist/`, `build/`, `__pycache__/`, `.git/`, `.gitignore` entries. Config exclusions extend these.
 
-### Step 6: Polyglot Detection
+### Step 7: Polyglot Detection
 
 Count file extensions across detected source paths. Any secondary language >10% of source files → add to `language.additional`.
 
 For polyglot repos: helper scripts run once per language, benchmarks loaded for each language, metrics grouped by language where they differ.
 
-### Step 7: Auto-Detect Test Runner
+### Step 8: Auto-Detect Test Runner
 
 1. Check framework config: `pytest.ini`, `jest.config.*`, `vitest.config.*`, `.mocharc.*`, `phpunit.xml`
 2. Check `package.json` → `scripts.test`
 3. Fall back to language default
 4. If ambiguous, ask user
 
-### Step 8: Domain Inference
+### Step 9: Domain Inference
 
 1. Read `README.md`, `package.json` description, `pyproject.toml` description
 2. Scan key imports (e.g., `django` → web app, `numpy` → ML, `fastapi` → API service)
@@ -147,7 +167,7 @@ For polyglot repos: helper scripts run once per language, benchmarks loaded for 
 4. Synthesize domain summary: e.g., "Django REST API for e-commerce"
 5. Use WebSearch for comparable projects and benchmarks (if available)
 
-### Step 9: Prerequisites Check
+### Step 10: Prerequisites Check
 
 Verify Python 3 is available:
 
@@ -159,13 +179,13 @@ If not available, warn:
 
 > Python 3 is required for deterministic metrics (complexity, structure, churn analysis). Without it, the audit will use qualitative-only analysis. Proceed? (y/n)
 
-### Step 10: Scope Size Check
+### Step 11: Scope Size Check
 
 Count source files. If >1000 files, warn:
 
 > This project has ~{N} source files. A full audit may take several minutes. Proceed? (y/n)
 
-### Step 11: Merge Config
+### Step 12: Merge Config
 
 `auto-detected defaults ← config overrides` — config always wins where specified.
 
@@ -213,13 +233,14 @@ Before dispatching agents, identify all live commands that will run and present 
 > **The following live commands will be executed during collection:**
 > - `{test_runner}` (Tests agent — runs test suite)
 > - `{audit_command}` (Architecture agent — checks dependencies)
+> - `{tool_command}` (Tooling — {tool_name} report-only analysis)
 >
 > Options:
 > 1. **Run all** — execute all listed commands
 > 2. **Static only** — skip live commands, static analysis only
 > 3. **Select** — choose which to allow
 
-Commands NOT requiring the gate (read-only): helper scripts, `git log`, `git diff`, Glob/Grep/Read.
+Commands NOT requiring the gate (read-only): helper scripts, `git log`, `git diff`, Glob/Grep/Read, tool detection (config file checks, `which`/`where` commands).
 
 If `--static-only` was passed, skip the gate entirely.
 
@@ -230,6 +251,9 @@ You are a structural metrics analyst for a codebase audit.
 
 ## Project Context
 {PROJECT_CONTEXT_BLOCK}
+
+## Static Analysis Results
+{TOOLING_CONTEXT}
 
 ## Principles
 Read the following principle files before analysis:
@@ -303,6 +327,9 @@ You are a code quality analyst for a codebase audit.
 ## Project Context
 {PROJECT_CONTEXT_BLOCK}
 
+## Static Analysis Results
+{TOOLING_CONTEXT}
+
 ## Principles
 Read these principle files before analysis:
 - `skills/codebase-audit/principles/maintainability.md`
@@ -369,6 +396,9 @@ You are an architecture analyst for a codebase audit.
 ## Project Context
 {PROJECT_CONTEXT_BLOCK}
 
+## Static Analysis Results
+{TOOLING_CONTEXT}
+
 ## Principles
 Read these principle files:
 - `skills/codebase-audit/principles/evolvability.md`
@@ -406,6 +436,9 @@ Run dependency audit if applicable:
 - Dependency health (lock file, audit results, outdated/vulnerable count)
 - Environment config handling
 - Logging patterns
+- Static analysis tooling adoption (from TOOLING_CONTEXT: tools detected, status, findings summary)
+- Build-integrated analysis patterns (from TOOLING_CONTEXT)
+- Tooling gap recommendations (from TOOLING_CONTEXT)
 
 ## Output Format
 
@@ -426,7 +459,31 @@ Return JSON:
     "lock_file_present": false,
     "dependency_vulnerabilities": {"high": 0, "medium": 0, "low": 0},
     "logging_present": false,
-    "env_config_handling": ""
+    "env_config_handling": "",
+    "static_analysis_tooling": {
+      "tools_detected": [
+        {
+          "name": "clang-tidy",
+          "category": "static_analyzer",
+          "tier": 1,
+          "status": "available",
+          "config_file": ".clang-tidy",
+          "findings_summary": {"errors": 2, "warnings": 15},
+          "top_findings": ["src/parser.cpp:142 — use-after-move (error)", "..."],
+          "run_command": "clang-tidy -p build --quiet src/"
+        }
+      ],
+      "build_integrated": [
+        {"pattern": "-Wall -Werror", "location": "CMakeLists.txt:12"}
+      ],
+      "gap_recommendations": [
+        {
+          "missing": "security_scanner",
+          "best_in_class": {"name": "Semgrep", "reason": "custom rules, free CLI"},
+          "popular_oss": {"name": "Flawfinder", "reason": "zero deps, grep-based"}
+        }
+      ]
+    }
   },
   "qualitative_notes": ""
 }
@@ -440,6 +497,9 @@ You are a git history and development velocity analyst for a codebase audit.
 
 ## Project Context
 {PROJECT_CONTEXT_BLOCK}
+
+## Static Analysis Results
+{TOOLING_CONTEXT}
 
 ## Your Task
 
@@ -500,6 +560,9 @@ You are a performance analyst for a codebase audit (static analysis only).
 ## Project Context
 {PROJECT_CONTEXT_BLOCK}
 
+## Static Analysis Results
+{TOOLING_CONTEXT}
+
 ## Principles
 Read: `skills/codebase-audit/principles/performance.md`
 
@@ -550,6 +613,9 @@ You are a test suite analyst for a codebase audit.
 
 ## Project Context
 {PROJECT_CONTEXT_BLOCK}
+
+## Static Analysis Results
+{TOOLING_CONTEXT}
 
 ## Principles
 Read these principle files:
@@ -637,6 +703,22 @@ Each criterion gets a confidence level:
 Overall audit confidence = lowest confidence among all measured criteria.
 
 Display: append `~` to grades with low confidence (e.g., "B~" = approximate).
+
+**Tooling Impact on Grades:**
+
+Static analysis tooling results from TOOLING_CONTEXT affect criterion grades:
+
+| Criterion | Positive Signal | Negative Signal |
+|---|---|---|
+| Security | Security scanner present + clean run | No scanner, or scanner found vulnerabilities |
+| Consistency | Formatter + linter present + clean | Violations found, or no formatter/linter |
+| Operability | Any analysis tooling present, CI-integrated analysis | No tooling at all |
+| Maintainability | Static analyzer clean (no dead code, complexity warnings) | Analyzer found issues |
+| Correctness | Type checker clean (mypy, tsc, pyright) | Type errors found |
+
+Tools classified as `configured-but-unavailable` are graded the same as `absent` — the config exists but the tool could not run. Note the config presence in the analysis narrative.
+
+Build-integrated analysis patterns (compiler flags, CI tools) are positive signals that count toward grades even though they are not executed.
 
 ### Step 2: Risk Heat Map
 
@@ -1131,6 +1213,11 @@ powershell.exe -c "[Console]::Beep(800, 300)"
 | Python not available | Qualitative-only for helper-dependent metrics. |
 | No previous audit for delta | "Need at least 2 audits for delta comparison." |
 | Live commands declined | Static analysis fallback. Mark as "Skipped (live commands declined)." |
+| No static analysis tools detected | Gap recommendations included. Criteria graded without tool input. |
+| Tool configured but not installed | Graded as absent. Config noted in analysis. |
+| Tool execution fails (crash/timeout) | Skip tool, proceed with remaining tools. Note failure in TOOLING_CONTEXT. |
+| All tools declined in Safety Gate | Tool analysis skipped entirely. Criteria graded without tool input. Note in methodology. |
+| --static-only with tools detected | Tools detected and classified but not executed. Report detection only. |
 
 ---
 
@@ -1145,3 +1232,6 @@ powershell.exe -c "[Console]::Beep(800, 300)"
 | <2 metrics.json for `delta` mode | "Need at least 2 audits for delta comparison. Found {N}." |
 | Output directory creation fails | Report error, suggest alternative path |
 | Agent returns malformed JSON | Use what's parseable, note the issue |
+| Tool binary not found | Classify as `configured-but-unavailable`, skip execution, continue |
+| Tool output unparseable | Report raw output summary, skip structured parsing, continue |
+| Tool timeout | Kill process, report timeout, skip tool, continue with remaining tools |
