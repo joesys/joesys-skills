@@ -198,18 +198,19 @@ def render_pdf(html_path: str, output_path: str, orientation: str) -> None:
         sys.exit(1)
 
     file_url = Path(html_path).as_uri()
+    abs_output = str(Path(output_path).resolve())
 
     cmd = [
         browser,
         "--headless",
         "--disable-gpu",
         "--no-sandbox",
-        f"--print-to-pdf={output_path}",
+        f"--print-to-pdf={abs_output}",
         file_url,
     ]
 
     result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
-    if result.returncode != 0 and not os.path.isfile(output_path):
+    if not os.path.isfile(abs_output):
         print(f"Error: Browser PDF rendering failed:\n{result.stderr}", file=sys.stderr)
         sys.exit(3)
 
@@ -224,6 +225,7 @@ def render_png(
         sys.exit(1)
 
     file_url = Path(html_path).as_uri()
+    abs_output = str(Path(output_path).resolve())
 
     window_size = f"{width},{height}" if height else f"{width},900"
     cmd = [
@@ -231,13 +233,13 @@ def render_png(
         "--headless",
         "--disable-gpu",
         "--no-sandbox",
-        f"--screenshot={output_path}",
+        f"--screenshot={abs_output}",
         f"--window-size={window_size}",
         file_url,
     ]
 
     result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
-    if result.returncode != 0 and not os.path.isfile(output_path):
+    if not os.path.isfile(abs_output):
         print(f"Error: Browser PNG rendering failed:\n{result.stderr}", file=sys.stderr)
         sys.exit(3)
 
