@@ -156,6 +156,23 @@ img {
     margin: 20mm;
   }
 
+  /* Keep blocks together — avoid splitting across pages */
+  table, pre, blockquote, img, figure {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Keep headings with their following content */
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+
+  /* Avoid orphaned table headers */
+  thead { display: table-header-group; }
+  tr { page-break-inside: avoid; break-inside: avoid; }
+
+  /* Allow long code blocks to wrap rather than overflow */
   pre {
     white-space: pre-wrap;
     word-wrap: break-word;

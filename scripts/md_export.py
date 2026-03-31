@@ -23,6 +23,7 @@ from pathlib import Path
 # ── Constants ──────────────────────────────────────────────────────────────────
 
 THEMES_DIR = Path(__file__).parent / "themes"
+TEMPLATES_DIR = Path(__file__).parent / "templates"
 
 HIGHLIGHT_STYLES = {
     "minimal": "pygments",
@@ -140,16 +141,7 @@ def convert_to_html(
     """Convert markdown content to a self-contained HTML file via Pandoc."""
     pandoc = find_pandoc()
     if not pandoc:
-        print(
-            "Error: Pandoc is required but not found.\n"
-            "\n"
-            "Install Pandoc:\n"
-            "  Windows:  choco install pandoc   OR   winget install JohnMacFarlane.Pandoc\n"
-            "  macOS:    brew install pandoc\n"
-            "  Linux:    sudo apt install pandoc   OR   sudo pacman -S pandoc\n"
-            "  All:      https://pandoc.org/installing.html",
-            file=sys.stderr,
-        )
+        _print_pandoc_error()
         sys.exit(1)
 
     css_path = THEMES_DIR / f"{theme}.css"
@@ -173,7 +165,7 @@ def convert_to_html(
             "-t", "html5",
             "--standalone",
             "--embed-resources",
-            f"--highlight-style={highlight_style}",
+            f"--syntax-highlighting={highlight_style}",
             f"--css={css_path}",
             f"--metadata=title:{title}",
             "-o", output_path,
@@ -190,46 +182,106 @@ def convert_to_html(
 # ── Browser Rendering ──────────────────────────────────────────────────────────
 
 
-def _inject_page_orientation(html_path: str, orientation: str) -> None:
-    """Inject @page CSS rule for landscape/portrait into an HTML file."""
-    if orientation == "portrait":
-        return  # portrait is the browser default, no injection needed
-
-    with open(html_path, "r", encoding="utf-8") as f:
-        html = f.read()
-
-    page_css = "<style>@page { size: A4 landscape; }</style>"
-    html = html.replace("</head>", f"{page_css}\n</head>", 1)
-
-    with open(html_path, "w", encoding="utf-8") as f:
-        f.write(html)
-
-
-def render_pdf(html_path: str, output_path: str, orientation: str) -> None:
-    """Render HTML to PDF using a headless browser."""
-    browser = find_browser()
-    if not browser:
-        _print_browser_error()
+def render_pdf(
+    markdown_content: str, theme: str, title: str,
+    output_path: str, orientation: str
+) -> None:
+    """Render markdown content to PDF using Pandoc + XeLaTeX."""
+    pandoc = find_pandoc()
+    if not pandoc:
+        _print_pandoc_error()
         sys.exit(1)
 
-    _inject_page_orientation(html_path, orientation)
+    # Check for lualatex
+    if not shutil.which("lualatex"):
+        print(
+            "Error: LuaLaTeX is required for PDF output but not found.\n"
+            "\n"
+            "Install a TeX distribution:\n"
+            "  Windows:  choco install miktex   OR   https://miktex.org/download\n"
+            "  macOS:    brew install --cask mactex-no-gui\n"
+            "  Linux:    sudo apt install texlive-luatex texlive-fonts-recommended",
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
-    file_url = Path(html_path).as_uri()
-    abs_output = str(Path(output_path).resolve())
+    template_path = TEMPLATES_DIR / f"{theme}.tex"
+    if not template_path.exists():
+        print(f"Error: LaTeX template '{theme}' not found at {template_path}", file=sys.stderr)
+        sys.exit(2)
 
-    cmd = [
-        browser,
-        "--headless",
-        "--disable-gpu",
-        "--no-sandbox",
-        f"--print-to-pdf={abs_output}",
-        file_url,
-    ]
+    highlight_style = HIGHLIGHT_STYLES.get(theme, "pygments")
 
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
-    if not os.path.isfile(abs_output):
-        print(f"Error: Browser PDF rendering failed:\n{result.stderr}", file=sys.stderr)
-        sys.exit(3)
+    # Write content to temp file for Pandoc input
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".md", delete=False, encoding="utf-8"
+    ) as tmp:
+        tmp.write(markdown_content)
+        tmp_path = tmp.name
+
+    # Geometry for orientation
+    geometry = "a4paper,margin=25mm"
+    if orientation == "landscape":
+        geometry += ",landscape"
+
+    try:
+        cmd = [
+            pandoc,
+            "-f", "markdown+hard_line_breaks",
+            "--pdf-engine=lualatex",
+            f"--syntax-highlighting={highlight_style}",
+            f"--include-in-header={template_path}",
+            f"--variable=geometry:{geometry}",
+            "--variable=documentclass:article",
+            "--variable=mainfont:Segoe UI",
+            "--variable=sansfont:Segoe UI",
+            "--variable=monofont:Cascadia Code",
+            "--variable=monofontoptions:Scale=0.88",
+            f"--metadata=title:{title}",
+            "-o", output_path,
+            tmp_path,
+        ]
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+        if result.returncode != 0:
+            print(f"Error: PDF rendering failed:\n{result.stderr}", file=sys.stderr)
+            sys.exit(3)
+    finally:
+        os.unlink(tmp_path)
+
+
+def _trim_png_bottom(image_path: str) -> None:
+    """Trim trailing blank space from the bottom of a PNG image.
+
+    Scans upward from the bottom to find the last row that differs from
+    the background color (sampled from the bottom-left pixel), then crops
+    with a small padding margin.
+    """
+    try:
+        from PIL import Image
+    except ImportError:
+        return  # Pillow not available — skip trimming silently
+
+    img = Image.open(image_path)
+    pixels = img.load()
+    w, h = img.size
+
+    # Sample background color from the bottom-left corner
+    bg = pixels[0, h - 1]
+
+    # Scan upward to find last row with non-background content
+    content_bottom = h
+    for y in range(h - 1, -1, -1):
+        row_is_bg = all(pixels[x, y] == bg for x in range(0, w, 4))  # sample every 4th pixel for speed
+        if not row_is_bg:
+            content_bottom = y
+            break
+
+    # Add padding below content (24px or to image edge)
+    crop_y = min(content_bottom + 24, h)
+
+    if crop_y < h:
+        img = img.crop((0, 0, w, crop_y))
+        img.save(image_path)
 
 
 def render_png(
@@ -244,7 +296,11 @@ def render_png(
     file_url = Path(html_path).as_uri()
     abs_output = str(Path(output_path).resolve())
 
-    window_size = f"{width},{height}" if height else f"{width},900"
+    # Use a tall viewport to capture full page content when height is auto.
+    # Chrome --screenshot captures the viewport, not the scrollable area,
+    # so we set a large height, then trim the blank space afterward.
+    auto_height = height is None
+    window_size = f"{width},{height}" if height else f"{width},10000"
     cmd = [
         browser,
         "--headless",
@@ -259,6 +315,23 @@ def render_png(
     if not os.path.isfile(abs_output):
         print(f"Error: Browser PNG rendering failed:\n{result.stderr}", file=sys.stderr)
         sys.exit(3)
+
+    # Trim trailing blank space for auto-height screenshots
+    if auto_height:
+        _trim_png_bottom(abs_output)
+
+
+def _print_pandoc_error() -> None:
+    print(
+        "Error: Pandoc is required but not found.\n"
+        "\n"
+        "Install Pandoc:\n"
+        "  Windows:  choco install pandoc   OR   winget install JohnMacFarlane.Pandoc\n"
+        "  macOS:    brew install pandoc\n"
+        "  Linux:    sudo apt install pandoc   OR   sudo pacman -S pandoc\n"
+        "  All:      https://pandoc.org/installing.html",
+        file=sys.stderr,
+    )
 
 
 def _print_browser_error() -> None:
@@ -377,17 +450,8 @@ def main(argv: list[str] | None = None) -> None:
             print(f"Created: {output_path}")
 
         elif fmt == "pdf":
-            with tempfile.NamedTemporaryFile(
-                suffix=".html", delete=False
-            ) as tmp:
-                tmp_html = tmp.name
-            try:
-                convert_to_html(content, args.theme, title, tmp_html)
-                render_pdf(tmp_html, output_path, args.orientation)
-                print(f"Created: {output_path}")
-            finally:
-                if os.path.exists(tmp_html):
-                    os.unlink(tmp_html)
+            render_pdf(content, args.theme, title, output_path, args.orientation)
+            print(f"Created: {output_path}")
 
         elif fmt == "png":
             width, height = get_png_size(args.scope, args.orientation)
