@@ -10,8 +10,8 @@
     {
       "name": "joesys-skills",
       "source": "./",
-      "description": "Custom Claude Code skills — multi-model AI delegation, structured git commits, code review, codebase explanation, and devlog writing",
-      "version": "4.1.0",
+      "description": "Custom Claude Code skills — multi-model AI delegation, structured git commits, code review, quick review, codebase explanation, and devlog writing",
+      "version": "5.3.0",
       "category": "development",
       "homepage": "https://github.com/joesys/joesys-skills",
       "tags": [
@@ -27,6 +27,8 @@
         "onboarding",
         "documentation",
         "orientation",
+        "quick-review",
+        "cross-model",
         "devlog",
         "blog",
         "writing",

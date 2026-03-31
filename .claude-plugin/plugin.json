@@ -1,7 +1,7 @@
 {
   "name": "joesys-skills",
-  "description": "Custom Claude Code skills — multi-model AI delegation, structured git commits, code review, codebase explanation, codebase quality audit, devlog writing, and retrospectives",
-  "version": "5.2.0",
+  "description": "Custom Claude Code skills — multi-model AI delegation, structured git commits, code review, quick review, codebase explanation, codebase quality audit, devlog writing, retrospectives, and markdown export",
+  "version": "7.0.0",
   "author": {
     "name": "joesys",
     "url": "https://github.com/joesys"
@@ -24,6 +24,8 @@
     "synthesis",
     "automation",
     "code-review",
+    "quick-review",
+    "cross-model",
     "explain",
     "codebase",
     "codebase-audit",
@@ -43,6 +45,12 @@
     "retrospective",
     "retro",
     "sprint",
-    "process-improvement"
+    "process-improvement",
+    "export",
+    "pdf",
+    "html",
+    "png",
+    "markdown",
+    "share"
   ]
 }

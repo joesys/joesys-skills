@@ -19,10 +19,12 @@ Parse the user's `/code-review` arguments to determine mode and scope:
 | `/code-review --pr 123` | PR review | Files changed in a GitHub PR |
 | `/code-review --commit abc123` | Commit review | Files changed in a specific commit |
 | `/code-review --min-severity P1` | Severity filter | Combinable with any mode |
+| `/code-review --include-gemini` | Add Gemini | Adds Gemini as additional cross-model reviewer |
 
 Arguments are combinable. Examples:
 - `/code-review --pr 42 --min-severity P1` — review PR #42, only show P1+ findings
 - `/code-review src/api/ --min-severity P2` — scan directory, show P2+ findings
+- `/code-review --include-gemini` — add Gemini as a third model reviewer
 
 If the invocation is ambiguous or the argument is unrecognizable, ask the user to clarify before proceeding.
 
@@ -202,13 +204,93 @@ Severity levels:
 - **P3**: Low — polish items, magic numbers, naming improvements
 - **P4**: Optional — style nits, formatting, micro-optimizations
 
+### Cross-Model Dispatch
+
+In addition to the 6 domain subagents, dispatch a cross-model review request in the **same parallel batch** — all 7 invocations (6 subagents + 1 cross-model CLI) launch simultaneously in a single response.
+
+#### Host Detection
+
+| You Are | Dispatch To | Command |
+|---|---|---|
+| Claude | Codex | `codex exec` |
+| Codex | Claude | `claude -p` |
+| Gemini | Claude | `claude -p` |
+| Unknown | Both Codex + Claude | Two parallel dispatches |
+
+#### Cross-Model Prompt
+
+Write the prompt to a temporary file and pipe via stdin:
+
+```bash
+cat > /tmp/code-review-cross-prompt.txt << 'PROMPT_EOF'
+You are a comprehensive code reviewer. Analyze the following code changes for bugs, security vulnerabilities, performance issues, reliability problems, architectural concerns, and code quality.
+
+## Rules
+- Use this severity scale: P0 (critical), P1 (high), P2 (medium), P3 (low), P4 (optional)
+- For each finding: file, line, what's wrong, severity, suggested fix, and why it matters
+- Be thorough but precise — every finding must reference a specific location
+- All code examples (Before/After) MUST be in <TARGET_LANGUAGE>
+
+## Files Under Review
+<FILES_CONTENT>
+
+## Diff
+<DIFF_CONTENT>
+
+## Static Analysis Results
+{TOOLING_CONTEXT}
+
+## Output Format
+For each finding:
+### [Category] — [Specific Issue]
+**Severity**: P0 | P1 | P2 | P3 | P4
+**Location**: `file.ext:line_number`
+**Problem**: What is wrong.
+**Before**: (code block in target language)
+**After**: (code block in target language)
+**Why**: What could go wrong.
+
+If you find no issues, output: "No issues found."
+PROMPT_EOF
+```
+
+**If dispatching to Codex:**
+```bash
+cat /tmp/code-review-cross-prompt.txt | codex exec --model gpt-5.4 \
+  -c model_reasoning_effort="xhigh" --sandbox read-only \
+  --skip-git-repo-check 2>/dev/null
+```
+
+**If dispatching to Claude:**
+```bash
+cat /tmp/code-review-cross-prompt.txt | claude --model opus --effort high \
+  --permission-mode plan --name "code-review-cross" -p "" 2>/dev/null
+```
+
+Use 600000ms timeout. Clean up temp files after completion.
+
+The cross-model reviewer receives the **same full file content and diff** that the 6 domain subagents receive — not the reduced context used in quick-review. When files are batched (Phase 1.4), the cross-model dispatch is included in each batch alongside the 6 subagents.
+
+#### --include-gemini
+
+When `--include-gemini` is specified, launch an additional parallel dispatch to Gemini. The Gemini prompt is identical to the cross-model prompt above, written to a separate temp file (`/tmp/code-review-gemini-prompt.txt`):
+
+```bash
+cat /tmp/code-review-gemini-prompt.txt | gemini -m gemini-3.1-pro-preview \
+  --approval-mode plan -p "" 2>/dev/null
+```
+
+#### Failure Handling
+
+If cross-model dispatch fails, the review continues with the 6 domain subagents only. Note in the report header: "Cross-model review unavailable; results are from domain subagents only."
+
 ---
 
 ## Phase 3: Synthesis
 
 ### 3.1 Collect Results
 
-Gather all findings from the 6 subagents. If any subagent failed, note which domain was not analyzed and proceed with the remaining results.
+Gather all findings from the 6 domain subagents and the cross-model dispatch. If any subagent or the cross-model reviewer failed, note which source was unavailable and proceed with the remaining results.
 
 ### 3.2 Deduplicate
 
@@ -244,6 +326,23 @@ When static analysis tools produced findings (from TOOLING_CONTEXT):
 **AI-only findings** (AI found something no tool flagged):
 - No change — these appear as normal findings
 
+### Cross-Model Finding Merge
+
+When cross-model dispatch produced findings:
+
+**Corroborated findings** (cross-model and one or more domain subagents flag the same file + overlapping line range within 3 lines):
+- Merge into the existing domain finding
+- Add `[Corroborated by: {model_name}]` annotation — this boosts confidence (two different models independently identified the same issue)
+- Keep the domain subagent's explanation (richer, principle-grounded context)
+
+**Cross-model-only findings** (cross-model found something no domain subagent flagged):
+- Include as a new finding in a section: "**Additional findings from {model_name}**"
+- Use the cross-model reviewer's severity rating
+- These findings get their own subsection at the end of each severity group
+
+**Domain-only findings** (domain subagents found something the cross-model reviewer did not flag):
+- No change — present as normal. Domain analysis is the primary reviewer; cross-model is supplementary.
+
 ### 3.3 Apply Severity Filter
 
 If `--min-severity` was specified, filter findings **now** (not during analysis — subagents always perform full analysis). Remove any finding below the threshold. Severity order: P0 > P1 > P2 > P3 > P4.
@@ -264,7 +363,8 @@ Present the synthesized report:
 
 ```
 ## Summary
-1-3 sentences on overall code health. Mention the number of findings per severity level.
+1-3 sentences on overall code health. Mention the number of findings per severity level and any cross-model corroboration. Include a model line:
+"Models: [host model] + [cross-model] | Domains: 6 | Static: [tools]"
 
 ## Violations Found
 
@@ -376,3 +476,5 @@ These constraints prevent the review from producing unhelpful or misleading find
 | Tool crashes or times out | Report error, skip tool, continue with remaining tools |
 | Tool output unparseable | Include raw summary in report, skip structured merge |
 | All tools declined in gate | Review proceeds without tool findings — AI analysis only |
+| Cross-model dispatch fails | Continue with 6 domain subagents; note "Cross-model unavailable" in report header. |
+| `--include-gemini` but Gemini CLI not found | Warn and continue without Gemini. |
