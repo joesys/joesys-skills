@@ -290,7 +290,7 @@ If cross-model dispatch fails, the review continues with the 6 domain subagents 
 
 ### 3.1 Collect Results
 
-Gather all findings from the 6 subagents. If any subagent failed, note which domain was not analyzed and proceed with the remaining results.
+Gather all findings from the 6 domain subagents and the cross-model dispatch. If any subagent or the cross-model reviewer failed, note which source was unavailable and proceed with the remaining results.
 
 ### 3.2 Deduplicate
 
@@ -326,6 +326,23 @@ When static analysis tools produced findings (from TOOLING_CONTEXT):
 **AI-only findings** (AI found something no tool flagged):
 - No change — these appear as normal findings
 
+### Cross-Model Finding Merge
+
+When cross-model dispatch produced findings:
+
+**Corroborated findings** (cross-model and one or more domain subagents flag the same file + overlapping line range within 3 lines):
+- Merge into the existing domain finding
+- Add `[Corroborated by: {model_name}]` annotation — this boosts confidence (two different models independently identified the same issue)
+- Keep the domain subagent's explanation (richer, principle-grounded context)
+
+**Cross-model-only findings** (cross-model found something no domain subagent flagged):
+- Include as a new finding in a section: "**Additional findings from {model_name}**"
+- Use the cross-model reviewer's severity rating
+- These findings get their own subsection at the end of each severity group
+
+**Domain-only findings** (domain subagents found something the cross-model reviewer did not flag):
+- No change — present as normal. Domain analysis is the primary reviewer; cross-model is supplementary.
+
 ### 3.3 Apply Severity Filter
 
 If `--min-severity` was specified, filter findings **now** (not during analysis — subagents always perform full analysis). Remove any finding below the threshold. Severity order: P0 > P1 > P2 > P3 > P4.
@@ -346,7 +363,8 @@ Present the synthesized report:
 
 ```
 ## Summary
-1-3 sentences on overall code health. Mention the number of findings per severity level.
+1-3 sentences on overall code health. Mention the number of findings per severity level and any cross-model corroboration. Include a model line:
+"Models: [host model] + [cross-model] | Domains: 6 | Static: [tools]"
 
 ## Violations Found
 
@@ -458,3 +476,5 @@ These constraints prevent the review from producing unhelpful or misleading find
 | Tool crashes or times out | Report error, skip tool, continue with remaining tools |
 | Tool output unparseable | Include raw summary in report, skip structured merge |
 | All tools declined in gate | Review proceeds without tool findings — AI analysis only |
+| Cross-model dispatch fails | Continue with 6 domain subagents; note "Cross-model unavailable" in report header. |
+| `--include-gemini` but Gemini CLI not found | Warn and continue without Gemini. |
