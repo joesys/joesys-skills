@@ -190,12 +190,29 @@ def convert_to_html(
 # ── Browser Rendering ──────────────────────────────────────────────────────────
 
 
+def _inject_page_orientation(html_path: str, orientation: str) -> None:
+    """Inject @page CSS rule for landscape/portrait into an HTML file."""
+    if orientation == "portrait":
+        return  # portrait is the browser default, no injection needed
+
+    with open(html_path, "r", encoding="utf-8") as f:
+        html = f.read()
+
+    page_css = "<style>@page { size: A4 landscape; }</style>"
+    html = html.replace("</head>", f"{page_css}\n</head>", 1)
+
+    with open(html_path, "w", encoding="utf-8") as f:
+        f.write(html)
+
+
 def render_pdf(html_path: str, output_path: str, orientation: str) -> None:
     """Render HTML to PDF using a headless browser."""
     browser = find_browser()
     if not browser:
         _print_browser_error()
         sys.exit(1)
+
+    _inject_page_orientation(html_path, orientation)
 
     file_url = Path(html_path).as_uri()
     abs_output = str(Path(output_path).resolve())
