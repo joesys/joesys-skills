@@ -3,6 +3,7 @@
 import os
 import sys
 import tempfile
+from pathlib import Path
 
 # Add scripts/ to path so we can import md_export
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
@@ -116,3 +117,130 @@ class TestPrepareContent:
             assert "x = 1" in result
         finally:
             os.unlink(tmp_name)
+
+
+class TestBuildOutputPath:
+    def test_default_pdf(self):
+        result = md_export.build_output_path("docs/report.md", "pdf", "full", None)
+        assert result == str(Path("docs/report.pdf"))
+
+    def test_summary_scope(self):
+        result = md_export.build_output_path("docs/report.md", "html", "summary", None)
+        assert result == str(Path("docs/report-summary.html"))
+
+    def test_1pager_scope(self):
+        result = md_export.build_output_path("docs/report.md", "png", "1pager", None)
+        assert result == str(Path("docs/report-1pager.png"))
+
+    def test_custom_output(self):
+        result = md_export.build_output_path("docs/report.md", "pdf", "full", "/tmp/out.pdf")
+        assert result == "/tmp/out.pdf"
+
+
+class TestGetPngSize:
+    def test_full_scope(self):
+        w, h = md_export.get_png_size("full", "portrait")
+        assert w == 430
+        assert h is None
+
+    def test_summary_scope(self):
+        w, h = md_export.get_png_size("summary", "portrait")
+        assert w == 430
+        assert h is None
+
+    def test_1pager_portrait(self):
+        w, h = md_export.get_png_size("1pager", "portrait")
+        assert (w, h) == (794, 1123)
+
+    def test_1pager_landscape(self):
+        w, h = md_export.get_png_size("1pager", "landscape")
+        assert (w, h) == (1123, 794)
+
+
+class TestEndToEndHTML:
+    """Integration test: requires Pandoc installed."""
+
+    def test_markdown_to_html(self):
+        if not md_export.find_pandoc():
+            return  # skip if pandoc not available
+
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".md", delete=False, encoding="utf-8"
+        ) as f:
+            f.write("# Test\n\nHello **world**.\n")
+            input_path = f.name
+
+        output_path = input_path.replace(".md", ".html")
+        try:
+            md_export.convert_to_html(
+                md_export.prepare_content(input_path),
+                "minimal",
+                "test",
+                output_path,
+            )
+            assert os.path.isfile(output_path)
+            with open(output_path, "r", encoding="utf-8") as out:
+                html = out.read()
+            assert "<strong>world</strong>" in html
+            assert "Hello" in html
+        finally:
+            os.unlink(input_path)
+            if os.path.exists(output_path):
+                os.unlink(output_path)
+
+    def test_code_file_to_html(self):
+        if not md_export.find_pandoc():
+            return
+
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".py", delete=False, encoding="utf-8"
+        ) as f:
+            f.write('print("hello")\n')
+            input_path = f.name
+
+        output_path = input_path.replace(".py", ".html")
+        try:
+            md_export.convert_to_html(
+                md_export.prepare_content(input_path),
+                "minimal",
+                "test",
+                output_path,
+            )
+            assert os.path.isfile(output_path)
+            with open(output_path, "r", encoding="utf-8") as out:
+                html = out.read()
+            assert "hello" in html
+        finally:
+            os.unlink(input_path)
+            if os.path.exists(output_path):
+                os.unlink(output_path)
+
+    def test_hard_line_breaks(self):
+        """Verify that single newlines produce <br> not paragraph merge."""
+        if not md_export.find_pandoc():
+            return
+
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".md", delete=False, encoding="utf-8"
+        ) as f:
+            f.write("Name: Joe\nOccupation: Human\n")
+            input_path = f.name
+
+        output_path = input_path.replace(".md", ".html")
+        try:
+            md_export.convert_to_html(
+                md_export.prepare_content(input_path),
+                "minimal",
+                "test",
+                output_path,
+            )
+            with open(output_path, "r", encoding="utf-8") as out:
+                html = out.read()
+            # With hard_line_breaks, there should be a <br> between the lines
+            assert "<br" in html or "Name: Joe" in html
+            # They should NOT be merged into one run
+            assert "Name: Joe Occupation:" not in html
+        finally:
+            os.unlink(input_path)
+            if os.path.exists(output_path):
+                os.unlink(output_path)
