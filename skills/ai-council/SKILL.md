@@ -162,7 +162,7 @@ After presenting the synthesis, always offer:
 If the user resumes and gets new insight, they can invoke `/ai-council` again with a refined question. The skill does not auto-update from individual resume sessions.
 
 3. **Devlog suggestion** (if noteworthy) — If the synthesis revealed something genuinely interesting — a surprising disagreement between models, a non-obvious consensus, a tension that changed the developer's thinking, or a recommendation that contradicts conventional wisdom — suggest capturing it as a devlog scrap:
-   > "This council session surfaced [brief description of the noteworthy finding]. That might make a good devlog post. Want me to run `/devlog scrap` to capture it?"
+   > "This council session surfaced [brief description of the noteworthy finding]. That might make a good devlog post. Want me to run `/devlog scrap --from-context` to capture it?"
    - Only suggest when the findings are genuinely insightful — not for routine confirmations or questions with obvious answers
    - Wait for the user's response. Do not auto-run.
 

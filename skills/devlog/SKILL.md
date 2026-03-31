@@ -19,6 +19,7 @@ Parse the user's `/devlog` arguments to determine mode and options:
 |---|---|---|
 | `/devlog [topic]` | Write | Full brainstorming + devlog post |
 | `/devlog scrap [hint]` | Scrap | Rich auto-captured scrap, no questions asked |
+| `/devlog scrap --from-context [hint]` | Scrap (lightweight) | Scrap from current conversation context only — no subagent dispatch |
 | `/devlog list` | List | Show scrap backlog with age, published posts |
 | `/devlog --since <range>` | Write | Full post, mining sessions from a time range |
 | `/devlog --from-scrap <name>` | Write | Full post, starting from a specific scrap |
@@ -28,6 +29,7 @@ Arguments are combinable. Examples:
 - `/devlog the clone bug --since yesterday` — write about the clone bug, mining recent sessions
 - `/devlog --from-scrap recursive-fix` — write a post starting from an existing scrap
 - `/devlog scrap signing workaround` — quickly capture a scrap about signing
+- `/devlog scrap --from-context auth refactor` — capture a scrap using only what's already in the conversation (used by auto-invoke from commit skill)
 
 The `--since` parameter accepts natural language time expressions (`yesterday`, `last week`, `3 days ago`) and absolute dates (`2026-03-20`). The special value `beginning` scans all available history.
 
@@ -42,6 +44,8 @@ If the invocation is ambiguous or unrecognizable, ask the user to clarify before
 ---
 
 ## Phase 1: Session & Timeframe Resolution
+
+**If `--from-context` is set, skip this entire phase** — there are no gathering agents to configure. Proceed directly to Phase 2's fast path.
 
 Before dispatching gathering agents, resolve the timeframe for content mining.
 
@@ -64,6 +68,7 @@ The `<project-dir>` is derived from the current working directory with path sepa
 | `/devlog --since "3 days ago"` | `git log --since="3 days ago"` | Sessions with timestamps from 3 days ago onward |
 | `/devlog --since 2026-03-20` | `git log --since="2026-03-20"` | Sessions with timestamps from that date onward |
 | `/devlog --since beginning` | Full `git log` | All session JSONL files for this project |
+| `/devlog scrap --from-context` | N/A (no subagents) | N/A (uses current conversation context directly) |
 
 For the Conversation Miner, filter session files by checking the first entry's `timestamp` field in each JSONL file. Only pass matching session file paths to the agent.
 
@@ -82,7 +87,19 @@ Examples:
 
 ## Phase 2: Parallel Gathering
 
-Dispatch **3 subagents simultaneously** via the Agent tool — all 3 in a single response (3 parallel Agent tool calls).
+### `--from-context` fast path
+
+If `--from-context` is set (scrap mode only), **skip all subagent dispatch**. Instead:
+
+1. **Use current conversation context directly.** The invoking session already contains the diff, commit message, conversation history, and any analysis performed. Do not re-mine this information.
+2. **Scan for existing scraps** (dedup only). Read `docs/devlog/.scraps/` to check if a scrap with overlapping topic/date already exists. If the directory doesn't exist or is empty, note "no existing scraps" and proceed.
+3. **Proceed directly to Phase 3a** with the content brief assembled from conversation context — the commit message (intent, changes, AI review), the diff, and any notable exchanges from the current session.
+
+This path exists because auto-invocations (e.g., from the commit skill) already have rich context in the conversation — dispatching subagents to re-discover it is redundant and slow.
+
+### Full gathering (default)
+
+When `--from-context` is **not** set, dispatch **3 subagents simultaneously** via the Agent tool — all 3 in a single response (3 parallel Agent tool calls).
 
 **IMPORTANT:** Every Agent tool call **must** use `model: "opus"` to ensure high-quality analysis.
 

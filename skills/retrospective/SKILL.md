@@ -621,7 +621,7 @@ After Phase 4 completes, execute the following in order:
 
 ### 1. Devlog Scrap Integration
 
-Auto-invoke `/devlog scrap` with the retro's single most surprising insight, human correction, or pattern discovered. This feeds the content pipeline without interrupting the user.
+Auto-invoke `/devlog scrap --from-context` with the retro's single most surprising insight, human correction, or pattern discovered. The `--from-context` flag tells the devlog skill to use the current conversation context (the retro analysis and discussion already available) instead of dispatching subagents. This feeds the content pipeline without interrupting the user.
 
 If the `/devlog` skill is not available (plugin not installed in the target project), silently skip this step.
 

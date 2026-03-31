@@ -386,6 +386,6 @@ After a successful commit (any path), evaluate whether the commit is worth captu
 
 ### How to Capture
 
-If both conditions are met, auto-invoke `/devlog scrap` after the commit completes. Do not ask the user — this should be seamless. The scrap skill will analyze the current session and git history to produce a rich content scrap.
+If both conditions are met, auto-invoke `/devlog scrap --from-context` after the commit completes. Do not ask the user — this should be seamless. The `--from-context` flag tells the devlog skill to synthesize the scrap directly from the current conversation context (the diff, commit message, and session exchanges already available) instead of dispatching subagents to re-mine git history and session files.
 
 If the `/devlog` skill is not available (plugin not installed in the target project), silently skip this step.
