@@ -186,7 +186,7 @@ def render_pdf(
     markdown_content: str, theme: str, title: str,
     output_path: str, orientation: str
 ) -> None:
-    """Render markdown content to PDF using Pandoc + XeLaTeX."""
+    """Render markdown content to PDF using Pandoc + LuaLaTeX."""
     pandoc = find_pandoc()
     if not pandoc:
         _print_pandoc_error()

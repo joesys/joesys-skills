@@ -23,10 +23,23 @@ Delegate prompts to Anthropic's Claude Code CLI and critically evaluate the outp
    - `--bare` enables bare mode (skips hooks, plugins, CLAUDE.md, MCP servers)
    - Any remaining text is the prompt
 2. Derive a short session name from the prompt topic (kebab-case, 2-4 words).
-3. Assemble and run the command (use 600000ms timeout on the Bash tool):
+3. Assemble and run the command (use 600000ms timeout on the Bash tool).
+
+   **For short, simple prompts** (no quotes, backticks, dollar signs, or other shell metacharacters), pass directly:
    ```bash
    claude --model opus --effort high --permission-mode plan --name "<derived-name>" -p "<USER_PROMPT>" 2>/dev/null
    ```
+
+   **For long or complex prompts** (contains special characters, multi-line, or very long), write to a temp file and pipe via stdin to avoid shell quoting issues:
+   ```bash
+   cat > /tmp/claude-prompt.txt << 'PROMPT_EOF'
+   <USER_PROMPT>
+   PROMPT_EOF
+   cat /tmp/claude-prompt.txt | claude --model opus --effort high --permission-mode plan \
+     --name "<derived-name>" -p "" 2>/dev/null
+   rm -f /tmp/claude-prompt.txt
+   ```
+   The `-p ""` flag triggers non-interactive mode while stdin provides the actual prompt.
 4. Present the output clearly labeled as **Claude's response**.
 5. Critically evaluate the output (see Critical Evaluation below).
 6. Provide a brief summary: "Here's what Claude said, here's what I think."

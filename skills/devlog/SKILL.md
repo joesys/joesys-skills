@@ -460,18 +460,6 @@ docs/devlog/
 
 ---
 
-## Content Sources
-
-| Source | Location | Access Method |
-|---|---|---|
-| Git history | Local repo | `git log`, `git diff`, `git show` |
-| Conversation history | `~/.claude/projects/{project}/*.jsonl` | Read JSONL, parse user/assistant messages |
-| Prompt history | `~/.claude/history.jsonl` | Read JSONL, filter by project |
-| Existing scraps | `docs/devlog/.scraps/` | Filesystem read |
-| Published posts | `docs/devlog/*/` | Filesystem read (for dedup/context) |
-
----
-
 ## Error Handling
 
 | Phase | Condition | Action |

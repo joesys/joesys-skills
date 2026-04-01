@@ -20,10 +20,22 @@ Delegate prompts to OpenAI's Codex CLI and critically evaluate the output.
    - `--model <MODEL>` overrides the default model
    - `--sandbox <MODE>` overrides the default sandbox (`read-only`, `workspace-write`, `danger-full-access`)
    - Any remaining text is the prompt
-2. Assemble and run the command (use 600000ms timeout on the Bash tool):
+2. Assemble and run the command (use 600000ms timeout on the Bash tool).
+
+   **For short, simple prompts** (no quotes, backticks, dollar signs, or other shell metacharacters), pass directly:
    ```bash
    codex exec --model gpt-5.4 -c model_reasoning_effort="xhigh" \
      --sandbox read-only --skip-git-repo-check "<USER_PROMPT>" 2>/dev/null
+   ```
+
+   **For long or complex prompts** (contains special characters, multi-line, or very long), write to a temp file and pipe via stdin to avoid shell quoting issues:
+   ```bash
+   cat > /tmp/codex-prompt.txt << 'PROMPT_EOF'
+   <USER_PROMPT>
+   PROMPT_EOF
+   cat /tmp/codex-prompt.txt | codex exec --model gpt-5.4 -c model_reasoning_effort="xhigh" \
+     --sandbox read-only --skip-git-repo-check 2>/dev/null
+   rm -f /tmp/codex-prompt.txt
    ```
 3. Present the output clearly labeled as **Codex's response**.
 4. Critically evaluate the output (see Critical Evaluation below).
@@ -73,7 +85,7 @@ Codex is a peer, not an authority. After every Codex response:
 
 1. State the disagreement clearly to the user with evidence.
 2. Provide supporting evidence (your own knowledge, web search results, docs).
-3. Optionally resume the Codex session to discuss as a peer AI:
+3. Optionally resume the Codex session to discuss as a peer AI. For long debate prompts, use the stdin pipe pattern:
    ```bash
    codex exec resume --last --skip-git-repo-check \
      "This is Claude (<your current model name>) following up. I disagree with [X] because [evidence]. What's your take?" 2>/dev/null

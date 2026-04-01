@@ -250,23 +250,7 @@ You are a senior infrastructure engineer mapping how this system integrates with
 - **Infrastructure config**: Terraform, CloudFormation, Docker, Kubernetes, Helm charts — what infrastructure is defined in code
 - **Sync vs async**: which integrations are synchronous (blocking) vs asynchronous (queues, events, webhooks)
 - **Resilience patterns**: retry logic, circuit breakers, fallbacks, timeouts — or their absence
-- **Integration map**: Include an ASCII integration map with the system at center and external services arranged around it. Follow the ASCII Graph Standards. Example:
-
-```
-              ┌─────┐
-              │ CDN │
-              └──┬──┘
-                 │
-┌──────┐   ┌─────▼────┐   ┌──────────┐
-│ Auth │◀──│  System  │──▶│ Postgres │
-└──────┘   └─────┬────┘   └──────────┘
-                 │
-             ┌───▼───┐
-             │ Redis │
-             └───────┘
-```
-
-Column alignment verification: all vertical connectors (`┬`, `│`, `▼`) sit at column 17.
+- **Integration map**: Include an ASCII integration map with the system at center and external services arranged around it. Follow the ASCII Graph Standards.
 
 ## Output Format
 Return structured markdown.
