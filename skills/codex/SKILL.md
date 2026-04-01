@@ -1,6 +1,6 @@
 ---
 name: codex
-description: Use when the user invokes /codex to delegate a prompt to OpenAI Codex CLI, or /codex resume to continue a previous Codex session
+description: "Use when the user invokes /codex to delegate a prompt to OpenAI Codex CLI, or /codex resume to continue a previous Codex session"
 ---
 
 # Codex Skill
@@ -63,33 +63,7 @@ When the user invokes `/codex resume`:
    - Do NOT use `--ephemeral` on the initial run, or resume will have no session to continue
 4. After resume, follow the same output flow: present, evaluate, summarize, offer resume.
 
-## Error Handling
+## Critical Evaluation & Error Handling
 
-| Condition | Action |
-|---|---|
-| Non-zero exit code | Report failure, suggest checking `codex --version` or auth setup |
-| Empty output | Report that Codex returned nothing, suggest rephrasing the prompt |
-| Partial/warning output | Summarize warnings and ask user how to proceed |
-| Timeout | Report timeout, suggest a simpler prompt or lower reasoning effort (`-c model_reasoning_effort="high"`) |
-
-## Critical Evaluation
-
-Codex is a peer, not an authority. After every Codex response:
-
-- **Trust your own knowledge** when confident. If Codex claims something you know is incorrect, push back.
-- **Research disagreements** using WebSearch or project documentation before accepting Codex's claims.
-- **Remember knowledge cutoffs** — Codex may not know about recent releases, APIs, or changes.
-- **Don't defer blindly** — evaluate suggestions critically, especially regarding model names, library versions, API changes, and best practices.
-
-### When You Disagree
-
-1. State the disagreement clearly to the user with evidence.
-2. Provide supporting evidence (your own knowledge, web search results, docs).
-3. Optionally resume the Codex session to discuss as a peer AI. For long debate prompts, use the stdin pipe pattern:
-   ```bash
-   codex exec resume --last --skip-git-repo-check \
-     "This is Claude (<your current model name>) following up. I disagree with [X] because [evidence]. What's your take?" 2>/dev/null
-   ```
-   **Note:** A debate resume becomes "the last session." Inform the user that `/codex resume` will now continue the debate thread, not the original prompt.
-4. Frame disagreements as discussions — either AI could be wrong.
-5. Let the user decide how to proceed if there is genuine ambiguity.
+Read `shared/delegation-common.md` and apply to Codex.
+Timeout suggestion: lower reasoning effort (`-c model_reasoning_effort="high"`).

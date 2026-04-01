@@ -34,31 +34,11 @@ If the invocation is ambiguous or the argument is unrecognizable, ask the user t
 
 ### 1.1 Base Branch Detection
 
-Determine where the current branch diverged. Check candidates in order:
-
-1. The upstream tracking branch (e.g., `origin/feature-x` tracks `origin/main`)
-2. `main`
-3. `master`
-
-If none exist or the result is ambiguous, ask the user: "Which branch should I compare against?"
-
-Compute the fork point:
-
-```bash
-git merge-base <base-branch> HEAD
-```
+Read `shared/review-common.md` § Base Branch Detection.
 
 ### 1.2 File Gathering
 
-Gather the list of files to review based on the resolved mode:
-
-| Mode | Command |
-|---|---|
-| Branch diff | `git diff --name-only <base>...HEAD` |
-| Directory scan | All files recursively in the specified directory, respecting `.gitignore` |
-| Single file | The specified file path |
-| PR review | `gh pr diff <number> --name-only` |
-| Commit review | `git diff --name-only <commit>^..<commit>` |
+Read `shared/review-common.md` § File Gathering.
 
 ### 1.3 Content Loading
 
@@ -78,45 +58,18 @@ Keep related files in the same batch when possible (e.g., a module and its tests
 
 ### 1.5 Target Language Detection
 
-Infer the primary language from file extensions:
-
-| Extension | Language |
-|---|---|
-| `.ts`, `.tsx` | TypeScript |
-| `.js`, `.jsx` | JavaScript |
-| `.py` | Python |
-| `.rs` | Rust |
-| `.go` | Go |
-| `.java` | Java |
-| `.cs` | C# |
-| `.rb` | Ruby |
-| `.php` | PHP |
-| `.swift` | Swift |
-| `.kt` | Kotlin |
-| `.cpp`, `.cc`, `.h` | C++ |
-
-If the changeset is polyglot, note all languages and instruct each subagent to use the correct language per file. Subagents must **never** emit before/after examples in a language other than the target file's language.
+Read `shared/review-common.md` § Target Language Detection.
 
 ### 1.6 Static Analysis Tooling
 
-Read the shared tooling registry and per-language profiles:
-- `shared/tooling-registry.md` — for detection protocol and safety rules
-- `shared/tooling/{language}.md` — for each detected language
-- `shared/tooling/general.md` — for cross-language tools
+Read `shared/review-common.md` § Static Analysis Tooling — Detection Protocol (steps 1-3: detect, check availability, classify).
 
-Follow the detection flow from the registry:
+Then continue with code-review-specific steps:
 
-1. **Detect config files**: Glob for each tool's detection markers.
-2. **Check availability**: Run `which`/`where` for each tool's binary.
-3. **Classify**: Mark each tool as `available`, `configured-but-unavailable`, or `absent`.
 4. **Build scoped commands**: For `available` tools, construct report-only commands targeting only the changed files using the tool's scope-to-files flag from the per-language profile.
 5. **Safety Gate**: Present scoped tool commands to the user for approval (alongside any other live commands).
 6. **Execute approved tools**: Run each tool. Respect timeouts (from `audit.yaml` if present, else adaptive: <10k LOC = 30s, 10-100k = 60s, >100k = 120s per tool).
 7. **Build TOOLING_CONTEXT**: Assemble the slim version (findings only — no gap analysis, no build-integrated detection).
-
-For large output (>50 findings from a single tool): summarize as "{tool} reported N violations: X errors, Y warnings", include top 3 most severe, tell user: "Run `{exact command}` for full results."
-
-If a tool fails (crash, not a findings exit code): report error, skip tool, continue.
 
 ---
 
@@ -461,20 +414,14 @@ These constraints prevent the review from producing unhelpful or misleading find
 
 ## Error Handling
 
+Read `shared/review-common.md` § Shared Error Handling for common errors (no changed files, base branch detection, PR/commit not found, file not found, no violations, too many files, tool errors).
+
+Additional code-review-specific errors:
+
 | Error | Action |
 |---|---|
-| No changed files found | "No changes detected on this branch vs. `<base>`. Try specifying a file or directory." |
-| Base branch detection fails | Ask: "Which branch should I compare against?" |
-| PR number not found | "PR #N not found. Check the number and try again." |
-| Commit hash not found | "Commit `<hash>` not found. Check the hash and try again." |
 | One or more subagents fail | Continue with remaining results; note which domain was not analyzed in the report header. |
 | All subagents fail | Report the failure: "Analysis failed — could not complete any domain review. Please try again." |
-| No violations found | "No violations detected. Code looks solid." |
-| File not found (single file mode) | "File `<path>` not found. Check the path and try again." |
-| Too many files (>100) | Warn the user about scope size, suggest narrowing with `--file` or a subdirectory, proceed if confirmed. |
-| Tool binary not found | Classify as `configured-but-unavailable`, skip, continue review |
-| Tool crashes or times out | Report error, skip tool, continue with remaining tools |
-| Tool output unparseable | Include raw summary in report, skip structured merge |
 | All tools declined in gate | Review proceeds without tool findings — AI analysis only |
 | Cross-model dispatch fails | Continue with 6 domain subagents; note "Cross-model unavailable" in report header. |
 | `--include-gemini` but Gemini CLI not found | Warn and continue without Gemini. |

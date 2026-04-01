@@ -307,7 +307,26 @@ Suggest: git rebase -i <base-commit-hash>
 >
 > **Important:** The rebase target must be `<base-commit-hash>` (where the feature branch started), NOT `<parent-branch>`. The parent still has the original commits that were cherry-picked; rebasing onto it risks duplicate commits if patch-ids diverge.
 
-**C7.** Switch back to the parent branch, reset it to the base commit, and merge. Count the commits on the feature branch first:
+**C7.** Switch back to the parent branch and prepare to rewrite history.
+
+Before running `git reset --hard`, verify the feature branch has all expected commits:
+
+```bash
+git log --oneline <base-commit-hash>..<type>/<short-description>
+```
+
+Present the log to the user:
+
+> The feature branch `<branch>` has these commits:
+> - `<hash> <subject>` (cherry-picked)
+> - `<hash> <subject>` (cherry-picked)
+> - `<hash> <subject>` (new)
+>
+> I'm about to reset `<parent-branch>` back to `<base-commit-hash>` and
+> merge the feature branch in. This rewrites history on `<parent-branch>`.
+> Proceed?
+
+After user confirms:
 
 ```bash
 git checkout <parent-branch>
