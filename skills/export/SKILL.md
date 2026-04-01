@@ -78,11 +78,19 @@ python scripts/md_export.py <input_or_temp_file> \
   [--output <path>]
 ```
 
-The script handles:
-1. Input type detection (markdown, text, code)
-2. Code file wrapping in fenced blocks with syntax highlighting
-3. Pandoc conversion to self-contained HTML
-4. Headless browser rendering to PDF/PNG (if needed)
+Each format uses a different rendering pipeline:
+
+| Format | Pipeline | Theme assets | Dependencies |
+|---|---|---|---|
+| **HTML** | Pandoc → self-contained HTML | CSS (`scripts/themes/`) | Pandoc |
+| **PDF** | Pandoc + LuaLaTeX → PDF | LaTeX templates (`scripts/templates/`) | Pandoc, LuaLaTeX |
+| **PNG** | Pandoc → temp HTML → headless browser screenshot → auto-trim | CSS (`scripts/themes/`) | Pandoc, Chromium browser |
+
+The script also handles input detection (markdown vs code) and wraps code files in fenced blocks with syntax highlighting before passing to Pandoc.
+
+**PDF typography:** PDF output uses Segoe UI for body text, Cascadia Code for code blocks (scaled to 0.88). These are system fonts — if they are missing, LuaLaTeX will fall back to defaults. Orientation is controlled via LaTeX geometry options.
+
+**PNG sizing:** The `--scope` flag affects PNG dimensions — `1pager` renders at A4-equivalent resolution (794×1123 portrait, 1123×794 landscape), while `full`/`summary` use a narrow 430px-wide viewport with auto-height that gets trimmed to content.
 
 ### Step 4 — Report Results
 
@@ -93,11 +101,18 @@ After successful rendering, report:
 
 If `--format all` was used, list all three output files.
 
-If rendering fails, show the error from the script and suggest troubleshooting steps (check Pandoc installation, check browser availability).
+If rendering fails, show the error from the script and suggest troubleshooting:
+
+| Error | Likely cause | Suggestion |
+|---|---|---|
+| "Pandoc is required but not found" | Pandoc not installed | Platform-specific install instructions (shown by script) |
+| "LuaLaTeX is required" | No TeX distribution | `choco install miktex` / `brew install --cask mactex-no-gui` / `apt install texlive-luatex` |
+| "Chromium-based browser is required" | No browser for PNG | Edge is usually pre-installed on Windows; otherwise install Chrome |
+| "PDF rendering failed" | LaTeX compilation error | Check for unsupported Unicode characters or missing fonts |
 
 ### Step 5 — Cleanup
 
-Remove any temporary files created during content preparation (summary/1pager temp markdown files).
+Remove any temporary files created during content preparation (summary/1pager temp markdown files). The rendering script handles its own temp file cleanup.
 
 ## Output Naming Convention
 
@@ -115,21 +130,28 @@ Output is placed in the same directory as the input file by default. Use `--outp
 |---|---|
 | `.md` | Render as markdown |
 | `.txt` | Treat as markdown |
-| Known code (`.py`, `.js`, `.ts`, `.cpp`, `.c`, `.rs`, `.go`, `.java`, `.cs`, `.sh`, `.ps1`, `.rb`, `.lua`, `.sql`, `.yaml`, `.json`, `.toml`, `.xml`, `.html`, `.css`) | Syntax-highlighted code with filename heading |
+| Known code (`.py`, `.js`, `.ts`, `.cpp`, `.c`, `.rs`, `.go`, `.java`, `.cs`, `.sh`, `.ps1`, `.rb`, `.lua`, `.sql`, `.yaml`, `.yml`, `.json`, `.toml`, `.xml`, `.html`, `.css`) | Syntax-highlighted code with filename heading |
 | Unknown extension | Treat as plain text / markdown |
 
 ## Themes
 
-| Theme | Description |
-|---|---|
-| `minimal` (default) | Clean white, bold black headings, no accents. Content-first typography. |
-| `modern` | Muted slate accents, structured layout with subtle top border. |
-| `dark` | Deep navy background, purple accents. Good for screenshots and screen sharing. |
+Each theme has both a CSS file (for HTML and PNG) and a LaTeX template (for PDF):
+
+| Theme | CSS | LaTeX | Description |
+|---|---|---|---|
+| `minimal` (default) | `scripts/themes/minimal.css` | `scripts/templates/minimal.tex` | Clean white, bold black headings, no accents. Content-first typography. |
+| `modern` | `scripts/themes/modern.css` | `scripts/templates/modern.tex` | Muted slate accents, structured layout with subtle top border. |
+| `dark` | `scripts/themes/dark.css` | `scripts/templates/dark.tex` | Deep navy background, purple accents. Good for screenshots and screen sharing. |
+
+Syntax highlighting style varies by theme: `pygments` (minimal), `tango` (modern), `breezedark` (dark).
 
 ## Dependencies
 
-The rendering script requires:
-- **Pandoc** — for markdown → HTML conversion
-- **A Chromium-based browser** (Edge, Chrome) — for HTML → PDF/PNG rendering
+| Dependency | Required for | Install |
+|---|---|---|
+| **Pandoc** | All formats | `choco install pandoc` / `brew install pandoc` / `apt install pandoc` |
+| **LuaLaTeX** (TeX distribution) | PDF only | `choco install miktex` / `brew install --cask mactex-no-gui` / `apt install texlive-luatex texlive-fonts-recommended` |
+| **Chromium browser** (Edge, Chrome) | PNG only | Usually pre-installed (Edge on Windows); `brew install --cask google-chrome` on macOS |
+| **Pillow** (Python) | PNG trim (optional) | `pip install Pillow` — if missing, PNG output may have trailing blank space |
 
-If either is missing, the script provides platform-specific install instructions.
+The script checks for each dependency at runtime and provides install instructions if missing.
