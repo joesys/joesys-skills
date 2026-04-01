@@ -121,11 +121,11 @@ If a tool fails: report error, skip tool, continue.
 
 ## Phase 2: Parallel Analysis
 
-Launch **all three tracks simultaneously** — static analysis execution (from Phase 1.5), host AI subagents, and cross-model dispatch all begin at the same time. Use parallel tool invocations (multiple Agent and Bash calls in a single response).
+Launch **Track 2 and Track 3 simultaneously** in a single response (2 Agent tool calls + 1 Bash tool call in parallel). Static analysis (Track 1) already completed in Phase 1.5 — its results feed into the other tracks as TOOLING_CONTEXT.
 
-### Track 1: Static Analysis
+### Track 1: Static Analysis (already complete)
 
-Static analysis was executed in Phase 1.5 (sequentially, before Phase 2 begins). Include TOOLING_CONTEXT in both Track 2 subagent prompts and Track 3 cross-model prompts. If any tools failed or were skipped in Phase 1.5, include only the findings that succeeded.
+Static analysis ran in Phase 1.5 before this phase. Include TOOLING_CONTEXT in both Track 2 subagent prompts and Track 3 cross-model prompts. If any tools failed or were skipped, include only the findings that succeeded.
 
 ### Track 2: Host AI Subagents
 
