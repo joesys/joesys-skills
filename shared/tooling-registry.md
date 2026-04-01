@@ -1,6 +1,6 @@
 # Static Analysis Tooling Registry
 
-Both **codebase-audit** and **code-review** reference this file as the single source of truth for discovering, classifying, and safely executing static analysis tools. Per-language tool profiles live in `shared/tooling/<language>.md`; this file defines the shared protocol that governs all of them.
+**codebase-audit**, **code-review**, and **quick-review** all reference this file as the single source of truth for discovering, classifying, and safely executing static analysis tools. Per-language tool profiles live in `shared/tooling/<language>.md`; this file defines the shared protocol that governs all of them.
 
 ---
 
@@ -11,7 +11,7 @@ These rules are absolute and apply to every tool, every language, every run.
 1. **NEVER** run any tool without its report-only / dry-run / check-only flags.
 2. **NEVER** install, update, upgrade, or remove any tool or dependency.
 3. **NEVER** modify source files, configuration files, or the working tree.
-4. **ALWAYS** present tool commands in the **Live Command Safety Gate** before execution — the human must see and approve every command.
+4. **ALWAYS** present tool commands in the **Live Command Safety Gate** before execution — the human must see and approve every command. **Exception:** quick-review auto-runs read-only tools (linters, type checkers, SAST) without a safety gate for speed. It still skips tools marked `⚠️ DANGER: auto-modifies`. This exception is intentional — quick-review trades the gate for faster turnaround on tools that cannot modify files.
 5. Tools that auto-modify by default are marked with `⚠️ DANGER: auto-modifies` in per-language profile files — **double-check report-only flags** before queuing these tools.
 
 ---
@@ -136,7 +136,7 @@ The TOOLING_CONTEXT block is the structured output that feeds into the audit or 
 - ...
 ```
 
-### Slim Version (code-review)
+### Slim Version (code-review, quick-review)
 
 ```
 ### TOOLING_CONTEXT
@@ -182,9 +182,9 @@ Tooling results influence the audit grade through two mechanisms: criteria impac
 
 ---
 
-## 7. Code-Review Merge Rules
+## 7. Review Merge Rules
 
-When both AI analysis and tool output identify issues in the same diff, apply these merge rules.
+When both AI analysis and tool output identify issues in the same diff, apply these merge rules. Both code-review and quick-review use these rules, with quick-review applying a wider ±5 line tolerance for deduplication (because cross-model reviewers working from diff-only context may report slightly different line numbers) and discarding findings below P2.
 
 ### Overlapping Findings (same file, within 3 lines)
 

@@ -1,5 +1,6 @@
 ---
 name: retrospective
+version: "1.0.0"
 description: "Use when the user invokes /retrospective to run a structured retrospective — mines git history, conversations, code quality, plans, and tests, then facilitates topic-by-topic discussion with the human to produce action items, process improvements, and a narrative summary."
 ---
 
@@ -165,7 +166,20 @@ After Phase 4 completes:
 
 2. **Apply approved improvements** — implement any approved proposals from Phase 3c. Each change gets its own commit via `/commit` (or standard Conventional Commits if unavailable).
 
-3. **Commit retro artifacts** — commit all output files with type `docs(retro)`.
+3. **Commit retro artifacts** — commit all output files using Conventional Commits with the structured body format:
+   ```
+   docs(retro): add retrospective for <date range>
+
+   Structured retrospective covering [N] topics with [N] action items.
+
+   [--- Changes ---]
+
+   - docs/retros/YYYY-MM-DD/: retrospective output files (carry-forward, digest, discussions, summary, action items, improvements, narrative)
+
+   [--- AI Review (<model name>) ---]
+
+   <Brief assessment of the retrospective quality.>
+   ```
 
 4. **End message:** `Retrospective complete. Artifacts saved to <retro-dir>/.`
 

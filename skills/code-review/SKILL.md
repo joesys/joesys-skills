@@ -1,5 +1,6 @@
 ---
 name: code-review
+version: "1.0.0"
 description: "Use when the user invokes /code-review to analyze code for correctness, quality, architecture, reliability, security, and performance violations with concrete before/after examples."
 ---
 
@@ -150,32 +151,23 @@ Each subagent returns zero or more findings in this structure:
 **Why**: Explanation
 ```
 
-Severity levels:
-- **P0**: Critical — security holes, data loss, actual bugs that will cause failures
-- **P1**: High — bugs waiting to happen, logic errors, missing error handling
-- **P2**: Medium — maintainability problems, DRY violations (3+), structural issues
-- **P3**: Low — polish items, magic numbers, naming improvements
-- **P4**: Optional — style nits, formatting, micro-optimizations
+Severity levels are defined in `shared/review-common.md` § Severity Scale (P0 critical through P4 optional).
 
 ### Cross-Model Dispatch
 
 In addition to the 6 domain subagents, dispatch a cross-model review request in the **same parallel batch** — all 7 invocations (6 subagents + 1 cross-model CLI) launch simultaneously in a single response.
 
-#### Host Detection
+#### Dispatch Protocol
 
-| You Are | Dispatch To | Command |
-|---|---|---|
-| Claude | Codex | `codex exec` |
-| Codex | Claude | `claude -p` |
-| Gemini | Claude | `claude -p` |
-| Unknown | Both Codex + Claude | Two parallel dispatches |
+Read `shared/cross-model-dispatch.md` for host detection, platform-adaptive temp file creation, CLI command templates, and failure handling. Read `shared/model-defaults.md` for current model identifiers.
 
 #### Cross-Model Prompt
 
-Write the prompt to a temporary file and pipe via stdin:
+Write the prompt to a temp file (use `mktemp` per `shared/cross-model-dispatch.md`):
 
 ```bash
-cat > /tmp/code-review-cross-prompt.txt << 'PROMPT_EOF'
+PROMPT_FILE=$(mktemp /tmp/code-review-cross-XXXXXX.txt)
+cat > "$PROMPT_FILE" << 'PROMPT_EOF'
 You are a comprehensive code reviewer. Analyze the following code changes for bugs, security vulnerabilities, performance issues, reliability problems, architectural concerns, and code quality.
 
 ## Rules
@@ -207,31 +199,13 @@ If you find no issues, output: "No issues found."
 PROMPT_EOF
 ```
 
-**If dispatching to Codex:**
-```bash
-cat /tmp/code-review-cross-prompt.txt | codex exec --model gpt-5.4 \
-  -c model_reasoning_effort="xhigh" --sandbox read-only \
-  --skip-git-repo-check 2>/dev/null
-```
-
-**If dispatching to Claude:**
-```bash
-cat /tmp/code-review-cross-prompt.txt | claude --model opus --effort high \
-  --permission-mode plan --name "code-review-cross" -p "" 2>/dev/null
-```
-
-Use 600000ms timeout. Clean up temp files after completion.
+Dispatch using the CLI command templates from `shared/cross-model-dispatch.md`, substituting `$PROMPT_FILE` for the temp file path and `"code-review-cross"` for the `--name` flag on Claude CLI. Use 600000ms timeout. Clean up: `rm -f "$PROMPT_FILE"` after completion.
 
 The cross-model reviewer receives the **same full file content and diff** that the 6 domain subagents receive — not the reduced context used in quick-review. When files are batched (Phase 1.4), the cross-model dispatch is included in each batch alongside the 6 subagents.
 
 #### --include-gemini
 
-When `--include-gemini` is specified, launch an additional parallel dispatch to Gemini. The Gemini prompt is identical to the cross-model prompt above, written to a separate temp file (`/tmp/code-review-gemini-prompt.txt`):
-
-```bash
-cat /tmp/code-review-gemini-prompt.txt | gemini -m gemini-3.1-pro-preview \
-  --approval-mode plan -p "" 2>/dev/null
-```
+When `--include-gemini` is specified, launch an additional parallel dispatch to Gemini per `shared/cross-model-dispatch.md` § `--include-gemini` Flag. The Gemini prompt is identical to the cross-model prompt above, written to a separate temp file (use `mktemp`).
 
 #### Failure Handling
 
@@ -270,10 +244,7 @@ When static analysis tools produced findings (from TOOLING_CONTEXT):
 
 **Tool-only findings** (tool found something no AI agent flagged):
 - Include as its own finding with "[{tool_name}]" prefix in the principle name
-- Map tool severity to P0-P4:
-  - tool `error` → P1 (P0 if security-related)
-  - tool `warning` → P2
-  - tool `style` / `info` → P3
+- Map tool severity per `shared/review-common.md` § Tool Severity Mapping
 - The `--min-severity` filter applies to tool findings too
 
 **AI-only findings** (AI found something no tool flagged):
@@ -382,33 +353,19 @@ After fixes are applied, present:
 
 ## Priority Matrix
 
-| Priority | Type | Examples | Fix When |
-|---|---|---|---|
-| P0: Critical | Security, data loss, bugs | Hardcoded secrets, SQL injection, off-by-one causing data corruption, null dereference, race conditions | Immediately |
-| P1: High | Bugs waiting to happen | Missing error handling, silent failures, N+1 queries, incorrect boolean logic, unhandled edge cases | This PR |
-| P2: Medium | Maintainability | DRY violations (3+), god classes, deep nesting, missing caching | When touching file |
-| P3: Low | Polish | Magic numbers, naming, minor duplication | If time permits |
-| P4: Optional | Style | Formatting, comment cleanup, micro-optimizations | Boy Scout Rule |
+See `shared/review-common.md` § Severity Scale for the full P0-P4 definitions and fix-when guidance.
 
 ---
 
 ## Guardrails
 
-These constraints prevent the review from producing unhelpful or misleading findings:
+Read `shared/review-common.md` § Shared Guardrails for the base constraints (no over-engineering, context matters, be specific, language-adaptive, profile first).
 
-1. **Don't over-engineer**: Suggesting abstractions for single-use code violates YAGNI/KISS. Do not recommend patterns, factories, or interfaces unless there is a concrete, present-day need.
+Additional code-review-specific guardrails:
 
-2. **Context matters**: Test code follows different standards. Prefer DAMP (Descriptive And Meaningful Phrases) over DRY in tests — repeating setup for clarity is acceptable and often preferable.
+1. **Rule of Three**: Do not flag duplication or suggest extraction until the pattern has been proven with **3 or more occurrences**. Two similar blocks are not enough.
 
-3. **Rule of Three**: Do not flag duplication or suggest extraction until the pattern has been proven with **3 or more occurrences**. Two similar blocks are not enough.
-
-4. **Incidental similarity is not duplication**: Two code blocks that look alike but serve different purposes and evolve independently are not DRY violations. They are coincidentally similar.
-
-5. **Be specific**: Every finding must include exact file paths, line numbers, and concrete before/after code blocks. Vague advice like "consider refactoring this" is not acceptable.
-
-6. **Profile first (performance)**: Flag obvious algorithmic issues (O(n^2) where O(n) is trivial, missing indexes on hot queries), but do not flag micro-optimizations. "This could be 2% faster" is noise unless it's in a proven hot path.
-
-7. **Language-adaptive**: All before/after examples must be in the **target language**. Never default to Python when reviewing TypeScript. Never show Java patterns when reviewing Go.
+2. **Incidental similarity is not duplication**: Two code blocks that look alike but serve different purposes and evolve independently are not DRY violations. They are coincidentally similar.
 
 ---
 

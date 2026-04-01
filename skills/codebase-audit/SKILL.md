@@ -1,5 +1,6 @@
 ---
 name: codebase-audit
+version: "1.0.0"
 description: "Use when the user invokes /codebase-audit to run a language-agnostic codebase quality audit measuring up to 11 quality criteria + development velocity with industry benchmarks, grading, and actionable recommendations."
 ---
 
@@ -312,10 +313,18 @@ Remove temp files. Report output paths:
 > - Analysis: `docs/reports/codebase-audit/{DATE}/analysis.md`
 > - Overall grade: **{GRADE}**
 
-Notify completion:
+Notify completion (cross-platform):
 
 ```bash
-powershell.exe -c "[Console]::Beep(800, 300)"
+if command -v powershell.exe &>/dev/null; then
+  powershell.exe -c "[Console]::Beep(800, 300)"
+elif command -v afplay &>/dev/null; then
+  afplay /System/Library/Sounds/Glass.aiff &
+elif command -v paplay &>/dev/null; then
+  paplay /usr/share/sounds/freedesktop/stereo/complete.oga &
+else
+  printf '\a'
+fi
 ```
 
 ---

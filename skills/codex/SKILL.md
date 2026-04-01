@@ -1,5 +1,6 @@
 ---
 name: codex
+version: "1.0.0"
 description: "Use when the user invokes /codex to delegate a prompt to OpenAI Codex CLI, or /codex resume to continue a previous Codex session"
 ---
 
@@ -22,20 +23,16 @@ Delegate prompts to OpenAI's Codex CLI and critically evaluate the output.
    - Any remaining text is the prompt
 2. Assemble and run the command (use 600000ms timeout on the Bash tool).
 
-   **For short, simple prompts** (no quotes, backticks, dollar signs, or other shell metacharacters), pass directly:
-   ```bash
-   codex exec --model gpt-5.4 -c model_reasoning_effort="xhigh" \
-     --sandbox read-only --skip-git-repo-check "<USER_PROMPT>" 2>/dev/null
-   ```
+   Deliver the prompt using the temp-file-and-pipe pattern from `shared/delegation-common.md` § Prompt Delivery. Use `mktemp` for platform-adaptive temp files. For short, simple prompts with no special characters, passing directly as a positional argument is acceptable.
 
-   **For long or complex prompts** (contains special characters, multi-line, or very long), write to a temp file and pipe via stdin to avoid shell quoting issues:
    ```bash
-   cat > /tmp/codex-prompt.txt << 'PROMPT_EOF'
+   PROMPT_FILE=$(mktemp /tmp/codex-prompt-XXXXXX.txt)
+   cat > "$PROMPT_FILE" << 'PROMPT_EOF'
    <USER_PROMPT>
    PROMPT_EOF
-   cat /tmp/codex-prompt.txt | codex exec --model gpt-5.4 -c model_reasoning_effort="xhigh" \
+   cat "$PROMPT_FILE" | codex exec --model gpt-5.4 -c model_reasoning_effort="xhigh" \
      --sandbox read-only --skip-git-repo-check 2>/dev/null
-   rm -f /tmp/codex-prompt.txt
+   rm -f "$PROMPT_FILE"
    ```
 3. Present the output clearly labeled as **Codex's response**.
 4. Critically evaluate the output (see Critical Evaluation below).
@@ -62,6 +59,10 @@ When the user invokes `/codex resume`:
      ```
    - Do NOT use `--ephemeral` on the initial run, or resume will have no session to continue
 4. After resume, follow the same output flow: present, evaluate, summarize, offer resume.
+
+## Known Limitations
+
+- **Resume fragility:** Codex only supports `--last` for session resume — there is no named-session or index-based resume. If you start another Codex session between the original run and a resume attempt, `--last` will resume the newer session, not the one you intended. This is a CLI limitation, not a skill issue. Warn the user if they attempt `/codex resume` after running other Codex commands.
 
 ## Critical Evaluation & Error Handling
 

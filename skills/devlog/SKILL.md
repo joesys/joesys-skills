@@ -1,5 +1,6 @@
 ---
 name: devlog
+version: "1.0.0"
 description: "Use when the user invokes /devlog to capture development insights as devlog posts or content scraps. Mines git history, conversation history, and existing scraps to reconstruct the developer's thinking, then brainstorms to surface the real insight before drafting."
 ---
 
@@ -267,8 +268,20 @@ Present the draft to the developer for review before publishing.
 5. Write the post: `docs/devlog/YYYYMMDD-<topic>/YYYYMMDD-<topic>.md`
 6. Delete any scraps that were incorporated into this post (check the content brief for which scraps were used)
 7. Git commit:
+   Use Conventional Commits with the structured body format:
    ```
    docs(devlog): add post on <topic summary>
+
+   Captures development insight from [session context / scrap / brainstorming].
+
+   [--- Changes ---]
+
+   - docs/devlog/YYYYMMDD-<topic>/: new devlog post
+   - docs/devlog/.scraps/: deleted incorporated scraps (if any)
+
+   [--- AI Review (<model name>) ---]
+
+   <Brief assessment of the post quality and insight captured.>
    ```
 8. Report to the developer:
    > Post published to `docs/devlog/YYYYMMDD-<topic>/YYYYMMDD-<topic>.md` and committed.

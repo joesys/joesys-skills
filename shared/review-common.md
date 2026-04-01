@@ -50,6 +50,7 @@ Infer the primary language from file extensions:
 | `.swift` | Swift |
 | `.kt` | Kotlin |
 | `.cpp`, `.cc`, `.h` | C++ |
+| `.gd` | GDScript |
 
 If the changeset is polyglot, note all languages and instruct each subagent to use the correct language per file. Subagents must **never** emit before/after examples in a language other than the target file's language.
 
@@ -60,14 +61,16 @@ Read the shared tooling registry and per-language profiles:
 - `shared/tooling/{language}.md` — for each detected language
 - `shared/tooling/general.md` — for cross-language tools
 
-Follow the detection flow:
+**Note on per-language profiles:** Profiles exist for TypeScript, JavaScript, Python, Rust, Go, C++, C#, GDScript, and a general cross-language profile. Languages without a dedicated profile (Ruby, PHP, Swift, Kotlin, Java) fall back to the general profile only. If no relevant profile is found, skip tooling detection for that language and note it in the report: "No static analysis profile for [language] — tool detection skipped."
 
-1. **Detect config files**: Glob for each tool's detection markers.
-2. **Check availability**: Run `which`/`where` for each tool's binary.
-3. **Classify**: Mark each tool as `available`, `configured-but-unavailable`, or `absent`.
+Follow the detection flow (maps to tooling-registry.md Steps 2-4):
+
+1. **Detect config files**: Glob for each tool's detection markers. *(registry Step 2)*
+2. **Check availability**: Run `which`/`where` for each tool's binary. *(registry Step 3)*
+3. **Classify**: Mark each tool as `available`, `configured-but-unavailable`, or `absent`. *(registry Step 4)*
 
 Steps 4+ diverge per skill — see skill-specific SKILL.md for execution,
-safety gates, and TOOLING_CONTEXT assembly.
+safety gates, and TOOLING_CONTEXT assembly. The registry's Step 1 (Load Tool Profiles) is implicit in reading the per-language profile files above.
 
 For large output (>50 findings from a single tool): summarize as "{tool} reported N violations: X errors, Y warnings", include top 3 most severe, tell user: "Run `{exact command}` for full results."
 
@@ -87,3 +90,41 @@ If a tool fails (crash, not a findings exit code): report error, skip tool, cont
 | Tool binary not found | Classify as `configured-but-unavailable`, skip, continue review |
 | Tool crashes or times out | Report error, skip tool, continue with remaining tools |
 | Tool output unparseable | Include raw summary in report, skip structured merge |
+
+## Content Loading
+
+Content loading is **intentionally skill-specific** — code-review loads full files + diff for deep analysis, while quick-review loads only the diff with `-U50` context for speed. See each skill's SKILL.md for its content loading strategy.
+
+## Severity Scale
+
+Shared severity definitions used by both code-review and quick-review (quick-review reports P0-P2 only):
+
+| Priority | Type | Examples | Fix When |
+|---|---|---|---|
+| P0: Critical | Security, data loss, bugs | Hardcoded secrets, SQL injection, off-by-one causing data corruption, null dereference, race conditions | Immediately |
+| P1: High | Bugs waiting to happen | Missing error handling, silent failures, N+1 queries, incorrect boolean logic, unhandled edge cases | This PR |
+| P2: Medium | Maintainability | DRY violations (3+), god classes, deep nesting, missing caching | When touching file |
+| P3: Low | Polish | Magic numbers, naming, minor duplication | If time permits |
+| P4: Optional | Style | Formatting, comment cleanup, micro-optimizations | Boy Scout Rule |
+
+### Tool Severity Mapping
+
+When including tool-only findings, map tool severity to the review priority scale:
+
+| Tool Severity | Review Priority |
+|---|---|
+| error | **P1** (or **P0** if security-related) |
+| warning | **P2** |
+| style / info | **P3** |
+
+Quick-review discards tool findings below P2.
+
+## Shared Guardrails
+
+These constraints apply to both code-review and quick-review:
+
+1. **Don't over-engineer**: Do not suggest abstractions, patterns, or interfaces for single-use code. YAGNI/KISS applies.
+2. **Context matters**: Test code follows different standards. Prefer DAMP over DRY in tests — repeating setup for clarity is acceptable.
+3. **Be specific**: Every finding must include exact file paths, line numbers, and a concrete fix (before/after for code-review, suggested fix for quick-review). Vague advice is not acceptable.
+4. **Language-adaptive**: All code examples must be in the target language. Never default to Python when reviewing TypeScript.
+5. **Profile first (performance)**: Flag obvious algorithmic issues but not micro-optimizations.

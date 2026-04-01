@@ -1,5 +1,6 @@
 ---
 name: claude
+version: "1.0.0"
 description: "Use when the user invokes /claude to delegate a prompt to Claude Code CLI, or /claude resume to continue a previous Claude session"
 ---
 
@@ -19,27 +20,23 @@ Delegate prompts to Anthropic's Claude Code CLI and critically evaluate the outp
 1. Parse the user's `/claude` arguments for any overrides:
    - `--model <MODEL>` overrides the default model (e.g., `sonnet`, `haiku`, `opus[1m]`)
    - `--permission-mode <MODE>` overrides the default permission mode (`default`, `acceptEdits`, `dontAsk`)
-   - `--effort <LEVEL>` overrides the default effort (`low`, `medium`, `max`)
+   - `--effort <LEVEL>` overrides the default effort (`low`, `medium`, `high`, `max`)
    - `--bare` enables bare mode (skips hooks, plugins, CLAUDE.md, MCP servers)
    - Any remaining text is the prompt
 2. Derive a short session name from the prompt topic (kebab-case, 2-4 words).
 3. Assemble and run the command (use 600000ms timeout on the Bash tool).
 
-   **For short, simple prompts** (no quotes, backticks, dollar signs, or other shell metacharacters), pass directly:
-   ```bash
-   claude --model opus --effort high --permission-mode plan --name "<derived-name>" -p "<USER_PROMPT>" 2>/dev/null
-   ```
+   Deliver the prompt using the temp-file-and-pipe pattern from `shared/delegation-common.md` § Prompt Delivery. Use `mktemp` for platform-adaptive temp files. For short, simple prompts with no special characters, direct `-p "<text>"` is acceptable.
 
-   **For long or complex prompts** (contains special characters, multi-line, or very long), write to a temp file and pipe via stdin to avoid shell quoting issues:
    ```bash
-   cat > /tmp/claude-prompt.txt << 'PROMPT_EOF'
+   PROMPT_FILE=$(mktemp /tmp/claude-prompt-XXXXXX.txt)
+   cat > "$PROMPT_FILE" << 'PROMPT_EOF'
    <USER_PROMPT>
    PROMPT_EOF
-   cat /tmp/claude-prompt.txt | claude --model opus --effort high --permission-mode plan \
+   cat "$PROMPT_FILE" | claude --model opus --effort high --permission-mode plan \
      --name "<derived-name>" -p "" 2>/dev/null
-   rm -f /tmp/claude-prompt.txt
+   rm -f "$PROMPT_FILE"
    ```
-   The `-p ""` flag triggers non-interactive mode while stdin provides the actual prompt.
 4. Present the output clearly labeled as **Claude's response**.
 5. Critically evaluate the output (see Critical Evaluation below).
 6. Provide a brief summary: "Here's what Claude said, here's what I think."

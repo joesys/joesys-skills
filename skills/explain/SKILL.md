@@ -1,5 +1,6 @@
 ---
 name: explain
+version: "1.0.0"
 description: "Use when the user invokes /explain to analyze a codebase, directory, file, symbol, or feature and produce a layered explanation report from 5 parallel analysis lenses."
 ---
 

@@ -1,5 +1,6 @@
 ---
 name: commit
+version: "1.0.0"
 description: "Create a git commit following Conventional Commits with a structured body format (intent paragraph, changes changelog, AI review). Uses OneFlow Option 3 (rebase + merge --no-ff) for decomposed multi-commit changesets."
 ---
 
@@ -290,12 +291,25 @@ git checkout -b <type>/<short-description> <base-commit-hash>
 git cherry-pick <commit1> <commit2> <commit3>
 ```
 
+If a cherry-pick fails with a conflict:
+1. Report the conflicting files to the user
+2. Attempt to resolve trivially (e.g., if the conflict is whitespace or obvious merge)
+3. If non-trivial, ask the user: "Cherry-pick of `<hash>` conflicted in `<file>`. Want me to resolve it, or would you prefer to handle this manually?"
+4. After resolution: `git cherry-pick --continue`
+5. If the user wants to abort: `git cherry-pick --abort`, then fall back to Path A (single commit on the current branch)
+
 **C5.** Restore the stashed changes and commit the new work using the standard body format. If the new changes contain multiple logical units, commit each sub-unit separately:
 
 ```bash
 git stash pop
 # stage and commit new change(s)
 ```
+
+If `git stash pop` fails with a conflict:
+1. Report the conflicting files to the user
+2. The stash is preserved (not dropped) on conflict — the working tree has partial merge markers
+3. Resolve conflicts, then `git stash drop` to clean up the stash
+4. If unresolvable, `git checkout -- .` to discard the failed pop, then `git stash pop` won't be retried — ask the user how to proceed
 
 **C6.** *(Optional)* Clean up the commit sequence on the feature branch. Since commits were cherry-picked with their original messages and the new work was committed fresh, this is usually unnecessary. If cleanup is needed (e.g., squash a fixup), ask the user to run the interactive rebase themselves:
 

@@ -1,5 +1,6 @@
 ---
 name: quick-review
+version: "1.0.0"
 description: "Use when the user invokes /quick-review for a fast bug-focused code review using cross-model parallel analysis (correctness + security, P0-P2 only)."
 ---
 
@@ -136,23 +137,17 @@ Quick-review uses `Suggested Fix` instead of full before/after code blocks to pr
 
 Dispatch a review request to a different AI model via CLI, running in parallel with Track 2.
 
-#### Host Detection
+#### Dispatch Protocol
 
-Determine which cross-model CLI to dispatch based on who you are:
-
-| You Are | Dispatch To | Command |
-|---|---|---|
-| Claude | Codex | `codex exec` |
-| Codex | Claude | `claude -p` |
-| Gemini | Claude | `claude -p` |
-| Unknown | Both Codex + Claude | Two parallel dispatches |
+Read `shared/cross-model-dispatch.md` for host detection, platform-adaptive temp file creation, CLI command templates, and failure handling. Read `shared/model-defaults.md` for current model identifiers.
 
 #### Prompt Construction
 
-Write the prompt to a temporary file and pipe via stdin to avoid shell metacharacter issues:
+Write the prompt to a temp file (use `mktemp` per `shared/cross-model-dispatch.md`):
 
 ```bash
-cat > /tmp/quick-review-cross-prompt.txt << 'PROMPT_EOF'
+PROMPT_FILE=$(mktemp /tmp/quick-review-cross-XXXXXX.txt)
+cat > "$PROMPT_FILE" << 'PROMPT_EOF'
 You are a bug-focused code reviewer. Your task is to find correctness bugs, security vulnerabilities, and reliability issues in the following code changes.
 
 ## Rules
@@ -185,33 +180,11 @@ PROMPT_EOF
 
 Then dispatch based on host detection:
 
-**If dispatching to Codex:**
-```bash
-cat /tmp/quick-review-cross-prompt.txt | codex exec --model gpt-5.4 \
-  -c model_reasoning_effort="xhigh" --sandbox read-only \
-  --skip-git-repo-check 2>/dev/null
-```
-
-**If dispatching to Claude:**
-```bash
-cat /tmp/quick-review-cross-prompt.txt | claude --model opus --effort high \
-  --permission-mode plan --name "quick-review-cross" -p "" 2>/dev/null
-```
-
-Use 600000ms timeout on the Bash tool for both.
-
-Clean up: `rm -f /tmp/quick-review-cross-prompt.txt` after the dispatch completes.
+Dispatch using the CLI command templates from `shared/cross-model-dispatch.md`, substituting `$PROMPT_FILE` for the temp file path and `"quick-review-cross"` for the `--name` flag on Claude CLI. Use 600000ms timeout. Clean up: `rm -f "$PROMPT_FILE"` after completion.
 
 #### --include-gemini
 
-When `--include-gemini` is specified, launch an additional parallel dispatch to Gemini alongside Track 3:
-
-```bash
-cat /tmp/quick-review-gemini-prompt.txt | gemini -m gemini-3.1-pro-preview \
-  --approval-mode plan -p "" 2>/dev/null
-```
-
-The Gemini prompt is identical to the cross-model prompt. Write it to a separate temp file (`/tmp/quick-review-gemini-prompt.txt`). Clean up after completion.
+When `--include-gemini` is specified, launch an additional parallel dispatch to Gemini per `shared/cross-model-dispatch.md` § `--include-gemini` Flag. The Gemini prompt is identical to the cross-model prompt, written to a separate temp file (use `mktemp`). Clean up after completion.
 
 #### Permissions
 
@@ -242,7 +215,7 @@ If any track failed, note which source was unavailable and proceed with remainin
 
 When multiple sources flag the **same location** (same file, line range within ±5 lines, same category of issue), merge them into a single finding and classify into one of three buckets.
 
-The ±5 line tolerance is wider than code-review's ±3 because cross-model reviewers working from diff-only context may report slightly different line numbers for the same issue. "Same category" means both findings describe the same type of problem (e.g., both are null-safety issues, both are SQL injection, both are unchecked error returns) — do not merge a correctness finding with an unrelated security finding that happens to be on nearby lines.
+The ±5 line tolerance is wider than code-review's ±3 because cross-model reviewers working from diff-only context may report slightly different line numbers for the same issue. This wider tolerance applies to **all** deduplication in quick-review, including tool-AI merges (overriding the ±3 default in `shared/tooling-registry.md`). "Same category" means both findings describe the same type of problem (e.g., both are null-safety issues, both are SQL injection, both are unchecked error returns) — do not merge a correctness finding with an unrelated security finding that happens to be on nearby lines.
 
 | Bucket | Criteria | Display |
 |---|---|---|
@@ -262,7 +235,7 @@ Merge rules:
 
 When a static analysis tool finds something no AI flagged:
 - Include as its own finding with `[tool_name]` prefix
-- Map tool severity: error → P1 (P0 if security-related), warning → P2
+- Map tool severity per `shared/review-common.md` § Tool Severity Mapping
 - Discard tool findings below P2 (quick-review skips P3/P4)
 
 ### 3.3 Prioritize Correctness
@@ -320,13 +293,13 @@ Omit empty severity sections. If there are zero findings across all severities, 
 
 ## Guardrails
 
+Read `shared/review-common.md` § Shared Guardrails for the base constraints (no over-engineering, context matters, be specific, language-adaptive, profile first).
+
+Additional quick-review-specific guardrails:
+
 1. **P0-P2 only**: Never include P3 (polish) or P4 (style) findings in the output. Subagents are instructed to skip them; synthesis discards any that slip through.
-2. **No over-engineering suggestions**: Do not suggest abstractions, patterns, or architectural changes. This is a bug finder, not a design reviewer.
-3. **Be specific**: Every finding must include exact file path, line number, and a concrete suggested fix. Vague advice like "consider adding validation" is not acceptable.
-4. **Language-adaptive**: Code examples in suggested fixes must be in the target language.
-5. **Context matters**: Test code follows different standards — don't flag test-specific patterns (e.g., repeated setup, hardcoded values) as bugs.
-6. **Corroboration is signal, not proof**: Two models agreeing increases confidence, but don't present corroborated findings as definitively correct. The human reviewer makes the final call.
-7. **Diff-only context has limits**: Quick-review uses `-U50` diff context, not full files. Issues requiring broader file analysis (e.g., unused imports, unreachable code paths, architectural problems) may not be detected. Use `/code-review` for full-file analysis.
+2. **Corroboration is signal, not proof**: Two models agreeing increases confidence, but don't present corroborated findings as definitively correct. The human reviewer makes the final call.
+3. **Diff-only context has limits**: Quick-review uses `-U50` diff context, not full files. Issues requiring broader file analysis (e.g., unused imports, unreachable code paths, architectural problems) may not be detected. Use `/code-review` for full-file analysis.
 
 ---
 

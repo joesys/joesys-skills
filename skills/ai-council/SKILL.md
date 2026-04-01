@@ -1,5 +1,6 @@
 ---
 name: ai-council
+version: "1.0.0"
 description: "Use when the user invokes /ai-council to consult three frontier AI models (Claude, GPT, Gemini) in parallel and synthesize their responses into a consensus analysis"
 ---
 
@@ -57,21 +58,27 @@ Reword the user's question into a clear, logical form with explicit framing (con
 
 ### Prompt Size Safety
 
-**Always** write prompts to temporary files and pipe them to CLI tools. This avoids shell quoting issues regardless of prompt content (quotes, backticks, dollar signs, newlines, etc.):
+Read `shared/delegation-common.md` § Prompt Delivery and `shared/model-defaults.md` for the standard prompt delivery pattern and current CLI command templates.
 
-Write prompts using heredocs with **single-quoted delimiters** to prevent shell expansion:
+**Always** write prompts to temporary files using `mktemp` and pipe them to CLI tools. Use single-quoted heredoc delimiters to prevent shell expansion:
+
 ```bash
-cat > /tmp/council-<leg>-prompt.txt << 'PROMPT_EOF'
+CODEX_PROMPT=$(mktemp /tmp/council-codex-XXXXXX.txt)
+GEMINI_PROMPT=$(mktemp /tmp/council-gemini-XXXXXX.txt)
+CLAUDE_PROMPT=$(mktemp /tmp/council-claude-XXXXXX.txt)
+
+cat > "$CODEX_PROMPT" << 'PROMPT_EOF'
 <prompt content>
 PROMPT_EOF
+# (repeat for each leg with leg-specific preamble)
 ```
 
-Then pipe to each tool:
-- **Codex:** `cat /tmp/council-codex-prompt.txt | codex exec --model gpt-5.4 -c model_reasoning_effort="xhigh" --sandbox read-only --skip-git-repo-check 2>/dev/null`
-- **Gemini:** `cat /tmp/council-gemini-prompt.txt | gemini -m gemini-3.1-pro-preview --approval-mode plan -p "" 2>/dev/null` (`-p ""` triggers non-interactive mode, stdin provides the prompt)
-- **Claude CLI:** `cat /tmp/council-claude-prompt.txt | claude --model opus --effort high --permission-mode plan --name "council-<topic>" -p "" 2>/dev/null`
+Then pipe to each tool using the CLI templates from `shared/model-defaults.md`:
+- **Codex:** `cat "$CODEX_PROMPT" | codex exec --model gpt-5.4 -c model_reasoning_effort="xhigh" --sandbox read-only --skip-git-repo-check 2>/dev/null`
+- **Gemini:** `cat "$GEMINI_PROMPT" | gemini -m gemini-3.1-pro-preview --approval-mode plan -p "" 2>/dev/null`
+- **Claude CLI:** `cat "$CLAUDE_PROMPT" | claude --model opus --effort high --permission-mode plan --name "council-<topic>" -p "" 2>/dev/null`
 
-Clean up temporary files after all legs complete.
+Clean up temporary files after all legs complete: `rm -f "$CODEX_PROMPT" "$GEMINI_PROMPT" "$CLAUDE_PROMPT"`
 
 ## Phase 3: Parallel Dispatch
 
@@ -82,7 +89,7 @@ Launch all three legs simultaneously in a single response (three parallel tool i
 **Always deliver the prompt via stdin pipe** (see Prompt Size Safety).
 
 ```bash
-cat /tmp/council-codex-prompt.txt | codex exec --model gpt-5.4 -c model_reasoning_effort="xhigh" \
+cat "$CODEX_PROMPT" | codex exec --model gpt-5.4 -c model_reasoning_effort="xhigh" \
   --sandbox read-only --skip-git-repo-check 2>/dev/null
 ```
 
@@ -91,7 +98,7 @@ cat /tmp/council-codex-prompt.txt | codex exec --model gpt-5.4 -c model_reasonin
 The `-p` flag is mandatory for non-interactive execution. Without it, Gemini enters interactive mode and hangs. **Always deliver the prompt via stdin pipe** — never pass long prompts as a direct `-p` argument (shell metacharacters break argument passing).
 
 ```bash
-cat /tmp/council-gemini-prompt.txt | gemini -m gemini-3.1-pro-preview --approval-mode plan -p "" 2>/dev/null
+cat "$GEMINI_PROMPT" | gemini -m gemini-3.1-pro-preview --approval-mode plan -p "" 2>/dev/null
 ```
 
 ### Claude Leg (Heuristic)
@@ -103,7 +110,7 @@ Choose the mechanism based on whether the prompt is self-contained:
 **Use CLI** when the question references specific files or codepaths that Phase 1 could not fully resolve, and the Claude leg would benefit from tool access to explore further. When using CLI, include `--name` for resumability:
 
 ```bash
-cat /tmp/council-claude-prompt.txt | claude --model opus --effort high --permission-mode plan \
+cat "$CLAUDE_PROMPT" | claude --model opus --effort high --permission-mode plan \
   --name "council-<topic>" -p "" 2>/dev/null
 ```
 
