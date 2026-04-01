@@ -11,7 +11,7 @@
       "name": "joesys-skills",
       "source": "./",
       "description": "Custom Claude Code skills — multi-model AI delegation, structured git commits, code review, quick review, codebase explanation, and devlog writing",
-      "version": "7.1.0",
+      "version": "7.2.0",
       "category": "development",
       "homepage": "https://github.com/joesys/joesys-skills",
       "tags": [
