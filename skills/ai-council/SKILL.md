@@ -1,6 +1,6 @@
 ---
 name: ai-council
-description: Use when the user invokes /ai-council to consult three frontier AI models (Claude, GPT, Gemini) in parallel and synthesize their responses into a consensus analysis
+description: "Use when the user invokes /ai-council to consult three frontier AI models (Claude, GPT, Gemini) in parallel and synthesize their responses into a consensus analysis"
 ---
 
 # AI Council Skill

@@ -37,31 +37,11 @@ If the invocation is ambiguous or the argument is unrecognizable, ask the user t
 
 ### 1.1 Base Branch Detection
 
-Determine where the current branch diverged. Check candidates in order:
-
-1. The upstream tracking branch (e.g., `origin/feature-x` tracks `origin/main`)
-2. `main`
-3. `master`
-
-If none exist or the result is ambiguous, ask the user: "Which branch should I compare against?"
-
-Compute the fork point:
-
-```bash
-git merge-base <base-branch> HEAD
-```
+Read `shared/review-common.md` § Base Branch Detection.
 
 ### 1.2 File Gathering
 
-Gather the list of files to review based on the resolved mode:
-
-| Mode | Command |
-|---|---|
-| Branch diff | `git diff --name-only <base>...HEAD` |
-| Directory scan | All files recursively in the specified directory, respecting `.gitignore` |
-| Single file | The specified file path |
-| PR review | `gh pr diff <number> --name-only` |
-| Commit review | `git diff --name-only <commit>^..<commit>` |
+Read `shared/review-common.md` § File Gathering.
 
 ### 1.3 Context Loading
 
@@ -77,45 +57,18 @@ This is the primary time savings over the full code-review. Both host AI subagen
 
 ### 1.4 Target Language Detection
 
-Infer the primary language from file extensions:
-
-| Extension | Language |
-|---|---|
-| `.ts`, `.tsx` | TypeScript |
-| `.js`, `.jsx` | JavaScript |
-| `.py` | Python |
-| `.rs` | Rust |
-| `.go` | Go |
-| `.java` | Java |
-| `.cs` | C# |
-| `.rb` | Ruby |
-| `.php` | PHP |
-| `.swift` | Swift |
-| `.kt` | Kotlin |
-| `.cpp`, `.cc`, `.h` | C++ |
-
-If the changeset is polyglot, note all languages and instruct subagents to use the correct language per file.
+Read `shared/review-common.md` § Target Language Detection.
 
 ### 1.5 Static Analysis (Streamlined)
 
-Read the shared tooling registry and per-language profiles:
-- `shared/tooling-registry.md` — for detection protocol
-- `shared/tooling/{language}.md` — for each detected language
-- `shared/tooling/general.md` — for cross-language tools
+Read `shared/review-common.md` § Static Analysis Tooling — Detection Protocol (steps 1-3: detect, check availability, classify).
 
-Follow a streamlined detection flow:
+Then continue with quick-review-specific steps:
 
-1. **Detect config files**: Glob for each tool's detection markers.
-2. **Check availability**: Run `which`/`where` for each tool's binary.
-3. **Classify**: Mark each tool as `available`, `configured-but-unavailable`, or `absent`.
 4. **Build scoped commands**: For `available` tools, construct report-only commands targeting only the changed files.
 5. **Auto-run read-only tools**: Linters, type checkers, and SAST tools are read-only — execute them without a safety gate. Tools marked with `⚠️ DANGER: auto-modifies` in per-language profiles are **skipped** (quick-review never runs auto-modifying tools).
 6. **30-second timeout per tool**: Hard cap. If a tool exceeds 30 seconds, kill it and continue.
 7. **Build TOOLING_CONTEXT**: Assemble the slim version (findings only — no gap analysis, no build-integrated detection). Same format as code-review's slim TOOLING_CONTEXT.
-
-For large output (>50 findings from a single tool): summarize as "{tool} reported N violations: X errors, Y warnings", include top 3 most severe, tell user: "Run `{exact command}` for full results."
-
-If a tool fails: report error, skip tool, continue.
 
 ---
 
@@ -379,19 +332,14 @@ Omit empty severity sections. If there are zero findings across all severities, 
 
 ## Error Handling
 
+Read `shared/review-common.md` § Shared Error Handling for common errors (no changed files, base branch detection, PR/commit not found, file not found, no violations, too many files, tool errors).
+
+Additional quick-review-specific errors:
+
 | Error | Action |
 |---|---|
-| No changed files found | "No changes detected on this branch vs. `<base>`. Try specifying a file or directory." |
-| Base branch detection fails | Ask: "Which branch should I compare against?" |
-| PR number not found | "PR #N not found. Check the number and try again." |
-| Commit hash not found | "Commit `<hash>` not found. Check the hash and try again." |
-| File not found (single file mode) | "File `<path>` not found. Check the path and try again." |
 | One or both host subagents fail | Continue with remaining results; note which domain was not analyzed. |
 | Both host subagents fail | Fall back to cross-model results only. If cross-model also failed, report: "Analysis failed — could not complete any review. Please try again." |
 | Cross-model dispatch fails | Continue with host-only results; note in summary header. |
 | All sources fail | Report: "Analysis failed — no reviewers completed successfully. Please try again." |
-| No violations found | "No bugs or security issues found. Code looks solid." |
-| Too many files (>100) | Warn about scope size, suggest narrowing with `--file` or a subdirectory, proceed if confirmed. |
-| Tool binary not found | Skip tool, continue with remaining tools. |
-| Tool crashes or times out | Report error, skip tool, continue. |
 | `--include-gemini` but Gemini CLI not installed | Warn: "Gemini CLI not found. Proceeding without Gemini." Continue with host + primary cross-model. |

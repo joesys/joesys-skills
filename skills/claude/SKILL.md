@@ -1,6 +1,6 @@
 ---
 name: claude
-description: Use when the user invokes /claude to delegate a prompt to Claude Code CLI, or /claude resume to continue a previous Claude session
+description: "Use when the user invokes /claude to delegate a prompt to Claude Code CLI, or /claude resume to continue a previous Claude session"
 ---
 
 # Claude Skill
@@ -65,36 +65,11 @@ When the user invokes `/claude resume`:
    - `--bare` CAN be added on resume if the user explicitly requests it
 4. After resume, follow the same output flow: present, evaluate, summarize, offer resume.
 
-## Error Handling
+## Critical Evaluation & Error Handling
 
-| Condition | Action |
-|---|---|
-| Non-zero exit code | Report failure, suggest checking `claude --version` or auth setup |
-| Empty output | Report that Claude returned nothing, suggest rephrasing the prompt |
-| Partial/warning output | Summarize warnings and ask user how to proceed |
-| Timeout | Report timeout, suggest lowering effort (`--effort medium`) or switching to `sonnet` |
-
-## Critical Evaluation
-
-Claude is a peer, not an authority — even when it is the same model as you. After every Claude response:
-
-- **Trust your own knowledge** when confident. If the spawned Claude claims something you know is incorrect, push back.
-- **Research disagreements** using WebSearch or project documentation before accepting claims.
-- **Remember context differences** — the spawned Claude lacks your conversation context and may make assumptions.
-- **Don't defer blindly** — evaluate suggestions critically, especially regarding model names, library versions, API changes, and best practices.
+Read `shared/delegation-common.md` and apply to Claude.
+Timeout suggestion: lower effort (`--effort medium`) or switch to `sonnet`.
 
 ### Self-Evaluation Vigilance
 
 Unlike Codex and Gemini, this is Claude evaluating Claude. Be especially vigilant about shared blind spots — if both instances agree, that's not necessarily stronger evidence. Highlight when independent verification (WebSearch, docs) would add value over two instances of the same model reaching the same conclusion.
-
-### When You Disagree
-
-1. State the disagreement clearly to the user with evidence.
-2. Provide supporting evidence (your own knowledge, web search results, docs).
-3. Optionally resume the Claude session to discuss as a peer AI:
-   ```bash
-   claude -c -p "This is Claude (<your current model name>) from the parent session. I disagree with [X] because [evidence]. What's your take?" 2>/dev/null
-   ```
-   **Note:** A debate resume becomes the continued session. Inform the user that `/claude resume` will now continue the debate thread, not the original prompt.
-4. Frame disagreements as discussions — same model, different context means different conclusions are valid.
-5. Let the user decide how to proceed if there is genuine ambiguity.

@@ -1,6 +1,6 @@
 ---
 name: gemini
-description: Use when the user invokes /gemini to delegate a prompt to Google Gemini CLI, /gemini resume to continue a previous Gemini session, or /gemini sessions to list available sessions
+description: "Use when the user invokes /gemini to delegate a prompt to Google Gemini CLI, /gemini resume to continue a previous Gemini session, or /gemini sessions to list available sessions"
 ---
 
 # Gemini Skill
@@ -66,32 +66,7 @@ When the user invokes `/gemini sessions`:
 2. Present the session list to the user.
 3. Inform them they can resume any session with `/gemini resume <INDEX> <PROMPT>`.
 
-## Error Handling
+## Critical Evaluation & Error Handling
 
-| Condition | Action |
-|---|---|
-| Non-zero exit code | Report failure, suggest checking `gemini --version` or auth setup |
-| Empty output | Report that Gemini returned nothing, suggest rephrasing the prompt |
-| Partial/warning output | Summarize warnings and ask user how to proceed |
-| Timeout | Report timeout, suggest a simpler prompt or switching to `gemini-2.5-flash` |
-
-## Critical Evaluation
-
-Gemini is a peer, not an authority. After every Gemini response:
-
-- **Trust your own knowledge** when confident. If Gemini claims something you know is incorrect, push back.
-- **Research disagreements** using WebSearch or project documentation before accepting Gemini's claims.
-- **Remember knowledge cutoffs** — Gemini may not know about recent releases, APIs, or changes.
-- **Don't defer blindly** — evaluate suggestions critically, especially regarding model names, library versions, API changes, and best practices.
-
-### When You Disagree
-
-1. State the disagreement clearly to the user with evidence.
-2. Provide supporting evidence (your own knowledge, web search results, docs).
-3. Optionally resume the Gemini session to discuss as a peer AI:
-   ```bash
-   gemini --resume latest -p "This is Claude (<your current model name>) following up. I disagree with [X] because [evidence]. What's your take?" 2>/dev/null
-   ```
-   **Note:** A debate resume becomes "the last session." Inform the user that `/gemini resume` will now continue the debate thread, not the original prompt.
-4. Frame disagreements as discussions — either AI could be wrong.
-5. Let the user decide how to proceed if there is genuine ambiguity.
+Read `shared/delegation-common.md` and apply to Gemini.
+Timeout suggestion: switch to `gemini-2.5-flash`.
