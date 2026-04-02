@@ -43,7 +43,29 @@ Default: `docs/retros/YYYY-MM-DD/` (retro execution date). Override with `--outp
 
 ---
 
-## Phase 0: Carry-Forward Check
+## Phase 0a: Load User Preferences
+
+Read `shared/skill-context.md` for the full protocol. In brief:
+
+1. Read `.claude/skill-context/preferences.md` — if missing, invoke `/preferences` (streamlined).
+2. Read `.claude/skill-context/retrospective.md` (if it exists) for retro-specific preferences.
+
+**How preferences shape this skill:**
+
+| Preference | Effect on Retrospective |
+|---|---|
+| Detail level: concise | Tighter narrative, fewer discussion prompts, streamlined output |
+| Detail level: detailed | Richer context in the digest, more discussion topics surfaced |
+| Tone: casual | Informal discussion facilitation ("What did we learn?") |
+| Tone: professional | Structured facilitation ("Key takeaway for this topic:") |
+| Project phase | Shapes what the retro focuses on (prototype → velocity, mature → process) |
+| Retro-specific: formality | Casual reflection / Structured review / Formal with action items and owners |
+
+Pass project context and tone preferences to all channel agents in Phase 1 and to the narrative agent in Phase 4.
+
+---
+
+## Phase 0b: Carry-Forward Check
 
 Closes the feedback loop from the previous retro. Read `references/output-formats.md` for the carry-forward format.
 
@@ -197,7 +219,7 @@ After Phase 4 completes:
 
 | Files Found | Resume Point |
 |---|---|
-| No retro directory | Start from Phase 0 |
+| No retro directory | Start from Phase 0b |
 | `00-carry-forward.md` exists | Phase 1 |
 | `01-digest.md` exists | Phase 2 |
 | `02-topic-discussions.md` exists | Check YAML status (see below) |

@@ -11,6 +11,7 @@ Thumbs.db
 
 # Claude Code local settings
 .claude/settings.local.json
+.claude/skill-context/
 
 # Local docs
 docs/reinstall-plugin.md

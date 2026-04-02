@@ -33,6 +33,26 @@ If the invocation is ambiguous or the argument is unrecognizable, ask the user t
 
 ## Phase 1: Scope Resolution
 
+### 1.0 Load User Preferences
+
+Read `shared/skill-context.md` for the full protocol. In brief:
+
+1. Read `.claude/skill-context/preferences.md` — if missing, invoke `/preferences` (streamlined).
+2. Read `.claude/skill-context/code-review.md` (if it exists) for review-specific preferences.
+
+**How preferences shape this skill:**
+
+| Preference | Effect on Code Review |
+|---|---|
+| Detail level: concise | Shorter findings, omit minor context, focus on top issues |
+| Detail level: detailed | Include architectural context, explain why something is a problem |
+| Assumed knowledge: beginner | Explain what the violation means, not just what to fix |
+| Assumed knowledge: expert | Skip obvious explanations, focus on non-obvious implications |
+| Review-specific: severity focus | Override `--min-severity` default (e.g., user always wants P0-P1 only) |
+| Review-specific: priority domains | Reorder which domains get emphasis in the synthesis |
+
+Pass relevant preferences to each domain subagent in Phase 2 — append as a `## User Preferences` section after the principle file content.
+
 ### 1.1 Base Branch Detection
 
 Read `shared/review-common.md` § Base Branch Detection.

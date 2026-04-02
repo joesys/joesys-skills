@@ -36,6 +36,23 @@ If the invocation is ambiguous or the argument is unrecognizable, ask the user t
 
 ## Phase 1: Scope Resolution
 
+### 1.0 Load User Preferences
+
+Read `shared/skill-context.md` for the full protocol. In brief:
+
+1. Read `.claude/skill-context/preferences.md` — if missing, invoke `/preferences` (streamlined).
+2. Read `.claude/skill-context/code-review.md` (if it exists) — quick-review shares review preferences with code-review.
+
+**How preferences shape this skill:**
+
+| Preference | Effect on Quick Review |
+|---|---|
+| Detail level: concise | Even terser findings — just the bug and the fix |
+| Assumed knowledge: beginner | Brief explanation of why the bug matters |
+| Review-specific: priority domains | Which of correctness/security to emphasize in synthesis |
+
+Pass relevant preferences to subagents in Phase 2.
+
 ### 1.1 Base Branch Detection
 
 Read `shared/review-common.md` § Base Branch Detection.

@@ -7,7 +7,7 @@ JSON schemas, output file templates, and directory structure for audit artifacts
 - [Output Directory Structure](#output-directory-structure)
 - [metrics.json Schema](#metricsjson-schema)
 - [metrics.md Template](#metricsmd-template)
-- [project-context.md Template](#project-contextmd-template)
+- [Audit Preferences Template (Legacy Migration)](#audit-preferences-template-legacy-migration)
 - [Execution Flows](#execution-flows)
 
 ---
@@ -16,11 +16,18 @@ JSON schemas, output file templates, and directory structure for audit artifacts
 
 ```
 docs/reports/codebase-audit/
-├── project-context.md              # Persistent project profile
+├── project-context.md              # Legacy — migrated to .claude/skill-context/
 └── YYYYMMDD/
     ├── metrics.json                # Machine-readable metrics
     ├── metrics.md                  # Human-readable metrics table
     └── analysis.md                 # Full qualitative report
+```
+
+User context is now stored in the shared preferences system:
+```
+.claude/skill-context/
+├── preferences.md                  # Shared preferences (project phase, team size, priority)
+└── codebase-audit.md               # Audit-specific (trade-offs, cadence, history)
 ```
 
 Date-stamped directories. If today's directory exists, append suffix: `YYYYMMDD-2`.
@@ -187,20 +194,28 @@ Only include sections for which data was actually collected. Omit empty sections
 
 ---
 
-## project-context.md Template
+## Audit Preferences Template (Legacy Migration)
 
-Persistent profile, updated each audit:
+**Note:** User context has migrated to the shared preferences system.
+Project phase, team size, and business priority are now stored in
+`.claude/skill-context/preferences.md`. Audit-specific context (known
+trade-offs, deployment cadence, audit history) is stored in
+`.claude/skill-context/codebase-audit.md`.
+
+The legacy file at `docs/reports/codebase-audit/project-context.md` is
+no longer generated. If one exists from a previous audit, Phase 3 will
+migrate its contents into the shared system. See `shared/skill-context.md`
+for the shared format.
+
+### codebase-audit.md Preferences Template
 
 ```markdown
-# Project Context — {Project Name}
+# Codebase Audit Preferences
 
 Last updated: {DATE}
 
-## Profile
-- **Phase:** {phase}
-- **Team:** {team_size}
-- **Deployment:** {cadence}
-- **Priority:** {priority}
+## Audit-Specific Context
+- **Deployment cadence:** {cadence}
 - **Domain:** {domain_summary}
 
 ## Known Trade-offs

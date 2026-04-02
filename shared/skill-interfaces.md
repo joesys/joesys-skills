@@ -46,6 +46,26 @@ interfaces, update all callers listed below.
 
 **Note:** Quick-review reaches into `skills/code-review/principles/` for its principle files. This is an intentional cross-skill dependency — the principles are shared content, not code-review-exclusive. If the principles directory is moved or restructured, both skills must be updated.
 
+## Preferences Skill Interface
+
+**Invocation:** `/preferences [skill-name | show | reset]`
+
+**Behavior contract:**
+- `/preferences` — runs the shared interview, saves to `.claude/skill-context/preferences.md`
+- `/preferences <skill-name>` — runs skill-specific interview, saves to `.claude/skill-context/<skill-name>.md`
+- `/preferences show` — displays all current preferences
+- `/preferences reset` — clears all preference files after confirmation
+- When invoked by another skill (first-contact case): runs streamlined core interview only, skips skill-specific deep-dives, returns control to caller
+
+**File contract:**
+- Shared preferences: `.claude/skill-context/preferences.md`
+- Skill-specific: `.claude/skill-context/<skill-name>.md`
+- Files are plain markdown, human-readable and hand-editable
+- Skills must handle missing files gracefully (first-run case)
+
+**Callers:**
+- All skills in this collection — each checks for shared preferences during their earliest phase and invokes `/preferences` if missing. See `shared/skill-context.md` for the full context-loading protocol.
+
 ## Commit Skill Interface
 
 **Invocation:** `/commit`

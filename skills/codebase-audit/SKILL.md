@@ -15,7 +15,7 @@ This skill uses progressive disclosure — read reference files only when needed
 | File | Contents | When to read |
 |---|---|---|
 | `references/agent-prompts.md` | Full prompt templates for all 6 collection agents + Phase 4 author agent | Before dispatching agents in Phase 1 or Phase 4 |
-| `references/output-schemas.md` | metrics.json schema, metrics.md template, project-context.md template, execution flows | Before writing output files in Phase 5 |
+| `references/output-schemas.md` | metrics.json schema, metrics.md template, codebase-audit.md preferences template, execution flows | Before writing output files in Phase 5 |
 | `references/detection-defaults.md` | Language marker files, language defaults, path auto-detection, polyglot rules, config file format | During Phase 0 detection |
 
 ## Invocation
@@ -65,17 +65,18 @@ Read `references/detection-defaults.md` for language marker files, language defa
 ### Detection Steps
 
 1. **Parse arguments** — determine invocation mode: `full`, `metrics`, `analysis`, `delta`, or `scoped`
-2. **Load config** — read `.claude/audit.yaml` if it exists (all fields optional)
-3. **Auto-detect language** — check marker files in priority order (see reference)
-4. **Apply language defaults** — function patterns, test runner, extension (see reference)
-5. **Detect static analysis tooling** — read `shared/tooling-registry.md` and per-language profiles from `shared/tooling/`. Classify tools as `available`, `configured-but-unavailable`, or `absent`. Build gap recommendations for absent tools.
-6. **Auto-detect paths** — source, test, and exclude paths (see reference)
-7. **Polyglot detection** — secondary language >10% of source files → add to additional
-8. **Auto-detect test runner** — check framework configs, package.json scripts, language default
-9. **Domain inference** — read README, package manifests, scan key imports, check directory names. Use WebSearch for comparable projects if available.
-10. **Prerequisites check** — verify Python 3 is available for helper scripts. If not, warn and offer qualitative-only mode.
-11. **Scope size check** — warn if >1000 source files
-12. **Merge config** — auto-detected defaults ← config overrides (config always wins)
+2. **Load user preferences** — read `shared/skill-context.md` for the full protocol. Load `.claude/skill-context/preferences.md` (shared) and `.claude/skill-context/codebase-audit.md` (skill-specific). If no shared preferences exist, invoke `/preferences` (streamlined mode). Shared preferences supply project phase, team size, and business priority — Phase 3 will skip questions already answered here.
+3. **Load config** — read `.claude/audit.yaml` if it exists (all fields optional)
+4. **Auto-detect language** — check marker files in priority order (see reference)
+5. **Apply language defaults** — function patterns, test runner, extension (see reference)
+6. **Detect static analysis tooling** — read `shared/tooling-registry.md` and per-language profiles from `shared/tooling/`. Classify tools as `available`, `configured-but-unavailable`, or `absent`. Build gap recommendations for absent tools.
+7. **Auto-detect paths** — source, test, and exclude paths (see reference)
+8. **Polyglot detection** — secondary language >10% of source files → add to additional
+9. **Auto-detect test runner** — check framework configs, package.json scripts, language default
+10. **Domain inference** — read README, package manifests, scan key imports, check directory names. Use WebSearch for comparable projects if available.
+11. **Prerequisites check** — verify Python 3 is available for helper scripts. If not, warn and offer qualitative-only mode.
+12. **Scope size check** — warn if >1000 source files
+13. **Merge config** — auto-detected defaults ← config overrides (config always wins)
 
 ### Output of Phase 0
 
@@ -248,23 +249,57 @@ After displaying the table:
 
 ## Phase 3 — User Context Interview
 
-Gathers context the code alone can't reveal.
+Gathers context the code alone can't reveal. Uses the shared preferences
+system (`shared/skill-context.md`) to avoid re-asking questions.
+
+### Context Sources (checked in order)
+
+1. **Shared preferences** (`.claude/skill-context/preferences.md`) — loaded in Phase 0 step 2. Contains project phase, team size, business priority.
+2. **Audit-specific preferences** (`.claude/skill-context/codebase-audit.md`) — deployment cadence, known trade-offs.
+3. **Legacy profile** (`docs/reports/codebase-audit/project-context.md`) — if this exists but no shared preferences file does, migrate its contents into the shared system.
 
 ### First Audit — Build the Profile
 
-Ask 3-5 questions maximum:
+Check what's already known from shared preferences. Only ask questions whose
+answers are not already captured:
 
-1. **Project phase:** Prototype / MVP / Active growth / Mature / Maintenance
-2. **Team size:** Solo / 2-5 / 6-15 / 16+
-3. **Deployment cadence:** Continuous / Weekly / Monthly / Release-based / Not yet
-4. **Business priority:** Speed to market / Reliability / Compliance / Cost reduction / Feature completeness
-5. **Known trade-offs:** Free text — intentional debt, upcoming migrations, constraints
+| Question | Skip if already in... |
+|---|---|
+| Project phase | shared preferences → "Project phase" |
+| Team size | shared preferences → "Team size" |
+| Deployment cadence | shared preferences → "Deployment cadence" **or** audit-specific preferences |
+| Business priority | shared preferences → "Business priority" |
+| Known trade-offs | audit-specific preferences → "Known trade-offs" |
 
-Also ask **informed questions** based on Phase 1 findings (e.g., "I noticed zero tests — intentional for now?").
+If shared preferences exist and cover project phase, team size, and business
+priority, the only new questions are **deployment cadence** (if missing),
+**known trade-offs**, and **informed questions** based on Phase 1 findings
+(e.g., "I noticed zero tests — intentional for now?").
+
+If no shared preferences exist at all, `/preferences` was already invoked in
+Phase 0 step 2 — those answers are now available. Ask only the audit-specific
+questions: deployment cadence, known trade-offs, and informed questions.
+
+Save audit-specific answers to `.claude/skill-context/codebase-audit.md`.
 
 ### Returning Audits — Confirm the Profile
 
-Check for existing profile at `docs/reports/codebase-audit/project-context.md`. If found, present it and ask if anything has changed. Quick on repeat audits.
+Check for existing audit-specific preferences at
+`.claude/skill-context/codebase-audit.md`. If found, present the combined
+profile (shared + audit-specific) and ask if anything has changed. Quick on
+repeat audits.
+
+### Legacy Migration
+
+If `docs/reports/codebase-audit/project-context.md` exists but
+`.claude/skill-context/preferences.md` does not:
+
+1. Read the legacy file
+2. Extract project phase, team size, deployment cadence, business priority
+3. Write shared fields to `.claude/skill-context/preferences.md`
+4. Write audit-specific fields (known trade-offs, audit history) to `.claude/skill-context/codebase-audit.md`
+5. Inform the user: "Migrated your audit profile to the shared preferences system."
+6. The legacy file remains in place (existing reports may reference it) but is no longer the source of truth.
 
 ### How User Context Shapes the Analysis
 
@@ -300,7 +335,7 @@ Read `references/output-schemas.md` for the full schemas and templates.
 | `metrics.json` | Machine-readable metrics with grades, benchmarks, methodology | Always (options 1 & 2) |
 | `metrics.md` | Human-readable metrics table | Always (options 1 & 2) |
 | `analysis.md` | Full qualitative report per `templates/analysis-template.md` | Option 1 only |
-| `project-context.md` | Persistent project profile | Updated each audit |
+| `.claude/skill-context/codebase-audit.md` | Audit-specific preferences (trade-offs, cadence, history) | Updated each audit |
 
 Output directory: `docs/reports/codebase-audit/YYYYMMDD/`
 

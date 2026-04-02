@@ -10,6 +10,26 @@ description: "Create a git commit following Conventional Commits with a structur
 
 Create git commits with consistent, well-structured commit messages following Conventional Commits and a structured body format. When a changeset decomposes into multiple commits, use a temporary branch merged with `--no-ff` (OneFlow Option 3) to preserve a clean, linear history with visible logical groupings.
 
+## User Preferences
+
+Read `shared/skill-context.md` for the full protocol. In brief:
+
+1. Read `.claude/skill-context/preferences.md` — if missing, proceed with defaults (don't interrupt the commit flow to run an interview).
+2. Read `.claude/skill-context/commit.md` (if it exists) for commit-specific preferences.
+
+**How preferences shape this skill:**
+
+| Preference | Effect on Commit |
+|---|---|
+| Detail level: concise | Shorter intent paragraph, compact changes section |
+| Detail level: detailed | Richer intent explanation, per-file change details |
+| Commit-specific: max subject length | Override the default ~72 char guideline |
+| Commit-specific: always include scope | Never generate scopeless commit messages |
+| Commit-specific: custom scopes | Suggest from a project-specific scope list |
+| Commit-specific: auto-devlog scrap | `on` (default) / `off` — controls whether the post-commit devlog scrap capture fires automatically. When `off`, skip the "Post-Commit: Devlog Scrap Capture" section entirely. |
+
+**Important:** Unlike other skills, commit does not invoke `/preferences` on first contact. The commit flow should never be interrupted by an interview — commits are fast, transactional operations. If no preferences exist, use sensible defaults. The user can set commit preferences proactively via `/preferences commit`.
+
 ## Convention
 
 Follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) for the subject line:
@@ -401,6 +421,8 @@ The result across all paths is a clean history where `git log --oneline` reads l
 ## Post-Commit: Devlog Scrap Capture
 
 After a successful commit (any path), evaluate whether the commit is worth capturing as a devlog scrap for future writing.
+
+**Preference gate:** If the user's commit preferences (`.claude/skill-context/commit.md`) set `auto-devlog scrap: off`, skip this entire section. Some users prefer not to auto-generate devlog scraps — respect that choice.
 
 ### When to Capture
 

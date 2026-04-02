@@ -23,6 +23,25 @@ Parse the user's `/ai-council` arguments:
 
 If the question is empty or unintelligible, use `AskUserQuestion` to ask the user to clarify.
 
+## Phase 0: Load User Preferences
+
+Read `shared/skill-context.md` for the full protocol. In brief:
+
+1. Read `.claude/skill-context/preferences.md` — if missing, invoke `/preferences` (streamlined).
+2. No skill-specific preferences file for ai-council — shared preferences are sufficient.
+
+**How preferences shape this skill:**
+
+| Preference | Effect on AI Council |
+|---|---|
+| Detail level | Controls how verbose the synthesis is |
+| Assumed knowledge | Shapes the synthesis voice — beginner gets more explanation of model disagreements |
+| Tone | Formal synthesis vs. conversational comparison |
+
+Pass the user's communication style preferences to the synthesis phase (Phase 4). The individual model legs receive the user's raw question, not preferences — each model should respond naturally.
+
+---
+
 ## Phase 1: Context Gathering
 
 Automatically gather relevant context before dispatching. No user approval needed.

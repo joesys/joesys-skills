@@ -15,6 +15,10 @@ Delegate prompts to OpenAI's Codex CLI and critically evaluate the output.
 - **Sandbox:** `read-only`
 - **Always use:** `--skip-git-repo-check`, `2>/dev/null`
 
+## User Preferences
+
+Read `shared/skill-context.md` for the full protocol. Load `.claude/skill-context/preferences.md` if it exists. Do not invoke `/preferences` on first contact — delegation is a pass-through operation and should not be interrupted by interviews. Shared communication style preferences shape the critical evaluation phase (how you present your assessment of Codex's output to the user).
+
 ## Running a Task
 
 1. Parse the user's `/codex` arguments for any overrides:

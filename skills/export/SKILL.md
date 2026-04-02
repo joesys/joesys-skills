@@ -37,6 +37,23 @@ Arguments are combinable. Examples:
 
 If the invocation is ambiguous or the file path is unrecognizable, ask the user to clarify before proceeding.
 
+## User Preferences
+
+Read `shared/skill-context.md` for the full protocol. In brief:
+
+1. Read `.claude/skill-context/preferences.md` — if missing, proceed with defaults (don't interrupt the export flow).
+2. Read `.claude/skill-context/export.md` (if it exists) for export-specific preferences.
+
+**How preferences shape this skill:**
+
+| Preference | Effect on Export |
+|---|---|
+| Export-specific: default format | Override the default `pdf` format |
+| Export-specific: default theme | Override the default `minimal` theme |
+| Export-specific: include TOC | Always include table of contents |
+
+Like commit, export does not invoke `/preferences` on first contact — exports are straightforward operations. If preferences exist, use them as new defaults (CLI flags still override). If not, use the built-in defaults above.
+
 ## Process
 
 ### Step 1 — Validate Input

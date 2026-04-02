@@ -41,6 +41,31 @@ If the invocation is ambiguous or the argument is unrecognizable, ask the user t
 
 ## Phase 1: Preparation
 
+### 1.0 Load User Preferences
+
+Read `shared/skill-context.md` for the full protocol. In brief:
+
+1. Read `.claude/skill-context/preferences.md`.
+   - If missing: invoke `/preferences` (streamlined mode — core questions only, then return here).
+   - If found: load preferences.
+2. Read `.claude/skill-context/explain.md` (if it exists) for explain-specific preferences.
+
+**How preferences shape this skill:**
+
+| Preference | Effect on Explain |
+|---|---|
+| Detail level: concise | Shorter TL;DR, fewer inline examples, top-level findings only |
+| Detail level: detailed | Expanded sections, more code references, richer context |
+| Style: analogy-heavy | Subagents use real-world parallels when describing architecture and flows |
+| Style: visual-with-diagrams | More ASCII diagrams, expanded dependency graphs, flow charts for every workflow |
+| Style: example-driven | Subagents include concrete usage examples alongside descriptions |
+| Assumed knowledge: beginner | Define domain terms, explain framework conventions, expand the glossary |
+| Assumed knowledge: expert | Skip obvious patterns, focus on non-obvious design decisions and gotchas |
+| Explain-specific: top-down | Structure agent starts with highest-level modules, drills down |
+| Explain-specific: bottom-up | Structure agent starts with leaf files, builds up to the big picture |
+
+Pass the relevant subset of preferences to each subagent prompt in Phase 2 (append after the Guiding Principles block). Subagents receive only the preferences that affect their lens — don't dump the entire file into every prompt.
+
 ### 1.1 Language Detection
 
 Infer the primary language from file extensions in scope:
@@ -103,6 +128,7 @@ Each subagent receives a prompt containing:
 - The resolved scope (what to analyze)
 - The file list (for non-project scopes)
 - The full Guiding Principles block (see below) — prepend it to every subagent prompt before dispatch
+- **User preferences** (loaded in Phase 1.0) — append the relevant subset after the Guiding Principles. Format as a `## User Preferences` section with only the fields that affect that subagent's lens. For example, Agent 1 (Structure) gets explanation style and detail level; Agent 5 (Health) gets experience level and project phase.
 
 ### Guiding Principles (included in every subagent prompt)
 

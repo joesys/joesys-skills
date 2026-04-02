@@ -50,6 +50,29 @@ If the invocation is ambiguous or unrecognizable, ask the user to clarify before
 
 ---
 
+## Phase 0: Load User Preferences
+
+Read `shared/skill-context.md` for the full protocol. In brief:
+
+1. Read `.claude/skill-context/preferences.md` — if missing, invoke `/preferences` (streamlined).
+2. Read `.claude/skill-context/devlog.md` (if it exists) for devlog-specific preferences.
+
+**How preferences shape this skill:**
+
+| Preference | Effect on Devlog |
+|---|---|
+| Tone: casual | Conversational voice, contractions, first-person narrative |
+| Tone: professional | Clean prose, structured sections, polished for publication |
+| Assumed knowledge: beginner | More context on technical concepts, define jargon |
+| Devlog-specific: target audience | Shapes the drafting voice and assumed reader background |
+| Devlog-specific: writing tone | Override the shared tone preference for devlog specifically |
+
+Pass the audience and tone preferences to all gathering agents and the drafting phase.
+
+**For `--from-context` scraps:** Still load preferences (they affect the scrap's tone and framing) but skip the interview if no preferences exist — scraps are quick captures, not the moment to start a preferences interview.
+
+---
+
 ## Phase 1: Session & Timeframe Resolution
 
 **If `--from-context` is set, skip this entire phase** — there are no gathering agents to configure. Proceed directly to Phase 2's fast path.
