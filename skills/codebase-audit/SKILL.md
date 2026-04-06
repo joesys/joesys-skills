@@ -1,12 +1,12 @@
 ---
 name: codebase-audit
 version: "1.0.0"
-description: "Use when the user invokes /codebase-audit to run a language-agnostic codebase quality audit measuring up to 11 quality criteria + development velocity with industry benchmarks, grading, and actionable recommendations."
+description: "Use when the user invokes /codebase-audit to run a language-agnostic codebase quality audit measuring up to 12 quality criteria + development velocity with industry benchmarks, grading, and actionable recommendations."
 ---
 
 # Codebase Audit Skill
 
-Run a comprehensive, language-agnostic codebase quality audit. Measures up to 11 core quality criteria + development velocity across 6 parallel collection agents, displays graded metrics on console, and optionally writes a full analysis report with industry benchmarks and actionable recommendations.
+Run a comprehensive, language-agnostic codebase quality audit. Measures up to 12 core quality criteria + development velocity across 6 parallel collection agents, displays graded metrics on console, and optionally writes a full analysis report with industry benchmarks and actionable recommendations.
 
 ## Reference Files
 
@@ -24,7 +24,7 @@ Parse the user's `/codebase-audit` arguments:
 
 | Invocation | Mode |
 |---|---|
-| `/codebase-audit` | Full pipeline (all 11 criteria + velocity) |
+| `/codebase-audit` | Full pipeline (all 12 criteria + velocity) |
 | `/codebase-audit metrics` | Collect + display only, write metrics.json + metrics.md |
 | `/codebase-audit analysis` | Re-analyze from most recent metrics.json |
 | `/codebase-audit delta` | Compare two most recent audits |
@@ -35,7 +35,7 @@ Parse the user's `/codebase-audit` arguments:
 ### Parsing Rules
 
 - **Reserved phase words:** `metrics`, `analysis`, `delta`
-- **Everything else:** Treated as criterion names, validated against the 12 valid names
+- **Everything else:** Treated as criterion names, validated against the 13 valid names
 - **Flags:** `--static-only` — skip all live commands
 - **Invalid names:** Print error listing valid options, stop
 
@@ -54,7 +54,8 @@ Parse the user's `/codebase-audit` arguments:
 | `consistency` | 9. Consistency | Core |
 | `operability` | 10. Operability | Core |
 | `security` | 11. Security | Core |
-| `velocity` | 12. Development Velocity | Extended |
+| `story-readability` | 12. Story Readability | Core |
+| `velocity` | 13. Development Velocity | Extended |
 
 ---
 
@@ -128,6 +129,7 @@ For scoped criteria, launch only the required agents:
 | Consistency | Quality, Architecture |
 | Operability | Architecture, Structural |
 | Security | Architecture, Quality |
+| Story Readability | Structural, Quality |
 | Velocity | Git/Velocity |
 
 ### Live Command Safety Gate
@@ -218,8 +220,9 @@ Print a summary table directly in the conversation:
 ║   1 Maintainability    B    CC avg: 8.2        ≤ 10        ║
 ║   2 Evolvability       B+   Fan-out avg: 3.1   ≤ 5         ║
 ║  ...                                                       ║
+║  12 Story Readability  B+   Narr: 8, Chunk: 6 ≥ 7 avg     ║
 ║  ── ──────────────── ────── ────────────────── ─────────── ║
-║  12 Velocity           —    +2.1k lines/30d    —           ║
+║  13 Velocity           —    +2.1k lines/30d    —           ║
 ╠══════════════════════════════════════════════════════════════╣
 ║  Top Risk: {criterion} ({grade}) — {reason}                ║
 ║  Top Strength: {criterion} ({grade}) — {reason}            ║
@@ -320,7 +323,7 @@ The author receives: assembled metrics JSON, project context, user context, risk
 
 ### Dynamic Criteria Weighting
 
-The author assigns a **priority rank** (1-11) and **weight** (High/Medium/Low) to each criterion based on language + domain expertise. This affects priority order, overall grade, analysis depth, and recommended actions. Users can override via `criteria_priority` in `audit.yaml`.
+The author assigns a **priority rank** (1-12) and **weight** (High/Medium/Low) to each criterion based on language + domain expertise. This affects priority order, overall grade, analysis depth, and recommended actions. Users can override via `criteria_priority` in `audit.yaml`.
 
 ---
 
