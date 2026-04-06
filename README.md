@@ -99,6 +99,21 @@ Dispatch 6 parallel domain-expert subagents to analyze code for violations acros
 /code-review --min-severity P1        # Only show P1+ findings (combinable with any mode)
 ```
 
+### quick-review
+
+Fast, bug-focused code review that dispatches correctness and security subagents alongside a cross-model reviewer (Codex and Claude) in parallel. Reports only P0–P2 findings — no style nits, no architecture suggestions. Uses `git diff -U50` for context rather than loading full files, making it significantly faster than `/code-review`.
+
+#### Usage
+
+```
+/quick-review                              # Review current branch diff vs. base
+/quick-review src/utils/                   # Scan all files in a directory
+/quick-review --file src/main.py           # Review a single file
+/quick-review --pr 123                     # Review files changed in a GitHub PR
+/quick-review --commit abc123              # Review files changed in a specific commit
+/quick-review --include-gemini             # Add Gemini as a third reviewer model
+```
+
 ### explain
 
 Dispatch 5 parallel domain-lens subagents to analyze a codebase across structure, behavior, domain & data, external dependencies, and health & risk. Produces a layered report from TL;DR to deep understanding with an orientation cheat sheet and fastest-path-to-competence recommendations. Supports whole projects, directories, single files, symbols, and natural language feature traces.
@@ -125,6 +140,31 @@ Dispatch 5 parallel domain-lens subagents to analyze a codebase across structure
 /explain src/api/ --save --path docs/     # Explain directory, save to custom path
 ```
 
+### codebase-audit
+
+Comprehensive, language-agnostic codebase quality audit measuring up to 11 core quality criteria plus development velocity. Spawns 6 parallel collection agents, displays graded metrics (A+ through F) in a console summary table, and optionally writes a full analysis report with industry benchmarks and actionable recommendations.
+
+#### Quality Criteria
+
+| Category | Criteria |
+|---|---|
+| Code Quality | Maintainability, Readability, Consistency |
+| Architecture | Modularity, Evolvability, Reliability |
+| Engineering | Correctness, Testability, Performance |
+| Operations | Operability, Security |
+| Velocity | Development velocity (commits, churn, throughput) |
+
+#### Usage
+
+```
+/codebase-audit                            # Full pipeline (all 11 criteria + velocity)
+/codebase-audit metrics                    # Collect and display only
+/codebase-audit analysis                   # Re-analyze from most recent metrics
+/codebase-audit delta                      # Compare two most recent audits
+/codebase-audit maintainability performance # Only specified criteria
+/codebase-audit --static-only             # No live commands (no test run, no dep audit)
+```
+
 ### devlog
 
 Capture development insights and turn them into devlog posts for budding programmers. Mines git history, Claude Code conversation transcripts, and content scraps to reconstruct your thinking, then brainstorms with you to find the real insight before drafting. Supports quick content scraps for when you're in the flow.
@@ -146,6 +186,60 @@ Capture development insights and turn them into devlog posts for budding program
 /devlog scrap "signing workaround"           # Quick-capture a scrap
 /devlog scrap                                # Auto-detect and capture a scrap
 /devlog list                                 # Show scraps and published posts
+```
+
+### retrospective
+
+Structured retrospective facilitated by AI, interleaved with human check-ins at every phase. Dispatches 5 parallel channel agents — each mining a different data source (git history, conversations, code quality, planning docs, tests) — to build a comprehensive digest. Derives discussion topics from the data, walks through them with the human, and produces action items, process improvements, and a readable narrative.
+
+#### Channels
+
+| Channel | Data Source |
+|---|---|
+| Git History | Commits, diffs, merge patterns, contributor activity |
+| Conversations | Claude Code conversation transcripts and decisions |
+| Code Quality | Quality deltas, complexity trends, debt movement |
+| Planning vs. Reality | Plan documents compared against actual implementation |
+| Testing & Reliability | Test coverage changes, failure patterns, flaky tests |
+
+#### Usage
+
+```
+/retrospective                             # Chain mode (default), from last retro to now
+/retrospective --since 2026-03-15          # From a specific date
+/retrospective --since v1.0                # From a git tag
+/retrospective --since v1.0..v1.1          # Between two tags
+/retrospective --output docs/sprints/3/    # Custom output directory
+/retrospective continue                    # Resume an interrupted retro
+```
+
+### export
+
+Convert markdown, text, and code files into polished, shareable formats. Supports PDF, HTML, and PNG output with three content scopes (full, summary, 1pager) and three CSS themes (minimal, modern, dark). Uses Pandoc with LuaLaTeX for PDF and headless Chromium for PNG.
+
+#### Usage
+
+```
+/export report.md                          # Full file to PDF (default)
+/export report.md --format png --theme dark   # Full PNG with dark theme
+/export report.md --scope summary --format all # Summary in all 3 formats
+/export utils.py --format html --theme dark   # Syntax-highlighted code export
+/export report.md --scope 1pager           # Condensed ~500-600 word version
+/export report.md --orientation landscape  # Landscape layout
+/export report.md --output ./out/          # Custom output path
+```
+
+### preferences
+
+Capture and manage per-user preferences that shape how every skill in the collection behaves. Can be invoked directly or automatically by other skills on first contact. Covers communication style, explanation depth, experience level, and project context.
+
+#### Usage
+
+```
+/preferences                               # Interactive setup
+/preferences show                          # Display current preferences
+/preferences reset                         # Clear all and start fresh
+/preferences code-review                   # Set preferences for a specific skill
 ```
 
 ### commit
