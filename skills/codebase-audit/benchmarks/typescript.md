@@ -40,6 +40,14 @@ TypeScript-specific quality thresholds.
 | npm audit clean | 0 high/critical | Required | npm audit [^8] |
 | Lock file present | package-lock.json or pnpm-lock.yaml | Required | npm documentation [^8] |
 
+## Story Readability
+
+| Metric | Threshold | Rating | Source |
+|---|---|---|---|
+| Weighted story score | ≥ 88 | Good (A) | Calibrated to shared/story-readability.md |
+| Weighted story score | ≥ 72 | Acceptable (B) | Calibrated to shared/story-readability.md |
+| Explicit type annotation (over `any`) | ≥ 90% | Good | TypeScript best practices |
+
 ## References
 
 [^1]: ESLint, "Rules Reference," eslint.org/docs/latest/rules/

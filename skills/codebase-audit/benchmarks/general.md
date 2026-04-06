@@ -51,6 +51,15 @@ Cross-language industry benchmarks used as fallback when no language-specific da
 | Commit frequency | ≥1/day (active project) | DORA metrics [^9] |
 | Bus factor | ≥2 per module | Best practice [^10] |
 
+## Story Readability
+
+| Metric | Threshold | Rating | Source |
+|---|---|---|---|
+| Weighted story score (8 dimensions) | ≥ 88 | Good (A) | Calibrated to shared/story-readability.md |
+| Weighted story score (8 dimensions) | ≥ 72 | Acceptable (B) | Calibrated to shared/story-readability.md |
+| Average function length (narrative proxy) | ≤ 20 lines | Good | Clean Code, Robert C. Martin [^3] |
+| Max nesting depth (structural clarity proxy) | ≤ 3 | Good | Linux kernel coding standard [^5] |
+
 ## References
 
 [^1]: Carnegie Mellon SEI, "A Complexity Measure," Thomas J. McCabe, IEEE Trans. Software Engineering, 1976
