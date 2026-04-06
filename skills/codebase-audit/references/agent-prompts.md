@@ -470,9 +470,15 @@ You are writing a comprehensive codebase quality audit report.
 5. **Previous Audit:** {PREVIOUS_METRICS_JSON_OR_NULL}
 
 ## Principle Files
-Read ALL 11 principle files from `skills/codebase-audit/principles/`:
+Read ALL 12 principle files from `skills/codebase-audit/principles/`:
 maintainability.md, evolvability.md, correctness.md, testability.md, reliability.md,
-performance.md, readability.md, modularity.md, consistency.md, operability.md, security.md
+performance.md, readability.md, modularity.md, consistency.md, operability.md, security.md,
+story-readability.md
+
+For Story Readability, also read `shared/story-readability.md` for the full dimension
+definitions, calibration examples, and scoring protocol. The principle file at
+`skills/codebase-audit/principles/story-readability.md` provides audit-specific guidance
+including the quantitative floor constraints and grading rubric.
 
 ## Benchmark Files
 Read: `skills/codebase-audit/benchmarks/{language}.md` and `skills/codebase-audit/benchmarks/general.md`
@@ -482,7 +488,13 @@ Read: `skills/codebase-audit/templates/analysis-template.md` — follow this str
 
 ## Instructions
 
-1. **Assign priority ranks and weights** to all 11 criteria based on your language + domain expertise. Show your reasoning in the "Criteria Priority Rationale" section.
+1. **Assign priority ranks and weights** to all 12 criteria based on your language + domain expertise. Show your reasoning in the "Criteria Priority Rationale" section.
+
+   **Story Readability scoring:** This criterion uses hybrid scoring:
+   - Use quantitative metrics from the Structural and Quality agents as a floor (see `principles/story-readability.md` § Quantitative floor)
+   - Sample 5-10 representative files and score each of the 8 dimensions using the calibration examples in `shared/story-readability.md`
+   - Compute the weighted average across sampled files
+   - Report confidence as `medium` by default (qualitative-heavy). Only `high` if quantitative metrics strongly corroborate the qualitative assessment.
 
 2. **Write the full analysis report** following the template structure. For each criterion:
    - Grade it using the principle file's rubric + benchmark data

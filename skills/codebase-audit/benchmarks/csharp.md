@@ -30,6 +30,14 @@ C#-specific quality thresholds aligned with .NET ecosystem standards.
 |---|---|---|---|
 | dotnet audit clean | 0 vulnerabilities | Required | dotnet list package --vulnerable [^4] |
 
+## Story Readability
+
+| Metric | Threshold | Rating | Source |
+|---|---|---|---|
+| Weighted story score | ≥ 88 | Good (A) | Calibrated to shared/story-readability.md |
+| Weighted story score | ≥ 72 | Acceptable (B) | Calibrated to shared/story-readability.md |
+| LINQ readability (no nested queries) | ≤ 1 level | Good | .NET coding conventions |
+
 ## References
 
 [^1]: NDepend, "Code Quality Metrics," ndepend.com

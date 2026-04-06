@@ -33,6 +33,14 @@ Go-specific quality thresholds. Go's error handling idiom affects complexity bas
 | govulncheck clean | 0 vulnerabilities | Required | govulncheck [^6] |
 | go.sum present | Present | Required | Go modules [^5] |
 
+## Story Readability
+
+| Metric | Threshold | Rating | Source |
+|---|---|---|---|
+| Weighted story score | ≥ 88 | Good (A) | Calibrated to shared/story-readability.md |
+| Weighted story score | ≥ 72 | Acceptable (B) | Calibrated to shared/story-readability.md |
+| Exported function GoDoc coverage | 100% | Good | Effective Go |
+
 ## References
 
 [^1]: Go idiomatic error handling adds ~3 CC per function via `if err != nil` patterns

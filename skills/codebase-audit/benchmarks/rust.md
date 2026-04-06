@@ -31,6 +31,14 @@ Rust-specific quality thresholds. Rust's ownership model and type system shift s
 | cargo audit clean | 0 vulnerabilities | Required | cargo-audit [^5] |
 | Cargo.lock committed (binaries) | Present for binaries | Required | Cargo docs [^4] |
 
+## Story Readability
+
+| Metric | Threshold | Rating | Source |
+|---|---|---|---|
+| Weighted story score | ≥ 88 | Good (A) | Calibrated to shared/story-readability.md |
+| Weighted story score | ≥ 72 | Acceptable (B) | Calibrated to shared/story-readability.md |
+| `?` operator usage (over manual match) | Preferred | Good | Rust API Guidelines |
+
 ## References
 
 [^1]: Rust compiler design — pattern matching and error handling inflate CC without indicating poor quality

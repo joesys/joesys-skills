@@ -33,6 +33,14 @@ GDScript-specific quality thresholds for Godot Engine projects.
 | Test framework | gdUnit4 or GUT | Standard | Godot community [^4] |
 | Test-to-source ratio | ≥0.3 | Acceptable | Adjusted for game development [^4] |
 
+## Story Readability
+
+| Metric | Threshold | Rating | Source |
+|---|---|---|---|
+| Weighted story score | ≥ 88 | Good (A) | Calibrated to shared/story-readability.md |
+| Weighted story score | ≥ 72 | Acceptable (B) | Calibrated to shared/story-readability.md |
+| Signal naming clarity | verb_noun pattern | Good | Godot style guide |
+
 ## References
 
 [^1]: Carnegie Mellon SEI — adapted general benchmarks

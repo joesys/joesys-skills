@@ -6,7 +6,7 @@ description: "Use when the user invokes /code-review to analyze code for correct
 
 # Code Review Skill
 
-Dispatch 6 parallel analysis subagents — each a domain expert (correctness, clean code, architecture, reliability, security, performance) — against the target code. Collect their findings, deduplicate overlapping violations, and synthesize a severity-grouped report with concrete before/after fixes in the target language.
+Dispatch 7 parallel analysis subagents — each a domain expert (correctness, clean code, architecture, reliability, security, performance, story readability) — against the target code. Collect their findings, deduplicate overlapping violations, and synthesize a severity-grouped report with concrete before/after fixes in the target language.
 
 ## Invocation
 
@@ -70,8 +70,8 @@ Read `shared/review-common.md` § File Gathering.
 
 If the file list exceeds **30 files**, batch them into groups of roughly equal size (aim for 10-15 files per batch). Each subagent receives the same batch assignments so analysis stays consistent across domains. Process batches sequentially:
 
-1. Dispatch 6 parallel subagents for batch 1, collect results
-2. Dispatch 6 parallel subagents for batch 2, collect results
+1. Dispatch 7 parallel subagents for batch 1, collect results
+2. Dispatch 7 parallel subagents for batch 2, collect results
 3. Continue until all batches are processed
 4. Synthesize all batch results together in Phase 3
 
@@ -96,7 +96,7 @@ Then continue with code-review-specific steps:
 
 ## Phase 2: Parallel Analysis
 
-Dispatch **6 subagents simultaneously** via the Agent tool — all 6 in a single response (6 parallel Agent tool calls). Each subagent is a domain expert that analyzes the code against one principle set.
+Dispatch **7 subagents simultaneously** via the Agent tool — all 7 in a single response (7 parallel Agent tool calls). Each subagent is a domain expert that analyzes the code against one principle set.
 
 ### Subagent Roster
 
@@ -108,6 +108,7 @@ Dispatch **6 subagents simultaneously** via the Agent tool — all 6 in a single
 | 4 | Security | `principles/security.md` |
 | 5 | Performance | `principles/performance.md` |
 | 6 | Correctness | `principles/correctness.md` |
+| 7 | Story Readability | `shared/story-readability.md` |
 
 ### Subagent Prompt Template
 
@@ -157,6 +158,16 @@ For each violation:
 
 Always spawn subagents with `model: "opus"` to ensure high-quality analysis.
 
+#### Story Readability Subagent Adjustments
+
+The Story Readability subagent (domain 7) uses the same prompt template as the other 6, with two adjustments:
+
+1. **Additional output:** In addition to the standard violation format, the Story Readability subagent outputs per-dimension scores (1–10) for each file reviewed. These scores follow the scoring protocol defined in `shared/story-readability.md`.
+2. **Severity calibration:** Story readability findings naturally cluster at P2–P4. The subagent does not artificially inflate severity — narrative concerns are maintainability issues, not critical bugs. Typical mapping:
+   - P2: Functions that actively mislead (e.g., a function named `validate` that also mutates state)
+   - P3: Functions that don't read as stories but aren't misleading (e.g., missing cognitive chunking, mixed abstraction levels)
+   - P4: Minor narrative polish (e.g., paragraph spacing, slight naming improvements)
+
 ### Subagent Output Format
 
 Each subagent returns zero or more findings in this structure:
@@ -175,7 +186,7 @@ Severity levels are defined in `shared/review-common.md` § Severity Scale (P0 c
 
 ### Cross-Model Dispatch
 
-In addition to the 6 domain subagents, dispatch a cross-model review request in the **same parallel batch** — all 7 invocations (6 subagents + 1 cross-model CLI) launch simultaneously in a single response.
+In addition to the 7 domain subagents, dispatch a cross-model review request in the **same parallel batch** — all 8 invocations (7 subagents + 1 cross-model CLI) launch simultaneously in a single response.
 
 #### Dispatch Protocol
 
@@ -221,7 +232,7 @@ PROMPT_EOF
 
 Dispatch using the CLI command templates from `shared/cross-model-dispatch.md`, substituting `$PROMPT_FILE` for the temp file path and `"code-review-cross"` for the `--name` flag on Claude CLI. Use 600000ms timeout. Clean up: `rm -f "$PROMPT_FILE"` after completion.
 
-The cross-model reviewer receives the **same full file content and diff** that the 6 domain subagents receive — not the reduced context used in quick-review. When files are batched (Phase 1.4), the cross-model dispatch is included in each batch alongside the 6 subagents.
+The cross-model reviewer receives the **same full file content and diff** that the 7 domain subagents receive — not the reduced context used in quick-review. When files are batched (Phase 1.4), the cross-model dispatch is included in each batch alongside the 7 subagents.
 
 #### --include-gemini
 
@@ -229,7 +240,7 @@ When `--include-gemini` is specified, launch an additional parallel dispatch to 
 
 #### Failure Handling
 
-If cross-model dispatch fails, the review continues with the 6 domain subagents only. Note in the report header: "Cross-model review unavailable; results are from domain subagents only."
+If cross-model dispatch fails, the review continues with the 7 domain subagents only. Note in the report header: "Cross-model review unavailable; results are from domain subagents only."
 
 ---
 
@@ -237,7 +248,7 @@ If cross-model dispatch fails, the review continues with the 6 domain subagents 
 
 ### 3.1 Collect Results
 
-Gather all findings from the 6 domain subagents and the cross-model dispatch. If any subagent or the cross-model reviewer failed, note which source was unavailable and proceed with the remaining results.
+Gather all findings from the 7 domain subagents and the cross-model dispatch. If any subagent or the cross-model reviewer failed, note which source was unavailable and proceed with the remaining results.
 
 ### 3.2 Deduplicate
 
@@ -251,6 +262,9 @@ Deduplication heuristics:
 - Same file + overlapping line range (within 3 lines) = likely duplicate
 - Same file + same code pattern but different principle = merge if the fix is identical, keep separate if fixes differ
 - Different files + same pattern = not duplicates (each gets its own finding)
+
+**Clean Code / Story Readability overlap:**
+When the Clean Code subagent and Story Readability subagent flag the same location (e.g., both flag a SLAP violation or naming issue), merge them into a single finding. Keep the Story Readability framing (richer narrative context) and credit both domains: "Flagged by: Clean Code, Story Readability."
 
 ### Tool-AI Finding Merge
 
@@ -400,5 +414,5 @@ Additional code-review-specific errors:
 | One or more subagents fail | Continue with remaining results; note which domain was not analyzed in the report header. |
 | All subagents fail | Report the failure: "Analysis failed — could not complete any domain review. Please try again." |
 | All tools declined in gate | Review proceeds without tool findings — AI analysis only |
-| Cross-model dispatch fails | Continue with 6 domain subagents; note "Cross-model unavailable" in report header. |
+| Cross-model dispatch fails | Continue with 7 domain subagents; note "Cross-model unavailable" in report header. |
 | `--include-gemini` but Gemini CLI not found | Warn and continue without Gemini. |

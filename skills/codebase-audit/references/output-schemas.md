@@ -125,6 +125,7 @@ Date-stamped directories. If today's directory exists, append suffix: `YYYYMMDD-
 - `by_language` inside metric objects is present only for polyglot repos. For single-language repos, omit it.
 - `audit_scope` captures what was measured and how — used for delta comparability checks.
 - After Phase 4 completes: **rewrite metrics.json and metrics.md** with final ranks, weights, and adjusted overall grade.
+- `story_readability` criterion uses dimension-specific metrics: `narrative_flow`, `naming_as_intent`, `cognitive_chunking`, `abstraction_consistency`, `function_focus`, `structural_clarity`, `documentation_quality`, `no_clever_tricks` — each with `value` (1-10), `weight` (percentage), and `assessment`. The `weighted_score` field holds the composite 0-100 score.
 
 ---
 

@@ -39,6 +39,14 @@ JavaScript-specific quality thresholds. Shares many metrics with TypeScript but 
 | ESLint configured | .eslintrc or eslint.config present | Expected | Airbnb style guide [^4] |
 | `"use strict"` or ESM | Module system defined | Expected | Node.js best practice [^7] |
 
+## Story Readability
+
+| Metric | Threshold | Rating | Source |
+|---|---|---|---|
+| Weighted story score | ≥ 88 | Good (A) | Calibrated to shared/story-readability.md |
+| Weighted story score | ≥ 72 | Acceptable (B) | Calibrated to shared/story-readability.md |
+| Class syntax (over prototype chains) | Preferred | Good | MDN best practices |
+
 ## References
 
 [^1]: ESLint, "Rules Reference," eslint.org/docs/latest/rules/

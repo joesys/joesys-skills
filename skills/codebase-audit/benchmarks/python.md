@@ -42,6 +42,15 @@ Python-specific quality thresholds. These override general benchmarks where they
 | pip-audit clean | 0 vulnerabilities | Required | pip-audit / safety [^9] |
 | Lock file present | poetry.lock or requirements.txt pinned | Good | PEP 665 [^10] |
 
+## Story Readability
+
+| Metric | Threshold | Rating | Source |
+|---|---|---|---|
+| Weighted story score | ≥ 88 | Good (A) | Calibrated to shared/story-readability.md |
+| Weighted story score | ≥ 72 | Acceptable (B) | Calibrated to shared/story-readability.md |
+| Average function length | ≤ 20 lines | Good | PEP 8 consensus [^2] |
+| Nested comprehension usage | ≤ 1 level | Good | PEP 8 consensus [^2] |
+
 ## References
 
 [^1]: Radon, "Cyclomatic Complexity," radon.readthedocs.io

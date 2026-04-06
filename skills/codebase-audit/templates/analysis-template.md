@@ -29,6 +29,7 @@ Based on analysis as a senior {LANGUAGE} engineer specializing in {DOMAIN}:
 | #2 | {Criterion} | High | {Rationale} |
 | ... | ... | ... | ... |
 | #11 | {Criterion} | Low | {Rationale} |
+| #12 | {Criterion} | Low | {Rationale} |
 
 ---
 
