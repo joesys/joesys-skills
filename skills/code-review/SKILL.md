@@ -6,7 +6,7 @@ description: "Use when the user invokes /code-review to analyze code for correct
 
 # Code Review Skill
 
-Dispatch 6 parallel analysis subagents — each a domain expert (correctness, clean code, architecture, reliability, security, performance) — against the target code. Collect their findings, deduplicate overlapping violations, and synthesize a severity-grouped report with concrete before/after fixes in the target language.
+Dispatch 7 parallel analysis subagents — each a domain expert (correctness, clean code, architecture, reliability, security, performance, story readability) — against the target code. Collect their findings, deduplicate overlapping violations, and synthesize a severity-grouped report with concrete before/after fixes in the target language.
 
 ## Invocation
 
@@ -70,8 +70,8 @@ Read `shared/review-common.md` § File Gathering.
 
 If the file list exceeds **30 files**, batch them into groups of roughly equal size (aim for 10-15 files per batch). Each subagent receives the same batch assignments so analysis stays consistent across domains. Process batches sequentially:
 
-1. Dispatch 6 parallel subagents for batch 1, collect results
-2. Dispatch 6 parallel subagents for batch 2, collect results
+1. Dispatch 7 parallel subagents for batch 1, collect results
+2. Dispatch 7 parallel subagents for batch 2, collect results
 3. Continue until all batches are processed
 4. Synthesize all batch results together in Phase 3
 
@@ -232,7 +232,7 @@ PROMPT_EOF
 
 Dispatch using the CLI command templates from `shared/cross-model-dispatch.md`, substituting `$PROMPT_FILE` for the temp file path and `"code-review-cross"` for the `--name` flag on Claude CLI. Use 600000ms timeout. Clean up: `rm -f "$PROMPT_FILE"` after completion.
 
-The cross-model reviewer receives the **same full file content and diff** that the 6 domain subagents receive — not the reduced context used in quick-review. When files are batched (Phase 1.4), the cross-model dispatch is included in each batch alongside the 6 subagents.
+The cross-model reviewer receives the **same full file content and diff** that the 7 domain subagents receive — not the reduced context used in quick-review. When files are batched (Phase 1.4), the cross-model dispatch is included in each batch alongside the 7 subagents.
 
 #### --include-gemini
 
@@ -248,7 +248,7 @@ If cross-model dispatch fails, the review continues with the 7 domain subagents 
 
 ### 3.1 Collect Results
 
-Gather all findings from the 6 domain subagents and the cross-model dispatch. If any subagent or the cross-model reviewer failed, note which source was unavailable and proceed with the remaining results.
+Gather all findings from the 7 domain subagents and the cross-model dispatch. If any subagent or the cross-model reviewer failed, note which source was unavailable and proceed with the remaining results.
 
 ### 3.2 Deduplicate
 
@@ -414,5 +414,5 @@ Additional code-review-specific errors:
 | One or more subagents fail | Continue with remaining results; note which domain was not analyzed in the report header. |
 | All subagents fail | Report the failure: "Analysis failed — could not complete any domain review. Please try again." |
 | All tools declined in gate | Review proceeds without tool findings — AI analysis only |
-| Cross-model dispatch fails | Continue with 6 domain subagents; note "Cross-model unavailable" in report header. |
+| Cross-model dispatch fails | Continue with 7 domain subagents; note "Cross-model unavailable" in report header. |
 | `--include-gemini` but Gemini CLI not found | Warn and continue without Gemini. |
