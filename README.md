@@ -259,6 +259,28 @@ Structured git commits following Conventional Commits with a three-part body (in
 /commit
 ```
 
+#### ss
+
+Visual communication bridge — grab recent screenshots, analyze them, and act. Supports natural language actions: explain (`huh`), fix errors (`fix`), learn and adapt (`do this`), or any freeform request. Intelligently suggests sibling skills when they fit. Configures the screenshot folder on first run and remembers it across projects.
+
+| Action | Behavior |
+|---|---|
+| *(none)* | Analyze and guess intent from conversation context |
+| `huh` | Explain what's in the screenshot |
+| `fix` | Identify and fix the error shown |
+| `do this` | Learn from the screenshot and adapt |
+| *(freeform)* | Natural language — "make infographic", "review this", etc. |
+
+```
+/ss                                        # Grab latest screenshot, analyze + guess intent
+/ss huh                                    # Explain what's in the latest screenshot
+/ss fix                                    # Identify error in screenshot, fix the code
+/ss 3                                      # Grab 3 latest, analyze all
+/ss 2 fix                                  # Grab 2 latest, cross-reference errors, fix
+/ss do this                                # Learn from screenshot, adapt for your project
+/ss 3 make infographic plz                 # Grab 3 latest, create unified infographic
+```
+
 ## Adding More Skills
 
 Add new skills under `skills/<skill-name>/` following the same structure:
