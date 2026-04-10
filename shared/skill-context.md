@@ -24,6 +24,7 @@ This directory is per-user (each collaborator may have their own via
 ├── codebase-audit.md       # Skill-specific preferences
 ├── explain.md              # Skill-specific preferences
 ├── code-review.md          # Skill-specific preferences (also used by quick-review)
+├── ss.md                   # Skill-specific preferences
 └── ...                     # One file per skill that needs customization
 ```
 
@@ -96,7 +97,7 @@ into three categories for how they handle missing preferences:
 - **Full interview** (explain, code-review, quick-review, codebase-audit,
   devlog, retrospective, ai-council): Invoke `/preferences` if no shared
   preferences exist.
-- **Silent defaults** (commit, export): Load preferences if they exist,
+- **Silent defaults** (commit, export, ss): Load preferences if they exist,
   use sensible defaults if not. Never interrupt the workflow with an
   interview — these are fast, transactional operations.
 - **Minimal load** (claude, codex, gemini): Load preferences if they exist
