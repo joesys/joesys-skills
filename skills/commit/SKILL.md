@@ -1,6 +1,6 @@
 ---
 name: commit
-version: "1.0.0"
+version: "1.1.0"
 description: "Create a git commit following Conventional Commits with a structured body format (intent paragraph, changes changelog, AI review). Uses OneFlow Option 3 (rebase + merge --no-ff) for decomposed multi-commit changesets."
 ---
 
@@ -9,6 +9,20 @@ description: "Create a git commit following Conventional Commits with a structur
 ## Purpose
 
 Create git commits with consistent, well-structured commit messages following Conventional Commits and a structured body format. When a changeset decomposes into multiple commits, use a temporary branch merged with `--no-ff` (OneFlow Option 3) to preserve a clean, linear history with visible logical groupings.
+
+## Never `git push` Without Express Authorization
+
+**Absolute rule:** Do NOT run `git push` in any form — normal, `--force`, `--force-with-lease`, tag push, branch push — unless the user's **current-turn** message contains a direct, unambiguous instruction to push **this specific push**. This rule overrides every other instruction in this skill.
+
+**Plan approval ≠ push approval.** If a plan or prior turn listed a push as a step and the user said "proceed" / "go ahead" / "do it" / "yes" to that plan, that is **NOT** push authorization. Those words authorize non-push work only. At the push step: STOP, present the exact `git push …` command, ask `"push to origin? yes/no"`, and wait for a push-specific answer.
+
+**Express orders that DO authorize a push:** "push it", "push now", "push to origin", "send it", "publish", or equivalent current-turn directive naming the push action.
+
+**Auto mode does NOT relax this rule. Solo-developer branches do NOT relax this rule. A rewrite that "needs" a force push does NOT relax this rule** — the need for the push is a reason to ask, not a reason to proceed.
+
+If unsure whether something counts as an express order, assume it does **NOT**. Ask.
+
+**Incident of record:** 2026-04-20 — a force-push landed during auto-mode execution before the user could intervene. The user's stated expectation: *"I DON'T WANT THIS TO EVER HAPPENED AGAIN."* This rule exists to prevent a recurrence.
 
 ## User Preferences
 
@@ -96,7 +110,7 @@ A feature branch is used in two scenarios:
 4. *(Optional)* Clean up the commit sequence if needed (squash fixups, reorder)
 5. Merge back into the **parent branch** with `--no-ff` to create a merge commit
 6. Delete the temporary branch
-7. Force push if the rewrite affected already-pushed commits
+7. If the rewrite affected already-pushed commits, a force push will be needed — **do NOT push automatically**. STOP and follow the "Never `git push` Without Express Authorization" rule above: present the command, ask, wait for a push-specific answer.
 
 **Cascading merge rule:** Always merge back into the branch you branched off from — never skip levels. If you're on `feat/auth` and create `feat/auth-tests`, merge back into `feat/auth`, not `main`. This keeps the history cascading cleanly: each branch merges into its parent.
 
@@ -396,13 +410,19 @@ EOF
 git merge <type>/<short-description>
 ```
 
-**C8.** If the branch has a remote upstream, force push to update the remote (retroactive grouping rewrites history):
+**C8.** **DO NOT push automatically.** Retroactive grouping rewrites history, so if the branch has a remote upstream, a force push will be required to sync the remote — but per the "Never `git push` Without Express Authorization" rule at the top of this skill, **plan-level approval from earlier in the session is NOT push authorization**. Stop here and present the situation to the user:
 
-```bash
-git push --force-with-lease
-```
+> Retroactive grouping rewrote history on `<parent-branch>`. The remote is now out of sync with local. To update the remote, a force push is required:
+>
+> ```bash
+> git push --force-with-lease
+> ```
+>
+> Push to origin? (yes/no)
 
-Skip this step if the branch has no remote tracking (e.g., purely local work with no upstream set).
+Wait for a push-specific answer in the current turn. "Yes to the plan" from earlier does NOT count. If the user declines or does not respond with an express push authorization, leave the remote out of sync and continue to C9 — the user can push later when ready.
+
+Skip this step entirely (no ask needed) if the branch has no remote tracking (e.g., purely local work with no upstream set).
 
 **C9.** Delete the temporary branch and verify:
 
