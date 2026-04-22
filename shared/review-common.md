@@ -86,7 +86,7 @@ If a tool fails (crash, not a findings exit code): report error, skip tool, cont
 | Commit hash not found | "Commit `<hash>` not found. Check the hash and try again." |
 | File not found (single file mode) | "File `<path>` not found. Check the path and try again." |
 | No violations found | "No violations detected. Code looks solid." (code-review) / "No bugs or security issues found. Code looks solid." (quick-review) |
-| Too many files (>100) | Warn the user about scope size, suggest narrowing with `--file` or a subdirectory, proceed if confirmed. |
+| Too many files (>100) | **code-review:** large tier activates logical-cluster dispatch (§ 1.4b) — no warning needed. **quick-review:** warn about scope size, suggest narrowing with `--file` or a subdirectory, proceed if confirmed. |
 | Tool binary not found | Classify as `configured-but-unavailable`, skip, continue review |
 | Tool crashes or times out | Report error, skip tool, continue with remaining tools |
 | Tool output unparseable | Include raw summary in report, skip structured merge |

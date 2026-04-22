@@ -1,6 +1,6 @@
 ---
 name: code-review
-version: "1.0.0"
+version: "1.1.0"
 description: "Use when the user invokes /code-review to analyze code for correctness, quality, architecture, reliability, security, and performance violations with concrete before/after examples."
 ---
 
@@ -66,16 +66,71 @@ Read `shared/review-common.md` § File Gathering.
 - Read the **full content** of every changed file — not just the diff hunks. Subagents need surrounding context to judge architecture, naming, and control flow.
 - Also capture the **diff itself** (`git diff <base>...HEAD` or equivalent) so subagents can focus on what actually changed while having the full file for context.
 
-### 1.4 Large Diff Handling
+### 1.4 Scope-Based Dispatch Strategy
 
-If the file list exceeds **30 files**, batch them into groups of roughly equal size (aim for 10-15 files per batch). Each subagent receives the same batch assignments so analysis stays consistent across domains. Process batches sequentially:
+Three tiers based on diff size. Measure LOC from `git diff --shortstat <base>...HEAD` (insertions + deletions).
 
-1. Dispatch 7 parallel subagents for batch 1, collect results
-2. Dispatch 7 parallel subagents for batch 2, collect results
+| Tier | Trigger | Strategy |
+|---|---|---|
+| Small | ≤ 30 files | Single-shot: one dispatch of 7 domain subagents + cross-model over all files (Phase 2 as-is) |
+| Medium | 31–100 files | File-batching — see § 1.4a |
+| Large | > 100 files **OR** > 5,000 LOC changed | Logical-cluster dispatch — see § 1.4b |
+
+Thresholds are defaults. Users can override in `.claude/skill-context/code-review.md` with any of:
+- `medium_tier_threshold_files` (default `30`)
+- `large_tier_threshold_files` (default `100`)
+- `large_tier_threshold_loc` (default `5000`)
+
+### 1.4a Medium Tier — File Batching
+
+Batch files into groups of roughly equal size (aim for 10-15 per batch). Keep related files in the same batch when possible (e.g., a module and its tests, a component and its styles). Each batch gets its own full dispatch (7 domain subagents + cross-model). Process batches sequentially:
+
+1. Dispatch 7 parallel subagents + cross-model for batch 1, collect results
+2. Dispatch for batch 2, collect results
 3. Continue until all batches are processed
 4. Synthesize all batch results together in Phase 3
 
-Keep related files in the same batch when possible (e.g., a module and its tests, a component and its styles).
+### 1.4b Large Tier — Logical-Cluster Dispatch
+
+When the diff exceeds the large-tier threshold, file-batching stops being enough — related changes span files, and arbitrary slices miss cross-file issues. Instead: scope the diff into logical clusters, dispatch a full review per cluster, then synthesize across clusters.
+
+**Step 1 — Scoping pass (one agent).** Dispatch a single agent with `model: "opus"` that receives only metadata (no full file contents):
+
+- `git diff --stat <base>...HEAD`
+- `git log <base>...HEAD --oneline`
+- Commit bodies: `git log <base>...HEAD --format='%h %s%n%b'`
+
+The agent partitions changed files into **logical clusters**, each tagged:
+
+| Type | Meaning |
+|---|---|
+| `feature` | New capability — cohesive set of related changes |
+| `bugfix` | Targeted fix to existing behavior |
+| `refactor` | Structural change with no behavior change |
+| `cross-cutting` | Renames, formatting, mechanical edits spanning many files |
+| `test-only` | Changes confined to test files |
+| `config/infra` | Build, CI, deployment, dependency files |
+
+Required output format:
+
+```
+## Cluster N: <short name>
+**Type:** <cluster-type>
+**Intent:** <one sentence on what this cluster accomplishes>
+**Files:**
+- path/to/file1
+- path/to/file2
+```
+
+Every changed file must appear in exactly one cluster. If a file is missing, rerun the scoping pass.
+
+**Step 2 — Cluster dispatch.** For each cluster, dispatch a full review (7 domain subagents + cross-model) in parallel. Every cluster gets all 7 domains regardless of cluster type — the cluster tag is reader context and synthesis priority, not a reviewer filter.
+
+All cluster dispatches fire in a single parallel batch. With N clusters, that's N × 8 tool calls in one response. No user gate between scoping and dispatch — the scoping pass returns, dispatch fires automatically.
+
+Each cluster dispatch receives only its cluster's files (per Phase 1.3 content loading) plus the diff slice for those files.
+
+**Step 3 — Continue to Phase 3.** Cross-cluster synthesis runs there — see § 3.1a.
 
 ### 1.5 Target Language Detection
 
@@ -249,6 +304,32 @@ If cross-model dispatch fails, the review continues with the 7 domain subagents 
 ### 3.1 Collect Results
 
 Gather all findings from the 7 domain subagents and the cross-model dispatch. If any subagent or the cross-model reviewer failed, note which source was unavailable and proceed with the remaining results.
+
+### 3.1a Cross-Cluster Synthesis (Large Tier Only)
+
+**Only runs when large-tier dispatch was used (§ 1.4b).** Skip for small and medium tier.
+
+After all cluster dispatches return, spawn one additional synthesis agent with `model: "opus"`. It receives:
+
+- The cluster manifest from the scoping pass (§ 1.4b Step 1)
+- All findings from every cluster's dispatch (pre-dedup)
+- The full diff (`git diff <base>...HEAD`)
+
+Its job is to find issues that span two or more clusters — things no single-cluster reviewer could catch:
+
+- Cluster A introduces a field, type, or contract that cluster B consumes incorrectly
+- Cluster A deprecates behavior that cluster B still relies on
+- Clusters A and B independently mutate overlapping state (race, lost update)
+- Security invariants spread across clusters no longer compose (e.g., cluster A adds input, cluster C trusts it)
+- Refactor cluster removes a guard that feature cluster's new code needs
+
+Output findings in the same format as domain subagents (§ Subagent Output Format), with one addition — after `**Location**`:
+
+```
+**Spans clusters:** Cluster 2 (auth refactor), Cluster 4 (new login flow)
+```
+
+Cross-cluster findings then flow into § 3.2 Deduplicate alongside per-cluster findings.
 
 ### 3.2 Deduplicate
 
