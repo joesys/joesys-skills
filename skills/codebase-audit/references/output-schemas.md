@@ -224,6 +224,9 @@ Last updated: {DATE}
 
 ## Audit History
 - {DATE}: {mode} audit ({grade})
+
+## Overrides (optional)
+- **large_tier_threshold_files:** {default 1000} — source file count that triggers large-tier decomposition
 ```
 
 ---

@@ -1,6 +1,6 @@
 ---
 name: codebase-audit
-version: "1.0.0"
+version: "1.1.0"
 description: "Use when the user invokes /codebase-audit to run a language-agnostic codebase quality audit measuring up to 12 quality criteria + development velocity with industry benchmarks, grading, and actionable recommendations."
 ---
 
@@ -76,7 +76,7 @@ Read `references/detection-defaults.md` for language marker files, language defa
 9. **Auto-detect test runner** — check framework configs, package.json scripts, language default
 10. **Domain inference** — read README, package manifests, scan key imports, check directory names. Use WebSearch for comparable projects if available.
 11. **Prerequisites check** — verify Python 3 is available for helper scripts. If not, warn and offer qualitative-only mode.
-12. **Scope size check** — warn if >1000 source files
+12. **Scope size check & tier selection** — count source files and classify. Default threshold: `large` tier at **>1000 source files**. Override via `.claude/skill-context/codebase-audit.md` key `large_tier_threshold_files`. Large tier activates Phase 1 module decomposition (§ Large Repo Decomposition) and Phase 2 heat-map-driven deep dive (§ Heat-Map-Driven Deep Dive). Below threshold: current whole-repo behavior.
 13. **Merge config** — auto-detected defaults ← config overrides (config always wins)
 
 ### Output of Phase 0
@@ -145,12 +145,32 @@ Before dispatching agents, present all live commands for approval:
 
 Read-only commands (helper scripts, `git log`, Glob/Grep/Read, tool detection) do not need approval.
 
+### Large Repo Decomposition (Large Tier Only)
+
+**Activates when Phase 0 step 12 classified the repo as large tier.**
+
+When the repo exceeds the large-tier threshold, the three **qualitative agents** (Architecture, Performance, Security) switch from whole-repo to per-module dispatch. Statistical agents (Structural, Quality, Git/Velocity, Tests) continue to run whole-repo — their helper scripts aggregate without reading files, so repo size doesn't degrade them.
+
+**Step 1 — Module detection.** Treat each top-level directory under the detected source paths as a module. Example: `src/api/`, `src/payment/`, `src/ui/`, `src/worker/` → four modules.
+
+- If a top-level dir contains fewer than 20 source files, merge small dirs into a sibling `misc` module to avoid agent spam.
+- If one module holds >50% of source files, subdivide it one level deeper (e.g., `src/core/` → `src/core/auth/`, `src/core/data/`).
+
+**Step 2 — Per-module dispatch.** For each module, dispatch one Architecture + one Performance + one Security agent in parallel. All modules × 3 agents launch in the same parallel batch, alongside the 3 statistical agents that run whole-repo.
+
+Each qualitative agent receives only its module's files plus the shared project context block.
+
+**Step 3 — Roll-up.** Per-module findings carry a `module` tag so the heat map and console display can reference them. The Phase 2 grade for Architecture/Performance/Security is the weighted average across modules (weighted by source file count).
+
+This is the "structural breadth" half of large-tier analysis. The "risk depth" half runs in Phase 2 (see § Heat-Map-Driven Deep Dive).
+
 ### Failure Handling
 
 - **Agent timeout:** 60s default. Proceed with available data, note missing agent.
 - **Helper script failure:** Agent falls back to qualitative-only. Metrics marked "Not measured."
 - **No test runner:** Tests agent does static analysis only.
 - **Live commands declined:** Static analysis fallback. Mark as "Skipped (live commands declined)."
+- **Large tier — partial module failure:** If some modules' qualitative agents fail, proceed with successful modules. Roll-up grade notes "N of M modules analyzed."
 
 ---
 
@@ -190,6 +210,28 @@ Cross-reference complexity (Quality agent) with churn (Git/Velocity agent):
 ```
 
 "Danger Zone" files (high complexity + high churn) are named explicitly.
+
+### Heat-Map-Driven Deep Dive (Large Tier Only)
+
+**Activates when Phase 0 step 12 classified the repo as large tier.**
+
+Runs *after* the heat map is computed, *in addition to* the Phase 1 per-module dispatch. Module decomposition gave breadth — every top-level dir got a reviewer. Heat-map deep dive gives depth on actual risk.
+
+**Risk clusters to deep-dive:**
+
+1. All files in the "Danger Zone" quadrant (high complexity × high churn)
+2. Any module whose Phase 1 qualitative grade was C or below
+3. Cross-module concerns surfaced by Phase 1 (e.g., coupling or shared-type issues that span modules)
+
+**Dispatch.** For each risk cluster, dispatch one Architecture + one Performance + one Security agent in parallel. Each agent receives:
+
+- The specific files in the cluster
+- The heat map context (complexity + churn for each file)
+- Phase 1 findings for those files, so the deep dive builds on rather than repeats
+
+Deep-dive findings merge into their criteria grades. Mark each deep-dive finding with `source: heat-map-deep-dive` so the methodology section can cite the two-pass structure.
+
+**Skip condition:** if the heat map is clean (no Danger Zone files) and every module graded B+ or above in Phase 1, skip this step — no risk to dive into.
 
 ### Grading Scale
 
@@ -393,7 +435,7 @@ fi
 | Helper script fails | Agent falls back to qualitative-only. Metrics marked "Not measured." |
 | No internet (WebSearch unavailable) | Use cached benchmarks. Note "cached benchmarks only" in methodology. |
 | Unknown language | Use general benchmarks. Extension-count fallback. |
-| Massive repo (1000+ files) | Warn user. Agents focus on most significant files. |
+| Massive repo (large tier) | Phase 1 module decomposition (per top-level dir) + Phase 2 heat-map-driven deep dive fire automatically. See § Large Repo Decomposition and § Heat-Map-Driven Deep Dive. |
 | No `.claude/audit.yaml` | Fully auto-detected. Note in methodology. |
 | Python not available | Qualitative-only for helper-dependent metrics. |
 | No previous audit for delta | "Need at least 2 audits for delta comparison." |
