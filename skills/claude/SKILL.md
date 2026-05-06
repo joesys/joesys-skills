@@ -10,10 +10,7 @@ Delegate prompts to Anthropic's Claude Code CLI and critically evaluate the outp
 
 ## Defaults
 
-- **Model:** `opus`
-- **Effort:** `high`
-- **Permission mode:** `plan` (read-only)
-- **Always use:** `-p` flag for non-interactive mode, `2>/dev/null`
+Read `shared/model-defaults.md` § Claude CLI for the current model identifier, effort level, permission mode, and required CLI flags. That file is the single source of truth — never hardcode model strings or flag values here.
 
 ## User Preferences
 
@@ -32,13 +29,14 @@ Read `shared/skill-context.md` for the full protocol. Load `.claude/skill-contex
 
    Deliver the prompt using the temp-file-and-pipe pattern from `shared/delegation-common.md` § Prompt Delivery. Use `mktemp` for platform-adaptive temp files. For short, simple prompts with no special characters, direct `-p "<text>"` is acceptable.
 
+   Substitute `<CLAUDE_CMD>` below with the current CLI invocation from `shared/model-defaults.md` § Claude CLI, layering any user `--model`, `--effort`, `--permission-mode`, or `--bare` overrides on top. Append `--name "<derived-name>"` for resumability.
+
    ```bash
    PROMPT_FILE=$(mktemp /tmp/claude-prompt-XXXXXX.txt)
    cat > "$PROMPT_FILE" << 'PROMPT_EOF'
    <USER_PROMPT>
    PROMPT_EOF
-   cat "$PROMPT_FILE" | claude --model opus --effort high --permission-mode plan \
-     --name "<derived-name>" -p "" 2>/dev/null
+   cat "$PROMPT_FILE" | <CLAUDE_CMD> --name "<derived-name>"
    rm -f "$PROMPT_FILE"
    ```
 4. Present the output clearly labeled as **Claude's response**.

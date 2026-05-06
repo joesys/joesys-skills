@@ -10,9 +10,7 @@ Delegate prompts to Google's Gemini CLI and critically evaluate the output.
 
 ## Defaults
 
-- **Model:** `gemini-3.1-pro-preview`
-- **Approval mode:** `plan` (read-only)
-- **Always use:** `-p` flag for non-interactive mode, `2>/dev/null`
+Read `shared/model-defaults.md` § Gemini for the current model identifier, approval mode, and required CLI flags. That file is the single source of truth — never hardcode model strings or flag values here.
 
 ## User Preferences
 
@@ -24,13 +22,13 @@ Read `shared/skill-context.md` for the full protocol. Load `.claude/skill-contex
    - `--model <MODEL>` overrides the default model
    - `--approval-mode <MODE>` overrides the default approval mode (`default`, `auto_edit`, `yolo`)
    - Any remaining text is the prompt
-2. Deliver the prompt using the temp-file-and-pipe pattern from `shared/delegation-common.md` § Prompt Delivery. Use `mktemp` for platform-adaptive temp files (use 600000ms timeout on the Bash tool):
+2. Deliver the prompt using the temp-file-and-pipe pattern from `shared/delegation-common.md` § Prompt Delivery. Use `mktemp` for platform-adaptive temp files (use 600000ms timeout on the Bash tool). Substitute `<GEMINI_CMD>` below with the current CLI invocation from `shared/model-defaults.md` § Gemini, layering any user `--model` or `--approval-mode` overrides on top.
    ```bash
    PROMPT_FILE=$(mktemp /tmp/gemini-prompt-XXXXXX.txt)
    cat > "$PROMPT_FILE" << 'PROMPT_EOF'
    <USER_PROMPT>
    PROMPT_EOF
-   cat "$PROMPT_FILE" | gemini -m gemini-3.1-pro-preview --approval-mode plan -p "" 2>/dev/null
+   cat "$PROMPT_FILE" | <GEMINI_CMD>
    rm -f "$PROMPT_FILE"
    ```
 

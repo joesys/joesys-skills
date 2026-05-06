@@ -46,28 +46,26 @@ If `mktemp` is unavailable, fall back to a deterministic path: `/tmp/<skill-name
 
 ## Dispatch Commands
 
-Substitute `$PROMPT_FILE` with the actual temp file path created above.
+Substitute `$PROMPT_FILE` with the actual temp file path created above. Substitute `<CODEX_CMD>`, `<CLAUDE_CMD>`, and `<GEMINI_CMD>` with the current invocations from `shared/model-defaults.md` (§ Codex, § Claude CLI, § Gemini respectively).
 
 ### To Codex
 
 ```bash
-cat "$PROMPT_FILE" | codex exec --model gpt-5.4 \
-  -c model_reasoning_effort="xhigh" --sandbox read-only \
-  --skip-git-repo-check 2>/dev/null
+cat "$PROMPT_FILE" | <CODEX_CMD>
 ```
 
 ### To Claude CLI
 
+Append `--name "<review-name>"` for resumability:
+
 ```bash
-cat "$PROMPT_FILE" | claude --model opus --effort high \
-  --permission-mode plan --name "<review-name>" -p "" 2>/dev/null
+cat "$PROMPT_FILE" | <CLAUDE_CMD> --name "<review-name>"
 ```
 
 ### To Gemini (via `--include-gemini`)
 
 ```bash
-cat "$PROMPT_FILE" | gemini -m gemini-3.1-pro-preview \
-  --approval-mode plan -p "" 2>/dev/null
+cat "$PROMPT_FILE" | <GEMINI_CMD>
 ```
 
 Use **600000ms** timeout on the Bash tool for all dispatches.
