@@ -1,6 +1,6 @@
 ---
 name: commit
-version: "1.1.0"
+version: "1.2.0"
 description: "Create a git commit following Conventional Commits with a structured body format (intent paragraph, changes changelog, AI review). Uses OneFlow Option 3 (rebase + merge --no-ff) for decomposed multi-commit changesets."
 ---
 
@@ -448,12 +448,30 @@ After a successful commit (any path), evaluate whether the commit is worth captu
 
 **Capture if ALL of these are true:**
 
-1. **The commit is significant.** Heuristics:
+1. **The commit type is potentially significant.** Heuristics:
    - Type is `feat`, `fix`, or `refactor`
    - OR it's a `--no-ff` merge commit (Path B or C) — these represent a complete feature
    - `docs`, `chore`, `style`, `ci`, `build`, `test`, `perf` commits are generally NOT significant unless they represent a non-trivial decision or pivot
 
-2. **The commit does not already contain devlog content.** Check if any of the committed files match:
+2. **There is something genuinely worth capturing from this session.** Type-significance is necessary but not sufficient — most `feat`/`fix`/`refactor` commits are routine and produce nothing worth re-reading later. Honestly judge whether the work behind this commit yielded an insight that the user, six months from now, would want to revisit. **Bias toward NO when uncertain.** Too many scraps is noisy and dilutes the value of the ones that actually matter.
+
+   **Worth capturing:**
+   - A non-obvious design decision or tradeoff was made
+   - A surprising root cause was discovered during debugging
+   - A novel pattern, technique, or approach emerged from the work
+   - A pivot or change of direction with a clear "why"
+   - An insight about the codebase, language, framework, or domain that wasn't obvious going in
+
+   **NOT worth capturing (skip even if the commit type is feat/fix/refactor):**
+   - Routine implementation following an established pattern in the codebase
+   - A straightforward feature with no design decisions or tradeoffs
+   - A bug fix that was a typo, off-by-one, or other mechanical correction
+   - A mechanical refactor (rename, extract, reformat) with no judgment calls
+   - Work where you (the LLM) cannot articulate a specific insight in one concrete sentence
+
+   **The one-sentence test:** Try to complete the sentence *"The interesting thing about this commit is ___"* with something specific and non-trivial. If you can't — or if the completion is generic ("we added a feature", "we fixed a bug") — skip the scrap.
+
+3. **The commit does not already contain devlog content.** Check if any of the committed files match:
    - `docs/devlog/.scraps/*` — the commit includes a devlog scrap
    - `docs/devlog/*/` — the commit includes a published devlog post
 
@@ -461,6 +479,6 @@ After a successful commit (any path), evaluate whether the commit is worth captu
 
 ### How to Capture
 
-If both conditions are met, auto-invoke `/devlog scrap --from-context` after the commit completes. Do not ask the user — this should be seamless. The `--from-context` flag tells the devlog skill to synthesize the scrap directly from the current conversation context (the diff, commit message, and session exchanges already available) instead of dispatching subagents to re-mine git history and session files.
+If all three conditions are met, auto-invoke `/devlog scrap --from-context` after the commit completes. Do not ask the user — this should be seamless. The `--from-context` flag tells the devlog skill to synthesize the scrap directly from the current conversation context (the diff, commit message, and session exchanges already available) instead of dispatching subagents to re-mine git history and session files.
 
 If the `/devlog` skill is not available (plugin not installed in the target project), silently skip this step.
