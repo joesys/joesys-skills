@@ -92,10 +92,10 @@ PROMPT_EOF
 # (repeat for each leg with leg-specific preamble)
 ```
 
-Then pipe to each tool using the CLI templates from `shared/model-defaults.md`:
-- **Codex:** `cat "$CODEX_PROMPT" | codex exec --model gpt-5.4 -c model_reasoning_effort="xhigh" --sandbox read-only --skip-git-repo-check 2>/dev/null`
-- **Gemini:** `cat "$GEMINI_PROMPT" | gemini -m gemini-3.1-pro-preview --approval-mode plan -p "" 2>/dev/null`
-- **Claude CLI:** `cat "$CLAUDE_PROMPT" | claude --model opus --effort high --permission-mode plan --name "council-<topic>" -p "" 2>/dev/null`
+Then pipe each prompt file to its corresponding CLI. Substitute the placeholders below with the current invocations from `shared/model-defaults.md`:
+- **Codex:** `cat "$CODEX_PROMPT" | <CODEX_CMD>`
+- **Gemini:** `cat "$GEMINI_PROMPT" | <GEMINI_CMD>`
+- **Claude CLI:** `cat "$CLAUDE_PROMPT" | <CLAUDE_CMD> --name "council-<topic>"`
 
 Clean up temporary files after all legs complete: `rm -f "$CODEX_PROMPT" "$GEMINI_PROMPT" "$CLAUDE_PROMPT"`
 
@@ -105,19 +105,18 @@ Launch all three legs simultaneously in a single response (three parallel tool i
 
 ### Codex Leg (Bash, 600000ms timeout)
 
-**Always deliver the prompt via stdin pipe** (see Prompt Size Safety).
+**Always deliver the prompt via stdin pipe** (see Prompt Size Safety). Substitute `<CODEX_CMD>` below with the current invocation from `shared/model-defaults.md` § Codex.
 
 ```bash
-cat "$CODEX_PROMPT" | codex exec --model gpt-5.4 -c model_reasoning_effort="xhigh" \
-  --sandbox read-only --skip-git-repo-check 2>/dev/null
+cat "$CODEX_PROMPT" | <CODEX_CMD>
 ```
 
 ### Gemini Leg (Bash, 600000ms timeout)
 
-The `-p` flag is mandatory for non-interactive execution. Without it, Gemini enters interactive mode and hangs. **Always deliver the prompt via stdin pipe** — never pass long prompts as a direct `-p` argument (shell metacharacters break argument passing).
+The `-p` flag is mandatory for non-interactive execution. Without it, Gemini enters interactive mode and hangs. **Always deliver the prompt via stdin pipe** — never pass long prompts as a direct `-p` argument (shell metacharacters break argument passing). Substitute `<GEMINI_CMD>` below with the current invocation from `shared/model-defaults.md` § Gemini.
 
 ```bash
-cat "$GEMINI_PROMPT" | gemini -m gemini-3.1-pro-preview --approval-mode plan -p "" 2>/dev/null
+cat "$GEMINI_PROMPT" | <GEMINI_CMD>
 ```
 
 ### Claude Leg (Heuristic)
@@ -126,11 +125,10 @@ Choose the mechanism based on whether the prompt is self-contained:
 
 **Use subagent (Agent tool)** when Phase 1 fully resolved all context the question needs. The prompt is self-contained and the Claude leg won't need to read additional files or search the web during execution. Spawn with `model: "opus"` and pass the full four-part prompt. Subagent is faster — no CLI startup overhead.
 
-**Use CLI** when the question references specific files or codepaths that Phase 1 could not fully resolve, and the Claude leg would benefit from tool access to explore further. When using CLI, include `--name` for resumability:
+**Use CLI** when the question references specific files or codepaths that Phase 1 could not fully resolve, and the Claude leg would benefit from tool access to explore further. Substitute `<CLAUDE_CMD>` below with the current invocation from `shared/model-defaults.md` § Claude CLI, and append `--name` for resumability:
 
 ```bash
-cat "$CLAUDE_PROMPT" | claude --model opus --effort high --permission-mode plan \
-  --name "council-<topic>" -p "" 2>/dev/null
+cat "$CLAUDE_PROMPT" | <CLAUDE_CMD> --name "council-<topic>"
 ```
 
 ### Fallback Behavior

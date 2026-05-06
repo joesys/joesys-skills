@@ -15,7 +15,7 @@ Custom Claude Code skills and plugins.
 
 ### Part I: AI Council
 
-Multi-model consultation — ask one model or all three in parallel.
+Multi-model consultation — ask one model or all three in parallel. Default model identifiers and CLI flags for the delegation skills (`/claude`, `/codex`, `/gemini`, `/ai-council`) are defined in [`shared/model-defaults.md`](shared/model-defaults.md).
 
 #### ai-council
 
@@ -31,8 +31,6 @@ Consult three frontier AI models (Claude, GPT, Gemini) in parallel on the same q
 
 Delegate prompts to Anthropic's Claude Code CLI for code analysis, refactoring, and automated editing. Critically evaluates Claude's output with special attention to shared blind spots (Claude evaluating Claude). Supports named session resume.
 
-**Defaults:** `opus` / `high` effort / `plan` (read-only) permission mode
-
 ```
 /claude "explain the auth flow in this repo"
 /claude --model sonnet "quick analysis of this function"
@@ -47,8 +45,6 @@ Delegate prompts to Anthropic's Claude Code CLI for code analysis, refactoring, 
 
 Delegate prompts to OpenAI's Codex CLI for code analysis, refactoring, and automated editing. Critically evaluates Codex's output and supports session resume.
 
-**Defaults:** `gpt-5.4` / `xhigh` reasoning / `read-only` sandbox
-
 ```
 /codex "explain the auth flow in this repo"
 /codex --model gpt-5.3 "analyze this function"
@@ -59,8 +55,6 @@ Delegate prompts to OpenAI's Codex CLI for code analysis, refactoring, and autom
 #### gemini
 
 Delegate prompts to Google's Gemini CLI for code analysis, refactoring, and automated editing. Critically evaluates Gemini's output and supports session resume with indexed session management.
-
-**Defaults:** `gemini-3.1-pro-preview` / `plan` (read-only) approval mode
 
 ```
 /gemini "explain the auth flow in this repo"

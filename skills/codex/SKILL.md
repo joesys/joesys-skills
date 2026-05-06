@@ -10,10 +10,7 @@ Delegate prompts to OpenAI's Codex CLI and critically evaluate the output.
 
 ## Defaults
 
-- **Model:** `gpt-5.4`
-- **Reasoning effort:** `xhigh`
-- **Sandbox:** `read-only`
-- **Always use:** `--skip-git-repo-check`, `2>/dev/null`
+Read `shared/model-defaults.md` § Codex for the current model identifier, reasoning effort, sandbox, and required CLI flags. That file is the single source of truth — never hardcode model strings or flag values here.
 
 ## User Preferences
 
@@ -29,13 +26,14 @@ Read `shared/skill-context.md` for the full protocol. Load `.claude/skill-contex
 
    Deliver the prompt using the temp-file-and-pipe pattern from `shared/delegation-common.md` § Prompt Delivery. Use `mktemp` for platform-adaptive temp files. For short, simple prompts with no special characters, passing directly as a positional argument is acceptable.
 
+   Substitute `<CODEX_CMD>` below with the current CLI invocation from `shared/model-defaults.md` § Codex, layering any user `--model` or `--sandbox` overrides on top.
+
    ```bash
    PROMPT_FILE=$(mktemp /tmp/codex-prompt-XXXXXX.txt)
    cat > "$PROMPT_FILE" << 'PROMPT_EOF'
    <USER_PROMPT>
    PROMPT_EOF
-   cat "$PROMPT_FILE" | codex exec --model gpt-5.4 -c model_reasoning_effort="xhigh" \
-     --sandbox read-only --skip-git-repo-check 2>/dev/null
+   cat "$PROMPT_FILE" | <CODEX_CMD>
    rm -f "$PROMPT_FILE"
    ```
 3. Present the output clearly labeled as **Codex's response**.

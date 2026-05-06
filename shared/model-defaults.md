@@ -10,7 +10,7 @@ Single source of truth for default model identifiers and CLI flags used across s
 
 | Provider | Model ID | Used In |
 |---|---|---|
-| OpenAI (Codex CLI) | `gpt-5.4` | `/codex`, `/ai-council`, `/code-review`, `/quick-review` |
+| OpenAI (Codex CLI) | `gpt-5.5` | `/codex`, `/ai-council`, `/code-review`, `/quick-review` |
 | Google (Gemini CLI) | `gemini-3.1-pro-preview` | `/gemini`, `/ai-council`, `/code-review`, `/quick-review` |
 | Anthropic (Claude CLI) | `opus` | `/claude`, `/ai-council`, `/code-review`, `/quick-review` |
 
@@ -19,13 +19,13 @@ Single source of truth for default model identifiers and CLI flags used across s
 ### Codex
 
 ```bash
-codex exec --model gpt-5.4 -c model_reasoning_effort="xhigh" \
+codex exec --model gpt-5.5 -c model_reasoning_effort="xhigh" \
   --sandbox read-only --skip-git-repo-check 2>/dev/null
 ```
 
 | Flag | Purpose |
 |---|---|
-| `--model gpt-5.4` | Model selection |
+| `--model gpt-5.5` | Model selection |
 | `-c model_reasoning_effort="xhigh"` | Maximum reasoning depth |
 | `--sandbox read-only` | Safety: no file writes |
 | `--skip-git-repo-check` | Required for piped input |
