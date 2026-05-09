@@ -1,12 +1,25 @@
 ---
 name: codebase-audit
-version: "1.1.0"
+version: "1.2.0"
 description: "Use when the user invokes /codebase-audit to run a language-agnostic codebase quality audit measuring up to 12 quality criteria + development velocity with industry benchmarks, grading, and actionable recommendations."
 ---
 
 # Codebase Audit Skill
 
 Run a comprehensive, language-agnostic codebase quality audit. Measures up to 12 core quality criteria + development velocity across 6 parallel collection agents, displays graded metrics on console, and optionally writes a full analysis report with industry benchmarks and actionable recommendations.
+
+## Out of Scope
+
+This skill MUST NOT:
+- Modify the audited code. Both observation and tool runs are read-only — even if a typo or obvious bug is noticed, do not edit.
+- Run write-mode tools (formatter `--fix`, linter `--fix`, code generators) as part of measurement. Read-only invocations only. If a tool only runs in fix mode, skip it.
+- Cite benchmarks, comparisons, or "industry standards" without naming the source. Unsourced numbers read as fabrication.
+- Continue past the safety gate when live commands were declined. Static-only fallback is mandatory in that case.
+- Grade a criterion without at least one measured metric backing it. If a helper script failed and no metric is available, the grade is "Not measured" — never "Good" or "—" by default.
+- Inflate grades to be encouraging or deflate them to be alarming. The grade reflects measured evidence, not the reaction it should produce.
+- Claim "no issues found" without actually measuring. Absence of evidence is not evidence of absence.
+- Skip the live-command safety gate. Even on `/codebase-audit metrics`, live commands need approval.
+- Pretend a tool ran when it didn't. If a tool was unavailable, configured-but-unavailable, or timed out, the report says so — it does not fold a missing tool into the "no findings" pile.
 
 ## Reference Files
 
@@ -99,7 +112,7 @@ If `--static-only` was passed, skip tool execution in Phase 1 but still detect a
 
 ## Phase 1 — Parallel Collection
 
-Spawn **6 measurement agents in parallel** via the Agent tool — all 6 in a single response. Each uses `model: "opus"`. Read `references/agent-prompts.md` for the full prompt template for each agent.
+**MUST spawn 6 measurement agents in parallel** via the Agent tool — all 6 in a single response. Each uses `model: "opus"`. Sequential dispatch is a defect. Read `references/agent-prompts.md` for the full prompt template for each agent.
 
 ### Agent Roster
 
@@ -134,7 +147,7 @@ For scoped criteria, launch only the required agents:
 
 ### Live Command Safety Gate
 
-Before dispatching agents, present all live commands for approval:
+**MUST present all live commands for approval** before dispatching agents:
 
 > **The following live commands will be executed during collection:**
 > - `{test_runner}` (Tests agent)
@@ -156,7 +169,7 @@ When the repo exceeds the large-tier threshold, the three **qualitative agents**
 - If a top-level dir contains fewer than 20 source files, merge small dirs into a sibling `misc` module to avoid agent spam.
 - If one module holds >50% of source files, subdivide it one level deeper (e.g., `src/core/` → `src/core/auth/`, `src/core/data/`).
 
-**Step 2 — Per-module dispatch.** For each module, dispatch one Architecture + one Performance + one Security agent in parallel. All modules × 3 agents launch in the same parallel batch, alongside the 3 statistical agents that run whole-repo.
+**Step 2 — Per-module dispatch.** For each module, dispatch one Architecture + one Performance + one Security agent in parallel. **MUST fire all modules × 3 agents in the same parallel batch**, alongside the 3 statistical agents that run whole-repo.
 
 Each qualitative agent receives only its module's files plus the shared project context block.
 
@@ -209,7 +222,7 @@ Cross-reference complexity (Quality agent) with churn (Git/Velocity agent):
               Low Churn
 ```
 
-"Danger Zone" files (high complexity + high churn) are named explicitly.
+"Danger Zone" files (high complexity + high churn) **MUST be named explicitly**.
 
 ### Heat-Map-Driven Deep Dive (Large Tier Only)
 
@@ -294,8 +307,7 @@ After displaying the table:
 
 ## Phase 3 — User Context Interview
 
-Gathers context the code alone can't reveal. Uses the shared preferences
-system (`shared/skill-context.md`) to avoid re-asking questions.
+Gathers context the code alone can't reveal. Uses the shared preferences system (`shared/skill-context.md`) to avoid re-asking questions.
 
 ### Context Sources (checked in order)
 
@@ -305,8 +317,7 @@ system (`shared/skill-context.md`) to avoid re-asking questions.
 
 ### First Audit — Build the Profile
 
-Check what's already known from shared preferences. Only ask questions whose
-answers are not already captured:
+Check what's already known from shared preferences. **MUST only ask** questions whose answers are not already captured:
 
 | Question | Skip if already in... |
 |---|---|
@@ -316,28 +327,19 @@ answers are not already captured:
 | Business priority | shared preferences → "Business priority" |
 | Known trade-offs | audit-specific preferences → "Known trade-offs" |
 
-If shared preferences exist and cover project phase, team size, and business
-priority, the only new questions are **deployment cadence** (if missing),
-**known trade-offs**, and **informed questions** based on Phase 1 findings
-(e.g., "I noticed zero tests — intentional for now?").
+If shared preferences exist and cover project phase, team size, and business priority, the only new questions are **deployment cadence** (if missing), **known trade-offs**, and **informed questions** based on Phase 1 findings (e.g., "I noticed zero tests — intentional for now?").
 
-If no shared preferences exist at all, `/preferences` was already invoked in
-Phase 0 step 2 — those answers are now available. Ask only the audit-specific
-questions: deployment cadence, known trade-offs, and informed questions.
+If no shared preferences exist at all, `/preferences` was already invoked in Phase 0 step 2 — those answers are now available. Ask only the audit-specific questions: deployment cadence, known trade-offs, and informed questions.
 
 Save audit-specific answers to `.claude/skill-context/codebase-audit.md`.
 
 ### Returning Audits — Confirm the Profile
 
-Check for existing audit-specific preferences at
-`.claude/skill-context/codebase-audit.md`. If found, present the combined
-profile (shared + audit-specific) and ask if anything has changed. Quick on
-repeat audits.
+Check for existing audit-specific preferences at `.claude/skill-context/codebase-audit.md`. If found, present the combined profile (shared + audit-specific) and ask if anything has changed. Quick on repeat audits.
 
 ### Legacy Migration
 
-If `docs/reports/codebase-audit/project-context.md` exists but
-`.claude/skill-context/preferences.md` does not:
+If `docs/reports/codebase-audit/project-context.md` exists but `.claude/skill-context/preferences.md` does not:
 
 1. Read the legacy file
 2. Extract project phase, team size, deployment cadence, business priority
@@ -359,13 +361,13 @@ If `docs/reports/codebase-audit/project-context.md` exists but
 
 ## Phase 4 — Analysis Writing
 
-A single author agent writes the full analysis in one pass. Uses `model: "opus"`. Read `references/agent-prompts.md` for the full author agent prompt.
+A single author agent writes the full analysis in one pass. **MUST use** `model: "opus"`. Read `references/agent-prompts.md` for the full author agent prompt.
 
 The author receives: assembled metrics JSON, project context, user context, risk heat map, and previous audit data (if any).
 
 ### Dynamic Criteria Weighting
 
-The author assigns a **priority rank** (1-12) and **weight** (High/Medium/Low) to each criterion based on language + domain expertise. This affects priority order, overall grade, analysis depth, and recommended actions. Users can override via `criteria_priority` in `audit.yaml`.
+The author assigns a **priority rank** (1–12) and **weight** (High/Medium/Low) to each criterion based on language + domain expertise. This affects priority order, overall grade, analysis depth, and recommended actions. Users can override via `criteria_priority` in `audit.yaml`.
 
 ---
 
@@ -428,7 +430,7 @@ fi
 
 | Situation | Behavior |
 |---|---|
-| 1-2 agents fail or time out | Proceed with available data. Note missing agents. Offer to retry. |
+| 1–2 agents fail or time out | Proceed with available data. Note missing agents. Offer to retry. |
 | All agents fail | Report failure. Suggest retrying or narrowing scope. |
 | No git history | Git/Velocity agent skips. Churn/bus factor marked "No git history." |
 | No test runner detected | Tests agent does static analysis only. |

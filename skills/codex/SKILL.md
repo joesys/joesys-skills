@@ -1,32 +1,43 @@
 ---
 name: codex
-version: "1.0.0"
-description: "Use when the user invokes /codex to delegate a prompt to OpenAI Codex CLI, or /codex resume to continue a previous Codex session"
+version: "1.1.0"
+description: "Use when the user invokes /codex to delegate a prompt to OpenAI Codex CLI, or /codex resume to continue a previous Codex session. SKIP if the user wants you to answer directly — this skill exists to consult GPT, not to substitute your own answer."
 ---
 
 # Codex Skill
 
 Delegate prompts to OpenAI's Codex CLI and critically evaluate the output.
 
-## Defaults
+## Out of Scope
 
-Read `shared/model-defaults.md` § Codex for the current model identifier, reasoning effort, sandbox, and required CLI flags. That file is the single source of truth — never hardcode model strings or flag values here.
+This skill MUST NOT:
+- Answer the question itself instead of delegating. The user invoked this skill to get GPT's take — substituting your own answer defeats the purpose.
+- Skip the critical-evaluation step. Always surface your honest assessment after the delegated model responds.
+- Modify the user's project (files, git state, settings) as part of the dispatch. The CLI runs read-only by default per `shared/model-defaults.md`; the skill itself never writes either.
+- Save the delegated response to a file. If the user wants it saved, they'll ask in a follow-up turn.
+- Combine outputs across multiple invocations into a synthesis. That's `/ai-council`'s job.
+
+## Preflight
+
+Before dispatching, **MUST**:
+1. Read `shared/model-defaults.md` § Codex for the current model identifier, reasoning effort, sandbox, and required flags. Never hardcode values.
+2. Confirm the user's prompt is non-empty. For `/codex resume` with no prompt, use `AskUserQuestion` to ask what they want to follow up on.
 
 ## User Preferences
 
-Read `shared/skill-context.md` for the full protocol. Load `.claude/skill-context/preferences.md` if it exists. Do not invoke `/preferences` on first contact — delegation is a pass-through operation and should not be interrupted by interviews. Shared communication style preferences shape the critical evaluation phase (how you present your assessment of Codex's output to the user).
+Read `shared/skill-context.md` for the full protocol. Load `.claude/skill-context/preferences.md` if it exists. **MUST NOT invoke** `/preferences` on first contact — delegation is a pass-through and should not be interrupted by interviews. Shared communication-style preferences shape the critical-evaluation phase only.
 
 ## Running a Task
 
-1. Parse the user's `/codex` arguments for any overrides:
-   - `--model <MODEL>` overrides the default model
-   - `--sandbox <MODE>` overrides the default sandbox (`read-only`, `workspace-write`, `danger-full-access`)
+1. Parse `/codex` arguments for overrides:
+   - `--model <MODEL>` — override default model
+   - `--sandbox <MODE>` — override default sandbox (`read-only`, `workspace-write`, `danger-full-access`)
    - Any remaining text is the prompt
-2. Assemble and run the command (use 600000ms timeout on the Bash tool).
+2. Assemble and dispatch the command (use 600000ms timeout on the Bash tool).
 
-   Deliver the prompt using the temp-file-and-pipe pattern from `shared/delegation-common.md` § Prompt Delivery. Use `mktemp` for platform-adaptive temp files. For short, simple prompts with no special characters, passing directly as a positional argument is acceptable.
+   Use the temp-file-and-pipe pattern from `shared/delegation-common.md` § Prompt Delivery. For short, simple prompts with no special characters, passing directly as a positional argument is acceptable.
 
-   Substitute `<CODEX_CMD>` below with the current CLI invocation from `shared/model-defaults.md` § Codex, layering any user `--model` or `--sandbox` overrides on top.
+   Substitute `<CODEX_CMD>` with the current invocation from `shared/model-defaults.md` § Codex, layering any user `--model` or `--sandbox` overrides on top.
 
    ```bash
    PROMPT_FILE=$(mktemp /tmp/codex-prompt-XXXXXX.txt)
@@ -36,7 +47,7 @@ Read `shared/skill-context.md` for the full protocol. Load `.claude/skill-contex
    cat "$PROMPT_FILE" | <CODEX_CMD>
    rm -f "$PROMPT_FILE"
    ```
-3. Present the output clearly labeled as **Codex's response**.
+3. **MUST present Codex's full response verbatim** — clearly labeled as **Codex's response** — *before* any assessment. No truncation, no summarization, no interleaving your own commentary.
 4. Critically evaluate the output (see Critical Evaluation below).
 5. Provide a brief summary: "Here's what Codex said, here's what I think."
 6. Inform the user: "You can resume this session with `/codex resume`."
@@ -51,22 +62,22 @@ When the user invokes `/codex resume`:
    codex exec resume --last --skip-git-repo-check "<FOLLOW_UP_PROMPT>" 2>/dev/null
    ```
 3. **Resume rules:**
-   - Resumed sessions inherit model, reasoning effort, and sandbox from the original run
-   - `--skip-git-repo-check` goes after `resume`, not between `exec` and `resume`
-   - `--sandbox` is NOT available on `codex exec resume`
-   - Exception: `--model` and `--full-auto` CAN be passed on resume if the user explicitly requests them
-   - If workspace-write is needed on resume, use `--full-auto`
+   - Resumed sessions inherit model, reasoning effort, and sandbox from the original run.
+   - `--skip-git-repo-check` goes after `resume`, not between `exec` and `resume`.
+   - `--sandbox` is NOT available on `codex exec resume`.
+   - `--model` and `--full-auto` MAY be passed on resume only when the user explicitly requests it.
+   - If workspace-write is needed on resume, use `--full-auto`:
      ```bash
      codex exec resume --last --skip-git-repo-check --full-auto "<FOLLOW_UP_PROMPT>" 2>/dev/null
      ```
-   - Do NOT use `--ephemeral` on the initial run, or resume will have no session to continue
-4. After resume, follow the same output flow: present, evaluate, summarize, offer resume.
+   - **MUST NOT use** `--ephemeral` on the initial run, or resume will have no session to continue.
+4. After resume, follow the same output flow: present full response → evaluate → summarize → offer resume.
 
 ## Known Limitations
 
-- **Resume fragility:** Codex only supports `--last` for session resume — there is no named-session or index-based resume. If you start another Codex session between the original run and a resume attempt, `--last` will resume the newer session, not the one you intended. This is a CLI limitation, not a skill issue. Warn the user if they attempt `/codex resume` after running other Codex commands.
+- **Resume fragility:** Codex only supports `--last` for session resume — there is no named-session or index-based resume. If you start another Codex session between the original run and a resume attempt, `--last` resumes the newer session, not the intended one. This is a CLI limitation, not a skill issue. **MUST warn** the user if they attempt `/codex resume` after running other Codex commands.
 
 ## Critical Evaluation & Error Handling
 
 Read `shared/delegation-common.md` and apply to Codex.
-Timeout suggestion: lower reasoning effort (`-c model_reasoning_effort="high"`).
+**Timeout suggestion:** lower reasoning effort (`-c model_reasoning_effort="high"`).

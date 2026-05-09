@@ -1,12 +1,22 @@
 ---
 name: retrospective
-version: "1.0.0"
+version: "1.1.0"
 description: "Use when the user invokes /retrospective to run a structured retrospective — mines git history, conversations, code quality, plans, and tests, then facilitates topic-by-topic discussion with the human to produce action items, process improvements, and a narrative summary."
 ---
 
 # Retrospective Skill
 
 Run a structured retrospective facilitated by AI, interleaved with human check-ins at every phase. Dispatch 5 parallel channel agents — each mining a different data source (git history, conversations, code quality, planning docs, tests) — to build a comprehensive digest. Derive discussion topics from the data, walk through them with the human, and produce three output layers: action items, process improvements, and skill improvements. Finish with a readable narrative written by a fresh-context agent.
+
+## Out of Scope
+
+This skill MUST NOT:
+- Skip a human check-in at any phase. Every phase has one, including Phase 4 narrative review.
+- Apply approved improvements before the user has explicitly approved them in the Phase 3c review gate. "Proceed" earlier in the session does not authorize improvement application.
+- Manufacture consensus across the 5 channels. If channels disagree, surface the tension — do not paper over it.
+- Use a templated topic list. Topics emerge from channel findings; if the data doesn't support a topic, drop it instead of padding.
+- Skip the fresh-context narrative agent in Phase 4. Reusing the discussion context produces a reformatted summary, not a narrative.
+- Re-mine source files, git logs, or session transcripts on session resume. Resume reads only what's needed for the resume point — upstream phases are already distilled into saved files.
 
 ## Reference Files
 
@@ -84,7 +94,7 @@ Save to `<retro-dir>/00-carry-forward.md`. No checkpoint pause — feeds directl
 
 ## Phase 1: Mine via Parallel Channel Agents
 
-Dispatch **5 subagents simultaneously** — all 5 in a single response. Each uses `model: "opus"`. Read `references/agent-prompts.md` for full prompt templates and guiding principles.
+**MUST dispatch 5 subagents simultaneously** — all 5 in a single response. Each uses `model: "opus"`. Read `references/agent-prompts.md` for full prompt templates and guiding principles.
 
 ### Agent Roster
 
@@ -102,11 +112,11 @@ After all 5 agents return, assemble findings into `<retro-dir>/01-digest.md` wit
 
 ### Topic Derivation
 
-Derive **4-7 discussion topics** from the channel findings:
+Derive **4–7 discussion topics** from the channel findings:
 1. Scan all findings for recurring themes, tensions, high-signal observations
 2. Group related findings into candidates
 3. Rank by signal strength (evidence count, number of channels that flagged it)
-4. Drop candidates with thin evidence
+4. **MUST drop** candidates with thin evidence
 5. Merge overlapping candidates
 
 Each topic needs: a descriptive name and a one-line justification citing which channels surfaced evidence.
@@ -156,11 +166,11 @@ Re-reads only `02-topic-discussions.md` — everything upstream is distilled the
 
 ### 3a: Retrospective Summary → `03-retro-summary.md`
 
-Consolidate topic discussions: metrics, narrative arc, human corrections, topic insights, top 3-5 takeaways.
+Consolidate topic discussions: metrics, narrative arc, human corrections, topic insights, top 3–5 takeaways.
 
 ### 3b: Action Items → `03-action-items.md`
 
-Extract Start/Stop/Continue items into actionable changes grouped by category with priorities. Every item must be **specific and verifiable**.
+Extract Start/Stop/Continue items into actionable changes grouped by category with priorities. **MUST be specific and verifiable** — vague action items ("improve testing") are not acceptable; rewrite with specifics.
 
 ### 3c: Improvement Proposals → `03-improvements.md`
 
@@ -168,13 +178,13 @@ Draft process and skill improvement proposals grounded in retro evidence.
 
 ### Human Review Gate
 
-Present improvement proposals **one by one** using `AskUserQuestion`: Approve / Reject / Modify. Update status in the file. **Do NOT apply changes without explicit approval.**
+Present improvement proposals **one by one** using `AskUserQuestion`: Approve / Reject / Modify. Update status in the file. **MUST NOT apply changes without explicit approval.**
 
 ---
 
 ## Phase 4: Retro Narrative
 
-**Always runs in a fresh context agent** (`subagent_type: "general-purpose"`, `model: "opus"`). Read `references/agent-prompts.md` for the narrative agent prompt and writing rules.
+**MUST run in a fresh context agent** (`subagent_type: "general-purpose"`, `model: "opus"`). Read `references/agent-prompts.md` for the narrative agent prompt and writing rules.
 
 The agent receives `03-retro-summary.md` and `02-topic-discussions.md`. Output: `<retro-dir>/04-retro-narrative.md` — engaging prose, not reformatted summary.
 
@@ -234,7 +244,7 @@ After Phase 4 completes:
    - Phase 3 resume: `02-topic-discussions.md` only
    - Phase 4 resume: `03-retro-summary.md` + `02-topic-discussions.md` (fresh agent)
 
-5. **Do NOT re-read** source files, git logs, or session transcripts already synthesized into the digest.
+5. **MUST NOT re-read** source files, git logs, or session transcripts already synthesized into the digest.
 
 ---
 
@@ -263,5 +273,5 @@ Watch for these signs during the retrospective:
 | Phase 1 agents | ~4,000 lines each. Prioritize breadth. |
 | Phase 2 discussions | After saving to disk, retain only Start/Stop/Continue + one-sentence insight. |
 | Phase 3 synthesis | Reads only `02-topic-discussions.md`. Everything upstream is distilled. |
-| Phase 4 narrative | Fresh context agent. Never in same context as Phases 0-3. |
+| Phase 4 narrative | Fresh context agent. **MUST NOT** be in same context as Phases 0–3. |
 | Incremental saves | Every topic saved immediately — enables both context management and session resumption. |

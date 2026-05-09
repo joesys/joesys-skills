@@ -1,6 +1,6 @@
 ---
 name: devlog
-version: "1.0.0"
+version: "1.1.0"
 description: "Use when the user invokes /devlog to capture development insights as devlog posts or content scraps. Mines git history, conversation history, and existing scraps to reconstruct the developer's thinking, then brainstorms to surface the real insight before drafting."
 ---
 
@@ -11,6 +11,17 @@ Capture development insights and turn them into devlog posts aimed at budding pr
 The primary deliverable is **insight** — the thinking process behind decisions, not the technical how-to. The content that matters is the surprise (where a mental model broke), the judgment (why one path was chosen over another), and the messy middle (how ambiguity was navigated).
 
 **Target audience:** Budding programmers learning how experienced developers think through problems, especially when developing with AI.
+
+## Out of Scope
+
+This skill MUST NOT:
+- Draft a full post in scrap mode. Scrap is silent auto-capture; full posts are collaborative (Write mode).
+- Generate an empty or hollow scrap. If gathering finds no decision points, no surprises, no clear insights — report that, do not create a placeholder file.
+- Skip the one-sentence insight test. If you can't complete *"The interesting thing about this commit is ___"* with something specific and non-trivial, do not capture a scrap.
+- Ask multiple questions in a single brainstorming message. One question at a time, each grounded in a specific moment from the content brief.
+- Project a narrative onto the developer's experience. Inferences MUST be grounded in conversation, git history, or scraps — and MUST be validated with the developer before being baked into a draft.
+- Leave stale scraps in `.scraps/` after publishing a post that incorporated them. Cleanup is mandatory.
+- Duplicate an existing published post. Check `docs/devlog/` before drafting; if a similar post exists, ask the developer whether to write a different angle or skip.
 
 ## Reference Files
 
@@ -119,7 +130,7 @@ Examples:
 
 ### `--from-context` fast path
 
-If `--from-context` is set (scrap mode only), **skip all subagent dispatch**. Instead:
+If `--from-context` is set (scrap mode only), **MUST skip all subagent dispatch**. Instead:
 
 1. **Use current conversation context directly.** The invoking session already contains the diff, commit message, conversation history, and any analysis performed. Do not re-mine this information.
 2. **Scan for existing scraps** (dedup only). Read `docs/devlog/.scraps/` to check if a scrap with overlapping topic/date already exists. If the directory doesn't exist or is empty, note "no existing scraps" and proceed.
@@ -131,7 +142,7 @@ This path exists because auto-invocations (e.g., from the commit skill) already 
 
 When `--from-context` is **not** set, dispatch **3 subagents simultaneously** via the Agent tool — all 3 in a single response (3 parallel Agent tool calls).
 
-**IMPORTANT:** Every Agent tool call **must** use `model: "opus"`.
+**MUST use** `model: "opus"` for every Agent tool call.
 
 Read `references/agent-prompts.md` for the full prompt template for each agent. Each subagent receives the guiding principles, resolved timeframe, scope, relevant file paths, and the topic hint (if provided).
 
@@ -147,10 +158,10 @@ Read `references/agent-prompts.md` for the full prompt template for each agent. 
 
 After all 3 agents return, synthesize their results into a **content brief**:
 
-1. **Merge timelines**: combine the git narrative and conversation narrative into a single chronological story
-2. **Cross-reference**: match git commits to conversation exchanges (by timestamp proximity) to connect code changes with the thinking behind them
-3. **Identify candidate insights**: list the moments that look most promising for a devlog post — surprises, pivots, judgment calls
-4. **Incorporate scraps**: weave in any relevant scrap content, noting what's already been captured vs. what's new
+1. **Merge timelines** — combine the git narrative and conversation narrative into a single chronological story
+2. **Cross-reference** — match git commits to conversation exchanges (by timestamp proximity) to connect code changes with the thinking behind them
+3. **Identify candidate insights** — list the moments that look most promising for a devlog post — surprises, pivots, judgment calls
+4. **Incorporate scraps** — weave in any relevant scrap content, noting what's already been captured vs. what's new
 
 The content brief is internal — not shown to the user directly. It feeds into either Scrap Mode or Write Mode.
 
@@ -164,12 +175,13 @@ Triggered when the first argument is `scrap`. After the gathering phase, scrap m
 
 1. Synthesize the content brief from the 3 agents' results
 2. Identify the most interesting moments — decision points, surprises, pivots, dead ends
-3. Infer the developer's thinking — reconstruct *why* decisions were made based on conversation flow and git history
-4. Generate a topic slug from the hint (if provided) or infer from the content (lowercase, hyphenated, 2-5 words)
-5. Write the scrap to `docs/devlog/.scraps/YYYYMMDD-<topic>.md`
-6. If a scrap with the same date and topic exists, append a numeric suffix: `YYYYMMDD-<topic>-2.md`
-7. Create the `.scraps/` directory if it doesn't exist
-8. Report the result to the user
+3. **MUST apply the one-sentence test** before generating any output. If you can't articulate the insight in one specific, non-trivial sentence, abort and report empty results (see below).
+4. Infer the developer's thinking — reconstruct *why* decisions were made based on conversation flow and git history
+5. Generate a topic slug from the hint (if provided) or infer from the content (lowercase, hyphenated, 2–5 words)
+6. Write the scrap to `docs/devlog/.scraps/YYYYMMDD-<topic>.md`
+7. If a scrap with the same date and topic exists, append a numeric suffix: `YYYYMMDD-<topic>-2.md`
+8. Create the `.scraps/` directory if it doesn't exist
+9. Report the result to the user
 
 ### Scrap Structure
 
@@ -205,7 +217,7 @@ status: unwritten
 
 ### Empty Results
 
-If the gathering phase finds nothing noteworthy — no pivots, no surprises, no clear decision points — do **not** generate a hollow scrap. Instead, report:
+If the gathering phase finds nothing noteworthy — no pivots, no surprises, no clear decision points — **MUST NOT** generate a hollow scrap. Instead, report:
 
 > I didn't find any clear decision points or surprises in this session. If something specific caught your attention, try `/devlog scrap <hint>` with a description of what was interesting.
 
@@ -242,8 +254,8 @@ Dig deeper through conversation. Ask targeted questions based on the inferred na
 - "What would you tell a junior developer who's about to make the same mistake you almost made here?"
 
 **Rules for this phase:**
-- Ask one question at a time
-- Each question must reference something specific from the content brief — no generic "tell me more" questions
+- **MUST ask one question at a time**
+- Each question MUST reference something specific from the content brief — no generic "tell me more" questions
 - The goal is to surface the **surprise** (where the mental model broke) and the **judgment** (the thinking that isn't obvious from the code)
 - Continue until you have a clear insight or the developer indicates they're done
 - If the developer's answer reveals a different insight than what you inferred, pivot to explore that instead
@@ -269,7 +281,7 @@ Each approved post gets its own draft-review-publish cycle (phases 3b.4 and 3b.5
 
 Write the devlog post following the Writing Principles (see below). The structure is **freeform** — shaped by the content, not a rigid template. However, every post should:
 
-1. **Open with the situation** — what you were doing and why, in 2-3 casual sentences
+1. **Open with the situation** — what you were doing and why, in 2–3 casual sentences
 2. **Show the journey** — what happened, including wrong turns and dead ends
 3. **Land the insight** — the transferable takeaway, grounded in the specific story
 4. **Close short** — no summary paragraph, no "in conclusion." The insight is the ending.
@@ -278,7 +290,7 @@ Write the devlog post following the Writing Principles (see below). The structur
 
 **Code snippets:** Include focused before/after snippets only where they serve the narrative. Never include full files. Code should illustrate the insight, not document the implementation.
 
-**Length:** Aim for 400-800 words. A focused post is better than a comprehensive one.
+**Length:** Aim for 400–800 words. A focused post is better than a comprehensive one.
 
 Present the draft to the developer for review before publishing.
 
@@ -289,9 +301,8 @@ Present the draft to the developer for review before publishing.
 3. Iterate on feedback until the developer approves
 4. Create the post directory: `docs/devlog/YYYYMMDD-<topic>/`
 5. Write the post: `docs/devlog/YYYYMMDD-<topic>/YYYYMMDD-<topic>.md`
-6. Delete any scraps that were incorporated into this post (check the content brief for which scraps were used)
-7. Git commit:
-   Use Conventional Commits with the structured body format:
+6. **MUST delete** any scraps that were incorporated into this post (check the content brief for which scraps were used)
+7. Git commit using Conventional Commits with the structured body format:
    ```
    docs(devlog): add post on <topic summary>
 
@@ -362,11 +373,11 @@ These principles are baked into the skill's behavior for both scrap inference an
 
 6. **Show the wrong path.** Dead ends and pivots are more instructive than the final solution. They teach *how to navigate* — which is the actual skill. Include what you tried that didn't work and why.
 
-7. **Short over comprehensive.** A focused 400-800 word post beats a sprawling 2000-word post. Respect the reader's time. If it can't be said concisely, it's probably two insights crammed into one post.
+7. **Short over comprehensive.** A focused 400–800 word post beats a sprawling 2000-word post. Respect the reader's time. If it can't be said concisely, it's probably two insights crammed into one post.
 
 8. **Casual + story-driven voice.** First person, conversational. "So I ran into this thing where..." not "In this post, we'll explore..." The voice should sound like explaining something interesting to a friend.
 
-9. **Infer the thinking, confirm with the human.** The skill's job is to reconstruct the developer's thought process from evidence (git, conversation, scraps), then validate that interpretation. Never project your own narrative onto the developer's experience. Always ask "Is that right?" after presenting an inference.
+9. **Infer the thinking, confirm with the human.** The skill's job is to reconstruct the developer's thought process from evidence (git, conversation, scraps), then validate that interpretation. **MUST NOT project** your own narrative onto the developer's experience. Always ask "Is that right?" after presenting an inference.
 
 ---
 
@@ -386,9 +397,9 @@ docs/devlog/
 
 - **Posts** in `docs/devlog/YYYYMMDD-<topic>/YYYYMMDD-<topic>.md` — directory per post for co-located assets (images, videos, supplementary files)
 - **Scraps** in `docs/devlog/.scraps/YYYYMMDD-<topic>.md` — dotdir keeps them hidden from casual browsing
-- **Topic slugs** are lowercase, hyphenated, auto-generated from content or user hint (2-5 words)
+- **Topic slugs** are lowercase, hyphenated, auto-generated from content or user hint (2–5 words)
 - **Scraps deleted** after being fully incorporated into a published post
-- **Git commit** after publishing — using conventional commit format (e.g., `docs(devlog): add post on recursive clone insight`)
+- **Git commit** after publishing using conventional commit format
 
 ---
 
@@ -399,7 +410,7 @@ docs/devlog/
 | Invocation | Empty or unintelligible arguments | Ask user to clarify: "What would you like to write about? Usage: `/devlog [topic]`, `/devlog scrap [hint]`, `/devlog list`" |
 | Phase 1 | Session pointer file not found | Fall back to most recent session file by modification time. Warn: "Couldn't detect current session — using most recent session file." |
 | Phase 1 | No session files exist for project | Skip conversation mining. Proceed with git history and scraps only. Warn: "No conversation history found for this project." |
-| Phase 2 | 1-2 gathering agents fail | Synthesize from successful agents. Note which sources are missing in the content brief. |
+| Phase 2 | 1–2 gathering agents fail | Synthesize from successful agents. Note which sources are missing in the content brief. |
 | Phase 2 | All gathering agents fail | Report failure. Suggest: "I couldn't gather any content. Try providing more context: `/devlog <topic description>`" |
 | Phase 2 | Conversation files are too large to read | Agent reads only user/assistant messages, skipping tool results and file-history-snapshots. Uses topic hint to focus on relevant time ranges. |
 | Phase 3a | Scrap directory doesn't exist | Create `docs/devlog/.scraps/` automatically |
@@ -407,15 +418,3 @@ docs/devlog/
 | Phase 3b | Developer wants to stop mid-brainstorm | Offer to save current state as a scrap: "Want me to save what we have so far as a scrap?" |
 | Phase 3c | No scraps or posts directory exists | Show appropriate "none yet" messages |
 | Phase 3b.5 | Git commit fails | Report the error. The post file is already written — suggest the developer commit manually. |
-
----
-
-## Guardrails
-
-1. **Scrap mode is silent.** Never ask the developer questions in scrap mode. Make your best inference and write it. The developer invoked scrap mode because they're in the flow and don't want interruption.
-2. **Write mode is collaborative.** Always present inferences for validation. Never draft without the developer's input on the insight.
-3. **One question at a time.** In write mode brainstorming, never ask multiple questions in a single message.
-4. **Evidence over projection.** Every claim about what the developer was thinking must be grounded in conversation exchanges, git history, or scraps. Mark inferences explicitly.
-5. **Respect the developer's voice.** The devlog is written from the developer's perspective, using their words where possible. Don't impose a different style or vocabulary.
-6. **Clean up after publishing.** Always delete scraps that were incorporated into a published post. Don't leave stale scraps around.
-7. **Don't duplicate insights.** Before writing a post, check existing published posts in `docs/devlog/` to avoid covering the same ground. If a similar post exists, mention it and ask if the developer wants to write a different angle or skip.

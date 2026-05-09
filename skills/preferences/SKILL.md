@@ -1,17 +1,23 @@
 ---
 name: preferences
-version: "1.0.0"
-description: "Use when the user invokes /preferences to set, view, or update their personal skill preferences. Also invoked automatically by other skills on first contact when no preferences file exists. Captures communication style, explanation preferences, experience level, and project context — shared across all skills in the collection."
+version: "1.1.0"
+description: "Use when the user invokes /preferences to set, view, or update their personal skill preferences. Also invoked automatically by other skills on first contact when no preferences file exists. Captures communication style, explanation preferences, experience level, and project context — shared across every skill in the collection."
 ---
 
 # Preferences Skill
 
-Capture and manage user preferences that shape how every skill in this
-collection behaves. Preferences are personal (per-user, per-project) and
-stored in `.claude/skill-context/`.
+Capture and manage user preferences that shape how every skill in this collection behaves. Preferences are personal (per-user, per-project) and stored in `.claude/skill-context/`.
 
-Read `shared/skill-context.md` for the full file format specification and
-how other skills consume these preferences.
+Read `shared/skill-context.md` for the full file format specification and how other skills consume these preferences.
+
+## Out of Scope
+
+This skill MUST NOT:
+- Re-ask questions the user has already answered. Read existing preferences first; only ask about gaps.
+- Block a calling skill's workflow on preference-capture failure. If the user cancels mid-interview or write fails, return control to the caller with sensible defaults.
+- Treat preferences as rigid laws. Skills apply them with judgment — "concise" doesn't mean dropping critical security findings.
+- Over-interview. 4 questions for shared, 1–3 per skill. Short answers are fine; gaps get sensible defaults.
+- Modify `.gitignore` automatically to add `.claude/skill-context/`. Suggest it; do not silently add.
 
 ## Invocation
 
@@ -22,9 +28,7 @@ how other skills consume these preferences.
 | `/preferences reset` | Clear all preferences and start fresh |
 | `/preferences <skill-name>` | Set or update preferences for a specific skill |
 
-When invoked **by another skill** (not the user), the calling skill has
-detected no preferences file exists. Run the interview, save results, and
-return control to the calling skill.
+When invoked **by another skill** (not the user), the calling skill has detected no preferences file exists. Run the streamlined Round 1 interview, save results, and return control.
 
 ---
 
@@ -34,17 +38,15 @@ return control to the calling skill.
 
 Read `.claude/skill-context/preferences.md`.
 
-- **If found:** Display current preferences in a clean summary and ask:
-  "Want to update anything, or is this still accurate?"
-  - If the user confirms → done.
-  - If they want changes → ask about the specific areas they want to change.
-    Update the file and show the updated version.
-- **If not found:** Proceed to Step 2.
+- **Found:** Display current preferences in a clean summary and ask:
+  > "Want to update anything, or is this still accurate?"
+  - User confirms → done.
+  - User wants changes → ask about specific areas. Update the file and show the result.
+- **Not found:** Proceed to Step 2.
 
 ### Step 2: The Interview
 
-Ask questions in a conversational flow — not a rigid survey. Present them
-as a group so the user can answer in one message if they want.
+Ask questions in a conversational flow — not a rigid survey. Present them as a group so the user can answer in one message if they want.
 
 #### Round 1: Core Preferences (always ask)
 
@@ -64,12 +66,11 @@ as a group so the user can answer in one message if they want.
 >
 > 4. **About this project:**
 >    - What phase is it in? (Prototype / MVP / Active growth / Mature / Maintenance)
->    - How big is the team? (Solo / 2-5 / 6-15 / 16+)
+>    - How big is the team? (Solo / 2–5 / 6–15 / 16+)
 >    - What's the top business priority? (Speed to market / Reliability /
 >      Compliance / Cost reduction / Feature completeness)
 
-Accept partial answers gracefully. If the user skips a question, use sensible
-defaults and note them. If they give a one-word answer, infer what you can.
+Accept partial answers gracefully. If the user skips a question, use sensible defaults and note them. If they give a one-word answer, infer what you can.
 
 #### Round 2: Offer to Go Deeper (always ask)
 
@@ -83,14 +84,11 @@ After capturing Round 1:
 >
 > You can do this now, or anytime later with `/preferences <skill-name>`.
 
-If the user wants to continue, proceed to skill-specific questions for the
-skills they mention. Otherwise, wrap up.
+If the user wants to continue, proceed to skill-specific questions for the skills they mention. Otherwise, wrap up.
 
 ### Step 3: Save
 
-Write `.claude/skill-context/preferences.md` using the format from
-`shared/skill-context.md`. Ensure `.claude/skill-context/` directory exists
-first (create if needed).
+Write `.claude/skill-context/preferences.md` using the format from `shared/skill-context.md`. Ensure `.claude/skill-context/` exists first (create if needed).
 
 Show the user what was saved:
 
@@ -98,7 +96,7 @@ Show the user what was saved:
 >
 > [formatted summary of preferences]
 >
-> These preferences will be used by all skills in this collection. You can
+> These preferences will be used by every skill in this collection. You can
 > update them anytime with `/preferences`, or fine-tune a specific skill with
 > `/preferences <skill-name>`.
 
@@ -109,10 +107,8 @@ Show the user what was saved:
 Read and display all preference files:
 
 1. Read `.claude/skill-context/preferences.md` — show as "Shared Preferences"
-2. Glob `.claude/skill-context/*.md` (excluding `preferences.md`) — show each
-   as "{Skill Name} Preferences"
-3. If no files exist: "No preferences set yet. Run `/preferences` to get
-   started."
+2. Glob `.claude/skill-context/*.md` (excluding `preferences.md`) — show each as "{Skill Name} Preferences"
+3. If no files exist: "No preferences set yet. Run `/preferences` to get started."
 
 Format as a clean summary, not a raw file dump.
 
@@ -120,7 +116,7 @@ Format as a clean summary, not a raw file dump.
 
 ## Mode: Reset (`/preferences reset`)
 
-Confirm before deleting:
+**MUST confirm** before deleting:
 
 > This will clear all your skill preferences (shared and skill-specific).
 > You'll be asked again on next skill use. Proceed? (y/n)
@@ -139,14 +135,11 @@ Check if `skills/<skill-name>/SKILL.md` exists. If not:
 
 ### Step 2: Check for Shared Preferences
 
-If `.claude/skill-context/preferences.md` doesn't exist, run the full
-interview first (Round 1 above), then proceed to skill-specific questions.
+If `.claude/skill-context/preferences.md` doesn't exist, run the full interview first (Round 1 above), then proceed to skill-specific questions.
 
 ### Step 3: Skill-Specific Interview
 
-Ask 1-3 targeted questions based on the skill. These questions should be
-things the skill actually uses to shape its behavior — not abstract
-preferences that don't affect output.
+Ask 1–3 targeted questions based on the skill. Questions MUST be things the skill actually uses — not abstract preferences that don't shape output.
 
 #### Skill-Specific Question Bank
 
@@ -160,11 +153,9 @@ preferences that don't affect output.
 
 **code-review:**
 > What matters most in code reviews?
-> - Rank these by priority: Security, Correctness, Performance,
->   Architecture, Clean Code, Reliability
-> - Should I include minor style findings (P3/P4), or focus on real bugs and
->   security issues only?
-> - Do you prefer before/after code examples, or just descriptions?
+> - Rank by priority: Security, Correctness, Performance, Architecture, Clean Code, Reliability
+> - Should I include minor style findings (P3/P4), or focus on real bugs and security issues only?
+> - Prefer before/after code examples, or just descriptions?
 
 **quick-review:**
 > Same as code-review — read and reuse code-review preferences if they exist.
@@ -172,8 +163,7 @@ preferences that don't affect output.
 
 **codebase-audit:**
 > Any known trade-offs I should be aware of?
-> (intentional debt, upcoming migrations, things that look bad but are
-> deliberate)
+> (intentional debt, upcoming migrations, things that look bad but are deliberate)
 >
 > What deployment cadence does this project use?
 > (Continuous / Weekly / Monthly / Release-based / Not yet)
@@ -189,16 +179,14 @@ preferences that don't affect output.
 
 **devlog:**
 > Who's the target audience for your devlog?
-> (Fellow engineers / General tech audience / Personal notes /
-> Company-internal / Blog readers)
+> (Fellow engineers / General tech audience / Personal notes / Company-internal / Blog readers)
 >
 > What tone should devlog entries use?
 > (Technical and precise / Conversational / Narrative storytelling)
 
 **retrospective:**
 > How formal should retrospectives be?
-> (Casual team reflection / Structured process review / Formal with
-> action items and owners)
+> (Casual team reflection / Structured process review / Formal with action items and owners)
 
 **export:**
 > Any default export preferences?
@@ -219,37 +207,16 @@ Write to `.claude/skill-context/<skill-name>.md`. Show what was saved.
 
 ## Invocation by Other Skills
 
-When another skill invokes `/preferences` because no preferences file exists,
-the flow is streamlined:
+When another skill invokes `/preferences` because no preferences file exists, the flow is streamlined:
 
 1. The calling skill detected no `.claude/skill-context/preferences.md`
 2. It invoked `/preferences`
 3. Run the Round 1 interview (core preferences)
-4. **Skip Round 2** (don't offer skill-specific deep-dives — the user is in
-   the middle of another skill's workflow)
+4. **MUST skip Round 2** (don't offer skill-specific deep-dives — the user is in the middle of another skill's workflow)
 5. Save and return control
-6. Optionally, after the calling skill completes, mention: "You can fine-tune
-   preferences for specific skills anytime with `/preferences <skill-name>`."
+6. After the calling skill completes, optionally mention: "You can fine-tune preferences for specific skills anytime with `/preferences <skill-name>`."
 
 This keeps the interruption brief while still capturing the essentials.
-
----
-
-## Guardrails
-
-1. **Don't over-interview.** 4 questions for shared, 1-3 per skill. If the
-   user gives short answers, work with what you get.
-2. **Accept partial answers.** Not every field needs to be filled. Defaults
-   are fine. Note them in the saved file as "(default)".
-3. **Never block a skill workflow.** If preferences capture fails for any
-   reason (user cancels, file write error), the calling skill proceeds with
-   sensible defaults.
-4. **Preferences are suggestions, not laws.** Skills apply them with
-   judgment. A "concise" preference doesn't mean stripping critical
-   findings from a security review.
-5. **Don't re-ask the same questions.** If the user already has shared
-   preferences, don't re-interview for shared context when they're setting
-   skill-specific preferences.
 
 ---
 
