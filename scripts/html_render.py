@@ -313,13 +313,88 @@ def render_html(
             tmp_md.unlink()
 
 
-# ── Main entry point ───────────────────────────────────────────────────
+# ── CLI ───────────────────────────────────────────────────────────────
+
+
+def _build_parser() -> argparse.ArgumentParser:
+    p = argparse.ArgumentParser(
+        prog="html_render",
+        description="Render a Markdown report to a self-contained HTML file.",
+    )
+    p.add_argument("input", help="Path to the input markdown file.")
+    p.add_argument(
+        "--output",
+        help="Output HTML path. Default: same dir, .html extension.",
+    )
+    p.add_argument(
+        "--profile",
+        choices=["analytical"],   # Phase 1 supports only analytical
+        default="analytical",
+        help="Report profile (Phase 1 supports only 'analytical').",
+    )
+    p.add_argument(
+        "--no-toc",
+        action="store_true",
+        help="Skip the sidebar TOC.",
+    )
+    p.add_argument(
+        "--vendor-dir",
+        help="Override the plugin's vendor directory (testing).",
+    )
+    p.add_argument(
+        "--template",
+        help="Override the Pandoc HTML5 template path (testing).",
+    )
+    p.add_argument(
+        "--assets-dir",
+        help="Override the docs/.assets/report-lib/ destination (testing).",
+    )
+    return p
 
 
 def main(argv: Optional[list[str]] = None) -> int:
-    """CLI entry point. Returns process exit code."""
-    # Phase 1 fills this in across Tasks 6-12.
-    raise NotImplementedError("html_render.main is implemented in Tasks 6-12")
+    parser = _build_parser()
+    args = parser.parse_args(argv)
+
+    input_md = Path(args.input).resolve()
+    if not input_md.is_file():
+        print(f"Input markdown not found: {input_md}", file=sys.stderr)
+        return 2
+
+    output_html = Path(args.output).resolve() if args.output else input_md.with_suffix(".html")
+    template_path = Path(args.template).resolve() if args.template else TEMPLATE_PATH
+    vendor_dir = Path(args.vendor_dir).resolve() if args.vendor_dir else PLUGIN_VENDOR_DIR
+
+    try:
+        if args.assets_dir:
+            assets_dir = Path(args.assets_dir).resolve()
+            assets_dir.mkdir(parents=True, exist_ok=True)
+        else:
+            repo_root = find_repo_root(input_md)
+            assets_dir = bootstrap_assets(repo_root, vendor_dir=vendor_dir)
+    except NotInRepoError as e:
+        print(str(e), file=sys.stderr)
+        return 6
+    except VendorMissingError as e:
+        print(str(e), file=sys.stderr)
+        return 4
+
+    try:
+        render_html(
+            input_md=input_md,
+            output_html=output_html,
+            assets_dir=assets_dir,
+            template_path=template_path,
+        )
+    except PandocMissingError as e:
+        print(str(e), file=sys.stderr)
+        return 1
+    except HtmlRenderError as e:
+        print(str(e), file=sys.stderr)
+        return 3
+
+    print(f"Rendered: {output_html}")
+    return 0
 
 
 if __name__ == "__main__":

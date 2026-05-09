@@ -283,3 +283,62 @@ class TestRenderHtml:
 
         html = output.read_text(encoding="utf-8")
         assert "<title>Custom Page Title</title>" in html
+
+
+# ── main / CLI ──────────────────────────────────────────────────────
+
+
+class TestMain:
+    def test_renders_input_to_default_output_path(self, tmp_path):
+        subprocess.run(["git", "init"], cwd=tmp_path, check=True, capture_output=True)
+        # Stub the vendor dir so bootstrap copies a minimal asset set
+        plugin_vendor = tmp_path / "_plugin_vendor"
+        plugin_vendor.mkdir()
+        (plugin_vendor / "report-base.css").write_text("/* test */")
+        # Need to also stub the template
+        template = tmp_path / "_template.html"
+        template.write_text(
+            '<!doctype html><html><head><title>$title$</title></head>'
+            '<body>$body$</body></html>'
+        )
+
+        input_md = tmp_path / "docs" / "explain" / "test.md"
+        input_md.parent.mkdir(parents=True)
+        input_md.write_text("# Hi\n")
+
+        exit_code = html_render.main([
+            str(input_md),
+            "--vendor-dir", str(plugin_vendor),
+            "--template", str(template),
+        ])
+        assert exit_code == 0
+        expected_html = tmp_path / "docs" / "explain" / "test.html"
+        assert expected_html.exists()
+
+    def test_main_returns_nonzero_when_input_missing(self, tmp_path):
+        exit_code = html_render.main([str(tmp_path / "ghost.md")])
+        assert exit_code == 2
+
+    def test_main_respects_explicit_output_flag(self, tmp_path):
+        subprocess.run(["git", "init"], cwd=tmp_path, check=True, capture_output=True)
+        plugin_vendor = tmp_path / "_plugin_vendor"
+        plugin_vendor.mkdir()
+        (plugin_vendor / "report-base.css").write_text("/* test */")
+        template = tmp_path / "_template.html"
+        template.write_text(
+            '<!doctype html><html><head><title>$title$</title></head>'
+            '<body>$body$</body></html>'
+        )
+
+        input_md = tmp_path / "test.md"
+        input_md.write_text("# Hi\n")
+        custom = tmp_path / "weird-name.html"
+
+        exit_code = html_render.main([
+            str(input_md),
+            "--output", str(custom),
+            "--vendor-dir", str(plugin_vendor),
+            "--template", str(template),
+        ])
+        assert exit_code == 0
+        assert custom.exists()
