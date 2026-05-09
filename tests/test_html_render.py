@@ -195,3 +195,91 @@ class TestComputeAssetsRelpath:
         rel = html_render.compute_assets_relpath(assets, output)
         assert "\\" not in rel
         assert rel.startswith("../")
+
+
+# ── render_html ─────────────────────────────────────────────────────
+
+
+class TestRenderHtml:
+    def test_renders_basic_markdown_to_html(self, tmp_path):
+        # Create a fake repo with assets dir
+        subprocess.run(["git", "init"], cwd=tmp_path, check=True, capture_output=True)
+        repo = tmp_path
+        assets = repo / "docs" / ".assets" / "report-lib"
+        assets.mkdir(parents=True)
+        # Write a stub base.css so the report has *something* to link to
+        (assets / "report-base.css").write_text("/* test */")
+
+        input_md = repo / "docs" / "explain" / "test.md"
+        input_md.parent.mkdir(parents=True)
+        input_md.write_text("# Hello\n\nWorld.\n")
+
+        output = repo / "docs" / "explain" / "test.html"
+        html_render.render_html(
+            input_md=input_md,
+            output_html=output,
+            assets_dir=assets,
+            template_path=html_render.TEMPLATE_PATH,
+        )
+
+        assert output.exists()
+        html = output.read_text(encoding="utf-8")
+        assert "<h1" in html and "Hello" in html
+        assert "World." in html
+        # Asset references use the correct relative path
+        assert 'href="../.assets/report-lib/report-base.css"' in html
+
+    def test_renders_mermaid_block_into_pre(self, tmp_path):
+        subprocess.run(["git", "init"], cwd=tmp_path, check=True, capture_output=True)
+        repo = tmp_path
+        assets = repo / "docs" / ".assets" / "report-lib"
+        assets.mkdir(parents=True)
+        (assets / "report-base.css").write_text("/* test */")
+
+        input_md = repo / "docs" / "explain" / "test.md"
+        input_md.parent.mkdir(parents=True)
+        input_md.write_text(
+            "# Test\n\n"
+            "```mermaid\n"
+            "graph TD\nA --> B\n"
+            "```\n"
+        )
+
+        output = repo / "docs" / "explain" / "test.html"
+        html_render.render_html(
+            input_md=input_md,
+            output_html=output,
+            assets_dir=assets,
+            template_path=html_render.TEMPLATE_PATH,
+        )
+
+        html = output.read_text(encoding="utf-8")
+        assert '<pre class="mermaid">' in html
+        assert "A --&gt; B" in html or "A --> B" in html
+
+    def test_uses_frontmatter_title(self, tmp_path):
+        subprocess.run(["git", "init"], cwd=tmp_path, check=True, capture_output=True)
+        repo = tmp_path
+        assets = repo / "docs" / ".assets" / "report-lib"
+        assets.mkdir(parents=True)
+        (assets / "report-base.css").write_text("/* test */")
+
+        input_md = repo / "docs" / "explain" / "test.md"
+        input_md.parent.mkdir(parents=True)
+        input_md.write_text(
+            "---\n"
+            "title: Custom Page Title\n"
+            "---\n\n"
+            "# Body\n"
+        )
+
+        output = repo / "docs" / "explain" / "test.html"
+        html_render.render_html(
+            input_md=input_md,
+            output_html=output,
+            assets_dir=assets,
+            template_path=html_render.TEMPLATE_PATH,
+        )
+
+        html = output.read_text(encoding="utf-8")
+        assert "<title>Custom Page Title</title>" in html

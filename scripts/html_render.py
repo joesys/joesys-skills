@@ -228,6 +228,91 @@ def compute_assets_relpath(assets_dir: Path, output_path: Path) -> str:
     return rel.replace(os.sep, "/")
 
 
+# ── Pandoc orchestration ──────────────────────────────────────────────
+
+
+def _ensure_pandoc() -> None:
+    """Raise PandocMissingError if pandoc is not on PATH."""
+    if shutil.which("pandoc") is None:
+        raise PandocMissingError(
+            "pandoc is required but was not found on PATH. "
+            "Install: choco install pandoc / brew install pandoc / "
+            "apt install pandoc"
+        )
+
+
+def render_html(
+    input_md: Path,
+    output_html: Path,
+    assets_dir: Path,
+    template_path: Path,
+) -> None:
+    """Render a markdown report to a self-contained HTML file.
+
+    1. Read source markdown.
+    2. Parse and strip front-matter (use as Pandoc metadata).
+    3. Apply enrichment-block transforms (Phase 1: mermaid only).
+    4. Compute relative asset path.
+    5. Write transformed markdown to a temp file.
+    6. Run Pandoc to render through our HTML5 template.
+    7. Clean up the temp file.
+
+    Args:
+        input_md: Source markdown.
+        output_html: Output HTML path.
+        assets_dir: Absolute path to docs/.assets/report-lib/.
+        template_path: Pandoc HTML5 template path.
+
+    Raises:
+        PandocMissingError: if pandoc is not installed.
+    """
+    _ensure_pandoc()
+
+    raw = input_md.read_text(encoding="utf-8")
+    metadata, body = parse_frontmatter(raw)
+
+    # Default title: first H1 or filename
+    if "title" not in metadata:
+        m = re.search(r"^#\s+(.+)$", body, re.MULTILINE)
+        metadata["title"] = m.group(1).strip() if m else input_md.stem
+
+    body = transform_mermaid_blocks(body)
+
+    rel_assets = compute_assets_relpath(assets_dir, output_html)
+
+    output_html.parent.mkdir(parents=True, exist_ok=True)
+
+    # Write transformed markdown to a temp file alongside the input
+    tmp_md = input_md.parent / (input_md.stem + ".tmp.md")
+    try:
+        tmp_md.write_text(body, encoding="utf-8")
+
+        cmd = [
+            "pandoc",
+            str(tmp_md),
+            "-o", str(output_html),
+            "--from=markdown",
+            "--to=html5",
+            "--template", str(template_path),
+            "--toc",
+            "--toc-depth=3",
+            "--standalone",
+            "--variable", f"assets-rel={rel_assets}",
+        ]
+        for key, value in metadata.items():
+            cmd.extend(["--variable", f"{key}={value}"])
+
+        try:
+            subprocess.run(cmd, check=True, capture_output=True, text=True)
+        except subprocess.CalledProcessError as e:
+            raise HtmlRenderError(
+                f"pandoc failed (exit {e.returncode}):\n{e.stderr}"
+            ) from e
+    finally:
+        if tmp_md.exists():
+            tmp_md.unlink()
+
+
 # ── Main entry point ───────────────────────────────────────────────────
 
 
