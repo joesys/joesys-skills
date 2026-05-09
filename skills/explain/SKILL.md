@@ -32,6 +32,7 @@ Parse the user's `/explain` arguments to determine scope and options:
 | `/explain MyClassName` | Class/symbol (resolved via LSP or Grep) |
 | `/explain "how does payment processing work?"` | Feature trace (natural language question) |
 | `/explain --save` | Any of the above + write output to file |
+| `/explain --save --no-html` | Save the markdown report only — skip HTML rendering for this run |
 | `/explain --save --path docs/onboarding/` | Custom save location |
 
 Arguments are combinable. Examples:
@@ -435,8 +436,28 @@ Scope name derivation:
 `--path <dir>` overrides the default directory. The filename derivation remains the same.
 
 ### Save behavior
-1. Write the full synthesized report to the resolved file path
-2. Print to terminal: a brief summary (TL;DR + Cheat Sheet only) followed by: `Full report saved to <path>`
+1. Write the full synthesized report to the resolved file path. **Add YAML front-matter** at the top of the markdown with these fields:
+   ```markdown
+   ---
+   title: "<scope-derived title>"
+   generated_by: "/explain"
+   generated_at: "<ISO 8601 UTC timestamp>"
+   scope: "<resolved scope>"
+   profile: "analytical"
+   ---
+   ```
+2. **Render the HTML companion.** After the markdown is written, invoke the HTML renderer (best-effort; if it fails, log a warning and continue — the markdown is already saved):
+   ```bash
+   python scripts/html_render.py <report-path>.md --profile analytical
+   ```
+   The renderer writes `<report-path>.html` next to the markdown. On first run in a project it also creates `docs/.assets/report-lib/`. See `shared/html-reports.md` for the protocol details.
+
+   To skip HTML rendering for a single invocation, the user passes `--no-html`:
+   ```
+   /explain --save --no-html
+   ```
+
+3. Print to terminal: a brief summary (TL;DR + Cheat Sheet only) followed by: `Full report saved to <path>.md and <path>.html`
 
 ---
 
