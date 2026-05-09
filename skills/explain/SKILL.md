@@ -70,7 +70,7 @@ Read `shared/skill-context.md` for the full protocol. In brief:
 | Detail level: concise | Shorter TL;DR, fewer inline examples, top-level findings only |
 | Detail level: detailed | Expanded sections, more code references, richer context |
 | Style: analogy-heavy | Subagents use real-world parallels when describing architecture and flows |
-| Style: visual-with-diagrams | More ASCII diagrams, expanded dependency graphs, flow charts for every workflow |
+| Style: visual-with-diagrams | More Mermaid diagrams, expanded dependency graphs, flow charts for every workflow |
 | Style: example-driven | Subagents include concrete usage examples alongside descriptions |
 | Assumed knowledge: beginner | Define domain terms, explain framework conventions, expand the glossary |
 | Assumed knowledge: expert | Skip obvious patterns, focus on non-obvious design decisions and gotchas |
@@ -150,7 +150,7 @@ Each subagent receives a prompt containing:
 3. **Use LSP tools if available, fall back to Glob/Grep/Read.** Do not fail if LSP is unavailable.
 4. **Respect scope boundaries.** Focus on the requested scope. Reference external context where necessary ("this module is called from `src/api/routes.ts`") but do not produce full analysis of unrelated modules.
 5. **Don't reproduce source code.** Reference code with `file:line_number` pointers and short snippets for clarity. The user has the code — they need understanding, not a copy.
-6. **ASCII graphs MUST follow the shared ASCII Graph Standards.** Read `references/ascii-standards.md` for the full specification. Use box-drawing characters, enforce alignment, and scale detail to project size per the adaptive rules.
+6. **Diagrams MUST use Mermaid syntax and follow the shared Diagram Standards.** Read `references/diagram-standards.md` for the syntax patterns per diagram type, adaptive detail rules, and authoring notes. ASCII box-drawing for graphs is not permitted — see `shared/html-reports.md` for rationale.
 
 ### Subagent Roster
 
@@ -186,7 +186,7 @@ You are a senior software architect analyzing a codebase for structural understa
 - **Entry points**: main files, route registrations, CLI commands, public exports, event handlers
 - **Dependency relationships**: how modules depend on each other (imports/requires graph)
 - **File conventions**: naming patterns, co-location patterns (tests next to source? separate tree?)
-- **Module dependency graph**: Include an ASCII graph showing how the major modules/packages depend on each other. Follow the ASCII Graph Standards. This graph will also be used by the synthesizer to compose the top-level Architecture Overview.
+- **Module dependency graph**: Include a Mermaid `graph LR` diagram showing how the major modules/packages depend on each other. Follow the Diagram Standards. This graph will also be used by the synthesizer to compose the top-level Architecture Overview.
 
 ## Output Format
 Return structured markdown with clear headings for each area above.
@@ -224,7 +224,7 @@ If fewer than 3 distinct workflows/paths exist at this scope, trace what's avail
 
 ## For Each Workflow, Report
 - The complete call chain: `file:function → file:function → ...`
-- **Flow diagram**: An ASCII flow diagram showing the call chain for this workflow. Use horizontal flow for the primary path, vertical branches for error/alternate paths. Follow the ASCII Graph Standards.
+- **Flow diagram**: A Mermaid `sequenceDiagram` (preferred) or `graph LR` flowchart showing the call chain for this workflow. Use sequence for linear request/response flows; use a flowchart when branching for error/alternate paths dominates. Follow the Diagram Standards.
 - Key business logic decisions (branches that matter)
 - External dependencies touched (DB queries, API calls, queue publishes)
 - Error handling approach at each step
@@ -260,7 +260,7 @@ You are a senior domain analyst mapping the data model and business concepts of 
 - **Domain glossary**: map code names to business concepts — especially non-obvious ones where the code name differs from the business term
 - **Storage mapping**: what data lives where (relational DB, document store, cache, queue, file system, in-memory)
 - **Validation and constraints**: invariants, required fields, business rules enforced at the data layer
-- **State transition diagram** (optional): If domain objects have clear lifecycle states (e.g., Order: draft → confirmed → shipped → delivered), include an ASCII state transition diagram. Follow the ASCII Graph Standards. If no clear state transitions exist, skip — don't force a graph where prose is clearer.
+- **State transition diagram** (optional): If domain objects have clear lifecycle states (e.g., Order: draft → confirmed → shipped → delivered), include a Mermaid `stateDiagram-v2`. Follow the Diagram Standards. If no clear state transitions exist, skip — don't force a diagram where prose is clearer.
 
 ## Output Format
 Return structured markdown with clear headings for each area above.
@@ -290,7 +290,7 @@ You are a senior infrastructure engineer mapping how this system integrates with
 - **Infrastructure config**: Terraform, CloudFormation, Docker, Kubernetes, Helm charts — what infrastructure is defined in code
 - **Sync vs async**: which integrations are synchronous (blocking) vs asynchronous (queues, events, webhooks)
 - **Resilience patterns**: retry logic, circuit breakers, fallbacks, timeouts — or their absence
-- **Integration map**: Include an ASCII integration map with the system at center and external services arranged around it. Follow the ASCII Graph Standards.
+- **Integration map**: Include a Mermaid `graph TD` integration map with the system at center and external services arranged around it. Follow the Diagram Standards.
 
 ## Output Format
 Return structured markdown.
@@ -475,9 +475,9 @@ Scope name derivation:
 
 ---
 
-## ASCII Graph Standards
+## Diagram Standards
 
-Read `references/ascii-standards.md` for the full box-drawing character set, alignment rules, adaptive detail rules, and graph types per section. These standards are prepended to every subagent prompt that produces graphs.
+Read `references/diagram-standards.md` for Mermaid syntax patterns per diagram type, adaptive detail rules, and authoring notes. These standards are prepended to every subagent prompt that produces diagrams.
 
 ---
 
