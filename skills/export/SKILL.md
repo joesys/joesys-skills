@@ -1,12 +1,26 @@
 ---
 name: export
-version: "1.0.0"
+version: "1.1.0"
 description: "Use when the user invokes /export to convert markdown, text, or code files into polished PDF, HTML, or PNG with proper typography, syntax highlighting, and responsive layout."
 ---
 
 # Export Skill
 
 Convert markdown, text, and code files into polished, shareable formats. Supports three output formats (PDF, HTML, PNG), three content scopes (full, summary, 1pager), and three CSS themes (minimal, modern, dark).
+
+## Out of Scope
+
+This skill MUST NOT:
+- Modify the input file. The export pipeline is read-only — the source markdown/code is never edited.
+- Alter content under `--scope full` (the default). Full-scope exports are faithful conversions; only `--scope summary` and `--scope 1pager` may condense.
+- Write output to a path outside the user's working directory tree without warning. If `--output` resolves outside the project, confirm before writing.
+- Skip dependency checks silently. If Pandoc/LuaLaTeX/Chromium is missing, report it with install instructions — do not fail mysteriously.
+
+## Preflight
+
+Before rendering, **MUST**:
+1. Confirm the input file exists.
+2. Verify required dependencies are installed for the requested format (Pandoc always; LuaLaTeX for PDF; Chromium for PNG). Report install instructions for any missing dependency.
 
 ## Invocation
 
@@ -41,7 +55,7 @@ If the invocation is ambiguous or the file path is unrecognizable, ask the user 
 
 Read `shared/skill-context.md` for the full protocol. In brief:
 
-1. Read `.claude/skill-context/preferences.md` — if missing, proceed with defaults (don't interrupt the export flow).
+1. Read `.claude/skill-context/preferences.md` — if missing, proceed with defaults (do not interrupt the export flow).
 2. Read `.claude/skill-context/export.md` (if it exists) for export-specific preferences.
 
 **How preferences shape this skill:**
@@ -52,15 +66,15 @@ Read `shared/skill-context.md` for the full protocol. In brief:
 | Export-specific: default theme | Override the default `minimal` theme |
 | Export-specific: include TOC | Always include table of contents |
 
-Like commit, export does not invoke `/preferences` on first contact — exports are straightforward operations. If preferences exist, use them as new defaults (CLI flags still override). If not, use the built-in defaults above.
+Like `/commit`, `/export` is a **silent defaults** skill. **MUST NOT invoke** `/preferences` on first contact — exports are straightforward operations. If preferences exist, use them as new defaults (CLI flags still override). If not, use the built-in defaults above.
 
 ## Process
 
 ### Step 1 — Validate Input
 
-1. Confirm the input file exists. If not, ask the user for the correct path.
+1. Confirm the input file exists. If not, ask for the correct path.
 2. Parse all flags from the invocation.
-3. If `--output` is used with `--format all`, warn the user that `--output` only works with a single format and ask them to choose.
+3. If `--output` is used with `--format all`, warn that `--output` only works with a single format; ask the user to choose.
 
 ### Step 2 — Content Preparation
 
@@ -71,17 +85,17 @@ Based on `--scope`:
 **`summary`:** Read the input file and generate a condensed markdown summary:
 - Extract and preserve the document title (first H1 or filename).
 - Identify key sections, findings, and conclusions.
-- Produce a focused summary — typically 30-50% of the original length.
-- Preserve code blocks, tables, and other structured elements that are central to the document's message.
+- Produce a focused summary — typically 30–50% of the original length.
+- Preserve code blocks, tables, and other structured elements central to the document's message.
 - Write the condensed markdown to a temporary file.
 
-**`1pager`:** Read the input file and condense to approximately one A4 page worth of content (~500-600 words):
-- Prioritize the most important information: conclusions, key findings, critical code.
+**`1pager`:** Read the input file and condense to ~one A4 page (~500–600 words):
+- Prioritize conclusions, key findings, critical code.
 - Use tighter prose — bullet points over paragraphs where appropriate.
-- Omit secondary details, verbose explanations, and supporting examples.
+- Omit secondary details, verbose explanations, supporting examples.
 - Write the condensed markdown to a temporary file.
 
-For code files (`.py`, `.cpp`, etc.) with `summary` or `1pager` scope: extract the most important functions/classes, add brief descriptions. Do not attempt to summarize every line.
+For code files (`.py`, `.cpp`, etc.) with `summary` or `1pager` scope: extract the most important functions/classes with brief descriptions. Do not attempt to summarize every line.
 
 ### Step 3 — Render
 
@@ -104,11 +118,11 @@ Each format uses a different rendering pipeline:
 | **PDF** | Pandoc + LuaLaTeX → PDF | LaTeX templates (`scripts/templates/`) | Pandoc, LuaLaTeX |
 | **PNG** | Pandoc → temp HTML → headless browser screenshot → auto-trim | CSS (`scripts/themes/`) | Pandoc, Chromium browser |
 
-The script also handles input detection (markdown vs code) and wraps code files in fenced blocks with syntax highlighting before passing to Pandoc.
+The script handles input detection (markdown vs code) and wraps code files in fenced blocks with syntax highlighting before passing to Pandoc.
 
-**PDF typography:** PDF output uses Segoe UI for body text, Cascadia Code for code blocks (scaled to 0.88). These are system fonts — if they are missing, LuaLaTeX will fall back to defaults. Orientation is controlled via LaTeX geometry options.
+**PDF typography:** PDF output uses Segoe UI for body text and Cascadia Code for code blocks (scaled to 0.88). These are system fonts — if missing, LuaLaTeX falls back to defaults. Orientation is controlled via LaTeX geometry options.
 
-**PNG sizing:** The `--scope` flag affects PNG dimensions — `1pager` renders at A4-equivalent resolution (794×1123 portrait, 1123×794 landscape), while `full`/`summary` use a narrow 430px-wide viewport with auto-height that gets trimmed to content.
+**PNG sizing:** `--scope` affects PNG dimensions — `1pager` renders at A4-equivalent resolution (794×1123 portrait, 1123×794 landscape); `full`/`summary` use a narrow 430px-wide viewport with auto-height trimmed to content.
 
 ### Step 4 — Report Results
 
