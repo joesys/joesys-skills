@@ -246,6 +246,7 @@ def render_html(
     output_html: Path,
     assets_dir: Path,
     template_path: Path,
+    toc: bool = True,
 ) -> None:
     """Render a markdown report to a self-contained HTML file.
 
@@ -262,9 +263,13 @@ def render_html(
         output_html: Output HTML path.
         assets_dir: Absolute path to docs/.assets/report-lib/.
         template_path: Pandoc HTML5 template path.
+        toc: If True (default), pass --toc / --toc-depth=3 to Pandoc so the
+            sidebar table of contents is auto-built. Set False to suppress
+            (the sidebar h1 "Contents" remains but the list is empty).
 
     Raises:
         PandocMissingError: if pandoc is not installed.
+        HtmlRenderError: if pandoc subprocess fails.
     """
     _ensure_pandoc()
 
@@ -294,11 +299,11 @@ def render_html(
             "--from=markdown",
             "--to=html5",
             "--template", str(template_path),
-            "--toc",
-            "--toc-depth=3",
             "--standalone",
             "--variable", f"assets-rel={rel_assets}",
         ]
+        if toc:
+            cmd.extend(["--toc", "--toc-depth=3"])
         for key, value in metadata.items():
             cmd.extend(["--variable", f"{key}={value}"])
 
@@ -385,6 +390,7 @@ def main(argv: Optional[list[str]] = None) -> int:
             output_html=output_html,
             assets_dir=assets_dir,
             template_path=template_path,
+            toc=not args.no_toc,
         )
     except PandocMissingError as e:
         print(str(e), file=sys.stderr)
