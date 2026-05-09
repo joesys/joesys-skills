@@ -1,21 +1,15 @@
-/* report-init.js — joesys-skills HTML report runtime.
-   Eager: applies stored theme preference before paint to avoid flash.
-   Deferred: wires the toggle button, initializes Mermaid, and updates
-   the sidebar TOC's active item on scroll. */
+/* report-init.js — joesys-skills HTML report runtime (deferred phase only).
+   Wires the toggle button, initializes Mermaid, and updates the sidebar
+   TOC's active item on scroll. The pre-paint theme application lives as
+   an inline <script> in the report template's <head> (a deferred external
+   script cannot run before first paint, so the theme-flash prevention
+   belongs in the template — see scripts/templates/report.html). */
 
 (function () {
   'use strict';
 
   var STORAGE_KEY = 'joesys-skills-report-theme';
   var root = document.documentElement;
-
-  // Apply stored theme preference before first paint.
-  try {
-    var stored = localStorage.getItem(STORAGE_KEY);
-    if (stored === 'light' || stored === 'dark') {
-      root.setAttribute('data-theme', stored);
-    }
-  } catch (e) { /* localStorage unavailable — fall back to system pref */ }
 
   function effectiveTheme() {
     var explicit = root.getAttribute('data-theme');
