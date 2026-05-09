@@ -166,6 +166,51 @@ def transform_mermaid_blocks(markdown: str) -> str:
     return _MERMAID_PATTERN.sub(_wrap, markdown)
 
 
+# ── Front-matter parsing ──────────────────────────────────────────────
+
+
+_FRONTMATTER_PATTERN = re.compile(
+    r"\A---\s*\n(.*?)^---\s*$\n?",
+    re.MULTILINE | re.DOTALL,
+)
+
+
+def parse_frontmatter(markdown: str) -> tuple[dict, str]:
+    """Extract YAML front-matter from the head of a markdown document.
+
+    Supports a tiny subset of YAML — flat key:value pairs, optional
+    double-quoted values. Sufficient for our front-matter needs without
+    pulling in PyYAML.
+
+    Args:
+        markdown: Source markdown text.
+
+    Returns:
+        Tuple of (metadata dict, body markdown with front-matter stripped).
+    """
+    match = _FRONTMATTER_PATTERN.match(markdown)
+    if not match:
+        return ({}, markdown)
+
+    raw = match.group(1)
+    metadata: dict = {}
+    for line in raw.splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if ":" not in line:
+            continue
+        key, _, value = line.partition(":")
+        value = value.strip()
+        # Strip surrounding double quotes if present.
+        if len(value) >= 2 and value[0] == '"' and value[-1] == '"':
+            value = value[1:-1]
+        metadata[key.strip()] = value
+
+    body = markdown[match.end():]
+    return (metadata, body)
+
+
 # ── Main entry point ───────────────────────────────────────────────────
 
 

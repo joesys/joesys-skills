@@ -122,3 +122,49 @@ class TestTransformMermaidBlocks:
         result = html_render.transform_mermaid_blocks(markdown)
         assert "```python" in result
         assert "<pre class=\"mermaid\">" not in result
+
+
+# ── parse_frontmatter ───────────────────────────────────────────────
+
+
+class TestParseFrontmatter:
+    def test_extracts_yaml_block_at_start(self):
+        markdown = (
+            "---\n"
+            "title: Hello\n"
+            "scope: src/auth/\n"
+            "---\n\n"
+            "# Body\n"
+        )
+        meta, body = html_render.parse_frontmatter(markdown)
+        assert meta == {"title": "Hello", "scope": "src/auth/"}
+        assert body.startswith("# Body")
+
+    def test_returns_empty_dict_when_no_frontmatter(self):
+        markdown = "# Just body\n\nText.\n"
+        meta, body = html_render.parse_frontmatter(markdown)
+        assert meta == {}
+        assert body == markdown
+
+    def test_handles_quoted_values(self):
+        markdown = (
+            "---\n"
+            'title: "Quoted: title"\n'
+            "---\n\n"
+            "Body.\n"
+        )
+        meta, body = html_render.parse_frontmatter(markdown)
+        assert meta["title"] == "Quoted: title"
+
+    def test_strips_only_first_yaml_block(self):
+        markdown = (
+            "---\n"
+            "title: A\n"
+            "---\n\n"
+            "Body with another --- divider.\n"
+            "\n---\n\n"
+            "After.\n"
+        )
+        meta, body = html_render.parse_frontmatter(markdown)
+        assert meta == {"title": "A"}
+        assert "After." in body
