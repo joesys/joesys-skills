@@ -1,8 +1,21 @@
 # Shared Review Infrastructure
 
-Reference file for code-review and quick-review skills. Read this file
-during Phase 1 (Scope Resolution) — it contains the shared logic for
-base branch detection, file gathering, and target language detection.
+Reference file for `/code-review` and `/quick-review`. Read this file during Phase 1 (Scope Resolution). It is the canonical source for base branch detection, file gathering, target language detection, severity scale, and shared guardrails.
+
+---
+
+## Cross-Skill Discipline (Read First)
+
+These constraints apply to **every** review skill that consumes this file. Subagent prompts MUST inherit them.
+
+1. **Evidence over speculation.** Every finding cites a specific `file:line_number`. No vague assertions, no "this might be" without naming the location.
+2. **Language-adaptive examples.** Before/after code MUST be in the target file's language. Never default to Python when reviewing TypeScript, Rust, or Go.
+3. **Be specific.** Every finding includes (a) exact path + line, (b) the problem, (c) a concrete fix. Vague advice ("consider refactoring") is rejected.
+4. **No over-engineering.** Do not suggest abstractions, patterns, or interfaces for single-use code. YAGNI/KISS applies.
+5. **Test code follows different standards.** Prefer DAMP over DRY in tests — repeated setup for clarity is acceptable, not a finding.
+6. **Profile before flagging perf.** Surface obvious algorithmic issues (N+1, O(n²) where O(n) is trivial); skip micro-optimizations.
+
+---
 
 ## Base Branch Detection
 
@@ -20,6 +33,8 @@ Compute the fork point:
 git merge-base <base-branch> HEAD
 ```
 
+---
+
 ## File Gathering
 
 Gather the list of files to review based on the resolved mode:
@@ -31,6 +46,8 @@ Gather the list of files to review based on the resolved mode:
 | Single file | The specified file path |
 | PR review | `gh pr diff <number> --name-only` |
 | Commit review | `git diff --name-only <commit>^..<commit>` |
+
+---
 
 ## Target Language Detection
 
@@ -52,7 +69,9 @@ Infer the primary language from file extensions:
 | `.cpp`, `.cc`, `.h` | C++ |
 | `.gd` | GDScript |
 
-If the changeset is polyglot, note all languages and instruct each subagent to use the correct language per file. Subagents must **never** emit before/after examples in a language other than the target file's language.
+If the changeset is polyglot, note all languages. Each subagent MUST use the correct language per file. Subagents MUST NOT emit before/after examples in any language other than the target file's language.
+
+---
 
 ## Static Analysis Tooling — Detection Protocol
 
@@ -61,43 +80,31 @@ Read the shared tooling registry and per-language profiles:
 - `shared/tooling/{language}.md` — for each detected language
 - `shared/tooling/general.md` — for cross-language tools
 
-**Note on per-language profiles:** Profiles exist for TypeScript, JavaScript, Python, Rust, Go, C++, C#, GDScript, and a general cross-language profile. Languages without a dedicated profile (Ruby, PHP, Swift, Kotlin, Java) fall back to the general profile only. If no relevant profile is found, skip tooling detection for that language and note it in the report: "No static analysis profile for [language] — tool detection skipped."
+**Coverage note:** Profiles exist for TypeScript, JavaScript, Python, Rust, Go, C++, C#, GDScript, plus a general cross-language profile. Languages without a dedicated profile (Ruby, PHP, Swift, Kotlin, Java) fall back to the general profile only. If no profile is found, skip tooling detection for that language and note in the report: "No static analysis profile for [language] — tool detection skipped."
 
-Follow the detection flow (maps to tooling-registry.md Steps 2-4):
+Follow the detection flow (maps to tooling-registry.md Steps 2–4):
 
-1. **Detect config files**: Glob for each tool's detection markers. *(registry Step 2)*
-2. **Check availability**: Run `which`/`where` for each tool's binary. *(registry Step 3)*
-3. **Classify**: Mark each tool as `available`, `configured-but-unavailable`, or `absent`. *(registry Step 4)*
+1. **Detect config files** — Glob for each tool's detection markers. *(registry Step 2)*
+2. **Check availability** — Run `which`/`where` for each tool's binary. *(registry Step 3)*
+3. **Classify** — Mark each tool as `available`, `configured-but-unavailable`, or `absent`. *(registry Step 4)*
 
-Steps 4+ diverge per skill — see skill-specific SKILL.md for execution,
-safety gates, and TOOLING_CONTEXT assembly. The registry's Step 1 (Load Tool Profiles) is implicit in reading the per-language profile files above.
+Steps 4+ diverge per skill — see each SKILL.md for execution, safety gates, and TOOLING_CONTEXT assembly. Registry Step 1 (Load Tool Profiles) is implicit in reading the per-language profile files above.
 
-For large output (>50 findings from a single tool): summarize as "{tool} reported N violations: X errors, Y warnings", include top 3 most severe, tell user: "Run `{exact command}` for full results."
+For large output (>50 findings from a single tool): summarize as "{tool} reported N violations: X errors, Y warnings", include top 3 most severe, tell the user: "Run `{exact command}` for full results."
 
 If a tool fails (crash, not a findings exit code): report error, skip tool, continue.
 
-## Shared Error Handling
-
-| Error | Action |
-|---|---|
-| No changed files found | "No changes detected on this branch vs. `<base>`. Try specifying a file or directory." |
-| Base branch detection fails | Ask: "Which branch should I compare against?" |
-| PR number not found | "PR #N not found. Check the number and try again." |
-| Commit hash not found | "Commit `<hash>` not found. Check the hash and try again." |
-| File not found (single file mode) | "File `<path>` not found. Check the path and try again." |
-| No violations found | "No violations detected. Code looks solid." (code-review) / "No bugs or security issues found. Code looks solid." (quick-review) |
-| Too many files (>100) | **code-review:** large tier activates logical-cluster dispatch (§ 1.4b) — no warning needed. **quick-review:** warn about scope size, suggest narrowing with `--file` or a subdirectory, proceed if confirmed. |
-| Tool binary not found | Classify as `configured-but-unavailable`, skip, continue review |
-| Tool crashes or times out | Report error, skip tool, continue with remaining tools |
-| Tool output unparseable | Include raw summary in report, skip structured merge |
+---
 
 ## Content Loading
 
-Content loading is **intentionally skill-specific** — code-review loads full files + diff for deep analysis, while quick-review loads only the diff with `-U50` context for speed. See each skill's SKILL.md for its content loading strategy.
+Content loading is **intentionally skill-specific** — code-review loads full files + diff for deep analysis; quick-review loads only the diff with `-U50` context for speed. See each skill's SKILL.md for its content loading strategy.
+
+---
 
 ## Severity Scale
 
-Shared severity definitions used by both code-review and quick-review (quick-review reports P0-P2 only):
+Shared severity definitions (quick-review reports P0–P2 only; code-review reports P0–P4):
 
 | Priority | Type | Examples | Fix When |
 |---|---|---|---|
@@ -119,12 +126,25 @@ When including tool-only findings, map tool severity to the review priority scal
 
 Quick-review discards tool findings below P2.
 
-## Shared Guardrails
+### Severity Discipline
 
-These constraints apply to both code-review and quick-review:
+- **MUST NOT inflate** severity to look thorough. P0 means actual bug or security hole. Style polish is P3/P4.
+- **MUST NOT downgrade** real bugs to manage report volume. If correctness or security found something genuine, it stays at its true severity.
+- **Correctness findings are almost always P0 or P1.** If a correctness agent returns a finding rated lower, consider bumping it.
 
-1. **Don't over-engineer**: Do not suggest abstractions, patterns, or interfaces for single-use code. YAGNI/KISS applies.
-2. **Context matters**: Test code follows different standards. Prefer DAMP over DRY in tests — repeating setup for clarity is acceptable.
-3. **Be specific**: Every finding must include exact file paths, line numbers, and a concrete fix (before/after for code-review, suggested fix for quick-review). Vague advice is not acceptable.
-4. **Language-adaptive**: All code examples must be in the target language. Never default to Python when reviewing TypeScript.
-5. **Profile first (performance)**: Flag obvious algorithmic issues but not micro-optimizations.
+---
+
+## Shared Error Handling
+
+| Error | Action |
+|---|---|
+| No changed files found | "No changes detected on this branch vs. `<base>`. Try specifying a file or directory." |
+| Base branch detection fails | Ask: "Which branch should I compare against?" |
+| PR number not found | "PR #N not found. Check the number and try again." |
+| Commit hash not found | "Commit `<hash>` not found. Check the hash and try again." |
+| File not found (single file mode) | "File `<path>` not found. Check the path and try again." |
+| No violations found | code-review: "No violations detected. Code looks solid." quick-review: "No bugs or security issues found. Code looks solid." |
+| Too many files (>100) | code-review: large tier activates logical-cluster dispatch (§ 1.4b) — no warning needed. quick-review: warn about scope size, suggest narrowing with `--file` or a subdirectory, proceed if confirmed. |
+| Tool binary not found | Classify as `configured-but-unavailable`, skip, continue review. |
+| Tool crashes or times out | Report error, skip tool, continue with remaining tools. |
+| Tool output unparseable | Include raw summary in report, skip structured merge. |

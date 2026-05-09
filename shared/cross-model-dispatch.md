@@ -6,6 +6,15 @@ Read `shared/model-defaults.md` for current model identifiers and CLI flag detai
 
 ---
 
+## Discipline
+
+- **MUST use read-only / plan mode** for every cross-model dispatch. Cross-model reviewers think; they never write.
+- **MUST deliver prompts via temp-file-and-stdin-pipe** to avoid shell quoting issues with code blocks, backticks, and special characters.
+- **MUST run dispatches in parallel** with the host AI subagents — all in a single response. Sequential dispatch defeats the speedup.
+- **MUST clean up temp files** after dispatch completes (`rm -f "$PROMPT_FILE"`).
+
+---
+
 ## Host Detection
 
 Determine which cross-model CLI to dispatch based on who you are:
@@ -21,11 +30,9 @@ Determine which cross-model CLI to dispatch based on who you are:
 
 ## Prompt Delivery
 
-**Always** write prompts to a temporary file and pipe via stdin. This avoids shell quoting issues regardless of prompt content (quotes, backticks, dollar signs, newlines).
-
 ### Platform-Adaptive Temp Files
 
-Use `mktemp` to create temp files portably (works on Linux, macOS, and Windows Git Bash):
+Use `mktemp` to create temp files portably (Linux, macOS, Windows Git Bash):
 
 ```bash
 PROMPT_FILE=$(mktemp /tmp/review-XXXXXX.txt)
@@ -46,7 +53,7 @@ If `mktemp` is unavailable, fall back to a deterministic path: `/tmp/<skill-name
 
 ## Dispatch Commands
 
-Substitute `$PROMPT_FILE` with the actual temp file path created above. Substitute `<CODEX_CMD>`, `<CLAUDE_CMD>`, and `<GEMINI_CMD>` with the current invocations from `shared/model-defaults.md` (§ Codex, § Claude CLI, § Gemini respectively).
+Substitute `$PROMPT_FILE` with the temp file path. Substitute `<CODEX_CMD>`, `<CLAUDE_CMD>`, `<GEMINI_CMD>` with the current invocations from `shared/model-defaults.md` (§ Codex, § Claude CLI, § Gemini).
 
 ### To Codex
 
@@ -74,7 +81,7 @@ Use **600000ms** timeout on the Bash tool for all dispatches.
 
 ## `--include-gemini` Flag
 
-When `--include-gemini` is specified, launch an **additional** parallel dispatch to Gemini alongside the primary cross-model dispatch. The Gemini prompt is identical to the cross-model prompt but written to a separate temp file. Both dispatches run in parallel in the same response.
+When `--include-gemini` is specified, launch an **additional** parallel dispatch to Gemini alongside the primary cross-model dispatch. The Gemini prompt is identical to the cross-model prompt but written to a separate temp file. **Both dispatches MUST run in parallel** in the same response.
 
 ---
 
@@ -84,10 +91,4 @@ If a cross-model dispatch fails or times out, the review continues with host-onl
 
 - **Single cross-model failure:** "Cross-model review unavailable ([model] [reason]); results are from [host model] only."
 - **`--include-gemini` with only Gemini failing:** Primary cross-model results are still included. Note Gemini unavailability separately.
-- **All cross-model dispatches fail:** Proceed with host AI subagents only. Note in report header.
-
----
-
-## Permissions
-
-All cross-model dispatches use **read-only / plan mode**. They only need to read the code/diff and think. Never dispatch with write permissions.
+- **All cross-model dispatches fail:** Proceed with host AI subagents only. Note in the report header.
