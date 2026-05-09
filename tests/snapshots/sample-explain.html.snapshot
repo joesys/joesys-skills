@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sample Explain Report</title>
+  <meta name="generator" content="/explain">
+
+  <script>
+    /* Eager theme application — inline so it runs before stylesheet parse
+       and first paint. Deferred external scripts cannot do this. */
+    (function () {
+      try {
+        var s = localStorage.getItem('joesys-skills-report-theme');
+        if (s === 'light' || s === 'dark') {
+          document.documentElement.setAttribute('data-theme', s);
+        }
+      } catch (e) { /* localStorage unavailable — system pref applies */ }
+    })();
+  </script>
+
+  <link rel="stylesheet" href="../../docs/.assets/report-lib/report-base.css">
+  <link rel="stylesheet" href="../../docs/.assets/report-lib/prism-light.css" class="prism-light">
+  <link rel="stylesheet" href="../../docs/.assets/report-lib/prism-dark.css"  class="prism-dark">
+
+  <script src="../../docs/.assets/report-lib/prism.min.js" defer></script>
+  <script src="../../docs/.assets/report-lib/mermaid.min.js" defer></script>
+  <script src="../../docs/.assets/report-lib/report-init.js" defer></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <h1>Contents</h1>
+    <ul>
+    <li><a href="#authentication-module"
+    id="toc-authentication-module">Authentication Module</a>
+    <ul>
+    <li><a href="#tldr" id="toc-tldr">TL;DR</a></li>
+    <li><a href="#architecture-overview"
+    id="toc-architecture-overview">Architecture Overview</a></li>
+    <li><a href="#behavior" id="toc-behavior">Behavior</a></li>
+    <li><a href="#health-risk" id="toc-health-risk">Health &amp;
+    Risk</a></li>
+    </ul></li>
+    </ul>
+  </aside>
+
+  <main class="main">
+    <div class="toolbar">
+      <span>/explain — <code>src/auth/</code></span>
+      <button id="theme-toggle" aria-label="Switch theme">☾</button>
+    </div>
+
+<h1 id="authentication-module">Authentication Module</h1>
+<h2 id="tldr">TL;DR</h2>
+<p>OAuth2 + session cookie. Three providers wired. Critical path is the
+session middleware.</p>
+<h2 id="architecture-overview">Architecture Overview</h2>
+<pre class="mermaid">
+graph TD
+  A[routes/auth.ts] --> B[middleware/session.ts]
+  B --> C[providers/oauth.ts]
+  B --> D[providers/local.ts]
+</pre>
+<p>The auth module is layered: routes call middleware, middleware
+delegates to provider modules.</p>
+<h2 id="behavior">Behavior</h2>
+<p>The login flow:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">async</span> <span class="kw">function</span> <span class="fu">login</span>(creds<span class="op">:</span> Credentials)<span class="op">:</span> <span class="bu">Promise</span><span class="op">&lt;</span>Token<span class="op">&gt;</span> {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> provider <span class="op">=</span> providers<span class="op">.</span><span class="fu">resolve</span>(creds<span class="op">.</span><span class="at">kind</span>)<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> provider<span class="op">.</span><span class="fu">issue</span>(creds)<span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h2 id="health-risk">Health &amp; Risk</h2>
+<ul>
+<li>Test coverage thin in <code>providers/local.ts</code></li>
+<li>Several <code>// TODO</code> markers around rate limiting</li>
+<li>Session secret rotation not implemented</li>
+</ul>
+
+      </main>
+</body>
+</html>
