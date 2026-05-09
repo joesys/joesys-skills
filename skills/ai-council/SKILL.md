@@ -1,12 +1,21 @@
 ---
 name: ai-council
-version: "1.0.0"
+version: "1.1.0"
 description: "Use when the user invokes /ai-council to consult three frontier AI models (Claude, GPT, Gemini) in parallel and synthesize their responses into a consensus analysis"
 ---
 
 # AI Council Skill
 
 Dispatch the same question to three frontier AI models (Claude, GPT via Codex, Gemini) in parallel, then synthesize their responses into a structured analysis highlighting consensus and tensions.
+
+## Out of Scope
+
+This skill MUST NOT:
+- Answer the question itself instead of dispatching to the council. The user invoked this skill to get *all three models'* takes — substituting your own answer defeats the purpose.
+- Skip a leg silently. If a leg fails, the synthesis MUST name the missing model and offer a retry.
+- Tilt the synthesis toward the host model (Claude). Treat all 3 legs as peers; dissent from any leg gets equal weight in consensus/tension analysis.
+- Suppress the default save behavior. When `--no-save` is NOT specified, saving to `docs/ai-council/YYYYMMDD-<topic>/` is mandatory, not optional.
+- Modify the user's project files outside the council output directory. The synthesis is the only artifact written.
 
 ## Terminology
 
@@ -69,7 +78,7 @@ The gathered context from Phase 1.
 
 ### Part 3: Refined Question (identical across all three)
 
-Reword the user's question into a clear, logical form with explicit framing (constraints, goals, scope). The refinement should clarify, not alter. Add explicit constraints and scope that are implied by context, but do not change the user's intent. When in doubt, use the original wording.
+Reword the user's question into a clear, logical form with explicit framing (constraints, goals, scope). The refinement should clarify, not alter. Add explicit constraints and scope that are implied by context, but **MUST NOT change** the user's intent. When in doubt, use the original wording.
 
 ### Part 4: Original Prompt (identical, for reference)
 
@@ -79,7 +88,7 @@ Reword the user's question into a clear, logical form with explicit framing (con
 
 Read `shared/delegation-common.md` § Prompt Delivery and `shared/model-defaults.md` for the standard prompt delivery pattern and current CLI command templates.
 
-**Always** write prompts to temporary files using `mktemp` and pipe them to CLI tools. Use single-quoted heredoc delimiters to prevent shell expansion:
+**MUST always** write prompts to temporary files using `mktemp` and pipe them to CLI tools. Use single-quoted heredoc delimiters to prevent shell expansion:
 
 ```bash
 CODEX_PROMPT=$(mktemp /tmp/council-codex-XXXXXX.txt)
@@ -101,11 +110,11 @@ Clean up temporary files after all legs complete: `rm -f "$CODEX_PROMPT" "$GEMIN
 
 ## Phase 3: Parallel Dispatch
 
-Launch all three legs simultaneously in a single response (three parallel tool invocations).
+**MUST launch all three legs simultaneously in a single response** (three parallel tool invocations). Sequential dispatch defeats the speedup and is a defect.
 
 ### Codex Leg (Bash, 600000ms timeout)
 
-**Always deliver the prompt via stdin pipe** (see Prompt Size Safety). Substitute `<CODEX_CMD>` below with the current invocation from `shared/model-defaults.md` § Codex.
+**MUST deliver via stdin pipe** (see Prompt Size Safety). Substitute `<CODEX_CMD>` with the current invocation from `shared/model-defaults.md` § Codex.
 
 ```bash
 cat "$CODEX_PROMPT" | <CODEX_CMD>
@@ -113,7 +122,7 @@ cat "$CODEX_PROMPT" | <CODEX_CMD>
 
 ### Gemini Leg (Bash, 600000ms timeout)
 
-The `-p` flag is mandatory for non-interactive execution. Without it, Gemini enters interactive mode and hangs. **Always deliver the prompt via stdin pipe** — never pass long prompts as a direct `-p` argument (shell metacharacters break argument passing). Substitute `<GEMINI_CMD>` below with the current invocation from `shared/model-defaults.md` § Gemini.
+The `-p` flag is mandatory for non-interactive execution. Without it, Gemini enters interactive mode and hangs. **MUST deliver via stdin pipe** — never pass long prompts as a direct `-p` argument (shell metacharacters break argument passing). Substitute `<GEMINI_CMD>` with the current invocation from `shared/model-defaults.md` § Gemini.
 
 ```bash
 cat "$GEMINI_PROMPT" | <GEMINI_CMD>
@@ -125,7 +134,7 @@ Choose the mechanism based on whether the prompt is self-contained:
 
 **Use subagent (Agent tool)** when Phase 1 fully resolved all context the question needs. The prompt is self-contained and the Claude leg won't need to read additional files or search the web during execution. Spawn with `model: "opus"` and pass the full four-part prompt. Subagent is faster — no CLI startup overhead.
 
-**Use CLI** when the question references specific files or codepaths that Phase 1 could not fully resolve, and the Claude leg would benefit from tool access to explore further. Substitute `<CLAUDE_CMD>` below with the current invocation from `shared/model-defaults.md` § Claude CLI, and append `--name` for resumability:
+**Use CLI** when the question references specific files or codepaths that Phase 1 could not fully resolve, and the Claude leg would benefit from tool access to explore further. Substitute `<CLAUDE_CMD>` with the current invocation from `shared/model-defaults.md` § Claude CLI, and append `--name` for resumability:
 
 ```bash
 cat "$CLAUDE_PROMPT" | <CLAUDE_CMD> --name "council-<topic>"
@@ -135,19 +144,19 @@ cat "$CLAUDE_PROMPT" | <CLAUDE_CMD> --name "council-<topic>"
 
 | Condition | Action |
 |---|---|
-| 1 leg fails | Proceed with 2/3 responses, note unavailable leg in synthesis, offer retry after presenting |
-| 2 legs fail | Proceed with 1/3, warn user council is degraded, offer retry |
+| 1 leg fails | Proceed with 2/3 responses, name the unavailable leg in the synthesis, offer retry after presenting |
+| 2 legs fail | Proceed with 1/3, warn user the council is degraded, offer retry |
 | All 3 legs fail | Report failures, suggest checking CLI installations and auth setup |
 
 When the user accepts a retry and it succeeds, update the synthesis and output files to incorporate the new response.
 
 ## Phase 4: Synthesis
 
-Produce a structured synthesis with five fixed sections:
+Produce a structured synthesis with five fixed sections.
 
 ### 1. Summary
 
-2-3 sentence overview of what the council was asked and the overall direction of responses.
+2–3 sentence overview of what the council was asked and the overall direction of responses.
 
 ### 2. Confidence Matrix
 
@@ -172,7 +181,7 @@ Where legs diverge — each leg's position stated fairly, with the nature of the
 
 ### 5. Synthesized Recommendation
 
-The parent's own recommendation, informed by all three but not just majority-rules. Weigh the quality of reasoning, not just the count.
+The parent's own recommendation, informed by all three but not just majority-rules. Weigh the **quality of reasoning**, not just the count.
 
 ## Post-Synthesis Options
 
@@ -188,7 +197,7 @@ If the user resumes and gets new insight, they can invoke `/ai-council` again wi
 3. **Devlog suggestion** (if noteworthy) — If the synthesis revealed something genuinely interesting — a surprising disagreement between models, a non-obvious consensus, a tension that changed the developer's thinking, or a recommendation that contradicts conventional wisdom — suggest capturing it as a devlog scrap:
    > "This council session surfaced [brief description of the noteworthy finding]. That might make a good devlog post. Want me to run `/devlog scrap --from-context` to capture it?"
    - Only suggest when the findings are genuinely insightful — not for routine confirmations or questions with obvious answers
-   - Wait for the user's response. Do not auto-run.
+   - **MUST wait** for the user's response. Do not auto-run.
 
 ## Phase 5: File Output
 
@@ -202,7 +211,7 @@ docs/ai-council/20260325-postgresql-vs-mongodb/
 └── synthesis.md
 ```
 
-- `<topic>` is derived from the question (kebab-case, 3-5 words)
+- `<topic>` is derived from the question (kebab-case, 3–5 words)
 - Each individual file contains the leg's raw response with a header noting the model name, timestamp, and the prompt it received
 - `synthesis.md` contains the full synthesis (all 5 sections from Phase 4)
 - If a leg was unavailable, its file is not created
