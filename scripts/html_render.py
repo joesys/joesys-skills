@@ -333,9 +333,13 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument(
         "--profile",
-        choices=["analytical"],   # Phase 1 supports only analytical
+        choices=["analytical"],
         default="analytical",
-        help="Report profile (Phase 1 supports only 'analytical').",
+        help=(
+            "Report profile (Phase 1 supports only 'analytical'). "
+            "Currently parsed but no-op — reserved for Phase 3 when "
+            "'devlog' and slide-deck output mode land."
+        ),
     )
     p.add_argument(
         "--no-toc",
