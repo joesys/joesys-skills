@@ -1,12 +1,23 @@
 ---
 name: code-review
-version: "1.1.0"
+version: "1.2.0"
 description: "Use when the user invokes /code-review to analyze code for correctness, quality, architecture, reliability, security, and performance violations with concrete before/after examples."
 ---
 
 # Code Review Skill
 
 Dispatch 7 parallel analysis subagents — each a domain expert (correctness, clean code, architecture, reliability, security, performance, story readability) — against the target code. Collect their findings, deduplicate overlapping violations, and synthesize a severity-grouped report with concrete before/after fixes in the target language.
+
+## Out of Scope
+
+This skill MUST NOT:
+- Modify source code without explicit user approval after the report. The skill produces findings; fixing happens only via the Phase 4 Fix Dispatch, only after the user picks "yes" or names specific findings.
+- Expand fixes beyond what was flagged. When the user approves fixes, fix exactly the reported findings — do not bundle "while I'm in this file" cleanup, renames, or unrelated improvements.
+- Report on code outside the resolved scope. If the diff/file/PR doesn't include a file, do not flag findings in it — even if you notice them while gathering context.
+- Inflate severity to look thorough. P0 means actual bug or security hole. Style polish is P3/P4.
+- Downgrade real bugs to manage report volume. If correctness or security found something genuine, it stays at its true severity even if `--min-severity` would otherwise filter it.
+- Merge findings whose proposed fixes differ. Deduplication is for same-location-same-fix cases. If two domains flag the same line but suggest incompatible fixes, both findings stay separate.
+- Skip the cross-model corroboration annotation. When two models independently flag the same issue, the `[Corroborated by: ...]` tag is mandatory — it's the user's signal that confidence is high.
 
 ## Invocation
 
@@ -27,7 +38,7 @@ Arguments are combinable. Examples:
 - `/code-review src/api/ --min-severity P2` — scan directory, show P2+ findings
 - `/code-review --include-gemini` — add Gemini as a third model reviewer
 
-If the invocation is ambiguous or the argument is unrecognizable, ask the user to clarify before proceeding.
+If the invocation is ambiguous or unrecognizable, ask the user to clarify before proceeding.
 
 ---
 
@@ -48,7 +59,7 @@ Read `shared/skill-context.md` for the full protocol. In brief:
 | Detail level: detailed | Include architectural context, explain why something is a problem |
 | Assumed knowledge: beginner | Explain what the violation means, not just what to fix |
 | Assumed knowledge: expert | Skip obvious explanations, focus on non-obvious implications |
-| Review-specific: severity focus | Override `--min-severity` default (e.g., user always wants P0-P1 only) |
+| Review-specific: severity focus | Override `--min-severity` default (e.g., user always wants P0–P1 only) |
 | Review-specific: priority domains | Reorder which domains get emphasis in the synthesis |
 
 Pass relevant preferences to each domain subagent in Phase 2 — append as a `## User Preferences` section after the principle file content.
@@ -83,7 +94,7 @@ Thresholds are defaults. Users can override in `.claude/skill-context/code-revie
 
 ### 1.4a Medium Tier — File Batching
 
-Batch files into groups of roughly equal size (aim for 10-15 per batch). Keep related files in the same batch when possible (e.g., a module and its tests, a component and its styles). Each batch gets its own full dispatch (7 domain subagents + cross-model). Process batches sequentially:
+Batch files into groups of roughly equal size (aim for 10–15 per batch). Keep related files in the same batch when possible (e.g., a module and its tests, a component and its styles). Each batch gets its own full dispatch (7 domain subagents + cross-model). Process batches sequentially:
 
 1. Dispatch 7 parallel subagents + cross-model for batch 1, collect results
 2. Dispatch for batch 2, collect results
@@ -122,11 +133,11 @@ Required output format:
 - path/to/file2
 ```
 
-Every changed file must appear in exactly one cluster. If a file is missing, rerun the scoping pass.
+Every changed file MUST appear in exactly one cluster. If a file is missing, rerun the scoping pass.
 
 **Step 2 — Cluster dispatch.** For each cluster, dispatch a full review (7 domain subagents + cross-model) in parallel. Every cluster gets all 7 domains regardless of cluster type — the cluster tag is reader context and synthesis priority, not a reviewer filter.
 
-All cluster dispatches fire in a single parallel batch. With N clusters, that's N × 8 tool calls in one response. No user gate between scoping and dispatch — the scoping pass returns, dispatch fires automatically.
+**MUST fire all cluster dispatches in a single parallel batch.** With N clusters, that's N × 8 tool calls in one response. No user gate between scoping and dispatch — the scoping pass returns, dispatch fires automatically.
 
 Each cluster dispatch receives only its cluster's files (per Phase 1.3 content loading) plus the diff slice for those files.
 
@@ -138,20 +149,20 @@ Read `shared/review-common.md` § Target Language Detection.
 
 ### 1.6 Static Analysis Tooling
 
-Read `shared/review-common.md` § Static Analysis Tooling — Detection Protocol (steps 1-3: detect, check availability, classify).
+Read `shared/review-common.md` § Static Analysis Tooling — Detection Protocol (steps 1–3: detect, check availability, classify).
 
 Then continue with code-review-specific steps:
 
-4. **Build scoped commands**: For `available` tools, construct report-only commands targeting only the changed files using the tool's scope-to-files flag from the per-language profile.
-5. **Safety Gate**: Present scoped tool commands to the user for approval (alongside any other live commands).
-6. **Execute approved tools**: Run each tool. Respect timeouts (from `audit.yaml` if present, else adaptive: <10k LOC = 30s, 10-100k = 60s, >100k = 120s per tool).
-7. **Build TOOLING_CONTEXT**: Assemble the slim version (findings only — no gap analysis, no build-integrated detection).
+4. **Build scoped commands** — for `available` tools, construct report-only commands targeting only the changed files using the tool's scope-to-files flag from the per-language profile.
+5. **Safety Gate** — present scoped tool commands to the user for approval (alongside any other live commands).
+6. **Execute approved tools** — run each tool. Respect timeouts (from `audit.yaml` if present, else adaptive: <10k LOC = 30s, 10–100k = 60s, >100k = 120s per tool).
+7. **Build TOOLING_CONTEXT** — assemble the slim version (findings only — no gap analysis, no build-integrated detection).
 
 ---
 
 ## Phase 2: Parallel Analysis
 
-Dispatch **7 subagents simultaneously** via the Agent tool — all 7 in a single response (7 parallel Agent tool calls). Each subagent is a domain expert that analyzes the code against one principle set.
+**MUST dispatch 7 subagents simultaneously** via the Agent tool — all 7 in a single response (7 parallel Agent tool calls). Each subagent is a domain expert that analyzes the code against one principle set. Sequential dispatch is a defect.
 
 ### Subagent Roster
 
@@ -211,7 +222,7 @@ For each violation:
 **Why**: Explanation of why this matters and what could go wrong.
 ```
 
-Always spawn subagents with `model: "opus"` to ensure high-quality analysis.
+**MUST spawn subagents** with `model: "opus"` to ensure high-quality analysis.
 
 #### Story Readability Subagent Adjustments
 
@@ -371,7 +382,7 @@ When cross-model dispatch produced findings:
 
 **Corroborated findings** (cross-model and one or more domain subagents flag the same file + overlapping line range within 3 lines):
 - Merge into the existing domain finding
-- Add `[Corroborated by: {model_name}]` annotation — this boosts confidence (two different models independently identified the same issue)
+- **MUST add** `[Corroborated by: {model_name}]` annotation — this boosts confidence (two different models independently identified the same issue)
 - Keep the domain subagent's explanation (richer, principle-grounded context)
 
 **Cross-model-only findings** (cross-model found something no domain subagent flagged):
@@ -388,7 +399,7 @@ If `--min-severity` was specified, filter findings **now** (not during analysis 
 
 ### 3.4 Prioritize Correctness
 
-Correctness findings (actual bugs — wrong logic, off-by-one errors, null dereferences, race conditions) should be surfaced prominently. These are almost always P0 or P1. If a correctness agent returns a finding rated lower, consider bumping it.
+Correctness findings (actual bugs — wrong logic, off-by-one errors, null dereferences, race conditions) MUST be surfaced prominently. These are almost always P0 or P1. If a correctness agent returns a finding rated lower, consider bumping it.
 
 ### 3.5 Effort Modifiers
 
@@ -403,7 +414,7 @@ Present the synthesized report:
 ```
 ## Summary
 1-3 sentences on overall code health. Mention the number of findings per severity level and any cross-model corroboration. Include a model line:
-"Models: [host model] + [cross-model] | Domains: 6 | Static: [tools]"
+"Models: [host model] + [cross-model] | Domains: 7 | Static: [tools]"
 
 ## Violations Found
 
@@ -451,10 +462,11 @@ After presenting the report, ask:
 ### Parallel Fix Strategy
 
 - Group fixes by **file independence** — fixes in unrelated files can be dispatched in parallel
-- Fixes in the **same file** must be applied sequentially to avoid conflicts
+- Fixes in the **same file** MUST be applied sequentially to avoid conflicts
 - Dispatch parallel fix agents for independent groups via the Agent tool
 - Each fix agent receives the finding details (problem, before/after, location) and applies the change using the Edit tool
-- Fix agents must verify the before-code still matches (code may have shifted since analysis)
+- Fix agents **MUST verify** the before-code still matches (code may have shifted since analysis)
+- Fix agents **MUST NOT expand scope** — apply exactly what was flagged, nothing more
 
 ### Post-Fix Summary
 
@@ -468,19 +480,19 @@ After fixes are applied, present:
 
 ## Priority Matrix
 
-See `shared/review-common.md` § Severity Scale for the full P0-P4 definitions and fix-when guidance.
+See `shared/review-common.md` § Severity Scale for the full P0–P4 definitions and fix-when guidance.
 
 ---
 
 ## Guardrails
 
-Read `shared/review-common.md` § Shared Guardrails for the base constraints (no over-engineering, context matters, be specific, language-adaptive, profile first).
+Read `shared/review-common.md` § Cross-Skill Discipline for the base constraints (evidence, language-adaptive, specificity, no over-engineering, test-code DAMP, profile-first).
 
 Additional code-review-specific guardrails:
 
-1. **Rule of Three**: Do not flag duplication or suggest extraction until the pattern has been proven with **3 or more occurrences**. Two similar blocks are not enough.
+1. **Rule of Three.** **MUST NOT flag** duplication or suggest extraction until the pattern has been proven with **3 or more occurrences**. Two similar blocks are not enough.
 
-2. **Incidental similarity is not duplication**: Two code blocks that look alike but serve different purposes and evolve independently are not DRY violations. They are coincidentally similar.
+2. **Incidental similarity is not duplication.** Two code blocks that look alike but serve different purposes and evolve independently are not DRY violations. They are coincidentally similar.
 
 ---
 

@@ -1,12 +1,24 @@
 ---
 name: explain
-version: "1.0.0"
+version: "1.1.0"
 description: "Use when the user invokes /explain to analyze a codebase, directory, file, symbol, or feature and produce a layered explanation report from 5 parallel analysis lenses."
 ---
 
 # Explain Skill
 
 Dispatch 5 parallel analysis subagents — each a domain lens (structure, behavior, domain & data, external dependencies, health & risk) — against the target scope. Collect their findings and synthesize a layered report that goes from 30-second overview to deep understanding.
+
+## Out of Scope
+
+This skill MUST NOT:
+- Modify the code being explained, even obvious typos or clearly-broken imports. The skill describes; if the user wants to fix, they invoke `/code-review` or fix manually.
+- Run write-mode tools (formatter `--fix`, linter `--fix`, code generators) as part of analysis. Read-only invocations only.
+- Cite benchmarks, comparisons, or "industry standards" without naming the source. Unsourced numbers read as fabrication.
+- Produce value judgments in lenses 1–4 (Structure, Behavior, Domain, Dependencies). Only lens 5 (Health & Risk) assesses quality and risk. Lenses 1–4 describe and explain — they do not say "this is bad" or "this is good."
+- Reproduce source code instead of pointing to it. Use `file:line_number` and short snippets (≤5 lines) for clarity. Long verbatim copies of source files are forbidden.
+- Confabulate workflows that don't exist. If the scope contains only 2 confidently-identifiable workflows, trace 2 — do not invent a third to fill the count.
+- Add a "fix this" or "improve this" step. `/explain` has no fix dispatch. If the user wants improvements after the report, they invoke `/code-review` or `/readability-review`.
+- Skip the "uncertain" flag when the evidence is thin. Saying "unclear" or "seems like" is a valid output — guessing confidently is not.
 
 ## Invocation
 
@@ -26,7 +38,7 @@ Arguments are combinable. Examples:
 - `/explain src/auth/ --save` — explain the auth module and save the report
 - `/explain --save --path docs/` — explain the whole project and save to `docs/`
 
-If the invocation is ambiguous or the argument is unrecognizable, ask the user to clarify before proceeding.
+If the invocation is ambiguous or unrecognizable, ask the user to clarify before proceeding.
 
 ### Scope Detection Logic
 
@@ -64,7 +76,7 @@ Read `shared/skill-context.md` for the full protocol. In brief:
 | Explain-specific: top-down | Structure agent starts with highest-level modules, drills down |
 | Explain-specific: bottom-up | Structure agent starts with leaf files, builds up to the big picture |
 
-Pass the relevant subset of preferences to each subagent prompt in Phase 2 (append after the Guiding Principles block). Subagents receive only the preferences that affect their lens — don't dump the entire file into every prompt.
+Pass the relevant subset of preferences to each subagent prompt in Phase 2 (append after the Guiding Principles block). Subagents receive only the preferences that affect their lens — do not dump the entire file into every prompt.
 
 ### 1.1 Language Detection
 
@@ -104,7 +116,7 @@ For **whole project** and **feature trace** scopes, agents explore freely — th
 
 ### 1.4 Scope Size Check
 
-For **whole project**, **directory**, and **feature trace** scopes, estimate the number of source files in scope. If the count exceeds **500 source files**, warn the user:
+For **whole project**, **directory**, and **feature trace** scopes, estimate the number of source files in scope. If the count exceeds **500 source files**, **MUST warn** the user:
 
 > This project has ~[N] source files. A full analysis may take several minutes. Consider narrowing scope (e.g., `/explain src/core/`). Proceed anyway? (y/n)
 
@@ -120,9 +132,9 @@ Before dispatching agents, print a brief status message:
 
 ## Phase 2: Parallel Analysis — 5 Lenses
 
-Dispatch **5 subagents simultaneously** via the Agent tool — all 5 in a single response (5 parallel Agent tool calls).
+**MUST dispatch 5 subagents simultaneously** via the Agent tool — all 5 in a single response (5 parallel Agent tool calls). Sequential dispatch is a defect.
 
-**IMPORTANT:** Every Agent tool call **must** use `model: "opus"` to ensure high-quality analysis.
+**MUST use** `model: "opus"` for every Agent tool call to ensure high-quality analysis.
 
 Each subagent receives a prompt containing:
 - The resolved scope (what to analyze)
@@ -132,12 +144,12 @@ Each subagent receives a prompt containing:
 
 ### Guiding Principles (included in every subagent prompt)
 
-1. **Evidence over guesswork.** Every claim about what the code does must reference a specific file, function, or config. No vague assertions.
+1. **Evidence over guesswork.** Every claim about what the code does MUST reference a specific file, function, or config. No vague assertions.
 2. **Flag uncertainty.** Distinguish what the code definitely does vs. what seems intended vs. what is unclear. Uncertainty is valid output — say "unclear" rather than speculate.
 3. **Use LSP tools if available, fall back to Glob/Grep/Read.** Do not fail if LSP is unavailable.
-4. **Respect scope boundaries.** Focus on the requested scope. Reference external context where necessary ("this module is called from `src/api/routes.ts`") but don't produce full analysis of unrelated modules.
+4. **Respect scope boundaries.** Focus on the requested scope. Reference external context where necessary ("this module is called from `src/api/routes.ts`") but do not produce full analysis of unrelated modules.
 5. **Don't reproduce source code.** Reference code with `file:line_number` pointers and short snippets for clarity. The user has the code — they need understanding, not a copy.
-6. **ASCII graphs must follow the shared ASCII Graph Standards.** Read `references/ascii-standards.md` for the full specification. Use box-drawing characters, enforce alignment, and scale detail to project size per the adaptive rules.
+6. **ASCII graphs MUST follow the shared ASCII Graph Standards.** Read `references/ascii-standards.md` for the full specification. Use box-drawing characters, enforce alignment, and scale detail to project size per the adaptive rules.
 
 ### Subagent Roster
 
@@ -151,7 +163,7 @@ Each subagent receives a prompt containing:
 
 ### Subagent Prompt Templates
 
-Each template below shows the domain-specific portion. When constructing the actual prompt, **prepend the full Guiding Principles block** (the 6-item list above) before the role line. The abbreviated instructions in each template are intentionally kept as reinforcement — the full principles block provides the authoritative version.
+Each template below shows the domain-specific portion. When constructing the actual prompt, **MUST prepend the full Guiding Principles block** (the 6-item list above) before the role line. The abbreviated instructions in each template are intentionally kept as reinforcement — the full principles block provides the authoritative version.
 
 #### Agent 1: Structure & Entry Points
 
@@ -207,7 +219,7 @@ For **project and directory scopes**: prefer the most common or business-critica
 
 For **single file and symbol scopes**: reframe as "the 3 most important code paths or behaviors" — these may not be user-facing workflows. Trace how this code is called, what it does, and what it calls.
 
-If fewer than 3 distinct workflows/paths exist at this scope, trace what's available.
+If fewer than 3 distinct workflows/paths exist at this scope, trace what's available. **MUST NOT invent** a third workflow to fill the count.
 
 ## For Each Workflow, Report
 - The complete call chain: `file:function → file:function → ...`
@@ -330,7 +342,7 @@ You are a senior tech lead assessing the health, risk profile, and onboarding pa
 - Areas to avoid touching without deeper understanding first
 
 ## No Value Judgments on Architecture
-Describe health signals and risks factually. Do not editorialize about whether the architecture is "good" or "bad" — that is not your lens. Focus on: what's fragile, what's unclear, what's risky to change, and what's the fastest way to get oriented.
+Describe health signals and risks factually. **MUST NOT editorialize** about whether the architecture is "good" or "bad" — that is not your lens. Focus on: what's fragile, what's unclear, what's risky to change, and what's the fastest way to get oriented.
 
 ## Output Format
 Return structured markdown with clear headings for each area above.
@@ -345,12 +357,12 @@ After all agents complete (or after handling failures — see Graceful Degradati
 
 ### Synthesis Rules
 
-1. **TL;DR generation**: Derive from all agents — touch structure, behavior, and health. 3 sentences maximum.
-2. **Orientation Cheat Sheet**: Populated by pulling specific answers from whichever agent found them. If an answer can't be determined, write "unclear" rather than guessing. Omitted for single file and symbol scopes.
-3. **Deduplication**: If multiple agents mention the same file or concept, merge into the most relevant section. Don't repeat.
-4. **Uncertainty preservation**: If an agent flagged something as uncertain, preserve that flag in the synthesis. Don't silently upgrade "seems like" to "definitely."
-5. **Section ordering**: Always present in the fixed order below — the layering is intentional (overview → specifics → actionable).
-6. **Graph composition**: Combine Agent 1 and Agent 4 graphs into the top-level Architecture Overview. Deduplicate shared nodes (e.g., if both agents reference "Postgres," show it once). Internal modules at center, external services at periphery. Preserve agent-produced inline graphs in their respective sections as-is — only the top-level overview is a synthesizer composition.
+1. **TL;DR generation:** Derive from all agents — touch structure, behavior, and health. 3 sentences maximum.
+2. **Orientation Cheat Sheet:** Populated by pulling specific answers from whichever agent found them. If an answer can't be determined, write "unclear" rather than guessing. Omitted for single file and symbol scopes.
+3. **Deduplication:** If multiple agents mention the same file or concept, merge into the most relevant section. Don't repeat.
+4. **Uncertainty preservation:** If an agent flagged something as uncertain, **MUST preserve** that flag in the synthesis. Don't silently upgrade "seems like" to "definitely."
+5. **Section ordering:** Always present in the fixed order below — the layering is intentional (overview → specifics → actionable).
+6. **Graph composition:** Combine Agent 1 and Agent 4 graphs into the top-level Architecture Overview. Deduplicate shared nodes (e.g., if both agents reference "Postgres," show it once). Internal modules at center, external services at periphery. Preserve agent-produced inline graphs in their respective sections as-is — only the top-level overview is a synthesizer composition.
 
 ### Output Structure
 
@@ -417,7 +429,7 @@ Scope name derivation:
 - Directory `src/auth/` → `src-auth.md`
 - Single file `src/auth/oauth.ts` → `src-auth-oauth-ts.md`
 - Symbol `MyClassName` → `myclassname.md`
-- Feature trace → extract 2-4 key nouns from the question, kebab-case them (e.g., "how does payment processing work?" → `payment-processing.md`)
+- Feature trace → extract 2–4 key nouns from the question, kebab-case them (e.g., "how does payment processing work?" → `payment-processing.md`)
 
 ### Custom save location
 `--path <dir>` overrides the default directory. The filename derivation remains the same.
@@ -432,7 +444,7 @@ Scope name derivation:
 
 | Situation | Behavior |
 |---|---|
-| 1-2 agents fail or time out | Synthesize from successful agents. Note which lenses are missing in the report. Offer to retry failed agents. |
+| 1–2 agents fail or time out | Synthesize from successful agents. Note which lenses are missing in the report. Offer to retry failed agents. |
 | All agents fail | Report the failure. Suggest retrying or narrowing scope. |
 | No git history available | Health & Risk agent skips git archaeology, notes "no git history available" |
 | Empty/minimal repo (< 5 source files) | Skip parallel dispatch entirely. Do a single-pass direct analysis — 5 agents for a trivial codebase is wasteful. |
@@ -444,9 +456,7 @@ Scope name derivation:
 
 ## ASCII Graph Standards
 
-Read `references/ascii-standards.md` for the full box-drawing character set,
-alignment rules, adaptive detail rules, and graph types per section. These
-standards are prepended to every subagent prompt that produces graphs.
+Read `references/ascii-standards.md` for the full box-drawing character set, alignment rules, adaptive detail rules, and graph types per section. These standards are prepended to every subagent prompt that produces graphs.
 
 ---
 
@@ -454,7 +464,7 @@ standards are prepended to every subagent prompt that produces graphs.
 
 1. **Evidence over guesswork.** Every claim references a specific file, function, or config.
 2. **Uncertainty is valid output.** Agents say "unclear" rather than speculate.
-3. **No value judgments in non-Health lenses.** Agents 1-4 describe and explain. Only Agent 5 assesses quality and risk.
+3. **No value judgments in non-Health lenses.** Agents 1–4 describe and explain. Only Agent 5 assesses quality and risk.
 4. **Respect scope boundaries.** Focus on the requested scope. Reference but don't fully analyze unrelated modules.
 5. **Don't reproduce source code.** Use `file:line_number` pointers and short snippets. The user has the code.
 
