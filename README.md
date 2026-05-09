@@ -73,7 +73,7 @@ Automated code analysis — from quick bug scans to full quality audits.
 
 #### code-review
 
-Dispatch 6 parallel domain-expert subagents to analyze code for violations across correctness, clean code, architecture, reliability, security, and performance. Produces a severity-grouped report (P0-P4) with concrete before/after fixes in the target language. Supports branch diffs, directory scans, single files, PR reviews, and commit reviews.
+Dispatch 7 parallel domain-expert subagents to analyze code for violations across correctness, clean code, architecture, reliability, security, performance, and story readability. Produces a severity-grouped report (P0-P4) with concrete before/after fixes in the target language. Supports branch diffs, directory scans, single files, PR reviews, and commit reviews.
 
 | Domain | Focus |
 |---|---|
@@ -83,6 +83,7 @@ Dispatch 6 parallel domain-expert subagents to analyze code for violations acros
 | Reliability | Error handling, silent failures, resource leaks, missing validation |
 | Security | Injection, hardcoded secrets, auth gaps, input sanitization, data exposure |
 | Performance | Algorithmic complexity, N+1 queries, missing caching, unnecessary allocations |
+| Story Readability | 8-dimension story-readability scoring (rolled into P2-P4 findings) |
 
 ```
 /code-review                          # Review current branch diff vs. base
