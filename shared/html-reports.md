@@ -59,9 +59,9 @@ If `title` is absent, the renderer falls back to the first H1 in the document, t
 
 Phase 1 supports one enrichment block. Phase 2+ will add more.
 
-### `mermaid` — Diagrams
+### `mermaid` — Diagrams (REQUIRED for graphs)
 
-Use a fenced code block with the `mermaid` language tag. Diagram source uses Mermaid syntax (flowchart, sequence, state, class, ER, gantt, etc.).
+**All diagrams in HTML companion reports MUST use Mermaid.** ASCII box-drawing is not permitted as a graph syntax. Use a fenced code block with the `mermaid` language tag — Mermaid supports flowchart (`graph TD` / `graph LR`), sequence (`sequenceDiagram`), state (`stateDiagram-v2`), class, ER, gantt, and more.
 
 ````markdown
 ```mermaid
@@ -71,7 +71,29 @@ graph TD
 ```
 ````
 
-The renderer wraps this in `<pre class="mermaid">`. The Mermaid library (vendored, loaded at page load) turns it into SVG client-side. The block degrades gracefully when the markdown is viewed in a non-rendering tool (just looks like a code block).
+The renderer wraps this in `<pre class="mermaid">`. The Mermaid library (vendored, loaded at page load) turns it into SVG client-side. The block degrades gracefully when the markdown is viewed in a non-rendering tool (just looks like a code block, with readable source).
+
+**Why Mermaid over ASCII:** The HTML companion was always intended to render diagrams as SVG. ASCII box-drawing renders as a `<pre><code>` listing — a code block, not a diagram — defeating the purpose of the HTML view. Mermaid is rendered natively by GitHub, GitLab, VS Code (with the standard preview extension), Obsidian, and most modern markdown viewers. In raw `cat` view, Mermaid source (e.g., `A --> B`) remains legible.
+
+**Tabular data → markdown tables, not ASCII boxes.** A scorecard or summary with rows and columns is not a graph. Use a real markdown table — it renders as a styled HTML table and is more readable in raw markdown than ASCII box-drawing.
+
+**ASCII fallback escape hatch (opt-in, per-report):** Authors MAY wrap an equivalent ASCII version in a collapsible `<details>` block when a specific report is reviewed primarily through tools that don't render Mermaid (terminal-only workflows, custom viewers). This is *not* the default — protocol does not require dual output, and the drift cost is on the author who opts in.
+
+````markdown
+```mermaid
+graph TD
+  A --> B
+```
+
+<details>
+<summary>ASCII fallback</summary>
+
+```
+[A] ──▶ [B]
+```
+
+</details>
+````
 
 ## Opt-out flags
 
