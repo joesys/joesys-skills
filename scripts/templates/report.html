@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>$title$</title>
+  $if(generated_by)$<meta name="generator" content="$generated_by$">$endif$
+
+  <script>
+    /* Eager theme application — inline so it runs before stylesheet parse
+       and first paint. Deferred external scripts cannot do this. */
+    (function () {
+      try {
+        var s = localStorage.getItem('joesys-skills-report-theme');
+        if (s === 'light' || s === 'dark') {
+          document.documentElement.setAttribute('data-theme', s);
+        }
+      } catch (e) { /* localStorage unavailable — system pref applies */ }
+    })();
+  </script>
+
+  <link rel="stylesheet" href="$assets-rel$/report-base.css">
+  <link rel="stylesheet" href="$assets-rel$/prism-light.css" class="prism-light">
+  <link rel="stylesheet" href="$assets-rel$/prism-dark.css"  class="prism-dark">
+
+  <script src="$assets-rel$/prism.min.js" defer></script>
+  <script src="$assets-rel$/mermaid.min.js" defer></script>
+  <script src="$assets-rel$/report-init.js" defer></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <h1>Contents</h1>
+    $toc$
+  </aside>
+
+  <main class="main">
+    <div class="toolbar">
+      <span>$if(generated_by)$$generated_by$$if(scope)$ — <code>$scope$</code>$endif$$endif$</span>
+      <button id="theme-toggle" aria-label="Switch theme">☾</button>
+    </div>
+
+$body$
+
+    $if(generated_at)$
+    <footer class="report-footer">
+      Generated $generated_at$$if(generated_by)$ by $generated_by$$endif$
+    </footer>
+    $endif$
+  </main>
+</body>
+</html>
