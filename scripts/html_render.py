@@ -211,6 +211,23 @@ def parse_frontmatter(markdown: str) -> tuple[dict, str]:
     return (metadata, body)
 
 
+def compute_assets_relpath(assets_dir: Path, output_path: Path) -> str:
+    """Compute the relative path from output HTML back to the assets dir.
+
+    HTML <link> and <script> tags must use forward slashes regardless of
+    the host OS, so we normalize the result.
+
+    Args:
+        assets_dir: Absolute path to docs/.assets/report-lib/.
+        output_path: Absolute path to the HTML file being generated.
+
+    Returns:
+        POSIX-style relative path string (e.g., "../.assets/report-lib").
+    """
+    rel = os.path.relpath(assets_dir, start=output_path.parent)
+    return rel.replace(os.sep, "/")
+
+
 # ── Main entry point ───────────────────────────────────────────────────
 
 

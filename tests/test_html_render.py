@@ -168,3 +168,30 @@ class TestParseFrontmatter:
         meta, body = html_render.parse_frontmatter(markdown)
         assert meta == {"title": "A"}
         assert "After." in body
+
+
+# ── compute_assets_relpath ──────────────────────────────────────────
+
+
+class TestComputeAssetsRelpath:
+    def test_one_level_deep(self, tmp_path):
+        assets = tmp_path / "docs" / ".assets" / "report-lib"
+        output = tmp_path / "docs" / "explain" / "report.html"
+        rel = html_render.compute_assets_relpath(assets, output)
+        # POSIX paths only — HTML uses forward slashes regardless of OS.
+        assert rel == "../.assets/report-lib"
+
+    def test_two_levels_deep(self, tmp_path):
+        assets = tmp_path / "docs" / ".assets" / "report-lib"
+        output = tmp_path / "docs" / "devlog" / "20260509-x" / "post.html"
+        rel = html_render.compute_assets_relpath(assets, output)
+        assert rel == "../../.assets/report-lib"
+
+    def test_handles_windows_paths_correctly(self, tmp_path):
+        # On Windows, paths use backslashes natively. Output must still be
+        # forward-slash for HTML.
+        assets = tmp_path / "docs" / ".assets" / "report-lib"
+        output = tmp_path / "docs" / "code-review" / "2026-05-09T14.html"
+        rel = html_render.compute_assets_relpath(assets, output)
+        assert "\\" not in rel
+        assert rel.startswith("../")
