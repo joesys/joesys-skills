@@ -130,6 +130,42 @@ def bootstrap_assets(repo_root: Path, vendor_dir: Path = PLUGIN_VENDOR_DIR) -> P
     return dest
 
 
+# ── Enrichment block transforms ────────────────────────────────────────
+
+
+_MERMAID_PATTERN = re.compile(
+    r"^```mermaid\s*\n(.*?)^```\s*$",
+    re.MULTILINE | re.DOTALL,
+)
+
+
+def transform_mermaid_blocks(markdown: str) -> str:
+    """Replace ```mermaid fenced blocks with raw-HTML <pre class="mermaid"> blocks.
+
+    Pandoc passes raw HTML through to its output. By wrapping mermaid source
+    in a <pre class="mermaid">, the inlined Mermaid library will render it as
+    SVG at page load.
+
+    Args:
+        markdown: Source markdown text.
+
+    Returns:
+        Markdown with mermaid fences replaced by HTML wrappers.
+    """
+
+    def _wrap(match: re.Match) -> str:
+        diagram = match.group(1).rstrip("\n")
+        # Mermaid syntax relies on `<`, `>`, `-->`, `<<` etc. as part of its
+        # diagram language, and the content lives inside a <pre> tag where
+        # Mermaid does its own parsing. Escape only `&` so that any literal
+        # ampersands in labels don't break HTML parsing — leave `<` and `>`
+        # alone so diagrams render correctly.
+        escaped = diagram.replace("&", "&amp;")
+        return f'\n<pre class="mermaid">\n{escaped}\n</pre>\n'
+
+    return _MERMAID_PATTERN.sub(_wrap, markdown)
+
+
 # ── Main entry point ───────────────────────────────────────────────────
 
 

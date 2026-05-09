@@ -76,3 +76,49 @@ class TestBootstrapAssets:
         repo_root.mkdir()
         with pytest.raises(html_render.VendorMissingError):
             html_render.bootstrap_assets(repo_root, vendor_dir=tmp_path / "nope")
+
+
+# ── transform_mermaid_blocks ────────────────────────────────────────
+
+
+class TestTransformMermaidBlocks:
+    def test_wraps_mermaid_block_in_pre_tag(self):
+        markdown = (
+            "Before.\n\n"
+            "```mermaid\n"
+            "graph TD\n"
+            "  A --> B\n"
+            "```\n\n"
+            "After.\n"
+        )
+        result = html_render.transform_mermaid_blocks(markdown)
+        # Mermaid block must be replaced with a fenced HTML block (Pandoc raw HTML).
+        assert "```mermaid" not in result
+        assert '<pre class="mermaid">' in result
+        assert "graph TD" in result
+        assert "A --> B" in result
+        # Surrounding prose preserved.
+        assert "Before." in result
+        assert "After." in result
+
+    def test_preserves_indentation_in_diagram(self):
+        markdown = "```mermaid\ngraph TD\n    A --> B\n```\n"
+        result = html_render.transform_mermaid_blocks(markdown)
+        assert "    A --> B" in result
+
+    def test_handles_multiple_mermaid_blocks(self):
+        markdown = (
+            "```mermaid\ngraph TD\nA --> B\n```\n\n"
+            "Middle\n\n"
+            "```mermaid\nsequenceDiagram\nAlice->>Bob: Hi\n```\n"
+        )
+        result = html_render.transform_mermaid_blocks(markdown)
+        assert result.count('<pre class="mermaid">') == 2
+        assert "A --> B" in result
+        assert "Alice->>Bob: Hi" in result
+
+    def test_leaves_non_mermaid_code_blocks_alone(self):
+        markdown = "```python\nprint('hi')\n```\n"
+        result = html_render.transform_mermaid_blocks(markdown)
+        assert "```python" in result
+        assert "<pre class=\"mermaid\">" not in result
