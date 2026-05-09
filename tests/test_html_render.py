@@ -1,6 +1,7 @@
 """Tests for html_render.py — bootstrap, transforms, rendering."""
 
 import os
+import re
 import sys
 import shutil
 import tempfile
@@ -342,3 +343,50 @@ class TestMain:
         ])
         assert exit_code == 0
         assert custom.exists()
+
+
+# ── Snapshot test ───────────────────────────────────────────────────
+
+
+_FIXTURES_DIR = Path(__file__).parent / "fixtures"
+_SNAPSHOTS_DIR = Path(__file__).parent / "snapshots"
+
+
+def _normalize(html: str) -> str:
+    """Strip non-deterministic content for snapshot comparison."""
+    # Remove timestamps in front-matter that may differ
+    html = re.sub(r"\d{4}-\d{2}-\d{2}T[\d:.]+Z?", "<TIMESTAMP>", html)
+    # Strip absolute paths (the test runs in tmpdir but snapshot was made in repo)
+    html = re.sub(r'href="[^"]*\.assets/report-lib/', 'href="ASSETS/', html)
+    html = re.sub(r'src="[^"]*\.assets/report-lib/', 'src="ASSETS/', html)
+    return html.strip()
+
+
+class TestSnapshot:
+    @pytest.mark.skipif(
+        shutil.which("pandoc") is None, reason="pandoc not on PATH"
+    )
+    def test_sample_explain_renders_to_snapshot(self, tmp_path):
+        # Set up a fake repo with stub assets so render_html can run end-to-end.
+        subprocess.run(["git", "init"], cwd=tmp_path, check=True, capture_output=True)
+        repo = tmp_path
+        # Use the real plugin vendor dir (which has the actual base CSS, etc.)
+        # by NOT passing --vendor-dir. Bootstrap will copy it.
+        # Copy the fixture into tmp repo so render produces output there
+        fixture_src = _FIXTURES_DIR / "sample-explain.md"
+        target = repo / "docs" / "explain" / "sample-explain.md"
+        target.parent.mkdir(parents=True)
+        target.write_text(fixture_src.read_text(encoding="utf-8"), encoding="utf-8")
+
+        exit_code = html_render.main([str(target)])
+        assert exit_code == 0
+        actual = (target.parent / "sample-explain.html").read_text(encoding="utf-8")
+
+        snapshot_path = _SNAPSHOTS_DIR / "sample-explain.html.snapshot"
+        expected = snapshot_path.read_text(encoding="utf-8")
+
+        assert _normalize(actual) == _normalize(expected), (
+            "Snapshot mismatch — if intentional, regenerate via:\n"
+            "  python scripts/html_render.py tests/fixtures/sample-explain.md\n"
+            "  mv tests/fixtures/sample-explain.html tests/snapshots/sample-explain.html.snapshot"
+        )
