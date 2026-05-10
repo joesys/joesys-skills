@@ -183,29 +183,27 @@ The report has three layers, presented in order.
 
 ### Layer 1: Scorecard
 
-Present a summary scorecard as an ASCII box table:
+Present a summary scorecard as a markdown header followed by a markdown table. The markdown table renders as a styled HTML table in the companion report and is more readable in raw markdown than ASCII box-drawing.
 
-```
-+===================================================+
-|  READABILITY REVIEW — {scope}                      |
-|  {Language} · {N} files · {Date}                   |
-+===================================================+
-|  Story Score: {score}/100 ({grade})                |
-+===================================================+
-|  #  Dimension              Score  Weight  Grade    |
-|  -- ---------------------- ------ ------- -------  |
-|  1  Narrative Flow         X/10    20%    {grade}  |
-|  2  Naming as Intent       X/10    15%    {grade}  |
-|  3  Cognitive Chunking     X/10    15%    {grade}  |
-|  4  Abstraction (SLAP)     X/10    14%    {grade}  |
-|  5  Function Focus         X/10    10%    {grade}  |
-|  6  Structural Clarity     X/10    10%    {grade}  |
-|  7  Documentation Quality  X/10    10%    {grade}  |
-|  8  No Clever Tricks       X/10     6%    {grade}  |
-+===================================================+
-|  Top opportunity: {dimension} in {file}            |
-|  Strongest: {dimension} across {scope}             |
-+===================================================+
+```markdown
+**READABILITY REVIEW — {scope}**
+{Language} · {N} files · {Date}
+
+**Story Score: {score}/100 ({grade})**
+
+| # | Dimension | Score | Weight | Grade |
+|---|---|---|---|---|
+| 1 | Narrative Flow | X/10 | 20% | {grade} |
+| 2 | Naming as Intent | X/10 | 15% | {grade} |
+| 3 | Cognitive Chunking | X/10 | 15% | {grade} |
+| 4 | Abstraction (SLAP) | X/10 | 14% | {grade} |
+| 5 | Function Focus | X/10 | 10% | {grade} |
+| 6 | Structural Clarity | X/10 | 10% | {grade} |
+| 7 | Documentation Quality | X/10 | 10% | {grade} |
+| 8 | No Clever Tricks | X/10 | 6% | {grade} |
+
+**Top opportunity:** {dimension} in {file}
+**Strongest:** {dimension} across {scope}
 ```
 
 Dimension scores are averaged across files, weighted by lines of code when files vary significantly in size. Apply the grade mapping from `shared/story-readability.md` § Grade Mapping to both the overall score and per-dimension scores.
