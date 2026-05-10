@@ -1,12 +1,51 @@
 # joesys-skills
 
-Custom Claude Code skills and plugins.
+Custom Claude Code skills and Codex-installable skills.
 
 ## Installation
+
+### Claude Code
 
 ```
 /plugin marketplace add joesys/joesys-skills
 /plugin install joesys-skills
+```
+
+### Codex
+
+Install the skills globally for Codex on this computer:
+
+```powershell
+python scripts\install_codex_skills.py
+```
+
+The installer adapts the Claude Code source skills into Codex-compatible copies
+and writes them to:
+
+```text
+%USERPROFILE%\.codex\skills\joesys-skills
+```
+
+If `CODEX_HOME` is set, the installer writes to:
+
+```text
+%CODEX_HOME%\skills\joesys-skills
+```
+
+Restart Codex after installing so it reloads the skill list.
+
+The generated Codex package is not checked in; `codex/` is intentionally
+gitignored. To update an existing Codex install after changing source skills,
+rerun:
+
+```powershell
+python scripts\install_codex_skills.py
+```
+
+To validate the adapter without installing:
+
+```powershell
+pytest tests\test_codex_adapter.py -q
 ```
 
 ## Available Skills

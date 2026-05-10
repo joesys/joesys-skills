@@ -23,5 +23,8 @@ __pycache__/
 # Temporary files
 temp/
 
+# Generated Codex skill package
+codex/
+
 # Git worktrees
 .worktrees/
