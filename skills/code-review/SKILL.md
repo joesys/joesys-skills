@@ -18,6 +18,8 @@ This skill MUST NOT:
 - Downgrade real bugs to manage report volume. If correctness or security found something genuine, it stays at its true severity even if `--min-severity` would otherwise filter it.
 - Merge findings whose proposed fixes differ. Deduplication is for same-location-same-fix cases. If two domains flag the same line but suggest incompatible fixes, both findings stay separate.
 - Skip the cross-model corroboration annotation. When two models independently flag the same issue, the `[Corroborated by: ...]` tag is mandatory — it's the user's signal that confidence is high.
+- Rewrite findings during the Phase 3.7 Tech Lead re-review for style or wording alone. The tech lead may only modify a finding when judgment changes the verdict — severity, fix strategy, or accept/reject. Cosmetic edits are out of scope.
+- Silently modify findings during Phase 3.7. Every tech-lead change MUST carry a stated reason in the inline annotation (e.g., `[Tech Lead: P2→P0 — this is SQL injection, not style]`). No reasonless rewrites.
 
 ## Invocation
 
@@ -32,11 +34,13 @@ Parse the user's `/code-review` arguments to determine mode and scope:
 | `/code-review --commit abc123` | Commit review | Files changed in a specific commit |
 | `/code-review --min-severity P1` | Severity filter | Combinable with any mode |
 | `/code-review --include-gemini` | Add Gemini | Adds Gemini as additional cross-model reviewer |
+| `/code-review --no-re-review` | Suppress re-review | Skip Phase 3.7 — present mechanical synthesis output directly |
 
 Arguments are combinable. Examples:
 - `/code-review --pr 42 --min-severity P1` — review PR #42, only show P1+ findings
 - `/code-review src/api/ --min-severity P2` — scan directory, show P2+ findings
 - `/code-review --include-gemini` — add Gemini as a third model reviewer
+- `/code-review --no-re-review` — skip the Tech Lead re-review pass (faster, no annotations)
 
 If the invocation is ambiguous or unrecognizable, ask the user to clarify before proceeding.
 
@@ -100,6 +104,7 @@ Batch files into groups of roughly equal size (aim for 10–15 per batch). Keep 
 2. Dispatch for batch 2, collect results
 3. Continue until all batches are processed
 4. Synthesize all batch results together in Phase 3
+5. Phase 3.7 (Tech Lead re-review) runs **once** over the fully-merged findings — not per batch
 
 ### 1.4b Large Tier — Logical-Cluster Dispatch
 
@@ -141,7 +146,7 @@ Every changed file MUST appear in exactly one cluster. If a file is missing, rer
 
 Each cluster dispatch receives only its cluster's files (per Phase 1.3 content loading) plus the diff slice for those files.
 
-**Step 3 — Continue to Phase 3.** Cross-cluster synthesis runs there — see § 3.1a.
+**Step 3 — Continue to Phase 3.** Cross-cluster synthesis runs there — see § 3.1a. Phase 3.7 (Tech Lead re-review) runs **after** the cross-cluster synthesis completes, on the fully-merged findings.
 
 ### 1.5 Target Language Detection
 
@@ -416,8 +421,16 @@ Present the synthesized report:
 
 ```
 ## Summary
-1-3 sentences on overall code health. Mention the number of findings per severity level and any cross-model corroboration. Include a model line:
+1-3 sentences on overall code health. Mention the number of findings per severity level and any cross-model corroboration. Include a model line.
+
+When Phase 3.7 ran (default):
+"Models: [host model] + [cross-model] + Tech Lead | Domains: 7 | Static: [tools] | Re-review: X rejected, Y severity changes, Z fixes rewritten, A added, B notes"
+
+When Phase 3.7 was skipped (`--no-re-review`):
 "Models: [host model] + [cross-model] | Domains: 7 | Static: [tools]"
+
+When Phase 3.7 failed:
+"Models: [host model] + [cross-model] | Domains: 7 | Static: [tools] | Tech Lead re-review: unavailable ([reason])"
 
 ## Violations Found
 
@@ -586,9 +599,11 @@ After presenting the report, ask:
 - Group fixes by **file independence** — fixes in unrelated files can be dispatched in parallel
 - Fixes in the **same file** MUST be applied sequentially to avoid conflicts
 - Dispatch parallel fix agents for independent groups via the Agent tool
-- Each fix agent receives the finding details (problem, before/after, location) and applies the change using the Edit tool
+- Each fix agent receives the finding details (problem, **Suggested Fix**, before/after, location) and applies the change using the Edit tool
+- When Phase 3.7 rewrote a fix, the **Suggested Fix and After block reflect the tech lead's rewrite** — apply that, not the original from the domain agent
 - Fix agents **MUST verify** the before-code still matches (code may have shifted since analysis)
 - Fix agents **MUST NOT expand scope** — apply exactly what was flagged, nothing more
+- Rejected findings (those in `## Rejected by Re-review`) are NOT eligible for Fix Dispatch
 
 ### Post-Fix Summary
 
@@ -631,3 +646,4 @@ Additional code-review-specific errors:
 | All tools declined in gate | Review proceeds without tool findings — AI analysis only |
 | Cross-model dispatch fails | Continue with 7 domain subagents; note "Cross-model unavailable" in report header. |
 | `--include-gemini` but Gemini CLI not found | Warn and continue without Gemini. |
+| Phase 3.7 tech lead subagent fails or times out | Fall back to the mechanical §3.6 output. Header line shows `Tech Lead re-review: unavailable ([reason])`. Offer retry: "Tech Lead re-review failed. Want to retry it? Or proceed with the synthesized findings as-is?" |
