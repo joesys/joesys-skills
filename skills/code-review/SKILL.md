@@ -1,6 +1,6 @@
 ---
 name: code-review
-version: "1.2.0"
+version: "1.3.0"
 description: "Use when the user invokes /code-review to analyze code for correctness, quality, architecture, reliability, security, and performance violations with concrete before/after examples."
 ---
 
@@ -18,6 +18,8 @@ This skill MUST NOT:
 - Downgrade real bugs to manage report volume. If correctness or security found something genuine, it stays at its true severity even if `--min-severity` would otherwise filter it.
 - Merge findings whose proposed fixes differ. Deduplication is for same-location-same-fix cases. If two domains flag the same line but suggest incompatible fixes, both findings stay separate.
 - Skip the cross-model corroboration annotation. When two models independently flag the same issue, the `[Corroborated by: ...]` tag is mandatory — it's the user's signal that confidence is high.
+- Rewrite findings during the Phase 3.7 Tech Lead re-review for style or wording alone. The tech lead may only modify a finding when judgment changes the verdict — severity, fix strategy, or accept/reject. Cosmetic edits are out of scope.
+- Silently modify findings during Phase 3.7. Every tech-lead change MUST carry a stated reason in the inline annotation (e.g., `[Tech Lead: P2→P0 — this is SQL injection, not style]`). No reasonless rewrites.
 
 ## Invocation
 
@@ -32,11 +34,13 @@ Parse the user's `/code-review` arguments to determine mode and scope:
 | `/code-review --commit abc123` | Commit review | Files changed in a specific commit |
 | `/code-review --min-severity P1` | Severity filter | Combinable with any mode |
 | `/code-review --include-gemini` | Add Gemini | Adds Gemini as additional cross-model reviewer |
+| `/code-review --no-re-review` | Suppress re-review | Skip Phase 3.7 — present mechanical synthesis output directly |
 
 Arguments are combinable. Examples:
 - `/code-review --pr 42 --min-severity P1` — review PR #42, only show P1+ findings
 - `/code-review src/api/ --min-severity P2` — scan directory, show P2+ findings
 - `/code-review --include-gemini` — add Gemini as a third model reviewer
+- `/code-review --no-re-review` — skip the Tech Lead re-review pass (faster, no annotations)
 
 If the invocation is ambiguous or unrecognizable, ask the user to clarify before proceeding.
 
@@ -100,6 +104,7 @@ Batch files into groups of roughly equal size (aim for 10–15 per batch). Keep 
 2. Dispatch for batch 2, collect results
 3. Continue until all batches are processed
 4. Synthesize all batch results together in Phase 3
+5. Phase 3.7 (Tech Lead re-review) runs **once** over the fully-merged findings — not per batch
 
 ### 1.4b Large Tier — Logical-Cluster Dispatch
 
@@ -141,7 +146,7 @@ Every changed file MUST appear in exactly one cluster. If a file is missing, rer
 
 Each cluster dispatch receives only its cluster's files (per Phase 1.3 content loading) plus the diff slice for those files.
 
-**Step 3 — Continue to Phase 3.** Cross-cluster synthesis runs there — see § 3.1a.
+**Step 3 — Continue to Phase 3.** Cross-cluster synthesis runs there — see § 3.1a. Phase 3.7 (Tech Lead re-review) runs **after** the cross-cluster synthesis completes, on the fully-merged findings.
 
 ### 1.5 Target Language Detection
 
@@ -211,13 +216,14 @@ For each violation:
 **Severity**: P0 | P1 | P2 | P3 | P4
 **Location**: `file.ext:line_number`
 **Problem**: Description of what is wrong.
+**Suggested Fix**: 1–2 sentences stating the fix approach — the strategy that fixes the root cause, not just the diff. Suggested Fix and After MUST agree: the prose states the strategy, the code shows it. If you cannot articulate the strategy in prose, you have not understood the fix — do not emit the finding.
 **Before**:
 ```<target_language>
 // the problematic code
 ```
 **After**:
 ```<target_language>
-// the corrected code
+// the corrected code matching the Suggested Fix
 ```
 **Why**: Explanation of why this matters and what could go wrong.
 ```
@@ -243,6 +249,7 @@ Each subagent returns zero or more findings in this structure:
 **Severity**: P0 | P1 | P2 | P3 | P4
 **Location**: `file.ext:line_number`
 **Problem**: Description
+**Suggested Fix**: 1–2 sentences stating the fix approach (strategy, not diff). MUST agree with the After block.
 **Before**: (code block in target language)
 **After**: (code block in target language)
 **Why**: Explanation
@@ -288,6 +295,7 @@ For each finding:
 **Severity**: P0 | P1 | P2 | P3 | P4
 **Location**: `file.ext:line_number`
 **Problem**: What is wrong.
+**Suggested Fix**: 1–2 sentences stating the fix approach (strategy, not diff). MUST agree with the After block.
 **Before**: (code block in target language)
 **After**: (code block in target language)
 **Why**: What could go wrong.
@@ -413,8 +421,16 @@ Present the synthesized report:
 
 ```
 ## Summary
-1-3 sentences on overall code health. Mention the number of findings per severity level and any cross-model corroboration. Include a model line:
+1-3 sentences on overall code health. Mention the number of findings per severity level and any cross-model corroboration. Include a model line.
+
+When Phase 3.7 ran (default):
+"Models: [host model] + [cross-model] + Tech Lead | Domains: 7 | Static: [tools] | Re-review: X rejected, Y severity changes, Z fixes rewritten, A added, B notes"
+
+When Phase 3.7 was skipped (`--no-re-review`):
 "Models: [host model] + [cross-model] | Domains: 7 | Static: [tools]"
+
+When Phase 3.7 failed:
+"Models: [host model] + [cross-model] | Domains: 7 | Static: [tools] | Tech Lead re-review: unavailable ([reason])"
 
 ## Violations Found
 
@@ -444,6 +460,125 @@ Prioritized list, most impactful first. Quick wins highlighted. Risky changes fl
 
 Omit empty severity sections — if there are no P0 findings, skip the P0 section entirely.
 
+This is the **mechanical** synthesis output. Phase 3.7 below takes it as input and produces the final user-facing report.
+
+---
+
+## Phase 3.7: Senior Tech Lead Re-review
+
+After §3.6 produces the mechanical synthesis, dispatch **one** Agent (model: `"opus"`) acting as a senior tech lead. This is the final judgment pass before the report reaches the user. **Always on by default**; suppressed only with `--no-re-review`.
+
+The tech lead's output **IS** the final report — it replaces §3.6's output. The mechanical synthesis is now the tech lead's input, not the user-facing deliverable.
+
+### 3.7.1 Inputs
+
+The tech lead subagent receives:
+
+- The mechanically-synthesized findings from §3.1–§3.6 (post-dedup, post-severity-filter, post-correctness-prioritization)
+- The full diff (`git diff <base>...HEAD` or equivalent for the mode)
+- Full file contents (the same context the domain agents received)
+- Static analysis findings (TOOLING_CONTEXT)
+- Cluster manifest if large-tier (§1.4b)
+- Whether `--min-severity` was applied (so the tech lead knows what's been filtered out)
+
+### 3.7.2 Persona Prompt
+
+```
+You are a senior tech lead doing a final read of a code review report before it goes to the engineer.
+
+Seven domain agents and a cross-model reviewer produced findings. The mechanical synthesis (deduplication, severity filtering, correctness prioritization) is done. Your job is to apply judgment over their work and produce the FINAL report the engineer will read.
+
+You can:
+1. Reject findings as false positives (move to "Rejected by Re-review" with reason)
+2. Change severity (up or down) — note inline why
+3. Rewrite the **Suggested Fix** and **After** code when a better fix exists
+4. Add findings the agents missed (tag inline with [Added by Tech Lead])
+5. Merge or split findings when dedup got it wrong
+6. Flag analysis gaps and architectural concerns in "Tech Lead Notes"
+
+Guardrails:
+- MUST NOT rewrite for style/wording alone — only when judgment changes the verdict (severity, fix, accept/reject)
+- MUST cite a reason for every change; no silent edits
+- MUST NOT lower severity to manage report volume; same discipline as the domain agents
+- MUST NOT add findings outside the resolved review scope
+- If you agree with everything as-is, output the mechanical report unchanged with a one-line header note: "Tech Lead: no changes — all findings stand as reported."
+
+## Mechanical Synthesis Output (Your Input)
+<MECHANICAL_REPORT>
+
+## Diff Context
+<DIFF_CONTENT>
+
+## Full File Contents
+<FILES_CONTENT>
+
+## Static Analysis Results
+{TOOLING_CONTEXT}
+
+## Cluster Manifest (large tier only)
+{CLUSTER_MANIFEST_OR_OMIT}
+
+## --min-severity Active?
+{YES_OR_NO}
+
+## Output Format
+
+Produce the final markdown report, structured identically to §3.6 (Summary, severity-grouped findings, Recommendations), with these additions:
+
+1. **Header line** gains a `Tech Lead` segment and a Re-review change-count summary:
+   `Models: [host] + [cross-model] + Tech Lead | Domains: 7 | Static: [tools] | Re-review: X rejected, Y severity changes, Z fixes rewritten, A added, B notes`
+
+2. **Inline annotations** appear ONLY on findings you touched. Untouched findings have no annotation. Format:
+   - Severity change: `[Tech Lead: P2→P0 — reason]`
+   - Fix rewrite: `[Tech Lead: fix rewritten — reason]` (the **Suggested Fix** and **After** code reflect your rewrite)
+   - Newly added finding: `[Added by Tech Lead]` (placed in the appropriate severity group)
+
+3. **New section `## Rejected by Re-review`** (only if any rejections) — list each rejected finding with `file:line — [original principle/category] rejected: <reason>`. Place this section AFTER all severity groups and Recommendations, near the bottom.
+
+4. **New section `## Tech Lead Notes`** (only if any) — analysis gaps, architectural concerns spanning findings, test-coverage observations, anything else open-ended. Place after `## Rejected by Re-review`.
+```
+
+### 3.7.3 Dispatch Mechanics
+
+| Property | Value |
+|---|---|
+| Tool | `Agent` |
+| Model | `"opus"` |
+| Parallelism | Sequential — runs AFTER §3.6 completes; cannot parallelize with the domain agents because it operates on their output |
+| Timeout | Standard agent timeout |
+
+The mechanical synthesis output is passed as plain text in the prompt body. The diff, full files, and TOOLING_CONTEXT are passed the same way the domain agents received them.
+
+### 3.7.4 Tier Interactions
+
+| Tier | Re-review timing |
+|---|---|
+| Small (≤30 files) | Runs once after §3.6, on the full synthesized findings |
+| Medium (file batching, 31–100 files) | Runs **once** after all batches are merged and synthesized — not per batch |
+| Large (logical-cluster, >100 files or >5,000 LOC) | Runs **after** §3.1a cross-cluster synthesis completes |
+
+The tech lead is always the **last** judgment pass before presentation.
+
+### 3.7.5 Filter and Flag Interactions
+
+- **`--min-severity`** — tech lead receives ALL findings regardless of the filter so it can upgrade a misclassified P3 → P0. The filter is applied **after** the tech lead, so the tech lead's verdict determines what the user actually sees. If the tech lead downgrades something below the threshold, it drops out silently.
+- **`--include-gemini`** — no change. Gemini's findings flow through the same dedup → tech lead path.
+- **`--no-re-review`** — Phase 3.7 is skipped entirely; the mechanical §3.6 output is presented directly to the user. Header line keeps the pre-enhancement format (no Tech Lead segment).
+
+### 3.7.6 Failure Handling
+
+If the tech lead subagent fails or times out:
+- Fall back to the mechanical §3.6 output unchanged
+- Header line replaces the Re-review segment with: `Tech Lead re-review: unavailable ([reason])`
+- Present the report, then offer retry: "Tech Lead re-review failed. Want to retry it? Or proceed with the synthesized findings as-is?"
+
+### 3.7.7 Phase 4 (Fix Dispatch) Interaction
+
+When the user approves fixes:
+- Fix agents apply the tech lead's **rewritten** Suggested Fix + After code where present, **not** the original from the domain agents
+- Findings added by the tech lead are eligible for Fix Dispatch like any other
+- Rejected findings (in `## Rejected by Re-review`) are NOT eligible for Fix Dispatch
+
 ---
 
 ## Phase 4: Fix Dispatch
@@ -464,9 +599,11 @@ After presenting the report, ask:
 - Group fixes by **file independence** — fixes in unrelated files can be dispatched in parallel
 - Fixes in the **same file** MUST be applied sequentially to avoid conflicts
 - Dispatch parallel fix agents for independent groups via the Agent tool
-- Each fix agent receives the finding details (problem, before/after, location) and applies the change using the Edit tool
+- Each fix agent receives the finding details (problem, **Suggested Fix**, before/after, location) and applies the change using the Edit tool
+- When Phase 3.7 rewrote a fix, the **Suggested Fix and After block reflect the tech lead's rewrite** — apply that, not the original from the domain agent
 - Fix agents **MUST verify** the before-code still matches (code may have shifted since analysis)
 - Fix agents **MUST NOT expand scope** — apply exactly what was flagged, nothing more
+- Rejected findings (those in `## Rejected by Re-review`) are NOT eligible for Fix Dispatch
 
 ### Post-Fix Summary
 
@@ -509,3 +646,4 @@ Additional code-review-specific errors:
 | All tools declined in gate | Review proceeds without tool findings — AI analysis only |
 | Cross-model dispatch fails | Continue with 7 domain subagents; note "Cross-model unavailable" in report header. |
 | `--include-gemini` but Gemini CLI not found | Warn and continue without Gemini. |
+| Phase 3.7 tech lead subagent fails or times out | Fall back to the mechanical §3.6 output. Header line shows `Tech Lead re-review: unavailable ([reason])`. Offer retry: "Tech Lead re-review failed. Want to retry it? Or proceed with the synthesized findings as-is?" |
