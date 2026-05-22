@@ -211,13 +211,14 @@ For each violation:
 **Severity**: P0 | P1 | P2 | P3 | P4
 **Location**: `file.ext:line_number`
 **Problem**: Description of what is wrong.
+**Suggested Fix**: 1–2 sentences stating the fix approach — the strategy that fixes the root cause, not just the diff. Suggested Fix and After MUST agree: the prose states the strategy, the code shows it. If you cannot articulate the strategy in prose, you have not understood the fix — do not emit the finding.
 **Before**:
 ```<target_language>
 // the problematic code
 ```
 **After**:
 ```<target_language>
-// the corrected code
+// the corrected code matching the Suggested Fix
 ```
 **Why**: Explanation of why this matters and what could go wrong.
 ```
@@ -243,6 +244,7 @@ Each subagent returns zero or more findings in this structure:
 **Severity**: P0 | P1 | P2 | P3 | P4
 **Location**: `file.ext:line_number`
 **Problem**: Description
+**Suggested Fix**: 1–2 sentences stating the fix approach (strategy, not diff). MUST agree with the After block.
 **Before**: (code block in target language)
 **After**: (code block in target language)
 **Why**: Explanation
@@ -288,6 +290,7 @@ For each finding:
 **Severity**: P0 | P1 | P2 | P3 | P4
 **Location**: `file.ext:line_number`
 **Problem**: What is wrong.
+**Suggested Fix**: 1–2 sentences stating the fix approach (strategy, not diff). MUST agree with the After block.
 **Before**: (code block in target language)
 **After**: (code block in target language)
 **Why**: What could go wrong.
