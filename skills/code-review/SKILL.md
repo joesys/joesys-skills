@@ -1,6 +1,6 @@
 ---
 name: code-review
-version: "1.2.0"
+version: "1.3.0"
 description: "Use when the user invokes /code-review to analyze code for correctness, quality, architecture, reliability, security, and performance violations with concrete before/after examples."
 ---
 
