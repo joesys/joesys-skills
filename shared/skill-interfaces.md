@@ -73,6 +73,24 @@ interfaces, update all callers listed below.
 **Callers:**
 - `skills/retrospective/SKILL.md` — Final Steps, step 2 (for committing approved improvements)
 
+## Interaction Review Interfaces
+
+**Invocation:** `/interaction-review [session <id> | since YYYY-MM-DD | trend]`
+
+**Behavior contract:**
+- Analyzes JSONL session transcripts from `~/.claude/projects/<project-dir>/`
+- Produces dual-format reports: `docs/interaction-review/YYYYMMDD-interaction-review.md` (and `.html`)
+- Reads previous reports from `docs/interaction-review/` for continuity tracking
+- Does NOT modify source code, CLAUDE.md, or memory — suggestions only
+
+**Callers:**
+- None currently — this skill is user-invoked only
+
+**Outbound interfaces (soft):**
+- Devlog scrap: offers `/devlog scrap --from-context interaction-review findings` after report generation
+- Preferences: loads shared + skill-specific preferences in Phase 0
+- HTML render: calls `scripts/html_render.py` in Phase 4
+
 ---
 
 **Rules:**

@@ -260,6 +260,25 @@ Structured retrospective facilitated by AI, interleaved with human check-ins at 
 /retrospective continue                    # Resume an interrupted retro
 ```
 
+#### interaction-review
+
+Analyze Claude Code conversation transcripts to grade how effectively you collaborate with the AI agent. Dispatches 5 parallel analysis subagents — each evaluating a dimension of interaction quality — followed by a coach re-review for quality and actionability. Produces a scored report card with a prioritized improvement roadmap tracking progress over time.
+
+| Lens | Weight | Focus |
+|---|---|---|
+| Prompt Craft | 30% | Clarity, specificity, context-setting, constraint usage |
+| Workflow Efficiency | 25% | Turn economy, correction loops, goal directness |
+| Agentic Leverage | 20% | Skill/tool usage, autonomy, parallelism, delegation |
+| Error Recovery | 15% | Detection speed, correction clarity, pivot decisiveness |
+| Context & Instruction | 10% | CLAUDE.md, memory, session setup, reference management |
+
+```
+/interaction-review                        # Analyze sessions since last report
+/interaction-review session <uuid>         # Deep-dive on one session
+/interaction-review since 2026-05-01       # Analyze from a specific date
+/interaction-review trend                  # Score progression across all reports
+```
+
 #### export
 
 Convert markdown, text, and code files into polished, shareable formats. Supports PDF, HTML, and PNG output with three content scopes (full, summary, 1pager) and three CSS themes (minimal, modern, dark). Uses Pandoc with LuaLaTeX for PDF and headless Chromium for PNG.
