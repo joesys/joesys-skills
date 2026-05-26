@@ -183,3 +183,72 @@ Dispatch a **single subagent** (`model: "opus"`) to classify every chunk. Read `
 - Every chunk must have exactly one tier and a non-empty reason.
 - At least one chunk must be classified as DECIDE or READ. If all chunks are SKIM/SKIP, re-prompt the triage agent with: "No decisions or notable logic found — are you sure? Look for any design choices, trade-offs, or non-obvious implementation decisions."
 - Count DECIDE chunks for the executive summary.
+
+---
+
+## Phase 2: Deep Analysis
+
+Fires only on chunks classified as `DECIDE` or `READ`. All other chunks pass through to Phase 3 with just their triage label.
+
+Dispatch a **single subagent** (`model: "opus"`) that processes all DECIDE and READ chunks **sequentially** — not parallel, because chunks often relate to each other and the analysis benefits from accumulated context. Read `references/agent-prompts.md` § Deep Analysis Agent for the full prompt template.
+
+### Agent Receives
+
+1. The mode (`code-diff`, `artifact`, or `mixed`)
+2. The triage output from Phase 1 (all chunks with tiers and reasons)
+3. The full content of DECIDE and READ chunks (diff hunks, file sections, or artifact sections)
+4. Surrounding context for each chunk (the file content around the changed hunk, or the parent section for artifacts)
+5. The user's calibration profile
+6. `/code-review` findings (if `--with-review` and findings were extracted in Phase 0.3)
+
+### DECIDE Chunk Analysis
+
+For each `DECIDE` chunk, the agent produces:
+
+````markdown
+### DECIDE: {file_path}:{line_range}
+
+**The decision:** {What choice was made, stated plainly}
+
+**Alternatives not taken:**
+- {Alternative 1} — {Why it likely wasn't chosen, or why it should have been}
+- {Alternative 2} — {Same}
+
+**Consequences:** {What this locks in, makes harder, or makes easier down the road}
+
+**Ask yourself:**
+1. {Specific question tailored to this decision — not generic}
+2. {Second question if warranted}
+
+**Reversibility:** {easy | moderate | costly} — {one-line explanation}
+````
+
+### READ Chunk Analysis
+
+For each `READ` chunk, the agent produces:
+
+````markdown
+### READ: {file_path}:{line_range}
+
+**What this does:** {Brief summary of the logic}
+
+**Why we do it this way:** {Reasoning behind the implementation approach}
+
+**Why it matters:** {How it connects to DECIDE chunks — e.g., "implements the retry policy chosen in db.go:45"}
+
+**Gotchas:** {Non-obvious things a reviewer might miss on a skim, or "None" if straightforward}
+````
+
+### `--with-review` Enrichment
+
+When `/code-review` findings are available, weave them into the relevant chunks:
+
+- Match findings to chunks by file path and line range.
+- For DECIDE chunks: note if `/code-review` found issues and whether the fix is mechanical or requires judgment. Example: *"Note: /code-review flagged a P1 race condition here. The fix is mechanical, but the decision to use a mutex vs. channel is yours."*
+- For READ chunks: note related findings as gotchas. Example: *"Gotcha: /code-review flagged missing error handling at line 52 (P2). Worth checking if the error case matters for your use case."*
+- Do NOT duplicate `/code-review` findings as standalone items — only reference them within the context of the chunk analysis.
+
+### Error Handling
+
+- **Agent fails:** Fall back to a simplified guide using only Phase 1 triage output (tier + reason per chunk, no deep analysis). Header note: "Deep analysis unavailable — showing triage-only guide." Offer retry.
+- **Agent returns incomplete analysis (missing chunks):** Note missing chunks in the guide: "Deep analysis skipped for {chunk} — triage classification only."
