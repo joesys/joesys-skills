@@ -252,3 +252,103 @@ When `/code-review` findings are available, weave them into the relevant chunks:
 
 - **Agent fails:** Fall back to a simplified guide using only Phase 1 triage output (tier + reason per chunk, no deep analysis). Header note: "Deep analysis unavailable — showing triage-only guide." Offer retry.
 - **Agent returns incomplete analysis (missing chunks):** Note missing chunks in the guide: "Deep analysis skipped for {chunk} — triage classification only."
+
+---
+
+## Phase 3: Guide Synthesis & Output
+
+Assemble the triage classifications + deep analysis into the final reading guide. Read `references/output-formats.md` for the full format templates.
+
+### 3.1 Determine Reading Order
+
+Order entries by **decision dependency**, not file path:
+
+1. Identify dependency links from the `Related to` field in triage output.
+2. Topologically sort DECIDE chunks: foundational decisions first, dependent decisions after.
+3. Interleave READ chunks after their related DECIDE chunk (so the reader gets context in order).
+4. Group SKIM chunks at the end under a "For Context" section.
+5. Collapse all SKIP chunks into a single summary line.
+
+If no dependency links exist (all chunks are independent), order DECIDE chunks by estimated impact (larger blast radius first), then READ chunks by file order.
+
+### 3.2 Build Executive Summary
+
+2-3 sentences covering:
+- What this change does overall
+- Number of decisions needing human input (count of DECIDE chunks)
+- Estimated review time: `(DECIDE_count × 3) + (READ_count × 1)` minutes, rounded to nearest 5
+
+### 3.3 Build Decision Map
+
+A table of all DECIDE chunks listed upfront, ordered by reading sequence:
+
+````markdown
+| # | Decision | Location | Reversibility |
+|---|----------|----------|---------------|
+| 1 | {one-line decision description} | `{file:line}` | {easy/moderate/costly} |
+````
+
+This is the table of contents for the review — the reviewer can scan this first to know what's coming.
+
+### 3.4 Build Review Checklist
+
+Derive concrete yes/no items from DECIDE chunks:
+
+````markdown
+- [ ] {Actionable question from DECIDE chunk 1's "Ask yourself" field}
+- [ ] {Actionable question from DECIDE chunk 2's "Ask yourself" field}
+````
+
+### 3.5 Build Open Questions
+
+Collect unresolved items:
+- Decisions where the analysis couldn't determine why a choice was made
+- Chunks where context was insufficient to assess consequences
+- Inconsistencies between chunks (e.g., two files making contradictory assumptions)
+
+If none: omit this section.
+
+### 3.6 Determine Output Format
+
+| Change size | Measurement | Output |
+|-------------|-------------|--------|
+| Small | ≤5 files **and** ≤200 lines changed | Terminal markdown inline |
+| Large | >5 files **or** >200 lines changed | HTML report file |
+
+For artifact mode: use terminal markdown unless the artifact is >200 lines.
+
+### 3.7 Render Output
+
+**Terminal markdown (small):**
+
+Assemble the guide inline using the terminal markdown template from `references/output-formats.md`. Tier badges render as inline markers: `[DECIDE]`, `[READ]`, `[SKIM]`.
+
+**HTML report (large):**
+
+1. Write the guide as markdown to a temporary location following the HTML report template from `references/output-formats.md`.
+2. Include YAML front-matter per `shared/html-reports.md`.
+3. Call the HTML renderer:
+
+````bash
+python scripts/html_render.py <report_path> --profile analytical
+````
+
+4. If the renderer succeeds: deliver the HTML file via `SendUserFile`.
+5. If the renderer fails: deliver the markdown file via `SendUserFile` with a warning.
+
+**In both formats:**
+- File references use `file:line` format
+- `DECIDE` entries are visually prominent (bold headers, tier badge)
+- The review checklist is copy-pasteable
+- SKIM entries are grouped separately (collapsed in HTML)
+- SKIP entries are a single summary line
+
+---
+
+## Context Management
+
+| Phase | Budget / Strategy |
+|---|---|
+| Phase 1 triage agent | Receives diff/content + calibration. For large diffs (>100 files), send only `git diff --stat` + file list and let the agent request specific file diffs as needed. |
+| Phase 2 deep analysis agent | Receives only DECIDE/READ chunk content + surrounding context. SKIM/SKIP chunks are excluded to save context. |
+| Phase 3 synthesis | Operates on agent outputs only — no raw content re-reading. |
