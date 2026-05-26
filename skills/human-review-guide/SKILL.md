@@ -115,3 +115,71 @@ Based on the invocation arguments, set the `mode` variable:
 | `<path>` to a directory | Mixed | Detect per-file: code files → `code-diff`, non-code → `artifact` |
 
 The `mode` variable is passed to the agent prompts to adjust framing.
+
+---
+
+## Phase 1: Input Resolution & Triage
+
+### 1.1 Input Resolution
+
+Gather the content to analyze based on the resolved mode:
+
+**For `code-diff` mode:**
+
+1. Detect base branch — read `shared/review-common.md` § Base Branch Detection.
+2. Gather changed files — read `shared/review-common.md` § File Gathering.
+3. Capture the diff: `git diff <base>...HEAD` (or `gh pr diff <number>` for PR mode).
+4. Capture file list with stats: `git diff --stat <base>...HEAD`.
+5. Count files and lines changed for output format decision (Phase 3).
+
+**For `artifact` mode:**
+
+1. Read the target file or directory contents.
+2. Split content by heading structure (H1, H2, H3) into logical sections.
+
+**For mixed mode (directory with code and non-code files):**
+
+1. List all files, classify each as code or non-code by extension.
+2. For code files: capture `git diff` if they have changes, or read full content.
+3. For non-code files: read and split by headings.
+
+### 1.2 Triage — Classification Pass
+
+Dispatch a **single subagent** (`model: "opus"`) to classify every chunk. Read `references/agent-prompts.md` § Triage Agent for the full prompt template.
+
+**Agent receives:**
+1. The mode (`code-diff`, `artifact`, or `mixed`)
+2. The diff or content chunks
+3. The user's calibration profile (role, review focus, skip tolerance)
+4. File stats summary (number of files, lines changed)
+
+**Agent returns structured JSON-like markdown for each chunk:**
+
+```markdown
+### Chunk: {file_path}:{line_range} (or {file_path}:{section_heading})
+
+- **Tier:** DECIDE | READ | SKIM | SKIP
+- **Reason:** {one-line explanation}
+- **Related to:** {other chunk IDs this decision connects to, if any}
+```
+
+**Classification tiers:**
+
+| Tier | Label | Meaning | Reviewer action |
+|------|-------|---------|-----------------|
+| 1 | `DECIDE` | Contains a decision requiring human judgment | Read carefully, form an opinion |
+| 2 | `READ` | Non-trivial logic worth understanding | Read to build mental model |
+| 3 | `SKIM` | Straightforward, follows from decisions elsewhere | Glance for context |
+| 4 | `SKIP` | Mechanical/boilerplate | Safe to ignore |
+
+**Triage rules:**
+- Conservative by default: when in doubt, escalate one tier up
+- Calibration adjusts thresholds: `skip_tolerance: aggressive` raises the SKIP bar; `conservative` lowers it
+- Role-aware: a backend dev reviewing frontend code → lower SKIP threshold for frontend patterns
+- Track `Related to` links between chunks for dependency ordering in Phase 3
+
+### 1.3 Validate Triage Output
+
+- Every chunk must have exactly one tier and a non-empty reason.
+- At least one chunk must be classified as DECIDE or READ. If all chunks are SKIM/SKIP, re-prompt the triage agent with: "No decisions or notable logic found — are you sure? Look for any design choices, trade-offs, or non-obvious implementation decisions."
+- Count DECIDE chunks for the executive summary.
