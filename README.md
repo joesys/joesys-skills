@@ -170,6 +170,25 @@ Grade code on how well it "reads like a story" using 8 weighted dimensions. Prod
 /readability-review --min-score 70           # Only show files scoring below threshold
 ```
 
+#### human-review-guide
+
+Generate a personalized reading guide for human review. Triages changes into attention tiers (DECIDE/READ/SKIM/SKIP), runs deep analysis on decision-heavy sections, and produces a guided reading order so reviewers know where to spend time and what to skip. Works on code diffs, PRs, specs, configs, and any AI-generated artifact.
+
+| Tier | Meaning | Reviewer Action |
+|---|---|---|
+| DECIDE | Contains a decision requiring human judgment | Read carefully, form an opinion |
+| READ | Non-trivial logic worth understanding | Read to build mental model |
+| SKIM | Straightforward, follows from decisions elsewhere | Glance for context |
+| SKIP | Mechanical/boilerplate | Safe to ignore |
+
+```
+/human-review-guide                        # Guide for current branch diff
+/human-review-guide PR#123                 # Guide for a specific PR
+/human-review-guide docs/spec.md           # Guide for reviewing an artifact
+/human-review-guide --with-review          # Enrich with /code-review findings
+/human-review-guide --calibrate            # Re-run calibration questions
+```
+
 #### codebase-audit
 
 Comprehensive, language-agnostic codebase quality audit measuring up to 12 core quality criteria plus development velocity. Spawns 6 parallel collection agents, displays graded metrics (A+ through F) in a console summary table, and optionally writes a full analysis report with industry benchmarks and actionable recommendations.

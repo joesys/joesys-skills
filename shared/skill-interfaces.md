@@ -91,6 +91,26 @@ interfaces, update all callers listed below.
 - Preferences: loads shared + skill-specific preferences in Phase 0
 - HTML render: calls `scripts/html_render.py` in Phase 4
 
+## Human Review Guide Interface
+
+**Invocation:** `/human-review-guide [PR#<number> | <path>] [--with-review] [--calibrate]`
+
+**Behavior contract:**
+- Analyzes diffs, files, or directories to produce a guided reading order for human reviewers
+- Classifies chunks into 4 attention tiers: DECIDE, READ, SKIM, SKIP
+- Deep analysis only on DECIDE and READ chunks
+- `--with-review` checks the current session for `/code-review` output — never auto-triggers `/code-review`
+- Produces terminal markdown (≤5 files and ≤200 lines) or HTML report (larger)
+- Does NOT modify source code, does NOT perform code review, does NOT make decisions for the reviewer
+
+**Callers:**
+- None currently — this skill is user-invoked only
+
+**Outbound interfaces (soft):**
+- Preferences: loads shared + skill-specific preferences in Phase 0
+- Code-review findings: optionally consumes `/code-review` output from session context (via `--with-review`)
+- HTML render: calls `scripts/html_render.py` in Phase 3.7
+
 ---
 
 **Rules:**
