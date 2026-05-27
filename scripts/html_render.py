@@ -228,6 +228,57 @@ def compute_assets_relpath(assets_dir: Path, output_path: Path) -> str:
     return rel.replace(os.sep, "/")
 
 
+# ── Portable template building ────────────────────────────────────────
+
+
+HANDBOOK_TEMPLATE_PATH = SCRIPTS_DIR / "templates" / "handbook.html"
+
+_CSS_FILES = ["report-base.css", "prism-light.css", "prism-dark.css"]
+_JS_FILES = ["prism.min.js", "mermaid.min.js", "report-init.js"]
+
+
+def _build_portable_template(
+    skeleton_path: Path, vendor_dir: Path
+) -> str:
+    """Build a self-contained HTML template by inlining vendor assets.
+
+    Reads the template skeleton and replaces ``/* INLINE_CSS */`` and
+    ``/* INLINE_JS */`` placeholders with the concatenated contents of
+    the vendor CSS and JS files.
+
+    Args:
+        skeleton_path: Path to the handbook.html template skeleton.
+        vendor_dir: Path to the vendor directory containing CSS/JS files.
+
+    Returns:
+        The template string with assets inlined.
+
+    Raises:
+        FileNotFoundError: if any expected vendor file is missing.
+    """
+    skeleton = skeleton_path.read_text(encoding="utf-8")
+
+    css_parts = []
+    for name in _CSS_FILES:
+        css_parts.append((vendor_dir / name).read_text(encoding="utf-8"))
+    css_content = "\n".join(css_parts)
+
+    js_parts = []
+    for name in _JS_FILES:
+        js_parts.append((vendor_dir / name).read_text(encoding="utf-8"))
+    js_content = "\n".join(js_parts)
+
+    # Pandoc uses $var$ for template variables. Vendor CSS/JS may contain
+    # literal $ (e.g., jQuery, regex, template literals in minified code).
+    # Escape $ as $$ so Pandoc passes them through as literal characters.
+    css_content = css_content.replace("$", "$$")
+    js_content = js_content.replace("$", "$$")
+
+    result = skeleton.replace("/* INLINE_CSS */", css_content)
+    result = result.replace("/* INLINE_JS */", js_content)
+    return result
+
+
 # ── Pandoc orchestration ──────────────────────────────────────────────
 
 
@@ -318,6 +369,79 @@ def render_html(
             tmp_md.unlink()
 
 
+def render_portable(
+    input_md: Path,
+    output_html: Path,
+    skeleton_path: Path = HANDBOOK_TEMPLATE_PATH,
+    vendor_dir: Path = PLUGIN_VENDOR_DIR,
+    toc: bool = True,
+) -> None:
+    """Render markdown to a self-contained portable HTML file.
+
+    Builds a Pandoc template on the fly by inlining vendor CSS/JS into
+    the handbook template skeleton, then renders through Pandoc. The
+    output HTML has no external dependencies.
+
+    Args:
+        input_md: Source markdown file.
+        output_html: Destination HTML file.
+        skeleton_path: Handbook template skeleton with INLINE_CSS/JS placeholders.
+        vendor_dir: Directory containing vendor CSS/JS files.
+        toc: Whether to include sidebar TOC.
+
+    Raises:
+        PandocMissingError: if pandoc is not installed.
+        HtmlRenderError: if pandoc subprocess fails.
+        FileNotFoundError: if vendor files are missing.
+    """
+    _ensure_pandoc()
+
+    raw = input_md.read_text(encoding="utf-8")
+    metadata, body = parse_frontmatter(raw)
+
+    if "title" not in metadata:
+        m = re.search(r"^#\s+(.+)$", body, re.MULTILINE)
+        metadata["title"] = m.group(1).strip() if m else input_md.stem
+
+    body = transform_mermaid_blocks(body)
+    output_html.parent.mkdir(parents=True, exist_ok=True)
+
+    # Build the self-contained template
+    template_content = _build_portable_template(skeleton_path, vendor_dir)
+    tmp_template = input_md.parent / (input_md.stem + ".tmp-template.html")
+    tmp_md = input_md.parent / (input_md.stem + ".tmp.md")
+
+    try:
+        tmp_template.write_text(template_content, encoding="utf-8")
+        tmp_md.write_text(body, encoding="utf-8")
+
+        cmd = [
+            "pandoc",
+            str(tmp_md),
+            "-o", str(output_html),
+            "--from=markdown",
+            "--to=html5",
+            "--template", str(tmp_template),
+            "--standalone",
+        ]
+        if toc:
+            cmd.extend(["--toc", "--toc-depth=3"])
+        for key, value in metadata.items():
+            cmd.extend(["--variable", f"{key}={value}"])
+
+        try:
+            subprocess.run(cmd, check=True, capture_output=True, text=True)
+        except subprocess.CalledProcessError as e:
+            raise HtmlRenderError(
+                f"pandoc failed (exit {e.returncode}):\n{e.stderr}"
+            ) from e
+    finally:
+        if tmp_template.exists():
+            tmp_template.unlink()
+        if tmp_md.exists():
+            tmp_md.unlink()
+
+
 # ── CLI ───────────────────────────────────────────────────────────────
 
 
@@ -333,12 +457,12 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument(
         "--profile",
-        choices=["analytical"],
+        choices=["analytical", "handbook"],
         default="analytical",
         help=(
-            "Report profile (Phase 1 supports only 'analytical'). "
-            "Currently parsed but no-op — reserved for Phase 3 when "
-            "'devlog' and slide-deck output mode land."
+            "Report profile. 'analytical' uses external assets; "
+            "'handbook' produces a self-contained portable HTML file "
+            "with all CSS/JS inlined."
         ),
     )
     p.add_argument(
@@ -375,27 +499,45 @@ def main(argv: Optional[list[str]] = None) -> int:
     vendor_dir = Path(args.vendor_dir).resolve() if args.vendor_dir else PLUGIN_VENDOR_DIR
 
     try:
-        if args.assets_dir:
-            assets_dir = Path(args.assets_dir).resolve()
-            assets_dir.mkdir(parents=True, exist_ok=True)
+        if args.profile == "handbook":
+            handbook_skeleton = (
+                Path(args.template).resolve()
+                if args.template
+                else HANDBOOK_TEMPLATE_PATH
+            )
+            try:
+                render_portable(
+                    input_md=input_md,
+                    output_html=output_html,
+                    skeleton_path=handbook_skeleton,
+                    vendor_dir=vendor_dir,
+                    toc=not args.no_toc,
+                )
+            except FileNotFoundError as e:
+                print(f"Vendor file missing: {e}", file=sys.stderr)
+                return 4
         else:
-            repo_root = find_repo_root(input_md)
-            assets_dir = bootstrap_assets(repo_root, vendor_dir=vendor_dir)
-    except NotInRepoError as e:
-        print(str(e), file=sys.stderr)
-        return 6
-    except VendorMissingError as e:
-        print(str(e), file=sys.stderr)
-        return 4
+            try:
+                if args.assets_dir:
+                    assets_dir = Path(args.assets_dir).resolve()
+                    assets_dir.mkdir(parents=True, exist_ok=True)
+                else:
+                    repo_root = find_repo_root(input_md)
+                    assets_dir = bootstrap_assets(repo_root, vendor_dir=vendor_dir)
+            except NotInRepoError as e:
+                print(str(e), file=sys.stderr)
+                return 6
+            except VendorMissingError as e:
+                print(str(e), file=sys.stderr)
+                return 4
 
-    try:
-        render_html(
-            input_md=input_md,
-            output_html=output_html,
-            assets_dir=assets_dir,
-            template_path=template_path,
-            toc=not args.no_toc,
-        )
+            render_html(
+                input_md=input_md,
+                output_html=output_html,
+                assets_dir=assets_dir,
+                template_path=template_path,
+                toc=not args.no_toc,
+            )
     except PandocMissingError as e:
         print(str(e), file=sys.stderr)
         return 1

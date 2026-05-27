@@ -15,15 +15,16 @@ import install_codex_skills
 REPO_ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_SKILLS = {
     "ai-council",
+    "antigravity",
     "claude",
-    "codereview",
     "codebase-audit",
+    "codereview",
     "codex",
     "commit",
     "devlog",
     "explain",
     "export",
-    "antigravity",
+    "handbook",
     "human-review-guide",
     "interaction-review",
     "preferences",
