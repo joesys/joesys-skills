@@ -1,12 +1,12 @@
 ---
 name: ai-council
 version: "1.1.0"
-description: "Use when the user invokes /ai-council to consult three frontier AI models (Claude, GPT, Gemini) in parallel and synthesize their responses into a consensus analysis"
+description: "Use when the user invokes /ai-council to consult three frontier AI models (Claude, GPT, Antigravity) in parallel and synthesize their responses into a consensus analysis"
 ---
 
 # AI Council Skill
 
-Dispatch the same question to three frontier AI models (Claude, GPT via Codex, Gemini) in parallel, then synthesize their responses into a structured analysis highlighting consensus and tensions.
+Dispatch the same question to three frontier AI models (Claude, GPT via Codex, Antigravity) in parallel, then synthesize their responses into a structured analysis highlighting consensus and tensions.
 
 ## Out of Scope
 
@@ -19,7 +19,7 @@ This skill MUST NOT:
 
 ## Terminology
 
-- **Leg** — a dispatch+response unit (Claude leg, Codex leg, Gemini leg)
+- **Leg** — a dispatch+response unit (Claude leg, Codex leg, Antigravity leg)
 - **Council** — the collective of all three legs
 
 ## Invocation
@@ -70,7 +70,7 @@ Construct the prompt in four parts:
 
 ### Part 1: Role Preamble (leg-specific)
 
-> "You are the [Claude/GPT/Gemini] representative on a multi-model AI council. Give your independent analysis. Be explicit about your confidence level and reasoning. State your position clearly."
+> "You are the [Claude/GPT/Antigravity] representative on a multi-model AI council. Give your independent analysis. Be explicit about your confidence level and reasoning. State your position clearly."
 
 ### Part 2: Context Bundle (identical across all three)
 
@@ -92,7 +92,7 @@ Read `shared/delegation-common.md` § Prompt Delivery and `shared/model-defaults
 
 ```bash
 CODEX_PROMPT=$(mktemp /tmp/council-codex-XXXXXX.txt)
-GEMINI_PROMPT=$(mktemp /tmp/council-gemini-XXXXXX.txt)
+AGY_PROMPT=$(mktemp /tmp/council-antigravity-XXXXXX.txt)
 CLAUDE_PROMPT=$(mktemp /tmp/council-claude-XXXXXX.txt)
 
 cat > "$CODEX_PROMPT" << 'PROMPT_EOF'
@@ -103,10 +103,10 @@ PROMPT_EOF
 
 Then pipe each prompt file to its corresponding CLI. Substitute the placeholders below with the current invocations from `shared/model-defaults.md`:
 - **Codex:** `cat "$CODEX_PROMPT" | <CODEX_CMD>`
-- **Gemini:** `cat "$GEMINI_PROMPT" | <GEMINI_CMD>`
+- **Antigravity:** `cat "$AGY_PROMPT" | <AGY_CMD>`
 - **Claude CLI:** `cat "$CLAUDE_PROMPT" | <CLAUDE_CMD> --name "council-<topic>"`
 
-Clean up temporary files after all legs complete: `rm -f "$CODEX_PROMPT" "$GEMINI_PROMPT" "$CLAUDE_PROMPT"`
+Clean up temporary files after all legs complete: `rm -f "$CODEX_PROMPT" "$AGY_PROMPT" "$CLAUDE_PROMPT"`
 
 ## Phase 3: Parallel Dispatch
 
@@ -120,12 +120,12 @@ Clean up temporary files after all legs complete: `rm -f "$CODEX_PROMPT" "$GEMIN
 cat "$CODEX_PROMPT" | <CODEX_CMD>
 ```
 
-### Gemini Leg (Bash, 600000ms timeout)
+### Antigravity Leg (Bash, 600000ms timeout)
 
-The `-p` flag is mandatory for non-interactive execution. Without it, Gemini enters interactive mode and hangs. **MUST deliver via stdin pipe** — never pass long prompts as a direct `-p` argument (shell metacharacters break argument passing). Substitute `<GEMINI_CMD>` with the current invocation from `shared/model-defaults.md` § Gemini.
+The `-p` flag is mandatory for non-interactive execution. Without it, Antigravity enters interactive mode and hangs. **MUST deliver via stdin pipe** — never pass long prompts as a direct `-p` argument (shell metacharacters break argument passing). Substitute `<AGY_CMD>` with the current invocation from `shared/model-defaults.md` § Antigravity.
 
 ```bash
-cat "$GEMINI_PROMPT" | <GEMINI_CMD>
+cat "$AGY_PROMPT" | <AGY_CMD>
 ```
 
 ### Claude Leg (Heuristic)
@@ -162,7 +162,7 @@ Produce a structured synthesis with five fixed sections.
 
 A table showing each leg's confidence level per topic/dimension.
 
-| Topic | Claude | GPT | Gemini |
+| Topic | Claude | GPT | Antigravity |
 |---|---|---|---|
 | Dimension A | High | High | High |
 | Dimension B | Medium | High | Not addressed |
@@ -177,7 +177,7 @@ Where all responding legs agree — stated clearly with supporting reasoning.
 
 ### 4. Tensions & Disagreements
 
-Where legs diverge — each leg's position stated fairly, with the nature of the disagreement explained (e.g., "Claude and GPT favor X for reason A, while Gemini argues Y due to reason B").
+Where legs diverge — each leg's position stated fairly, with the nature of the disagreement explained (e.g., "Claude and GPT favor X for reason A, while Antigravity argues Y due to reason B").
 
 ### 5. Synthesized Recommendation
 
@@ -187,7 +187,7 @@ The parent's own recommendation, informed by all three but not just majority-rul
 
 After presenting the synthesis, always offer:
 
-1. **Resume individual sessions** — "Would you like to continue the conversation with any of the models? Use `/codex resume`, `/gemini resume`, or `/claude resume` to explore their reasoning further."
+1. **Resume individual sessions** — "Would you like to continue the conversation with any of the models? Use `/codex resume`, `/antigravity resume`, or `/claude resume` to explore their reasoning further."
    - Resume is only available for legs that used CLI (not subagent). If the Claude leg used a subagent, note that `/claude resume` is not available for this council run.
    - For Codex, resume is only reliable immediately after the council run (before other Codex sessions are started).
 2. **Retry failed legs** (if applicable) — "Would you like to retry [failed leg]? I can rerun it and update the synthesis."
@@ -207,7 +207,7 @@ Saving is **on** by default. Files are written to `docs/ai-council/YYYYMMDD-<top
 docs/ai-council/20260325-postgresql-vs-mongodb/
 ├── claude.md
 ├── codex.md
-├── gemini.md
+├── antigravity.md
 └── synthesis.md
 ```
 

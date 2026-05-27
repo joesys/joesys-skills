@@ -141,9 +141,9 @@ When `--no-re-review` is used, the line keeps its current format (no Tech Lead s
 
 Tech lead receives **all** findings regardless of `--min-severity` so it can upgrade a misclassified P3 → P0. The filter is applied **after** the tech lead, so the tech lead's verdict determines what the user actually sees. If the tech lead downgrades something below the threshold, it drops out silently (same as if the domain agent had emitted at that severity).
 
-#### Interaction with `--include-gemini`
+#### Interaction with dual cross-model dispatch (Codex + Antigravity)
 
-No change. Gemini's findings flow through the same dedup → tech lead path.
+No change. Both cross-model sources' findings flow through the same dedup → tech lead path.
 
 #### Fix Dispatch (Phase 4) impact
 

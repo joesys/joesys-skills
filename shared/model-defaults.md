@@ -2,7 +2,7 @@
 
 Single source of truth for default model identifiers and CLI flags used across skills. When a model version changes, update this file — all skills that reference it will pick up the new defaults.
 
-**Consumers:** codex, gemini, claude, ai-council, codereview, quick-review
+**Consumers:** codex, antigravity, claude, ai-council, codereview, quick-review
 
 ---
 
@@ -11,7 +11,7 @@ Single source of truth for default model identifiers and CLI flags used across s
 | Provider | Model ID | Used In |
 |---|---|---|
 | OpenAI (Codex CLI) | `gpt-5.5` | `/codex`, `/ai-council`, `/codereview`, `/quick-review` |
-| Google (Gemini CLI) | `gemini-3.1-pro-preview` | `/gemini`, `/ai-council`, `/codereview`, `/quick-review` |
+| Google (Antigravity CLI) | *(managed by agy)* | `/antigravity`, `/ai-council`, `/codereview`, `/quick-review` |
 | Anthropic (Claude CLI) | `opus` | `/claude`, `/ai-council`, `/codereview`, `/quick-review` |
 
 ## Default CLI Command Templates
@@ -31,16 +31,15 @@ codex exec --model gpt-5.5 -c model_reasoning_effort="xhigh" \
 | `--skip-git-repo-check` | Required for piped input |
 | `2>/dev/null` | Suppress progress/ANSI noise on stderr |
 
-### Gemini
+### Antigravity
 
 ```bash
-gemini -m gemini-3.1-pro-preview --approval-mode plan -p "" 2>/dev/null
+agy --sandbox -p "" 2>/dev/null
 ```
 
 | Flag | Purpose |
 |---|---|
-| `-m gemini-3.1-pro-preview` | Model selection |
-| `--approval-mode plan` | Safety: read-only |
+| `--sandbox` | Safety: read-only |
 | `-p ""` | Non-interactive mode (stdin provides the prompt) |
 | `2>/dev/null` | Suppress progress/ANSI noise on stderr |
 

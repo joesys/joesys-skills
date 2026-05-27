@@ -194,7 +194,7 @@ Ask 1–3 targeted questions based on the skill. Questions MUST be things the sk
 > - Theme: light / dark
 > - Include table of contents?
 
-**ai-council, claude, codex, gemini:**
+**ai-council, claude, codex, antigravity:**
 > These delegation skills use shared communication preferences.
 > No additional questions needed — they read your shared preferences.
 > [Skip to save]

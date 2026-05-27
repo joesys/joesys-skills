@@ -23,7 +23,7 @@ EXPECTED_SKILLS = {
     "devlog",
     "explain",
     "export",
-    "gemini",
+    "antigravity",
     "human-review-guide",
     "interaction-review",
     "preferences",

@@ -54,11 +54,11 @@ pytest tests\test_codex_adapter.py -q
 
 ### Part I: AI Council
 
-Multi-model consultation — ask one model or all three in parallel. Default model identifiers and CLI flags for the delegation skills (`/claude`, `/codex`, `/gemini`, `/ai-council`) are defined in [`shared/model-defaults.md`](shared/model-defaults.md).
+Multi-model consultation — ask one model or all three in parallel. Default model identifiers and CLI flags for the delegation skills (`/claude`, `/codex`, `/antigravity`, `/ai-council`) are defined in [`shared/model-defaults.md`](shared/model-defaults.md).
 
 #### ai-council
 
-Consult three frontier AI models (Claude, GPT, Gemini) in parallel on the same question. Automatically gathers relevant context, dispatches to all three, then synthesizes a structured analysis with consensus points, tensions, and a confidence matrix. Saves results by default.
+Consult three frontier AI models (Claude, GPT, Antigravity) in parallel on the same question. Automatically gathers relevant context, dispatches to all three, then synthesizes a structured analysis with consensus points, tensions, and a confidence matrix. Saves results by default.
 
 ```
 /ai-council "Should we use PostgreSQL or MongoDB for our user data?"
@@ -91,17 +91,14 @@ Delegate prompts to OpenAI's Codex CLI for code analysis, refactoring, and autom
 /codex resume "follow up on that"
 ```
 
-#### gemini
+#### antigravity
 
-Delegate prompts to Google's Gemini CLI for code analysis, refactoring, and automated editing. Critically evaluates Gemini's output and supports session resume with indexed session management.
+Delegate prompts to Google's Antigravity CLI (`agy`) for code analysis, refactoring, and automated editing. Critically evaluates Antigravity's output and supports session resume.
 
 ```
-/gemini "explain the auth flow in this repo"
-/gemini --model gemini-2.5-flash "quick analysis of this function"
-/gemini --approval-mode yolo "fix the lint errors"
-/gemini resume "follow up on that"
-/gemini resume 3 "continue from that session"
-/gemini sessions
+/antigravity "explain the auth flow in this repo"
+/antigravity resume "follow up on that"
+/antigravity resume <ID> "continue from that session"
 ```
 
 ---
@@ -135,7 +132,7 @@ Dispatch 7 parallel domain-expert subagents to analyze code for violations acros
 
 #### quick-review
 
-Fast, bug-focused code review that dispatches correctness and security subagents alongside a cross-model reviewer (Codex and Claude) in parallel. Reports only P0-P2 findings — no style nits, no architecture suggestions. Uses `git diff -U50` for context rather than loading full files, making it significantly faster than `/codereview`.
+Fast, bug-focused code review that dispatches correctness and security subagents in parallel with streamlined static analysis. Reports only P0-P2 findings — no style nits, no architecture suggestions. Uses `git diff -U50` for context rather than loading full files, making it significantly faster than `/codereview`. No cross-model dispatch — uses the host model only for speed.
 
 ```
 /quick-review                              # Review current branch diff vs. base
@@ -143,7 +140,7 @@ Fast, bug-focused code review that dispatches correctness and security subagents
 /quick-review --file src/main.py           # Review a single file
 /quick-review --pr 123                     # Review files changed in a GitHub PR
 /quick-review --commit abc123              # Review files changed in a specific commit
-/quick-review --include-gemini             # Add Gemini as a third reviewer model
+/quick-review --commit abc123              # Review files changed in a specific commit
 ```
 
 #### readability-review
