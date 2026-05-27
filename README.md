@@ -140,7 +140,6 @@ Fast, bug-focused code review that dispatches correctness and security subagents
 /quick-review --file src/main.py           # Review a single file
 /quick-review --pr 123                     # Review files changed in a GitHub PR
 /quick-review --commit abc123              # Review files changed in a specific commit
-/quick-review --commit abc123              # Review files changed in a specific commit
 ```
 
 #### readability-review
