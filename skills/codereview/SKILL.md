@@ -33,13 +33,11 @@ Parse the user's `/codereview` arguments to determine mode and scope:
 | `/codereview --pr 123` | PR review | Files changed in a GitHub PR |
 | `/codereview --commit abc123` | Commit review | Files changed in a specific commit |
 | `/codereview --min-severity P1` | Severity filter | Combinable with any mode |
-| `/codereview --include-antigravity` | Add Antigravity | Adds Antigravity as additional cross-model reviewer |
 | `/codereview --no-re-review` | Suppress re-review | Skip Phase 3.7 — present mechanical synthesis output directly |
 
 Arguments are combinable. Examples:
 - `/codereview --pr 42 --min-severity P1` — review PR #42, only show P1+ findings
 - `/codereview src/api/ --min-severity P2` — scan directory, show P2+ findings
-- `/codereview --include-antigravity` — add Antigravity as a third model reviewer
 - `/codereview --no-re-review` — skip the Tech Lead re-review pass (faster, no annotations)
 
 If the invocation is ambiguous or unrecognizable, ask the user to clarify before proceeding.
@@ -142,7 +140,7 @@ Every changed file MUST appear in exactly one cluster. If a file is missing, rer
 
 **Step 2 — Cluster dispatch.** For each cluster, dispatch a full review (7 domain subagents + cross-model) in parallel. Every cluster gets all 7 domains regardless of cluster type — the cluster tag is reader context and synthesis priority, not a reviewer filter.
 
-**MUST fire all cluster dispatches in a single parallel batch.** With N clusters, that's N × 8 tool calls in one response. No user gate between scoping and dispatch — the scoping pass returns, dispatch fires automatically.
+**MUST fire all cluster dispatches in a single parallel batch.** With N clusters, that's N × 9 tool calls in one response. No user gate between scoping and dispatch — the scoping pass returns, dispatch fires automatically.
 
 Each cluster dispatch receives only its cluster's files (per Phase 1.3 content loading) plus the diff slice for those files.
 
@@ -259,7 +257,7 @@ Severity levels are defined in `shared/review-common.md` § Severity Scale (P0 c
 
 ### Cross-Model Dispatch
 
-In addition to the 7 domain subagents, dispatch a cross-model review request in the **same parallel batch** — all 8 invocations (7 subagents + 1 cross-model CLI) launch simultaneously in a single response.
+In addition to the 7 domain subagents, dispatch cross-model review requests to **both Codex and Antigravity** in the **same parallel batch** — all 9 invocations (7 subagents + 2 cross-model CLIs) launch simultaneously in a single response.
 
 #### Dispatch Protocol
 
@@ -304,17 +302,13 @@ If you find no issues, output: "No issues found."
 PROMPT_EOF
 ```
 
-Dispatch using the CLI command templates from `shared/cross-model-dispatch.md`, substituting `$PROMPT_FILE` for the temp file path and `"codereview-cross"` for the `--name` flag on Claude CLI. Use 600000ms timeout. Clean up: `rm -f "$PROMPT_FILE"` after completion.
+Write the prompt to **two** separate temp files (one per cross-model CLI) using `mktemp`. Dispatch both in parallel using the CLI command templates from `shared/cross-model-dispatch.md`. Use 600000ms timeout. Clean up both temp files after completion.
 
-The cross-model reviewer receives the **same full file content and diff** that the 7 domain subagents receive — not the reduced context used in quick-review. When files are batched (Phase 1.4), the cross-model dispatch is included in each batch alongside the 7 subagents.
-
-#### --include-antigravity
-
-When `--include-antigravity` is specified, launch an additional parallel dispatch to Antigravity per `shared/cross-model-dispatch.md` § `--include-antigravity` Flag. The Antigravity prompt is identical to the cross-model prompt above, written to a separate temp file (use `mktemp`).
+Both cross-model reviewers receive the **same full file content and diff** that the 7 domain subagents receive — not the reduced context used in quick-review. When files are batched (Phase 1.4), the cross-model dispatches are included in each batch alongside the 7 subagents.
 
 #### Failure Handling
 
-If cross-model dispatch fails, the review continues with the 7 domain subagents only. Note in the report header: "Cross-model review unavailable; results are from domain subagents only."
+If one cross-model dispatch fails, continue with the other's results. If both fail, continue with the 7 domain subagents only. Note unavailable models in the report header.
 
 ---
 
@@ -424,13 +418,13 @@ Present the synthesized report:
 1-3 sentences on overall code health. Mention the number of findings per severity level and any cross-model corroboration. Include a model line.
 
 When Phase 3.7 ran (default):
-"Models: [host model] + [cross-model] + Tech Lead | Domains: 7 | Static: [tools] | Re-review: X rejected, Y severity changes, Z fixes rewritten, A added, B notes"
+"Models: [host model] + Codex + Antigravity + Tech Lead | Domains: 7 | Static: [tools] | Re-review: X rejected, Y severity changes, Z fixes rewritten, A added, B notes"
 
 When Phase 3.7 was skipped (`--no-re-review`):
-"Models: [host model] + [cross-model] | Domains: 7 | Static: [tools]"
+"Models: [host model] + Codex + Antigravity | Domains: 7 | Static: [tools]"
 
 When Phase 3.7 failed:
-"Models: [host model] + [cross-model] | Domains: 7 | Static: [tools] | Tech Lead re-review: unavailable ([reason])"
+"Models: [host model] + Codex + Antigravity | Domains: 7 | Static: [tools] | Tech Lead re-review: unavailable ([reason])"
 
 ## Violations Found
 
@@ -526,7 +520,7 @@ Guardrails:
 Produce the final markdown report, structured identically to §3.6 (Summary, severity-grouped findings, Recommendations), with these additions:
 
 1. **Header line** gains a `Tech Lead` segment and a Re-review change-count summary:
-   `Models: [host] + [cross-model] + Tech Lead | Domains: 7 | Static: [tools] | Re-review: X rejected, Y severity changes, Z fixes rewritten, A added, B notes`
+   `Models: [host] + Codex + Antigravity + Tech Lead | Domains: 7 | Static: [tools] | Re-review: X rejected, Y severity changes, Z fixes rewritten, A added, B notes`
 
 2. **Inline annotations** appear ONLY on findings you touched. Untouched findings have no annotation. Format:
    - Severity change: `[Tech Lead: P2→P0 — reason]`
@@ -562,7 +556,7 @@ The tech lead is always the **last** judgment pass before presentation.
 ### 3.7.5 Filter and Flag Interactions
 
 - **`--min-severity`** — tech lead receives ALL findings regardless of the filter so it can upgrade a misclassified P3 → P0. The filter is applied **after** the tech lead, so the tech lead's verdict determines what the user actually sees. If the tech lead downgrades something below the threshold, it drops out silently.
-- **`--include-antigravity`** — no change. Antigravity's findings flow through the same dedup → tech lead path.
+- **Dual cross-model (Codex + Antigravity)** — both sets of findings flow through the same dedup → tech lead path.
 - **`--no-re-review`** — Phase 3.7 is skipped entirely; the mechanical §3.6 output is presented directly to the user. Header line keeps the pre-enhancement format (no Tech Lead segment).
 
 ### 3.7.6 Failure Handling
@@ -644,6 +638,6 @@ Additional codereview-specific errors:
 | One or more subagents fail | Continue with remaining results; note which domain was not analyzed in the report header. |
 | All subagents fail | Report the failure: "Analysis failed — could not complete any domain review. Please try again." |
 | All tools declined in gate | Review proceeds without tool findings — AI analysis only |
-| Cross-model dispatch fails | Continue with 7 domain subagents; note "Cross-model unavailable" in report header. |
-| `--include-antigravity` but Antigravity CLI not found | Warn and continue without Antigravity. |
+| One cross-model dispatch fails | Continue with remaining cross-model + 7 domain subagents; note unavailable model in report header. |
+| Both cross-model dispatches fail | Continue with 7 domain subagents only; note "Cross-model unavailable" in report header. |
 | Phase 3.7 tech lead subagent fails or times out | Fall back to the mechanical §3.6 output. Header line shows `Tech Lead re-review: unavailable ([reason])`. Offer retry: "Tech Lead re-review failed. Want to retry it? Or proceed with the synthesized findings as-is?" |

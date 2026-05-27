@@ -132,7 +132,7 @@ Dispatch 7 parallel domain-expert subagents to analyze code for violations acros
 
 #### quick-review
 
-Fast, bug-focused code review that dispatches correctness and security subagents alongside a cross-model reviewer (Codex and Claude) in parallel. Reports only P0-P2 findings — no style nits, no architecture suggestions. Uses `git diff -U50` for context rather than loading full files, making it significantly faster than `/codereview`.
+Fast, bug-focused code review that dispatches correctness and security subagents in parallel with streamlined static analysis. Reports only P0-P2 findings — no style nits, no architecture suggestions. Uses `git diff -U50` for context rather than loading full files, making it significantly faster than `/codereview`. No cross-model dispatch — uses the host model only for speed.
 
 ```
 /quick-review                              # Review current branch diff vs. base
@@ -140,7 +140,7 @@ Fast, bug-focused code review that dispatches correctness and security subagents
 /quick-review --file src/main.py           # Review a single file
 /quick-review --pr 123                     # Review files changed in a GitHub PR
 /quick-review --commit abc123              # Review files changed in a specific commit
-/quick-review --include-antigravity             # Add Antigravity as a third reviewer model
+/quick-review --commit abc123              # Review files changed in a specific commit
 ```
 
 #### readability-review

@@ -21,7 +21,7 @@ Determine which cross-model CLI to dispatch based on who you are:
 
 | You Are | Dispatch To | Command |
 |---|---|---|
-| Claude | Codex | `codex exec` |
+| Claude | Both Codex + Antigravity | Two parallel dispatches |
 | Codex | Antigravity | `agy --sandbox -p` |
 | Antigravity | Codex | `codex exec` |
 | Unknown | Both Codex + Claude | Two parallel dispatches |
@@ -69,7 +69,7 @@ Append `--name "<review-name>"` for resumability:
 cat "$PROMPT_FILE" | <CLAUDE_CMD> --name "<review-name>"
 ```
 
-### To Antigravity (via `--include-antigravity`)
+### To Antigravity
 
 ```bash
 cat "$PROMPT_FILE" | <AGY_CMD>
@@ -79,16 +79,9 @@ Use **600000ms** timeout on the Bash tool for all dispatches.
 
 ---
 
-## `--include-antigravity` Flag
-
-When `--include-antigravity` is specified, launch an **additional** parallel dispatch to Antigravity alongside the primary cross-model dispatch. The Antigravity prompt is identical to the cross-model prompt but written to a separate temp file. **Both dispatches MUST run in parallel** in the same response.
-
----
-
 ## Failure Handling
 
-If a cross-model dispatch fails or times out, the review continues with host-only findings. Append a note to the report:
+If a cross-model dispatch fails or times out, the review continues with the remaining sources. Append a note to the report:
 
-- **Single cross-model failure:** "Cross-model review unavailable ([model] [reason]); results are from [host model] only."
-- **`--include-antigravity` with only Antigravity failing:** Primary cross-model results are still included. Note Antigravity unavailability separately.
+- **One cross-model fails:** Continue with the other cross-model's results. Note the unavailable model: "Cross-model review from [model] unavailable ([reason])."
 - **All cross-model dispatches fail:** Proceed with host AI subagents only. Note in the report header.
