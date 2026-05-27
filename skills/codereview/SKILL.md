@@ -33,13 +33,13 @@ Parse the user's `/codereview` arguments to determine mode and scope:
 | `/codereview --pr 123` | PR review | Files changed in a GitHub PR |
 | `/codereview --commit abc123` | Commit review | Files changed in a specific commit |
 | `/codereview --min-severity P1` | Severity filter | Combinable with any mode |
-| `/codereview --include-gemini` | Add Gemini | Adds Gemini as additional cross-model reviewer |
+| `/codereview --include-antigravity` | Add Antigravity | Adds Antigravity as additional cross-model reviewer |
 | `/codereview --no-re-review` | Suppress re-review | Skip Phase 3.7 — present mechanical synthesis output directly |
 
 Arguments are combinable. Examples:
 - `/codereview --pr 42 --min-severity P1` — review PR #42, only show P1+ findings
 - `/codereview src/api/ --min-severity P2` — scan directory, show P2+ findings
-- `/codereview --include-gemini` — add Gemini as a third model reviewer
+- `/codereview --include-antigravity` — add Antigravity as a third model reviewer
 - `/codereview --no-re-review` — skip the Tech Lead re-review pass (faster, no annotations)
 
 If the invocation is ambiguous or unrecognizable, ask the user to clarify before proceeding.
@@ -308,9 +308,9 @@ Dispatch using the CLI command templates from `shared/cross-model-dispatch.md`, 
 
 The cross-model reviewer receives the **same full file content and diff** that the 7 domain subagents receive — not the reduced context used in quick-review. When files are batched (Phase 1.4), the cross-model dispatch is included in each batch alongside the 7 subagents.
 
-#### --include-gemini
+#### --include-antigravity
 
-When `--include-gemini` is specified, launch an additional parallel dispatch to Gemini per `shared/cross-model-dispatch.md` § `--include-gemini` Flag. The Gemini prompt is identical to the cross-model prompt above, written to a separate temp file (use `mktemp`).
+When `--include-antigravity` is specified, launch an additional parallel dispatch to Antigravity per `shared/cross-model-dispatch.md` § `--include-antigravity` Flag. The Antigravity prompt is identical to the cross-model prompt above, written to a separate temp file (use `mktemp`).
 
 #### Failure Handling
 
@@ -562,7 +562,7 @@ The tech lead is always the **last** judgment pass before presentation.
 ### 3.7.5 Filter and Flag Interactions
 
 - **`--min-severity`** — tech lead receives ALL findings regardless of the filter so it can upgrade a misclassified P3 → P0. The filter is applied **after** the tech lead, so the tech lead's verdict determines what the user actually sees. If the tech lead downgrades something below the threshold, it drops out silently.
-- **`--include-gemini`** — no change. Gemini's findings flow through the same dedup → tech lead path.
+- **`--include-antigravity`** — no change. Antigravity's findings flow through the same dedup → tech lead path.
 - **`--no-re-review`** — Phase 3.7 is skipped entirely; the mechanical §3.6 output is presented directly to the user. Header line keeps the pre-enhancement format (no Tech Lead segment).
 
 ### 3.7.6 Failure Handling
@@ -645,5 +645,5 @@ Additional codereview-specific errors:
 | All subagents fail | Report the failure: "Analysis failed — could not complete any domain review. Please try again." |
 | All tools declined in gate | Review proceeds without tool findings — AI analysis only |
 | Cross-model dispatch fails | Continue with 7 domain subagents; note "Cross-model unavailable" in report header. |
-| `--include-gemini` but Gemini CLI not found | Warn and continue without Gemini. |
+| `--include-antigravity` but Antigravity CLI not found | Warn and continue without Antigravity. |
 | Phase 3.7 tech lead subagent fails or times out | Fall back to the mechanical §3.6 output. Header line shows `Tech Lead re-review: unavailable ([reason])`. Offer retry: "Tech Lead re-review failed. Want to retry it? Or proceed with the synthesized findings as-is?" |

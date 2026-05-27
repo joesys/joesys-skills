@@ -23,11 +23,12 @@ interfaces, update all callers listed below.
 ## Delegation Skill Resume Interfaces
 
 **Codex resume:** `/codex resume [prompt]`
-**Gemini resume:** `/gemini resume [prompt]` or `/gemini resume <index> [prompt]`
+**Antigravity resume:** `/antigravity resume [prompt]` or `/antigravity resume <ID> [prompt]`
 **Claude resume:** `/claude resume [prompt]` or `/claude resume <name> [prompt]`
 
 **Callers:**
 - `skills/ai-council/SKILL.md` — Post-Synthesis Options, item 1
+
 
 ## Review Principles Interface
 

@@ -1,6 +1,6 @@
 # Shared Delegation Infrastructure
 
-Reference file for `/codex`, `/gemini`, `/claude`, and `/ai-council`. Read this file before dispatching the underlying CLI — it is the canonical source for prompt delivery, sequencing, critical evaluation, and error handling.
+Reference file for `/codex`, `/antigravity`, `/claude`, and `/ai-council`. Read this file before dispatching the underlying CLI — it is the canonical source for prompt delivery, sequencing, critical evaluation, and error handling.
 
 ---
 
@@ -38,7 +38,7 @@ rm -f "$PROMPT_FILE"
 
 If `mktemp` is unavailable, fall back to a deterministic path: `/tmp/<skill>-prompt.txt`.
 
-The `-p ""` flag (Claude, Gemini) or no `-p` flag (Codex) triggers non-interactive mode while stdin provides the actual prompt.
+The `-p ""` flag (Claude, Antigravity) or no `-p` flag (Codex) triggers non-interactive mode while stdin provides the actual prompt.
 
 **Why `2>/dev/null`?** CLI tools emit progress indicators, ANSI escape codes, and status messages on stderr. These pollute captured output when running programmatically.
 

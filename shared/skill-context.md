@@ -91,7 +91,7 @@ Every skill MUST follow this protocol in its earliest phase. Skills fall into th
 |---|---|---|
 | **Full interview** | `/explain`, `/codereview`, `/quick-review`, `/codebase-audit`, `/devlog`, `/retrospective`, `/ai-council` | Invoke `/preferences` (streamlined) if no shared preferences exist. |
 | **Silent defaults** | `/commit`, `/export`, `/ss`, `/readability-review` | Load preferences if present; use sensible defaults otherwise. **MUST NOT interrupt** the workflow with an interview — these are fast, transactional operations. |
-| **Minimal load** | `/claude`, `/codex`, `/gemini` | Load preferences if present to shape critical-evaluation output. **MUST NOT interview** — delegation is a pass-through. |
+| **Minimal load** | `/claude`, `/codex`, `/antigravity` | Load preferences if present to shape critical-evaluation output. **MUST NOT interview** — delegation is a pass-through. |
 
 ### Step 1: Check for Shared Preferences
 

@@ -33,14 +33,14 @@ Parse the user's `/quick-review` arguments to determine mode and scope:
 | `/quick-review --file src/main.py` | Single file | One specific file |
 | `/quick-review --pr 123` | PR review | Files changed in a GitHub PR |
 | `/quick-review --commit abc123` | Commit review | Files changed in a specific commit |
-| `/quick-review --include-gemini` | Add Gemini | Combinable with any mode |
+| `/quick-review --include-antigravity` | Add Antigravity | Combinable with any mode |
 
 Arguments are combinable. Examples:
 - `/quick-review --pr 42` — review PR #42
-- `/quick-review --include-gemini` — add Gemini as a third reviewer
-- `/quick-review --file src/main.py --include-gemini` — single file, three models
+- `/quick-review --include-antigravity` — add Antigravity as a third reviewer
+- `/quick-review --file src/main.py --include-antigravity` — single file, three models
 
-The `--include-gemini` flag affects Phase 2 dispatch only — Phase 1 scope resolution is identical regardless.
+The `--include-antigravity` flag affects Phase 2 dispatch only — Phase 1 scope resolution is identical regardless.
 
 If the invocation is ambiguous or unrecognizable, ask the user to clarify before proceeding.
 
@@ -209,9 +209,9 @@ PROMPT_EOF
 
 Dispatch using the CLI command templates from `shared/cross-model-dispatch.md`, substituting `$PROMPT_FILE` for the temp file path and `"quick-review-cross"` for the `--name` flag on Claude CLI. Use 600000ms timeout. Clean up: `rm -f "$PROMPT_FILE"` after completion.
 
-#### --include-gemini
+#### --include-antigravity
 
-When `--include-gemini` is specified, launch an additional parallel dispatch to Gemini per `shared/cross-model-dispatch.md` § `--include-gemini` Flag. The Gemini prompt is identical to the cross-model prompt, written to a separate temp file (use `mktemp`). Clean up after completion.
+When `--include-antigravity` is specified, launch an additional parallel dispatch to Antigravity per `shared/cross-model-dispatch.md` § `--include-antigravity` Flag. The Antigravity prompt is identical to the cross-model prompt, written to a separate temp file (use `mktemp`). Clean up after completion.
 
 #### Permissions
 
@@ -223,7 +223,7 @@ If a cross-model dispatch fails or times out, the review continues with host-onl
 
 > "Cross-model review unavailable ([model] [reason]); results are from [host model] only."
 
-If `--include-gemini` was specified and only Gemini fails, the primary cross-model results are still included.
+If `--include-antigravity` was specified and only Antigravity fails, the primary cross-model results are still included.
 
 ---
 
@@ -234,7 +234,7 @@ If `--include-gemini` was specified and only Gemini fails, the primary cross-mod
 Gather findings from all tracks:
 - Track 1: Static analysis tool output
 - Track 2: Host AI subagents (correctness + security)
-- Track 3: Cross-model dispatch (and Gemini, if `--include-gemini`)
+- Track 3: Cross-model dispatch (and Antigravity, if `--include-antigravity`)
 
 If any track failed, note which source was unavailable and proceed with remaining results.
 
@@ -246,9 +246,9 @@ The ±5 line tolerance is wider than codereview's ±3 because cross-model review
 
 | Bucket | Criteria | Display |
 |---|---|---|
-| **Corroborated** | Same issue flagged by 2+ AI sources (host + cross-model, or host + Gemini, etc.) | `[Corroborated: source1 + source2]` |
+| **Corroborated** | Same issue flagged by 2+ AI sources (host + cross-model, or host + Antigravity, etc.) | `[Corroborated: source1 + source2]` |
 | **Tool-confirmed** | AI finding validated by a static analysis tool at the same location | `[Confirmed by: tool_name]` |
-| **Single-source** | Found by only one source | Source attribution: `[Claude]`, `[Codex]`, `[Gemini]`, `[eslint]`, etc. |
+| **Single-source** | Found by only one source | Source attribution: `[Claude]`, `[Codex]`, `[Antigravity]`, `[eslint]`, etc. |
 
 A finding can be both corroborated AND tool-confirmed (e.g., Claude + Codex + mypy all flag the same null dereference). In this case, show both annotations.
 
@@ -279,9 +279,9 @@ X findings (Y corroborated across models). Reviewed N files, M lines changed.
 Models: [host model] + [cross-model] | Static: [tool1, tool2, ...]
 ```
 
-If `--include-gemini` was used:
+If `--include-antigravity` was used:
 ```
-Models: [host model] + [cross-model] + Gemini | Static: [tool1, tool2, ...]
+Models: [host model] + [cross-model] + Antigravity | Static: [tool1, tool2, ...]
 ```
 
 If cross-model was unavailable:
@@ -342,4 +342,4 @@ Additional quick-review-specific errors:
 | Both host subagents fail | Fall back to cross-model results only. If cross-model also failed, report: "Analysis failed — could not complete any review. Please try again." |
 | Cross-model dispatch fails | Continue with host-only results; note in summary header. |
 | All sources fail | Report: "Analysis failed — no reviewers completed successfully. Please try again." |
-| `--include-gemini` but Gemini CLI not installed | Warn: "Gemini CLI not found. Proceeding without Gemini." Continue with host + primary cross-model. |
+| `--include-antigravity` but Antigravity CLI not installed | Warn: "Antigravity CLI not found. Proceeding without Antigravity." Continue with host + primary cross-model. |
