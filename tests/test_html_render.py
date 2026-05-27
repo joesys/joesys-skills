@@ -391,6 +391,30 @@ class TestSnapshot:
             "  mv tests/fixtures/sample-explain.html tests/snapshots/sample-explain.html.snapshot"
         )
 
+    @pytest.mark.skipif(
+        shutil.which("pandoc") is None, reason="pandoc not on PATH"
+    )
+    def test_sample_handbook_renders_to_snapshot(self, tmp_path):
+        fixture_src = _FIXTURES_DIR / "sample-handbook.md"
+        target = tmp_path / "sample-handbook.md"
+        target.write_text(fixture_src.read_text(encoding="utf-8"), encoding="utf-8")
+
+        exit_code = html_render.main([
+            str(target),
+            "--profile", "handbook",
+        ])
+        assert exit_code == 0
+        actual = (tmp_path / "sample-handbook.html").read_text(encoding="utf-8")
+
+        snapshot_path = _SNAPSHOTS_DIR / "sample-handbook.html.snapshot"
+        expected = snapshot_path.read_text(encoding="utf-8")
+
+        assert _normalize(actual) == _normalize(expected), (
+            "Snapshot mismatch — if intentional, regenerate via:\n"
+            "  python scripts/html_render.py tests/fixtures/sample-handbook.md "
+            "--profile handbook --output tests/snapshots/sample-handbook.html.snapshot"
+        )
+
 
 # ── handbook template ──────────────────────────────────────────────
 

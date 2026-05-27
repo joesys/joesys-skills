@@ -112,6 +112,26 @@ interfaces, update all callers listed below.
 - Code-review findings: optionally consumes `/codereview` output from session context (via `--with-review`)
 - HTML render: calls `scripts/html_render.py` in Phase 3.7
 
+## Handbook Skill Interface
+
+**Invocation:** `/handbook [<path>]`
+
+**Behavior contract:**
+- Dispatches 6 analysis agents in parallel (Phase 1), then 13-16 chapter writers in parallel (Phase 3)
+- Conducts human interview between analysis and writing (Phase 2)
+- Produces `docs/handbook/handbook.md` and `docs/handbook/handbook.html`
+- Saves interview context to `.claude/skill-context/handbook.md`
+- Does NOT modify source code — read-only analysis
+- Does NOT auto-invoke other skills (no cross-skill dispatch)
+
+**Outbound interfaces (soft):**
+- Preferences: loads shared + skill-specific preferences in Phase 0 (invokes `/preferences` if missing)
+- Previous `/explain` report: reads `docs/explain/*.md` as supplementary context if present (does not invoke `/explain`)
+- HTML render: calls `scripts/html_render.py --profile handbook` in Phase 6
+
+**Callers:**
+- None currently — this skill is user-invoked only
+
 ---
 
 **Rules:**
