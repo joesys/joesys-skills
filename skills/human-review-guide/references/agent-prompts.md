@@ -102,7 +102,7 @@ You are producing deep analysis for chunks that a triage pass identified as need
 2. Build on context as you go — decisions in earlier chunks inform analysis of later ones.
 3. For each DECIDE chunk, produce all 5 analysis fields (decision, alternatives, consequences, questions, reversibility).
 4. For each READ chunk, produce all 4 analysis fields (what, why this way, why it matters, gotchas).
-5. If /code-review findings are provided, weave them into the relevant chunk analysis — don't list them separately.
+5. If /codereview findings are provided, weave them into the relevant chunk analysis — don't list them separately.
 
 ## Reviewer Calibration Profile
 <CALIBRATION_PROFILE>
@@ -119,8 +119,8 @@ You are producing deep analysis for chunks that a triage pass identified as need
 ## Content of DECIDE and READ Chunks
 <CHUNK_CONTENT_WITH_CONTEXT>
 
-## /code-review Findings (if --with-review)
-<CODE_REVIEW_FINDINGS or "None — running without /code-review enrichment.">
+## /codereview Findings (if --with-review)
+<CODE_REVIEW_FINDINGS or "None — running without /codereview enrichment.">
 
 ## Output Format
 

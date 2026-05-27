@@ -17,12 +17,12 @@ All preference files live under `.claude/skill-context/` in the project root. Th
 ├── preferences.md          # Shared preferences (every skill reads this)
 ├── codebase-audit.md       # Skill-specific preferences
 ├── explain.md              # Skill-specific preferences
-├── code-review.md          # Skill-specific preferences (also used by quick-review)
+├── codereview.md          # Skill-specific preferences (also used by quick-review)
 ├── ss.md                   # Skill-specific preferences
 └── ...                     # One file per skill that needs customization
 ```
 
-**Shared preference files:** Some skills share — for example, `quick-review` reads `code-review.md` rather than maintaining its own file, since both share the review domain (severity focus, priority domains, etc.).
+**Shared preference files:** Some skills share — for example, `quick-review` reads `codereview.md` rather than maintaining its own file, since both share the review domain (severity focus, priority domains, etc.).
 
 **`.gitignore` note:** Because preferences are personal, add `.claude/skill-context/` to `.gitignore` unless the team explicitly wants shared preferences.
 
@@ -75,7 +75,7 @@ Examples of skill-specific preferences:
 | Skill | Example Preferences |
 |---|---|
 | `explain` | "Start with entry points", "Always include dependency graphs", "Top-down preferred" |
-| `code-review` | "Care most about security and correctness", "Skip P3/P4 findings", "Always show before/after" |
+| `codereview` | "Care most about security and correctness", "Skip P3/P4 findings", "Always show before/after" |
 | `codebase-audit` | Project phase, team size, known trade-offs |
 | `commit` | "Keep messages under 72 chars", "Always include scope" |
 | `devlog` | "Write for a technical blog audience", "Include code snippets" |
@@ -89,9 +89,9 @@ Every skill MUST follow this protocol in its earliest phase. Skills fall into th
 
 | Category | Skills | First-contact behavior |
 |---|---|---|
-| **Full interview** | `/explain`, `/code-review`, `/quick-review`, `/codebase-audit`, `/devlog`, `/retrospective`, `/ai-council` | Invoke `/preferences` (streamlined) if no shared preferences exist. |
+| **Full interview** | `/explain`, `/codereview`, `/quick-review`, `/codebase-audit`, `/devlog`, `/retrospective`, `/ai-council` | Invoke `/preferences` (streamlined) if no shared preferences exist. |
 | **Silent defaults** | `/commit`, `/export`, `/ss`, `/readability-review` | Load preferences if present; use sensible defaults otherwise. **MUST NOT interrupt** the workflow with an interview — these are fast, transactional operations. |
-| **Minimal load** | `/claude`, `/codex`, `/gemini` | Load preferences if present to shape critical-evaluation output. **MUST NOT interview** — delegation is a pass-through. |
+| **Minimal load** | `/claude`, `/codex`, `/antigravity` | Load preferences if present to shape critical-evaluation output. **MUST NOT interview** — delegation is a pass-through. |
 
 ### Step 1: Check for Shared Preferences
 

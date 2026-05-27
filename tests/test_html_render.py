@@ -192,7 +192,7 @@ class TestComputeAssetsRelpath:
         # On Windows, paths use backslashes natively. Output must still be
         # forward-slash for HTML.
         assets = tmp_path / "docs" / ".assets" / "report-lib"
-        output = tmp_path / "docs" / "code-review" / "2026-05-09T14.html"
+        output = tmp_path / "docs" / "codereview" / "2026-05-09T14.html"
         rel = html_render.compute_assets_relpath(assets, output)
         assert "\\" not in rel
         assert rel.startswith("../")

@@ -1,6 +1,6 @@
 # Shared Review Infrastructure
 
-Reference file for `/code-review` and `/quick-review`. Read this file during Phase 1 (Scope Resolution). It is the canonical source for base branch detection, file gathering, target language detection, severity scale, and shared guardrails.
+Reference file for `/codereview` and `/quick-review`. Read this file during Phase 1 (Scope Resolution). It is the canonical source for base branch detection, file gathering, target language detection, severity scale, and shared guardrails.
 
 ---
 
@@ -98,13 +98,13 @@ If a tool fails (crash, not a findings exit code): report error, skip tool, cont
 
 ## Content Loading
 
-Content loading is **intentionally skill-specific** — code-review loads full files + diff for deep analysis; quick-review loads only the diff with `-U50` context for speed. See each skill's SKILL.md for its content loading strategy.
+Content loading is **intentionally skill-specific** — codereview loads full files + diff for deep analysis; quick-review loads only the diff with `-U50` context for speed. See each skill's SKILL.md for its content loading strategy.
 
 ---
 
 ## Severity Scale
 
-Shared severity definitions (quick-review reports P0–P2 only; code-review reports P0–P4):
+Shared severity definitions (quick-review reports P0–P2 only; codereview reports P0–P4):
 
 | Priority | Type | Examples | Fix When |
 |---|---|---|---|
@@ -143,8 +143,8 @@ Quick-review discards tool findings below P2.
 | PR number not found | "PR #N not found. Check the number and try again." |
 | Commit hash not found | "Commit `<hash>` not found. Check the hash and try again." |
 | File not found (single file mode) | "File `<path>` not found. Check the path and try again." |
-| No violations found | code-review: "No violations detected. Code looks solid." quick-review: "No bugs or security issues found. Code looks solid." |
-| Too many files (>100) | code-review: large tier activates logical-cluster dispatch (§ 1.4b) — no warning needed. quick-review: warn about scope size, suggest narrowing with `--file` or a subdirectory, proceed if confirmed. |
+| No violations found | codereview: "No violations detected. Code looks solid." quick-review: "No bugs or security issues found. Code looks solid." |
+| Too many files (>100) | codereview: large tier activates logical-cluster dispatch (§ 1.4b) — no warning needed. quick-review: warn about scope size, suggest narrowing with `--file` or a subdirectory, proceed if confirmed. |
 | Tool binary not found | Classify as `configured-but-unavailable`, skip, continue review. |
 | Tool crashes or times out | Report error, skip tool, continue with remaining tools. |
 | Tool output unparseable | Include raw summary in report, skip structured merge. |

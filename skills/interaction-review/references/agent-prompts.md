@@ -180,7 +180,7 @@ You are analyzing Claude Code conversation transcripts to evaluate whether the u
 - **Context management**: Does the user help the agent maintain effective context?
 
 Look for specific skill invocations (lines starting with `/`) and compare against what skills would have been useful but weren't invoked. Common missed opportunities:
-- `/code-review` instead of ad-hoc "check this code"
+- `/codereview` instead of ad-hoc "check this code"
 - `/explain` instead of sequential file reads
 - `/commit` instead of manual git commit
 - Plan mode instead of step-by-step dictation

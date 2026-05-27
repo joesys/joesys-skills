@@ -11,13 +11,13 @@ Dispatch 5 parallel analysis subagents — each a domain lens (structure, behavi
 ## Out of Scope
 
 This skill MUST NOT:
-- Modify the code being explained, even obvious typos or clearly-broken imports. The skill describes; if the user wants to fix, they invoke `/code-review` or fix manually.
+- Modify the code being explained, even obvious typos or clearly-broken imports. The skill describes; if the user wants to fix, they invoke `/codereview` or fix manually.
 - Run write-mode tools (formatter `--fix`, linter `--fix`, code generators) as part of analysis. Read-only invocations only.
 - Cite benchmarks, comparisons, or "industry standards" without naming the source. Unsourced numbers read as fabrication.
 - Produce value judgments in lenses 1–4 (Structure, Behavior, Domain, Dependencies). Only lens 5 (Health & Risk) assesses quality and risk. Lenses 1–4 describe and explain — they do not say "this is bad" or "this is good."
 - Reproduce source code instead of pointing to it. Use `file:line_number` and short snippets (≤5 lines) for clarity. Long verbatim copies of source files are forbidden.
 - Confabulate workflows that don't exist. If the scope contains only 2 confidently-identifiable workflows, trace 2 — do not invent a third to fill the count.
-- Add a "fix this" or "improve this" step. `/explain` has no fix dispatch. If the user wants improvements after the report, they invoke `/code-review` or `/readability-review`.
+- Add a "fix this" or "improve this" step. `/explain` has no fix dispatch. If the user wants improvements after the report, they invoke `/codereview` or `/readability-review`.
 - Skip the "uncertain" flag when the evidence is thin. Saying "unclear" or "seems like" is a valid output — guessing confidently is not.
 
 ## Invocation

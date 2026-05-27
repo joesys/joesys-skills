@@ -79,7 +79,7 @@ After capturing Round 1:
 > Got it! I've saved your preferences. Would you like to also set preferences
 > for specific skills? For example:
 > - How `/explain` structures its reports
-> - What severity levels `/code-review` focuses on
+> - What severity levels `/codereview` focuses on
 > - How `/commit` formats messages
 >
 > You can do this now, or anytime later with `/preferences <skill-name>`.
@@ -151,15 +151,15 @@ Ask 1–3 targeted questions based on the skill. Questions MUST be things the sk
 >
 > Any areas you want the explanation to emphasize or skip?
 
-**code-review:**
+**codereview:**
 > What matters most in code reviews?
 > - Rank by priority: Security, Correctness, Performance, Architecture, Clean Code, Reliability
 > - Should I include minor style findings (P3/P4), or focus on real bugs and security issues only?
 > - Prefer before/after code examples, or just descriptions?
 
 **quick-review:**
-> Same as code-review — read and reuse code-review preferences if they exist.
-> Only ask if code-review preferences are missing.
+> Same as codereview — read and reuse codereview preferences if they exist.
+> Only ask if codereview preferences are missing.
 
 **codebase-audit:**
 > Any known trade-offs I should be aware of?
@@ -194,7 +194,7 @@ Ask 1–3 targeted questions based on the skill. Questions MUST be things the sk
 > - Theme: light / dark
 > - Include table of contents?
 
-**ai-council, claude, codex, gemini:**
+**ai-council, claude, codex, antigravity:**
 > These delegation skills use shared communication preferences.
 > No additional questions needed — they read your shared preferences.
 > [Skip to save]

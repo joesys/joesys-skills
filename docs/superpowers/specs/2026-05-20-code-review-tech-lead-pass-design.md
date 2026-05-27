@@ -1,14 +1,14 @@
 # Code Review — Senior Tech Lead Re-review + Suggested Fix Field
 
 **Status:** Spec (awaiting implementation plan)
-**Skill affected:** `skills/code-review/SKILL.md` (and downstream consumers)
+**Skill affected:** `skills/codereview/SKILL.md` (and downstream consumers)
 **Date:** 2026-05-20
 
 ---
 
 ## Problem
 
-The `/code-review` skill dispatches 7 domain subagents + a cross-model reviewer in parallel, then synthesizes their findings. The current synthesis (Phase 3.1–3.6) is **mechanical**: collect → dedupe → severity filter → prioritize correctness → format. There is no judgment pass — no point where a senior engineer steps back and asks "do I actually agree with this list? Is this fix any good? Are we calling P0 things that aren't, and missing P0s that are?"
+The `/codereview` skill dispatches 7 domain subagents + a cross-model reviewer in parallel, then synthesizes their findings. The current synthesis (Phase 3.1–3.6) is **mechanical**: collect → dedupe → severity filter → prioritize correctness → format. There is no judgment pass — no point where a senior engineer steps back and asks "do I actually agree with this list? Is this fix any good? Are we calling P0 things that aren't, and missing P0s that are?"
 
 The result is that obvious misclassifications and weak fix suggestions reach the user unchallenged.
 
@@ -16,7 +16,7 @@ Additionally, per-finding fixes today live in a `**After**` code block. The bloc
 
 ## Goal
 
-Add two enhancements to `/code-review`:
+Add two enhancements to `/codereview`:
 
 1. **Senior Tech Lead Re-review** — a final judgment pass over the synthesized findings, dispatched as one additional opus subagent. It can reject, reclassify, rewrite fixes, add missed findings, flag analysis gaps, and **produces the final report directly**.
 2. **Explicit `**Suggested Fix:**` prose field** on every finding — 1–2 sentences stating the fix approach, sitting between `**Problem**` and `**Before**`. Gives the tech lead something judgment-evaluable beyond the diff.
@@ -60,10 +60,10 @@ New per-finding shape (additions in **bold**):
 **Prompt-level rule:** subagents are explicitly instructed that **Suggested Fix and After must agree** — the prose states the strategy, the code shows it. If a subagent cannot articulate the strategy in prose, it likely has not understood the fix and should not emit the finding.
 
 **Files touched in Phase 2:**
-- `skills/code-review/SKILL.md` § Subagent Prompt Template (the template block in Phase 2)
-- `skills/code-review/SKILL.md` § Cross-Model Prompt (the cross-model output format)
-- `skills/code-review/SKILL.md` § Subagent Output Format (the documented shape)
-- `skills/code-review/SKILL.md` § 3.1a Cross-Cluster Synthesis (large-tier synthesis agent output format)
+- `skills/codereview/SKILL.md` § Subagent Prompt Template (the template block in Phase 2)
+- `skills/codereview/SKILL.md` § Cross-Model Prompt (the cross-model output format)
+- `skills/codereview/SKILL.md` § Subagent Output Format (the documented shape)
+- `skills/codereview/SKILL.md` § 3.1a Cross-Cluster Synthesis (large-tier synthesis agent output format)
 
 ### 2. Phase 3.7 — Tech Lead Re-review (new phase)
 
@@ -141,9 +141,9 @@ When `--no-re-review` is used, the line keeps its current format (no Tech Lead s
 
 Tech lead receives **all** findings regardless of `--min-severity` so it can upgrade a misclassified P3 → P0. The filter is applied **after** the tech lead, so the tech lead's verdict determines what the user actually sees. If the tech lead downgrades something below the threshold, it drops out silently (same as if the domain agent had emitted at that severity).
 
-#### Interaction with `--include-gemini`
+#### Interaction with dual cross-model dispatch (Codex + Antigravity)
 
-No change. Gemini's findings flow through the same dedup → tech lead path.
+No change. Both cross-model sources' findings flow through the same dedup → tech lead path.
 
 #### Fix Dispatch (Phase 4) impact
 
@@ -180,7 +180,7 @@ Added to the `## Error Handling` table.
 
 | File | Change |
 |---|---|
-| `skills/code-review/SKILL.md` | All sections above — Phase 2 prompt templates, new Phase 3.7, header format, `--no-re-review` flag, Out of Scope, Error Handling |
+| `skills/codereview/SKILL.md` | All sections above — Phase 2 prompt templates, new Phase 3.7, header format, `--no-re-review` flag, Out of Scope, Error Handling |
 
 No new files. No other skills modified. Quick-review and other consumers are untouched.
 

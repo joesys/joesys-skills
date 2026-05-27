@@ -19,7 +19,7 @@ Evaluate whether the user is taking full advantage of the agent's autonomous cap
 Does the user invoke available skills when they would be more effective than manual orchestration?
 
 **Signs of strong utilization:**
-- Uses `/code-review` instead of asking "look at this code for issues"
+- Uses `/codereview` instead of asking "look at this code for issues"
 - Uses `/commit` for structured commits instead of manual `git commit`
 - Uses `/explain` for codebase understanding instead of sequential file reads
 - Uses `/retrospective` for process reflection instead of ad-hoc discussion

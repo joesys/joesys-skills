@@ -1,6 +1,6 @@
 # Static Analysis Tooling Registry
 
-**codebase-audit**, **code-review**, and **quick-review** all reference this file as the single source of truth for discovering, classifying, and safely executing static analysis tools. Per-language tool profiles live in `shared/tooling/<language>.md`; this file defines the shared protocol that governs all of them.
+**codebase-audit**, **codereview**, and **quick-review** all reference this file as the single source of truth for discovering, classifying, and safely executing static analysis tools. Per-language tool profiles live in `shared/tooling/<language>.md`; this file defines the shared protocol that governs all of them.
 
 ---
 
@@ -136,7 +136,7 @@ The TOOLING_CONTEXT block is the structured output that feeds into the audit or 
 - ...
 ```
 
-### Slim Version (code-review, quick-review)
+### Slim Version (codereview, quick-review)
 
 ```
 ### TOOLING_CONTEXT
@@ -152,7 +152,7 @@ The TOOLING_CONTEXT block is the structured output that feeds into the audit or 
 - ...
 ```
 
-The slim version omits **Gap Recommendations** and **Build-Integrated Analysis** — code-review is scoped to the diff, not the whole repository's tooling posture.
+The slim version omits **Gap Recommendations** and **Build-Integrated Analysis** — codereview is scoped to the diff, not the whole repository's tooling posture.
 
 ---
 
@@ -184,7 +184,7 @@ Tooling results influence the audit grade through two mechanisms: criteria impac
 
 ## 7. Review Merge Rules
 
-When both AI analysis and tool output identify issues in the same diff, apply these merge rules. Both code-review and quick-review use these rules, with quick-review applying a wider ±5 line tolerance for deduplication (because cross-model reviewers working from diff-only context may report slightly different line numbers) and discarding findings below P2.
+When both AI analysis and tool output identify issues in the same diff, apply these merge rules. Both codereview and quick-review use these rules, with quick-review applying a wider ±5 line tolerance for deduplication (because cross-model reviewers working from diff-only context may report slightly different line numbers) and discarding findings below P2.
 
 ### Overlapping Findings (same file, within 3 lines)
 

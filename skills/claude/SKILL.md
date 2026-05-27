@@ -81,4 +81,4 @@ Read `shared/delegation-common.md` and apply to Claude.
 
 ### Self-Evaluation Vigilance
 
-Unlike `/codex` and `/gemini`, this is Claude evaluating Claude. **MUST be especially vigilant** about shared blind spots — if both instances agree, that is *not* automatically stronger evidence. **MUST flag** when independent verification (WebSearch, docs) would add value over two instances of the same model reaching the same conclusion.
+Unlike `/codex` and `/antigravity`, this is Claude evaluating Claude. **MUST be especially vigilant** about shared blind spots — if both instances agree, that is *not* automatically stronger evidence. **MUST flag** when independent verification (WebSearch, docs) would add value over two instances of the same model reaching the same conclusion.
