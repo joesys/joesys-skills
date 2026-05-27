@@ -102,3 +102,33 @@ graph TD
 ## Output paths
 
 Skills should let the renderer derive the output path automatically. The renderer writes `<input>.html` next to `<input>.md` by default. Override only when there's a specific reason (e.g., centralizing all rendered reports in a different directory).
+
+## Handbook Profile (Portable)
+
+The `handbook` profile produces a **self-contained HTML file** with all CSS and JS inlined. No external assets, no `docs/.assets/report-lib/` dependency.
+
+**Invocation:**
+```bash
+python scripts/html_render.py <input.md> --profile handbook
+```
+
+**How it works:**
+1. Reads the template skeleton from `scripts/templates/handbook.html`
+2. Reads vendor CSS files (`report-base.css`, `prism-light.css`, `prism-dark.css`) and inlines them into the `/* INLINE_CSS */` placeholder
+3. Reads vendor JS files (`prism.min.js`, `mermaid.min.js`, `report-init.js`) and inlines them into the `/* INLINE_JS */` placeholder
+4. Renders through Pandoc with the assembled template
+5. Output has zero external dependencies
+
+**Differences from `analytical` profile:**
+- Does NOT require a git repo (no `find_repo_root`)
+- Does NOT bootstrap `docs/.assets/report-lib/`
+- Does NOT use `$assets-rel$` template variable
+- Output is larger (includes all CSS/JS) but fully portable
+
+**Handbook-specific CSS additions** (in the template skeleton):
+- Collapsible `<details>` styling for layered code walkthroughs
+- Danger zone callout styling (red-bordered blockquotes)
+- TL;DR hero section styling (first blockquote in main content)
+- Print styles (hide sidebar, expand all details)
+
+**Front-matter:** Same conventions as analytical. The `profile` field should be `"handbook"`.

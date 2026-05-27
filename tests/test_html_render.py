@@ -390,3 +390,200 @@ class TestSnapshot:
             "  python scripts/html_render.py tests/fixtures/sample-explain.md\n"
             "  mv tests/fixtures/sample-explain.html tests/snapshots/sample-explain.html.snapshot"
         )
+
+
+# ── handbook template ──────────────────────────────────────────────
+
+
+class TestHandbookTemplate:
+    def test_template_has_inline_placeholders(self):
+        template_path = Path(__file__).parent.parent / "scripts" / "templates" / "handbook.html"
+        content = template_path.read_text(encoding="utf-8")
+        assert "/* INLINE_CSS */" in content
+        assert "/* INLINE_JS */" in content
+
+    def test_template_has_no_external_asset_refs(self):
+        template_path = Path(__file__).parent.parent / "scripts" / "templates" / "handbook.html"
+        content = template_path.read_text(encoding="utf-8")
+        # No external stylesheet links or script srcs
+        assert 'href="$assets-rel$' not in content
+        assert 'src="$assets-rel$' not in content
+
+    def test_template_has_toc_sidebar(self):
+        template_path = Path(__file__).parent.parent / "scripts" / "templates" / "handbook.html"
+        content = template_path.read_text(encoding="utf-8")
+        assert "$toc$" in content
+        assert "sidebar" in content
+
+
+# ── portable template building ─────────────────────────────────────
+
+
+class TestBuildPortableTemplate:
+    def test_inlines_css_into_placeholder(self, tmp_path):
+        skeleton = tmp_path / "skeleton.html"
+        skeleton.write_text(
+            "<style>\n/* INLINE_CSS */\n</style>\n"
+            "<script>\n/* INLINE_JS */\n</script>"
+        )
+        vendor = tmp_path / "vendor"
+        vendor.mkdir()
+        (vendor / "report-base.css").write_text("body { color: red; }")
+        (vendor / "prism-light.css").write_text(".token { color: blue; }")
+        (vendor / "prism-dark.css").write_text(".dark .token { color: green; }")
+        (vendor / "prism.min.js").write_text("/* prism */")
+        (vendor / "mermaid.min.js").write_text("/* mermaid */")
+        (vendor / "report-init.js").write_text("/* init */")
+
+        result = html_render._build_portable_template(skeleton, vendor)
+        assert "body { color: red; }" in result
+        assert ".token { color: blue; }" in result
+        assert "/* prism */" in result
+        assert "/* mermaid */" in result
+        assert "/* INLINE_CSS */" not in result
+        assert "/* INLINE_JS */" not in result
+
+    def test_preserves_non_placeholder_content(self, tmp_path):
+        skeleton = tmp_path / "skeleton.html"
+        skeleton.write_text(
+            "<title>$title$</title>\n"
+            "<style>\n/* INLINE_CSS */\n</style>\n"
+            "<script>\n/* INLINE_JS */\n</script>\n"
+            "$body$"
+        )
+        vendor = tmp_path / "vendor"
+        vendor.mkdir()
+        for f in ["report-base.css", "prism-light.css", "prism-dark.css",
+                   "prism.min.js", "mermaid.min.js", "report-init.js"]:
+            (vendor / f).write_text(f"/* {f} */")
+
+        result = html_render._build_portable_template(skeleton, vendor)
+        assert "$title$" in result
+        assert "$body$" in result
+
+    def test_raises_when_vendor_file_missing(self, tmp_path):
+        skeleton = tmp_path / "skeleton.html"
+        skeleton.write_text("<style>\n/* INLINE_CSS */\n</style>\n<script>\n/* INLINE_JS */\n</script>")
+        vendor = tmp_path / "vendor"
+        vendor.mkdir()
+        # Missing all vendor files
+        with pytest.raises(FileNotFoundError):
+            html_render._build_portable_template(skeleton, vendor)
+
+
+# ── render_portable ────────────────────────────────────────────────
+
+
+class TestRenderPortable:
+    @pytest.mark.skipif(
+        shutil.which("pandoc") is None, reason="pandoc not on PATH"
+    )
+    def test_renders_self_contained_html(self, tmp_path):
+        # Create a minimal vendor dir
+        vendor = tmp_path / "vendor"
+        vendor.mkdir()
+        (vendor / "report-base.css").write_text("body { margin: 0; }")
+        (vendor / "prism-light.css").write_text(".light {}")
+        (vendor / "prism-dark.css").write_text(".dark {}")
+        (vendor / "prism.min.js").write_text("// prism")
+        (vendor / "mermaid.min.js").write_text("// mermaid")
+        (vendor / "report-init.js").write_text("// init")
+
+        # Create handbook template skeleton
+        skeleton = tmp_path / "skeleton.html"
+        skeleton.write_text(
+            '<!doctype html><html><head><title>$title$</title>'
+            '<style>\n/* INLINE_CSS */\n</style></head>'
+            '<body>$body$<script>\n/* INLINE_JS */\n</script></body></html>'
+        )
+
+        input_md = tmp_path / "handbook.md"
+        input_md.write_text("---\ntitle: Test Handbook\n---\n\n# Hello\n\nWorld.\n")
+        output = tmp_path / "handbook.html"
+
+        html_render.render_portable(
+            input_md=input_md,
+            output_html=output,
+            skeleton_path=skeleton,
+            vendor_dir=vendor,
+        )
+
+        assert output.exists()
+        html = output.read_text(encoding="utf-8")
+        assert "body { margin: 0; }" in html  # CSS inlined
+        assert "// prism" in html  # JS inlined
+        assert "Hello" in html
+        assert "$assets-rel$" not in html  # No external refs
+
+    @pytest.mark.skipif(
+        shutil.which("pandoc") is None, reason="pandoc not on PATH"
+    )
+    def test_renders_mermaid_blocks(self, tmp_path):
+        vendor = tmp_path / "vendor"
+        vendor.mkdir()
+        for f in ["report-base.css", "prism-light.css", "prism-dark.css",
+                   "prism.min.js", "mermaid.min.js", "report-init.js"]:
+            (vendor / f).write_text(f"/* {f} */")
+
+        skeleton = tmp_path / "skeleton.html"
+        skeleton.write_text(
+            '<!doctype html><html><head><title>$title$</title>'
+            '<style>\n/* INLINE_CSS */\n</style></head>'
+            '<body>$body$<script>\n/* INLINE_JS */\n</script></body></html>'
+        )
+
+        input_md = tmp_path / "handbook.md"
+        input_md.write_text("# Test\n\n```mermaid\ngraph TD\nA --> B\n```\n")
+        output = tmp_path / "handbook.html"
+
+        html_render.render_portable(
+            input_md=input_md,
+            output_html=output,
+            skeleton_path=skeleton,
+            vendor_dir=vendor,
+        )
+
+        html = output.read_text(encoding="utf-8")
+        assert '<pre class="mermaid">' in html
+
+
+# ── main / handbook profile ────────────────────────────────────────
+
+
+class TestMainHandbookProfile:
+    @pytest.mark.skipif(
+        shutil.which("pandoc") is None, reason="pandoc not on PATH"
+    )
+    def test_handbook_profile_produces_self_contained_html(self, tmp_path):
+        vendor = tmp_path / "_vendor"
+        vendor.mkdir()
+        for f in ["report-base.css", "prism-light.css", "prism-dark.css",
+                   "prism.min.js", "mermaid.min.js", "report-init.js"]:
+            (vendor / f).write_text(f"/* {f} */")
+
+        input_md = tmp_path / "handbook.md"
+        input_md.write_text("# Test\n\nContent.\n")
+        output = tmp_path / "out.html"
+
+        exit_code = html_render.main([
+            str(input_md),
+            "--profile", "handbook",
+            "--output", str(output),
+            "--vendor-dir", str(vendor),
+        ])
+        assert exit_code == 0
+        assert output.exists()
+        html = output.read_text(encoding="utf-8")
+        # Verify self-contained (CSS inlined, no external asset refs)
+        assert "/* report-base.css */" in html
+        assert "$assets-rel$" not in html
+
+    def test_handbook_profile_returns_error_when_vendor_missing(self, tmp_path):
+        input_md = tmp_path / "handbook.md"
+        input_md.write_text("# Test\n")
+        exit_code = html_render.main([
+            str(input_md),
+            "--profile", "handbook",
+            "--vendor-dir", str(tmp_path / "nonexistent"),
+        ])
+        assert exit_code != 0
