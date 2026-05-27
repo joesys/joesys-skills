@@ -1,6 +1,6 @@
 # Cross-Model Dispatch Protocol
 
-Shared infrastructure for dispatching review prompts to a different AI model via CLI. Used by `/code-review` and `/quick-review` to get an independent second opinion from a model outside the host.
+Shared infrastructure for dispatching review prompts to a different AI model via CLI. Used by `/codereview` and `/quick-review` to get an independent second opinion from a model outside the host.
 
 Read `shared/model-defaults.md` for current model identifiers and CLI flag details.
 

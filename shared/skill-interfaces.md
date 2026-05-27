@@ -31,7 +31,7 @@ interfaces, update all callers listed below.
 
 ## Review Principles Interface
 
-**Path:** `skills/code-review/principles/*.md`
+**Path:** `skills/codereview/principles/*.md`
 
 **Files:** `correctness.md`, `security.md`, `architecture.md`, `clean-code.md`, `performance.md`, `reliability.md`
 
@@ -41,10 +41,10 @@ interfaces, update all callers listed below.
 - Files are structured as markdown with principle names, descriptions, and examples
 
 **Callers:**
-- `skills/code-review/SKILL.md` — Phase 2: all 6 domain subagents read their respective principle file
+- `skills/codereview/SKILL.md` — Phase 2: all 6 domain subagents read their respective principle file
 - `skills/quick-review/SKILL.md` — Phase 2, Track 2: correctness and security subagents read `correctness.md` and `security.md`
 
-**Note:** Quick-review reaches into `skills/code-review/principles/` for its principle files. This is an intentional cross-skill dependency — the principles are shared content, not code-review-exclusive. If the principles directory is moved or restructured, both skills must be updated.
+**Note:** Quick-review reaches into `skills/codereview/principles/` for its principle files. This is an intentional cross-skill dependency — the principles are shared content, not codereview-exclusive. If the principles directory is moved or restructured, both skills must be updated.
 
 ## Preferences Skill Interface
 
@@ -99,7 +99,7 @@ interfaces, update all callers listed below.
 - Analyzes diffs, files, or directories to produce a guided reading order for human reviewers
 - Classifies chunks into 4 attention tiers: DECIDE, READ, SKIM, SKIP
 - Deep analysis only on DECIDE and READ chunks
-- `--with-review` checks the current session for `/code-review` output — never auto-triggers `/code-review`
+- `--with-review` checks the current session for `/codereview` output — never auto-triggers `/codereview`
 - Produces terminal markdown (≤5 files and ≤200 lines) or HTML report (larger)
 - Does NOT modify source code, does NOT perform code review, does NOT make decisions for the reviewer
 
@@ -108,7 +108,7 @@ interfaces, update all callers listed below.
 
 **Outbound interfaces (soft):**
 - Preferences: loads shared + skill-specific preferences in Phase 0
-- Code-review findings: optionally consumes `/code-review` output from session context (via `--with-review`)
+- Code-review findings: optionally consumes `/codereview` output from session context (via `--with-review`)
 - HTML render: calls `scripts/html_render.py` in Phase 3.7
 
 ---

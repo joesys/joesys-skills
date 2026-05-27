@@ -194,7 +194,7 @@ When a sibling skill is a natural fit, **suggest it — never auto-invoke**:
 The user always decides whether to chain. **MUST NOT silently hand off** to another skill.
 
 **Available skills in this plugin:**
-- `/code-review` — deep code review (correctness, security, architecture)
+- `/codereview` — deep code review (correctness, security, architecture)
 - `/quick-review` — fast bug-focused review (P0–P2 only)
 - `/readability-review` — story-readability grading (8 dimensions)
 - `/explain` — layered codebase/symbol explanation

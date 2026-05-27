@@ -13,7 +13,7 @@ The report is a self-improvement tool, not an audit. Tone is coaching, not punit
 ## Out of Scope
 
 This skill MUST NOT:
-- Analyze code quality. Code correctness, architecture, and style are the domain of `/code-review`, `/quick-review`, and `/codebase-audit`.
+- Analyze code quality. Code correctness, architecture, and style are the domain of `/codereview`, `/quick-review`, and `/codebase-audit`.
 - Produce project retrospectives. Process improvement and team reflection are the domain of `/retrospective`.
 - Grade model quality. The user cannot control which model they get — only how they interact with it.
 - Apply changes automatically. The report contains suggestions; the user decides what to act on.

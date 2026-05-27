@@ -110,7 +110,7 @@ Delegate prompts to Google's Gemini CLI for code analysis, refactoring, and auto
 
 Automated code analysis — from quick bug scans to full quality audits.
 
-#### code-review
+#### codereview
 
 Dispatch 7 parallel domain-expert subagents to analyze code for violations across correctness, clean code, architecture, reliability, security, performance, and story readability. Produces a severity-grouped report (P0-P4) with concrete before/after fixes in the target language. Supports branch diffs, directory scans, single files, PR reviews, and commit reviews.
 
@@ -125,17 +125,17 @@ Dispatch 7 parallel domain-expert subagents to analyze code for violations acros
 | Story Readability | 8-dimension story-readability scoring (rolled into P2-P4 findings) |
 
 ```
-/code-review                          # Review current branch diff vs. base
-/code-review src/                     # Scan all files in a directory
-/code-review --file src/main.py       # Review a single file
-/code-review --pr 123                 # Review files changed in a GitHub PR
-/code-review --commit abc123          # Review files changed in a specific commit
-/code-review --min-severity P1        # Only show P1+ findings (combinable with any mode)
+/codereview                          # Review current branch diff vs. base
+/codereview src/                     # Scan all files in a directory
+/codereview --file src/main.py       # Review a single file
+/codereview --pr 123                 # Review files changed in a GitHub PR
+/codereview --commit abc123          # Review files changed in a specific commit
+/codereview --min-severity P1        # Only show P1+ findings (combinable with any mode)
 ```
 
 #### quick-review
 
-Fast, bug-focused code review that dispatches correctness and security subagents alongside a cross-model reviewer (Codex and Claude) in parallel. Reports only P0-P2 findings — no style nits, no architecture suggestions. Uses `git diff -U50` for context rather than loading full files, making it significantly faster than `/code-review`.
+Fast, bug-focused code review that dispatches correctness and security subagents alongside a cross-model reviewer (Codex and Claude) in parallel. Reports only P0-P2 findings — no style nits, no architecture suggestions. Uses `git diff -U50` for context rather than loading full files, making it significantly faster than `/codereview`.
 
 ```
 /quick-review                              # Review current branch diff vs. base
@@ -185,7 +185,7 @@ Generate a personalized reading guide for human review. Triages changes into att
 /human-review-guide                        # Guide for current branch diff
 /human-review-guide PR#123                 # Guide for a specific PR
 /human-review-guide docs/spec.md           # Guide for reviewing an artifact
-/human-review-guide --with-review          # Enrich with /code-review findings
+/human-review-guide --with-review          # Enrich with /codereview findings
 /human-review-guide --calibrate            # Re-run calibration questions
 ```
 
@@ -320,7 +320,7 @@ Capture and manage per-user preferences that shape how every skill in the collec
 /preferences                               # Interactive setup
 /preferences show                          # Display current preferences
 /preferences reset                         # Clear all and start fresh
-/preferences code-review                   # Set preferences for a specific skill
+/preferences codereview                   # Set preferences for a specific skill
 ```
 
 #### commit

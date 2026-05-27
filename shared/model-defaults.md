@@ -2,7 +2,7 @@
 
 Single source of truth for default model identifiers and CLI flags used across skills. When a model version changes, update this file — all skills that reference it will pick up the new defaults.
 
-**Consumers:** codex, gemini, claude, ai-council, code-review, quick-review
+**Consumers:** codex, gemini, claude, ai-council, codereview, quick-review
 
 ---
 
@@ -10,9 +10,9 @@ Single source of truth for default model identifiers and CLI flags used across s
 
 | Provider | Model ID | Used In |
 |---|---|---|
-| OpenAI (Codex CLI) | `gpt-5.5` | `/codex`, `/ai-council`, `/code-review`, `/quick-review` |
-| Google (Gemini CLI) | `gemini-3.1-pro-preview` | `/gemini`, `/ai-council`, `/code-review`, `/quick-review` |
-| Anthropic (Claude CLI) | `opus` | `/claude`, `/ai-council`, `/code-review`, `/quick-review` |
+| OpenAI (Codex CLI) | `gpt-5.5` | `/codex`, `/ai-council`, `/codereview`, `/quick-review` |
+| Google (Gemini CLI) | `gemini-3.1-pro-preview` | `/gemini`, `/ai-council`, `/codereview`, `/quick-review` |
+| Anthropic (Claude CLI) | `opus` | `/claude`, `/ai-council`, `/codereview`, `/quick-review` |
 
 ## Default CLI Command Templates
 

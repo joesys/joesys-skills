@@ -1,7 +1,7 @@
 # Story-Readability Principle
 
 > Single source of truth for the story-readability code review system.
-> Consumed by: `/readability-review`, `/code-review` (domain 7), `/codebase-audit` (criterion 12).
+> Consumed by: `/readability-review`, `/codereview` (domain 7), `/codebase-audit` (criterion 12).
 
 ---
 

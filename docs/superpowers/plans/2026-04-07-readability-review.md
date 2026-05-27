@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add a story-readability code review system with three integration points: standalone `/readability-review` skill, 7th domain in `code-review`, and 12th criterion in `codebase-audit`.
+**Goal:** Add a story-readability code review system with three integration points: standalone `/readability-review` skill, 7th domain in `codereview`, and 12th criterion in `codebase-audit`.
 
-**Architecture:** A single shared principle file (`shared/story-readability.md`) defines 8 weighted dimensions of narrative code quality. Three consumers read it: a standalone skill with numeric scoring and fix dispatch, a new subagent in the existing code-review pipeline, and a new criterion in the codebase-audit pipeline. Preferences are customizable per-project via the shared skill-context system.
+**Architecture:** A single shared principle file (`shared/story-readability.md`) defines 8 weighted dimensions of narrative code quality. Three consumers read it: a standalone skill with numeric scoring and fix dispatch, a new subagent in the existing codereview pipeline, and a new criterion in the codebase-audit pipeline. Preferences are customizable per-project via the shared skill-context system.
 
 **Tech Stack:** Markdown skill files, Claude Code plugin system (plugin.json/marketplace.json), Agent tool for subagent dispatch, shared infrastructure (`shared/review-common.md`, `shared/skill-context.md`).
 
@@ -24,7 +24,7 @@
 
 | File | Change Summary |
 |---|---|
-| `skills/code-review/SKILL.md` | Add 7th subagent to roster, update dispatch count (6→7, 7→8 with cross-model), add deduplication note for Clean Code overlap, update failure handling counts. |
+| `skills/codereview/SKILL.md` | Add 7th subagent to roster, update dispatch count (6→7, 7→8 with cross-model), add deduplication note for Clean Code overlap, update failure handling counts. |
 | `skills/codebase-audit/SKILL.md` | Add `story-readability` to valid criterion names, add agent mapping, update console display, update criterion count references. |
 | `skills/codebase-audit/benchmarks/general.md` | Add Story Readability section with cross-language narrative benchmarks. |
 | `skills/codebase-audit/benchmarks/cpp.md` | Add Story Readability section with C++-specific benchmarks. |
@@ -925,15 +925,15 @@ git commit -m "feat(codebase-audit): add story-readability criterion principle f
 
 ---
 
-### Task 4: Integrate into `code-review` — Add 7th Subagent
+### Task 4: Integrate into `codereview` — Add 7th Subagent
 
 **Files:**
-- Modify: `skills/code-review/SKILL.md:97-178` (Phase 2 section)
-- Modify: `skills/code-review/SKILL.md:232` (failure handling reference)
+- Modify: `skills/codereview/SKILL.md:97-178` (Phase 2 section)
+- Modify: `skills/codereview/SKILL.md:232` (failure handling reference)
 
 - [ ] **Step 1: Update Phase 2 header and subagent roster**
 
-In `skills/code-review/SKILL.md`, find:
+In `skills/codereview/SKILL.md`, find:
 
 ```markdown
 ## Phase 2: Parallel Analysis
@@ -974,7 +974,7 @@ Dispatch **7 subagents simultaneously** via the Agent tool — all 7 in a single
 
 - [ ] **Step 2: Update subagent prompt template note**
 
-In `skills/code-review/SKILL.md`, find:
+In `skills/codereview/SKILL.md`, find:
 
 ```markdown
 Each subagent receives a prompt structured as follows. Adjust `<DOMAIN>` and `<PRINCIPLE_FILE>` per agent:
@@ -997,7 +997,7 @@ The Story Readability subagent (domain 7) uses the same prompt template as the o
 
 - [ ] **Step 3: Update cross-model dispatch count**
 
-In `skills/code-review/SKILL.md`, find:
+In `skills/codereview/SKILL.md`, find:
 
 ```markdown
 In addition to the 6 domain subagents, dispatch a cross-model review request in the **same parallel batch** — all 7 invocations (6 subagents + 1 cross-model CLI) launch simultaneously in a single response.
@@ -1011,7 +1011,7 @@ In addition to the 7 domain subagents, dispatch a cross-model review request in 
 
 - [ ] **Step 4: Update failure handling**
 
-In `skills/code-review/SKILL.md`, find:
+In `skills/codereview/SKILL.md`, find:
 
 ```markdown
 If cross-model dispatch fails, the review continues with the 6 domain subagents only. Note in the report header: "Cross-model review unavailable; results are from domain subagents only."
@@ -1025,7 +1025,7 @@ If cross-model dispatch fails, the review continues with the 7 domain subagents 
 
 - [ ] **Step 5: Add deduplication note for Clean Code overlap**
 
-In `skills/code-review/SKILL.md`, find the section `### 3.2 Deduplicate`. At the end of the deduplication heuristics list (after the line `- Different files + same pattern = not duplicates (each gets its own finding)`), add:
+In `skills/codereview/SKILL.md`, find the section `### 3.2 Deduplicate`. At the end of the deduplication heuristics list (after the line `- Different files + same pattern = not duplicates (each gets its own finding)`), add:
 
 ```markdown
 
@@ -1035,7 +1035,7 @@ When the Clean Code subagent and Story Readability subagent flag the same locati
 
 - [ ] **Step 6: Update error handling table**
 
-In `skills/code-review/SKILL.md`, find:
+In `skills/codereview/SKILL.md`, find:
 
 ```markdown
 | One or more subagents fail | Continue with remaining results; note which domain was not analyzed in the report header. |
@@ -1045,14 +1045,14 @@ No change needed — this already covers N subagents generically.
 
 - [ ] **Step 7: Verify changes**
 
-Run: `grep -n "7 subagents\|Story Readability\|8 invocations\|7 domain" skills/code-review/SKILL.md`
+Run: `grep -n "7 subagents\|Story Readability\|8 invocations\|7 domain" skills/codereview/SKILL.md`
 Expected: matches on the updated lines
 
 - [ ] **Step 8: Commit**
 
 ```bash
-git add skills/code-review/SKILL.md
-git commit -m "feat(code-review): add Story Readability as 7th domain subagent"
+git add skills/codereview/SKILL.md
+git commit -m "feat(codereview): add Story Readability as 7th domain subagent"
 ```
 
 ---
@@ -1423,9 +1423,9 @@ ls -la shared/story-readability.md skills/readability-review/SKILL.md skills/cod
 ```
 Expected: all 3 files present
 
-- [ ] **Step 2: Verify code-review integration**
+- [ ] **Step 2: Verify codereview integration**
 
-Run: `grep -c "Story Readability" skills/code-review/SKILL.md`
+Run: `grep -c "Story Readability" skills/codereview/SKILL.md`
 Expected: at least 3 matches (roster, prompt adjustment, deduplication note)
 
 - [ ] **Step 3: Verify codebase-audit integration**

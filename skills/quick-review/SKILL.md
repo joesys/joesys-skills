@@ -1,26 +1,26 @@
 ---
 name: quick-review
 version: "1.1.0"
-description: "Use when the user invokes /quick-review for a fast bug-focused code review using cross-model parallel analysis (correctness + security, P0-P2 only). SKIP if the user wants a comprehensive review with style and architecture findings — that's /code-review."
+description: "Use when the user invokes /quick-review for a fast bug-focused code review using cross-model parallel analysis (correctness + security, P0-P2 only). SKIP if the user wants a comprehensive review with style and architecture findings — that's /codereview."
 ---
 
 # Quick Review Skill
 
 Fast, bug-focused code review. Dispatches correctness and security subagents alongside a cross-model reviewer (Codex↔Claude) in parallel, with streamlined static analysis. Reports only P0–P2 findings — no style nits, no architecture suggestions.
 
-For comprehensive 7-domain reviews, use `/code-review`.
+For comprehensive 7-domain reviews, use `/codereview`.
 
 ## Out of Scope
 
 This skill MUST NOT:
-- Modify source code without explicit user approval. Quick-review is **report-only** — there is no fix dispatch phase. If the user wants fixes, they invoke `/code-review`.
+- Modify source code without explicit user approval. Quick-review is **report-only** — there is no fix dispatch phase. If the user wants fixes, they invoke `/codereview`.
 - Expand fixes beyond what was flagged. Same constraint applies if the user asks for fixes inline.
 - Report on code outside the resolved scope. If the diff/file/PR doesn't include a file, do not flag findings in it — even if you notice them while gathering context.
 - Inflate severity to look thorough. P0 means actual bug or security hole. Style polish is P3/P4 (and this skill skips P3/P4 entirely).
 - Downgrade real bugs to manage report volume. If correctness or security found something genuine, it stays at its true severity.
 - Include P3 (polish) or P4 (style) findings. The skill reports P0–P2 only, even if subagents return lower-severity findings.
 - Add a fix-dispatch phase. Quick-review is report-only.
-- Load full files. Quick-review uses `git diff -U50` exclusively for context — full-file loading is reserved for `/code-review`.
+- Load full files. Quick-review uses `git diff -U50` exclusively for context — full-file loading is reserved for `/codereview`.
 
 ## Invocation
 
@@ -53,7 +53,7 @@ If the invocation is ambiguous or unrecognizable, ask the user to clarify before
 Read `shared/skill-context.md` for the full protocol. In brief:
 
 1. Read `.claude/skill-context/preferences.md` — if missing, invoke `/preferences` (streamlined).
-2. Read `.claude/skill-context/code-review.md` (if it exists) — quick-review shares review preferences with code-review.
+2. Read `.claude/skill-context/codereview.md` (if it exists) — quick-review shares review preferences with codereview.
 
 **How preferences shape this skill:**
 
@@ -75,7 +75,7 @@ Read `shared/review-common.md` § File Gathering.
 
 ### 1.3 Context Loading
 
-Unlike `/code-review` (which loads entire files), quick-review loads only the diff with expanded context:
+Unlike `/codereview` (which loads entire files), quick-review loads only the diff with expanded context:
 
 ```bash
 git diff -U50 <base>...HEAD
@@ -83,7 +83,7 @@ git diff -U50 <base>...HEAD
 
 The `-U50` flag expands each hunk to include ~50 lines of surrounding context — enough for local scope, function signatures, variable declarations, and control flow, without loading entire files.
 
-This is the primary time savings over the full code-review. Both host AI subagents and the cross-model dispatch receive the same context.
+This is the primary time savings over the full codereview. Both host AI subagents and the cross-model dispatch receive the same context.
 
 ### 1.4 Target Language Detection
 
@@ -98,7 +98,7 @@ Then continue with quick-review-specific steps:
 4. **Build scoped commands** — for `available` tools, construct report-only commands targeting only the changed files.
 5. **Auto-run read-only tools** — linters, type checkers, and SAST tools are read-only — execute them without a safety gate. Tools marked with `⚠️ DANGER: auto-modifies` in per-language profiles are **MUST be skipped** (quick-review never runs auto-modifying tools).
 6. **30-second timeout per tool** — hard cap. If a tool exceeds 30 seconds, kill it and continue.
-7. **Build TOOLING_CONTEXT** — assemble the slim version (findings only — no gap analysis, no build-integrated detection). Same format as code-review's slim TOOLING_CONTEXT.
+7. **Build TOOLING_CONTEXT** — assemble the slim version (findings only — no gap analysis, no build-integrated detection). Same format as codereview's slim TOOLING_CONTEXT.
 
 ---
 
@@ -116,8 +116,8 @@ Static analysis ran in Phase 1.5 before this phase. Include TOOLING_CONTEXT in b
 
 | # | Domain | Principle File |
 |---|---|---|
-| 1 | Correctness | `skills/code-review/principles/correctness.md` |
-| 2 | Security | `skills/code-review/principles/security.md` |
+| 1 | Correctness | `skills/codereview/principles/correctness.md` |
+| 2 | Security | `skills/codereview/principles/security.md` |
 
 #### Subagent Prompt Template
 
@@ -160,7 +160,7 @@ For each violation:
 
 **MUST spawn subagents** with `model: "opus"`.
 
-Quick-review uses `Suggested Fix` instead of full before/after code blocks to prioritize speed and brevity. The full `/code-review` skill uses before/after blocks for detailed treatment.
+Quick-review uses `Suggested Fix` instead of full before/after code blocks to prioritize speed and brevity. The full `/codereview` skill uses before/after blocks for detailed treatment.
 
 ### Track 3: Cross-Model Dispatch
 
@@ -242,7 +242,7 @@ If any track failed, note which source was unavailable and proceed with remainin
 
 When multiple sources flag the **same location** (same file, line range within ±5 lines, same category of issue), merge them into a single finding and classify into one of three buckets.
 
-The ±5 line tolerance is wider than code-review's ±3 because cross-model reviewers working from diff-only context may report slightly different line numbers for the same issue. This wider tolerance applies to **all** deduplication in quick-review, including tool-AI merges (overriding the ±3 default in `shared/tooling-registry.md`). "Same category" means both findings describe the same type of problem (e.g., both null-safety issues, both SQL injection, both unchecked error returns) — **MUST NOT merge** a correctness finding with an unrelated security finding that happens to be on nearby lines.
+The ±5 line tolerance is wider than codereview's ±3 because cross-model reviewers working from diff-only context may report slightly different line numbers for the same issue. This wider tolerance applies to **all** deduplication in quick-review, including tool-AI merges (overriding the ±3 default in `shared/tooling-registry.md`). "Same category" means both findings describe the same type of problem (e.g., both null-safety issues, both SQL injection, both unchecked error returns) — **MUST NOT merge** a correctness finding with an unrelated security finding that happens to be on nearby lines.
 
 | Bucket | Criteria | Display |
 |---|---|---|
@@ -314,7 +314,7 @@ Omit empty severity sections. If there are zero findings across all severities, 
 
 > "No bugs or security issues found. Code looks solid."
 
-**No P3/P4 sections.** No before/after code blocks (keeps output scannable — use `/code-review` for detailed treatment). Findings reference `file:line` for quick navigation. **No fix dispatch phase** — report only.
+**No P3/P4 sections.** No before/after code blocks (keeps output scannable — use `/codereview` for detailed treatment). Findings reference `file:line` for quick navigation. **No fix dispatch phase** — report only.
 
 ---
 
@@ -326,7 +326,7 @@ Additional quick-review-specific guardrails:
 
 1. **P0–P2 only.** Never include P3 (polish) or P4 (style) findings in the output. Subagents are instructed to skip them; synthesis discards any that slip through.
 2. **Corroboration is signal, not proof.** Two models agreeing increases confidence, but **MUST NOT** present corroborated findings as definitively correct. The human reviewer makes the final call.
-3. **Diff-only context has limits.** Quick-review uses `-U50` diff context, not full files. Issues requiring broader file analysis (e.g., unused imports, unreachable code paths, architectural problems) may not be detected. Use `/code-review` for full-file analysis.
+3. **Diff-only context has limits.** Quick-review uses `-U50` diff context, not full files. Issues requiring broader file analysis (e.g., unused imports, unreachable code paths, architectural problems) may not be detected. Use `/codereview` for full-file analysis.
 
 ---
 

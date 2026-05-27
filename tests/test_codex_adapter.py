@@ -16,7 +16,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_SKILLS = {
     "ai-council",
     "claude",
-    "code-review",
+    "codereview",
     "codebase-audit",
     "codex",
     "commit",
@@ -24,6 +24,8 @@ EXPECTED_SKILLS = {
     "explain",
     "export",
     "gemini",
+    "human-review-guide",
+    "interaction-review",
     "preferences",
     "quick-review",
     "readability-review",
@@ -33,7 +35,7 @@ EXPECTED_SKILLS = {
 
 
 def test_build_collection_generates_all_skills_without_touching_source(tmp_path):
-    source_skill = REPO_ROOT / "skills" / "code-review" / "SKILL.md"
+    source_skill = REPO_ROOT / "skills" / "codereview" / "SKILL.md"
     before = source_skill.read_bytes()
 
     output = tmp_path / "joesys-skills"
@@ -49,25 +51,25 @@ def test_generated_skill_frontmatter_is_valid_for_codex(tmp_path):
     output = tmp_path / "joesys-skills"
     codex_adapter.build_collection(REPO_ROOT, output)
 
-    skill_text = (output / "code-review" / "SKILL.md").read_text(encoding="utf-8")
+    skill_text = (output / "codereview" / "SKILL.md").read_text(encoding="utf-8")
     frontmatter = skill_text.split("---", 2)[1]
 
-    assert "name: code-review" in frontmatter
+    assert "name: codereview" in frontmatter
     assert "description:" in frontmatter
     assert "version:" not in frontmatter
     assert "runtime:" not in frontmatter
-    assert "/joesys-code-review" in frontmatter
+    assert "/joesys-codereview" in frontmatter
 
 
 def test_generated_skills_reference_installed_collection_resources(tmp_path):
     output = tmp_path / "joesys-skills"
     codex_adapter.build_collection(REPO_ROOT, output)
 
-    code_review = (output / "code-review" / "SKILL.md").read_text(encoding="utf-8")
+    code_review = (output / "codereview" / "SKILL.md").read_text(encoding="utf-8")
     export = (output / "export" / "SKILL.md").read_text(encoding="utf-8")
 
     assert "~/.codex/skills/joesys-skills/shared/review-common.md" in code_review
-    assert "~/.codex/skills/joesys-skills/code-review/principles/clean-code.md" in code_review
+    assert "~/.codex/skills/joesys-skills/codereview/principles/clean-code.md" in code_review
     assert "~/.codex/skills/joesys-skills/scripts/md_export.py" in export
     assert (output / "shared" / "review-common.md").is_file()
     assert (output / "scripts" / "md_export.py").is_file()

@@ -1,7 +1,7 @@
 ---
-name: code-review
+name: codereview
 version: "1.3.0"
-description: "Use when the user invokes /code-review to analyze code for correctness, quality, architecture, reliability, security, and performance violations with concrete before/after examples."
+description: "Use when the user invokes /codereview to analyze code for correctness, quality, architecture, reliability, security, and performance violations with concrete before/after examples."
 ---
 
 # Code Review Skill
@@ -23,24 +23,24 @@ This skill MUST NOT:
 
 ## Invocation
 
-Parse the user's `/code-review` arguments to determine mode and scope:
+Parse the user's `/codereview` arguments to determine mode and scope:
 
 | Invocation | Mode | Scope |
 |---|---|---|
-| `/code-review` | Branch diff (default) | Current branch vs. fork point |
-| `/code-review src/utils/` | Directory scan | All files recursively in specified directory |
-| `/code-review --file src/main.py` | Single file | One specific file |
-| `/code-review --pr 123` | PR review | Files changed in a GitHub PR |
-| `/code-review --commit abc123` | Commit review | Files changed in a specific commit |
-| `/code-review --min-severity P1` | Severity filter | Combinable with any mode |
-| `/code-review --include-gemini` | Add Gemini | Adds Gemini as additional cross-model reviewer |
-| `/code-review --no-re-review` | Suppress re-review | Skip Phase 3.7 — present mechanical synthesis output directly |
+| `/codereview` | Branch diff (default) | Current branch vs. fork point |
+| `/codereview src/utils/` | Directory scan | All files recursively in specified directory |
+| `/codereview --file src/main.py` | Single file | One specific file |
+| `/codereview --pr 123` | PR review | Files changed in a GitHub PR |
+| `/codereview --commit abc123` | Commit review | Files changed in a specific commit |
+| `/codereview --min-severity P1` | Severity filter | Combinable with any mode |
+| `/codereview --include-gemini` | Add Gemini | Adds Gemini as additional cross-model reviewer |
+| `/codereview --no-re-review` | Suppress re-review | Skip Phase 3.7 — present mechanical synthesis output directly |
 
 Arguments are combinable. Examples:
-- `/code-review --pr 42 --min-severity P1` — review PR #42, only show P1+ findings
-- `/code-review src/api/ --min-severity P2` — scan directory, show P2+ findings
-- `/code-review --include-gemini` — add Gemini as a third model reviewer
-- `/code-review --no-re-review` — skip the Tech Lead re-review pass (faster, no annotations)
+- `/codereview --pr 42 --min-severity P1` — review PR #42, only show P1+ findings
+- `/codereview src/api/ --min-severity P2` — scan directory, show P2+ findings
+- `/codereview --include-gemini` — add Gemini as a third model reviewer
+- `/codereview --no-re-review` — skip the Tech Lead re-review pass (faster, no annotations)
 
 If the invocation is ambiguous or unrecognizable, ask the user to clarify before proceeding.
 
@@ -53,7 +53,7 @@ If the invocation is ambiguous or unrecognizable, ask the user to clarify before
 Read `shared/skill-context.md` for the full protocol. In brief:
 
 1. Read `.claude/skill-context/preferences.md` — if missing, invoke `/preferences` (streamlined).
-2. Read `.claude/skill-context/code-review.md` (if it exists) for review-specific preferences.
+2. Read `.claude/skill-context/codereview.md` (if it exists) for review-specific preferences.
 
 **How preferences shape this skill:**
 
@@ -91,7 +91,7 @@ Three tiers based on diff size. Measure LOC from `git diff --shortstat <base>...
 | Medium | 31–100 files | File-batching — see § 1.4a |
 | Large | > 100 files **OR** > 5,000 LOC changed | Logical-cluster dispatch — see § 1.4b |
 
-Thresholds are defaults. Users can override in `.claude/skill-context/code-review.md` with any of:
+Thresholds are defaults. Users can override in `.claude/skill-context/codereview.md` with any of:
 - `medium_tier_threshold_files` (default `30`)
 - `large_tier_threshold_files` (default `100`)
 - `large_tier_threshold_loc` (default `5000`)
@@ -156,7 +156,7 @@ Read `shared/review-common.md` § Target Language Detection.
 
 Read `shared/review-common.md` § Static Analysis Tooling — Detection Protocol (steps 1–3: detect, check availability, classify).
 
-Then continue with code-review-specific steps:
+Then continue with codereview-specific steps:
 
 4. **Build scoped commands** — for `available` tools, construct report-only commands targeting only the changed files using the tool's scope-to-files flag from the per-language profile.
 5. **Safety Gate** — present scoped tool commands to the user for approval (alongside any other live commands).
@@ -189,7 +189,7 @@ Each subagent receives a prompt structured as follows. Adjust `<DOMAIN>` and `<P
 You are a senior <DOMAIN> reviewer.
 
 ## Instructions
-1. Read the principle file at: skills/code-review/<PRINCIPLE_FILE>
+1. Read the principle file at: skills/codereview/<PRINCIPLE_FILE>
    (This file is relative to the project root — find and read it first.)
 2. Analyze the code below against every principle in that file.
 3. For each violation found, output it in the structured format below.
@@ -270,7 +270,7 @@ Read `shared/cross-model-dispatch.md` for host detection, platform-adaptive temp
 Write the prompt to a temp file (use `mktemp` per `shared/cross-model-dispatch.md`):
 
 ```bash
-PROMPT_FILE=$(mktemp /tmp/code-review-cross-XXXXXX.txt)
+PROMPT_FILE=$(mktemp /tmp/codereview-cross-XXXXXX.txt)
 cat > "$PROMPT_FILE" << 'PROMPT_EOF'
 You are a comprehensive code reviewer. Analyze the following code changes for bugs, security vulnerabilities, performance issues, reliability problems, architectural concerns, and code quality.
 
@@ -304,7 +304,7 @@ If you find no issues, output: "No issues found."
 PROMPT_EOF
 ```
 
-Dispatch using the CLI command templates from `shared/cross-model-dispatch.md`, substituting `$PROMPT_FILE` for the temp file path and `"code-review-cross"` for the `--name` flag on Claude CLI. Use 600000ms timeout. Clean up: `rm -f "$PROMPT_FILE"` after completion.
+Dispatch using the CLI command templates from `shared/cross-model-dispatch.md`, substituting `$PROMPT_FILE` for the temp file path and `"codereview-cross"` for the `--name` flag on Claude CLI. Use 600000ms timeout. Clean up: `rm -f "$PROMPT_FILE"` after completion.
 
 The cross-model reviewer receives the **same full file content and diff** that the 7 domain subagents receive — not the reduced context used in quick-review. When files are batched (Phase 1.4), the cross-model dispatch is included in each batch alongside the 7 subagents.
 
@@ -625,7 +625,7 @@ See `shared/review-common.md` § Severity Scale for the full P0–P4 definitions
 
 Read `shared/review-common.md` § Cross-Skill Discipline for the base constraints (evidence, language-adaptive, specificity, no over-engineering, test-code DAMP, profile-first).
 
-Additional code-review-specific guardrails:
+Additional codereview-specific guardrails:
 
 1. **Rule of Three.** **MUST NOT flag** duplication or suggest extraction until the pattern has been proven with **3 or more occurrences**. Two similar blocks are not enough.
 
@@ -637,7 +637,7 @@ Additional code-review-specific guardrails:
 
 Read `shared/review-common.md` § Shared Error Handling for common errors (no changed files, base branch detection, PR/commit not found, file not found, no violations, too many files, tool errors).
 
-Additional code-review-specific errors:
+Additional codereview-specific errors:
 
 | Error | Action |
 |---|---|

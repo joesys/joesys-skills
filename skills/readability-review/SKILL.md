@@ -14,7 +14,7 @@ This skill MUST NOT:
 - Modify source code without explicit user approval after the report. Fixing happens only via the Fix Offer phase, only after the user picks "yes" or names specific findings/files/dimensions.
 - Expand fixes beyond what was flagged. When the user approves fixes, fix exactly the reported findings — do not bundle "while I'm in this file" cleanup, renames, or unrelated improvements.
 - Report on code outside the resolved scope. If the diff/file/PR doesn't include a file, do not flag findings in it.
-- Use the P0–P4 severity scale. This skill uses per-dimension scores (1–10) and a weighted total (0–100) mapped to letter grades (A–F). P0–P4 belongs to `/code-review` and `/quick-review` — do not mix the two scales.
+- Use the P0–P4 severity scale. This skill uses per-dimension scores (1–10) and a weighted total (0–100) mapped to letter grades (A–F). P0–P4 belongs to `/codereview` and `/quick-review` — do not mix the two scales.
 - Downgrade severe readability findings to "polish." A function that actively misleads (named `validate` but mutates state), a god-function with 12 abstraction levels, or a name that lies about behavior — these ARE critical findings within the readability domain, even though they don't crash anything. Score them honestly: a 3/10 on a high-weight dimension is a real problem, not a P3 nit.
 - Grade outside the 8 fixed dimensions. The skill scores Narrative Flow, Naming as Intent, Cognitive Chunking, SLAP, Function Focus, Structural Clarity, Documentation Quality, No Clever Tricks — and only those.
 - Suggest extracting duplicate patterns until 3+ occurrences exist (Rule of Three).

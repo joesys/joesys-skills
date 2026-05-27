@@ -8,14 +8,14 @@ description: "Use when the user invokes /human-review-guide to generate a person
 
 Generate a personalized reading guide for human review. Analyze a change set or artifact, classify every section by how much human attention it needs, then produce a guided reading order focused on decisions that require human judgment. The guide tells the reviewer what to read carefully, what to skim, and what to skip — saving time by directing attention where it matters.
 
-The existing review skills (`/code-review`, `/quick-review`, `/readability-review`) have the AI do the review. This skill is different — it helps the *human* review more effectively.
+The existing review skills (`/codereview`, `/quick-review`, `/readability-review`) have the AI do the review. This skill is different — it helps the *human* review more effectively.
 
 ## Out of Scope
 
 This skill MUST NOT:
-- Perform the review itself. It produces a reading guide, not findings or bug reports. Code quality, correctness, and security analysis are the domain of `/code-review` and `/quick-review`.
+- Perform the review itself. It produces a reading guide, not findings or bug reports. Code quality, correctness, and security analysis are the domain of `/codereview` and `/quick-review`.
 - Modify source code. The guide is read-only output — no fixes, no edits.
-- Auto-trigger `/code-review`. When `--with-review` is used and no findings exist, prompt the user to run `/code-review` first — never invoke it automatically.
+- Auto-trigger `/codereview`. When `--with-review` is used and no findings exist, prompt the user to run `/codereview` first — never invoke it automatically.
 - Make final decisions for the reviewer. `DECIDE` chunks surface the decision and alternatives; the human makes the call.
 - Over-classify as SKIP. When in doubt, escalate one tier up (SKIP→SKIM, SKIM→READ, READ→DECIDE). Conservative triage is a feature, not a bug.
 - Inflate the decision count. Mechanical choices (variable names, formatting, import order) are not decisions. Reserve `DECIDE` for genuine trade-offs and judgment calls.
@@ -36,11 +36,11 @@ Parse the user's `/human-review-guide` arguments:
 | `/human-review-guide` | Branch diff (default) | Guide for current branch diff vs. base |
 | `/human-review-guide PR#<number>` | PR review | Guide for a specific GitHub PR |
 | `/human-review-guide <path>` | Artifact review | Guide for reviewing a file or directory |
-| `/human-review-guide --with-review` | Enriched | Incorporate existing `/code-review` findings from this session |
+| `/human-review-guide --with-review` | Enriched | Incorporate existing `/codereview` findings from this session |
 | `/human-review-guide --calibrate` | Recalibrate | Re-run first-run calibration questions |
 
 Arguments are combinable. Examples:
-- `/human-review-guide --with-review` — branch diff guide enriched with `/code-review` findings
+- `/human-review-guide --with-review` — branch diff guide enriched with `/codereview` findings
 - `/human-review-guide PR#42 --with-review` — PR guide with code review findings
 - `/human-review-guide docs/spec.md` — guide for reviewing a non-code artifact
 
@@ -98,9 +98,9 @@ If `--calibrate` flag is set, re-run calibration even if the file exists.
 
 If `--with-review` is specified:
 
-1. Check the current conversation context for `/code-review` output (look for the structured findings report with severity-grouped findings).
+1. Check the current conversation context for `/codereview` output (look for the structured findings report with severity-grouped findings).
 2. **Found:** Extract findings, noting file paths, severities, and descriptions. Hold for Phase 2 enrichment.
-3. **Not found:** Display: "No `/code-review` output found in this session. Run `/code-review` first, then re-run `/human-review-guide --with-review`. Or drop `--with-review` to generate the guide without it." Exit.
+3. **Not found:** Display: "No `/codereview` output found in this session. Run `/codereview` first, then re-run `/human-review-guide --with-review`. Or drop `--with-review` to generate the guide without it." Exit.
 
 ### 0.4 Determine Mode
 
@@ -199,7 +199,7 @@ Dispatch a **single subagent** (`model: "opus"`) that processes all DECIDE and R
 3. The full content of DECIDE and READ chunks (diff hunks, file sections, or artifact sections)
 4. Surrounding context for each chunk (the file content around the changed hunk, or the parent section for artifacts)
 5. The user's calibration profile
-6. `/code-review` findings (if `--with-review` and findings were extracted in Phase 0.3)
+6. `/codereview` findings (if `--with-review` and findings were extracted in Phase 0.3)
 
 ### DECIDE Chunk Analysis
 
@@ -241,12 +241,12 @@ For each `READ` chunk, the agent produces:
 
 ### `--with-review` Enrichment
 
-When `/code-review` findings are available, weave them into the relevant chunks:
+When `/codereview` findings are available, weave them into the relevant chunks:
 
 - Match findings to chunks by file path and line range.
-- For DECIDE chunks: note if `/code-review` found issues and whether the fix is mechanical or requires judgment. Example: *"Note: /code-review flagged a P1 race condition here. The fix is mechanical, but the decision to use a mutex vs. channel is yours."*
-- For READ chunks: note related findings as gotchas. Example: *"Gotcha: /code-review flagged missing error handling at line 52 (P2). Worth checking if the error case matters for your use case."*
-- Do NOT duplicate `/code-review` findings as standalone items — only reference them within the context of the chunk analysis.
+- For DECIDE chunks: note if `/codereview` found issues and whether the fix is mechanical or requires judgment. Example: *"Note: /codereview flagged a P1 race condition here. The fix is mechanical, but the decision to use a mutex vs. channel is yours."*
+- For READ chunks: note related findings as gotchas. Example: *"Gotcha: /codereview flagged missing error handling at line 52 (P2). Worth checking if the error case matters for your use case."*
+- Do NOT duplicate `/codereview` findings as standalone items — only reference them within the context of the chunk analysis.
 
 ### Error Handling
 
