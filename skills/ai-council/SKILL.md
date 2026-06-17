@@ -122,7 +122,7 @@ cat "$CODEX_PROMPT" | <CODEX_CMD>
 
 ### Antigravity Leg (Bash, 600000ms timeout)
 
-The `-p` flag is mandatory for non-interactive execution. Without it, Antigravity enters interactive mode and hangs. **MUST deliver via stdin pipe** — never pass long prompts as a direct `-p` argument (shell metacharacters break argument passing). Substitute `<AGY_CMD>` with the current invocation from `shared/model-defaults.md` § Antigravity.
+The adapter runs `agy` non-interactively and appends `-p` itself — do **not** add `-p`. **MUST deliver the prompt via stdin pipe** (shell metacharacters break direct arguments). Substitute `<AGY_CMD>` with the current invocation from `shared/model-defaults.md` § Antigravity.
 
 ```bash
 cat "$AGY_PROMPT" | <AGY_CMD>

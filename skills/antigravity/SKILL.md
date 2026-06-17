@@ -41,7 +41,7 @@ Read `shared/skill-context.md` for the full protocol. Load `.claude/skill-contex
    rm -f "$PROMPT_FILE"
    ```
 
-   For short, simple follow-up prompts (e.g., session resume) with no special characters, direct `-p "<text>"` is acceptable.
+   The adapter always reads the prompt from **stdin** — do **not** pass `-p` (the adapter appends it). The same stdin-pipe pattern is used for session resume.
 3. **MUST present Antigravity's full response verbatim** — clearly labeled as **Antigravity's response** — *before* any assessment. No truncation, no summarization, no interleaving your own commentary.
 4. Critically evaluate the output (see Critical Evaluation below).
 5. Provide a brief summary: "Here's what Antigravity said, here's what I think."
@@ -53,13 +53,14 @@ When the user invokes `/antigravity resume`:
 
 1. If no prompt is provided, use `AskUserQuestion` to ask what they want to follow up on.
 2. Determine the resume target:
-   - `/antigravity resume <PROMPT>` — resume the latest session:
+   - `/antigravity resume <PROMPT>` — resume the latest session. Deliver the follow-up
+     prompt via the same temp-file-and-stdin pattern as the initial dispatch:
      ```bash
-     agy -c -p "<FOLLOW_UP_PROMPT>" 2>/dev/null
+     cat "$PROMPT_FILE" | python scripts/agy_adapter.py -c
      ```
    - `/antigravity resume <ID> <PROMPT>` — resume a specific session by conversation ID:
      ```bash
-     agy --conversation <ID> -p "<FOLLOW_UP_PROMPT>" 2>/dev/null
+     cat "$PROMPT_FILE" | python scripts/agy_adapter.py --conversation <ID>
      ```
 3. **Resume rules:**
    - Resumed sessions inherit settings from the original run.

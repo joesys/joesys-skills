@@ -22,7 +22,7 @@ Determine which cross-model CLI to dispatch based on who you are:
 | You Are | Dispatch To | Command |
 |---|---|---|
 | Claude | Both Codex + Antigravity | Two parallel dispatches |
-| Codex | Antigravity | `agy --sandbox -p` |
+| Codex | Antigravity | `python scripts/agy_adapter.py --sandbox` |
 | Antigravity | Codex | `codex exec` |
 | Unknown | Both Codex + Claude | Two parallel dispatches |
 
