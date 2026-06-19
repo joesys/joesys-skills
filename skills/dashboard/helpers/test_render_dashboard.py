@@ -1,4 +1,5 @@
 from __future__ import annotations
+import copy
 import json, subprocess
 from pathlib import Path
 import render_dashboard as rd
@@ -80,3 +81,28 @@ def test_open_prs_tile_uses_host_when_present():
 def test_open_prs_tile_falls_back_to_wip_branches_without_host():
     html = rd.render(SAMPLE)  # host None
     assert "WIP branches" in html
+
+
+def test_code_quality_badge_with_provenance():
+    data = copy.deepcopy(SAMPLE)
+    data["code_quality"] = {"available": True, "date": "2026-06-18", "commit": "cad12879",
+                            "overall_grade": "A+", "criteria": {"correctness": "A+", "security": "A+"},
+                            "commits_behind": 5, "stale": False, "report_path": "docs/reports/x/metrics.json",
+                            "trend": [{"date": "2026-05-26", "grade": "A"}, {"date": "2026-06-18", "grade": "A+"}]}
+    html = rd.render(data)
+    assert "A+" in html
+    assert "from /codebase-audit" in html
+    assert "2026-06-18" in html
+    assert "5 commits behind" in html
+
+
+def test_code_quality_stale_warns():
+    data = copy.deepcopy(SAMPLE)
+    data["code_quality"] = {"available": True, "date": "2026-01-01", "commit": "old",
+                            "overall_grade": "B", "criteria": {}, "commits_behind": 400,
+                            "stale": True, "report_path": "p", "trend": []}
+    assert "⚠" in rd.render(data)
+
+
+def test_code_quality_absent_shows_not_measured():
+    assert "not measured" in rd.render(SAMPLE)

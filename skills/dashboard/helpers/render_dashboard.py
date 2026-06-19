@@ -128,10 +128,20 @@ def _team(d: dict) -> str:
 
 def _code_quality_block(d: dict) -> str:
     cq = d.get("code_quality")
-    if not cq:
-        return '<div class="col"><div class="label">code quality</div>' \
-               '<div class="named" style="opacity:.6">not measured — run /codebase-audit</div></div>'
-    return ""  # populated in Task 14
+    if not cq or not cq.get("available"):
+        return ('<div class="col"><div class="label">code quality</div>'
+                '<div class="named" style="opacity:.6">not measured — run /codebase-audit</div></div>')
+    warn = "⚠ " if cq.get("stale") else ""
+    crit = " · ".join(f'{escape(k)} {escape(v)}' for k, v in list(cq["criteria"].items())[:6])
+    trend = ""
+    if len(cq.get("trend", [])) >= 2:
+        trend = charts.grade_trend(cq["trend"])
+    prov = (f'from /codebase-audit · {escape(cq["date"])} · commit {escape(cq["commit"])} · '
+            f'{cq["commits_behind"]} commits behind HEAD')
+    return (f'<div class="col"><div class="label">code quality (borrowed)</div>'
+            f'<div class="num">{warn}{escape(cq["overall_grade"])}</div>'
+            f'<div class="named">{crit}</div>{trend}'
+            f'<div class="thresh">{prov}</div></div>')
 
 
 def _lens(title: str, light: str, why: str, body: str) -> str:
