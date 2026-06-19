@@ -64,3 +64,19 @@ def test_cli_writes_file(tmp_path):
                     "--metrics", str(metrics_path), "--out", str(out)],
                    capture_output=True, text=True, check=True)
     assert out.exists() and out.read_text(encoding="utf-8").startswith("<!DOCTYPE html>")
+
+
+def test_open_prs_tile_uses_host_when_present():
+    import copy
+    data = copy.deepcopy(SAMPLE)
+    data["host"] = {"available": True, "host": "github", "open_prs": 7,
+                    "pr_median_age_days": 3.5, "ci_pass_rate": 0.9, "open_issues": 4}
+    html = rd.render(data)
+    assert "Open PRs" in html
+    assert ">7<" in html or ">7 " in html
+    assert "from github" in html.lower()
+
+
+def test_open_prs_tile_falls_back_to_wip_branches_without_host():
+    html = rd.render(SAMPLE)  # host None
+    assert "WIP branches" in html

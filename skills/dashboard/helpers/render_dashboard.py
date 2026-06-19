@@ -29,7 +29,11 @@ def _tile(label: str, value: str) -> str:
 
 def _kpi_strip(d: dict) -> str:
     k = d["kpis"]
-    open_prs = "—" if k["open_prs"] is None else str(k["open_prs"])
+    host = d.get("host") or {}
+    if host.get("available"):
+        tile8 = _tile("Open PRs", str(host["open_prs"]))
+    else:
+        tile8 = _tile("WIP branches", str(k["stale_branches"]))
     tiles = [
         _tile("Pulse 30d", f'{k["pulse"]["count_30d"]} <span style="font-size:12px">'
               f'({_pct(k["pulse"]["pct_change"])})</span>'),
@@ -39,7 +43,7 @@ def _kpi_strip(d: dict) -> str:
         _tile("Firefighting", f'{k["firefighting_pct"] * 100:.0f}%'),
         _tile("Stale branches", str(k["stale_branches"])),
         _tile("Last release", "—" if k["last_release_days"] is None else f'{k["last_release_days"]}d'),
-        _tile("Open PRs", open_prs),
+        tile8,
     ]
     return "".join(tiles)
 
@@ -67,11 +71,22 @@ def _delivery(d: dict) -> str:
     mods = "".join(f'<div class="named">{escape(m["module"])}: {m["commits_30d"]} commits/30d</div>'
                    for m in L["modules"][:8])
     heat = charts.heatmap(L["heatmap"])
+    host = d.get("host") or {}
+    host_col = ""
+    if host.get("available"):
+        cyc = host["pr_median_age_days"]
+        host_col = (f'<div class="col"><div class="label">from {escape(host["host"])}</div>'
+                    f'<div class="named">{host["open_prs"]} open PRs'
+                    + (f' · median age {cyc}d' if cyc is not None else '') + '</div>'
+                    + (f'<div class="named">CI pass {host["ci_pass_rate"]*100:.0f}%</div>'
+                       if host.get("ci_pass_rate") is not None else '')
+                    + f'<div class="named">{host["open_issues"]} open issues</div></div>')
     return _lens("Delivery & Momentum", L["light"],
                  f'Commit cadence (26 wks) · throughput {L["throughput"]}/wk · {rel_txt}',
                  f'<div class="col">{spark}<div class="named">{rel_txt}</div></div>'
                  f'<div class="col">{mods}</div>'
-                 f'<div class="col">{heat}<div class="named">when we work</div></div>')
+                 f'<div class="col">{heat}<div class="named">when we work</div></div>'
+                 + host_col)
 
 
 def _health(d: dict) -> str:
