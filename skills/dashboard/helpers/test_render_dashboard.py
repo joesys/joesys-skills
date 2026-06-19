@@ -1,0 +1,51 @@
+from __future__ import annotations
+import json, subprocess
+from pathlib import Path
+import render_dashboard as rd
+
+SAMPLE = {
+    "schema": 1, "generated_ts": 9999999999,
+    "repo": {"name": "demo", "branch": "main", "commit": "abc1234", "default_branch": "main"},
+    "flags": {"solo": False, "shallow": False},
+    "kpis": {"pulse": {"count_30d": 12, "pct_change": 0.18}, "last_commit_days": 2,
+             "bus_factor": 1, "active_devs": 5, "firefighting_pct": 0.08,
+             "stale_branches": 12, "last_release_days": 9, "open_prs": None},
+    "lenses": {
+        "delivery": {"light": "green", "cadence": [1, 3, 2, 5], "release": {"has_tags": True, "days_since": 9, "last_tag": "v1"},
+                     "throughput": 2.0, "modules": [{"module": "src", "commits_30d": 8}], "heatmap": [[0]*24 for _ in range(7)]},
+        "health": {"light": "yellow", "firefighting_pct": 0.08, "hotspots": [{"file": "a.py", "changes": 47}],
+                   "stale_branches": [{"name": "old", "idle_days": 80}], "debt": {"total": 3, "todo": 2, "fixme": 1, "hack": 0},
+                   "hygiene": {"ci": True, "lockfile": True, "env_gitignored": True, "tests": True},
+                   "msg_hygiene": {"conventional_pct": 0.9, "wip_pct": 0.0}},
+        "team": {"light": "red", "bus_factor": {"count": 1, "top_author": "sam", "top_share": 0.71},
+                 "active_devs": 5, "distribution": {"authors": [{"author": "sam", "commits": 30}], "gini": 0.6},
+                 "dormant": {"gone_quiet": ["bob"], "newly_active": []}, "off_hours_pct": None}},
+    "overall": {"light": "red", "summary": "Shipping well, but one dev owns 71% of recent work."},
+    "repo_state": {"modules": ["src"], "size": {"files": 10, "languages": {"py": 8}}},
+    "narrative": None, "host": None, "code_quality": None,
+}
+
+
+def test_render_produces_self_contained_html():
+    html = rd.render(SAMPLE)
+    assert html.startswith("<!DOCTYPE html>")
+    assert "demo" in html
+    assert "71%" in html or "0.71" in html or "sam" in html
+    # self-contained: no external resource references
+    assert "http://" not in html and "https://" not in html
+    assert "<svg" in html  # at least one inline chart
+
+
+def test_verdict_dot_reflects_overall():
+    html = rd.render(SAMPLE)
+    assert 'class="dot red"' in html
+
+
+def test_cli_writes_file(tmp_path):
+    metrics_path = tmp_path / "d.json"
+    metrics_path.write_text(json.dumps(SAMPLE), encoding="utf-8")
+    out = tmp_path / "out.html"
+    subprocess.run(["python", str(Path(__file__).parent / "render_dashboard.py"),
+                    "--metrics", str(metrics_path), "--out", str(out)],
+                   capture_output=True, text=True, check=True)
+    assert out.exists() and out.read_text(encoding="utf-8").startswith("<!DOCTYPE html>")
