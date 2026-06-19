@@ -12,7 +12,7 @@ DAY = 86400
 def _within(commits: list[dict], now_ts: int, lo_days: int, hi_days: int) -> list[dict]:
     lo = now_ts - hi_days * DAY
     hi = now_ts - lo_days * DAY
-    return [c for c in commits if lo <= c["ts"] <= hi]
+    return [c for c in commits if lo < c["ts"] <= hi]
 
 
 # ── Delivery ────────────────────────────────────────────────────────────

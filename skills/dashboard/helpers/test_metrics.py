@@ -20,6 +20,16 @@ def test_pulse_counts_and_pct():
     assert p["pct_change"] == 0.0
 
 
+def test_pulse_no_double_count_at_30day_boundary():
+    # a commit exactly 30 days ago belongs to the prior window only
+    commits = [c(0), c(30), c(45)]
+    p = metrics.pulse(commits, NOW)
+    assert p["count_30d"] == 1          # only c(0)
+    assert p["count_prev_30d"] == 2     # c(30) and c(45)
+    # the two windows never count the same commit twice
+    assert p["count_30d"] + p["count_prev_30d"] == 3
+
+
 def test_pulse_pct_none_when_no_prior():
     p = metrics.pulse([c(1), c(2)], NOW)
     assert p["count_30d"] == 2
