@@ -31,7 +31,7 @@ def _kpi_strip(d: dict) -> str:
     k = d["kpis"]
     host = d.get("host") or {}
     if host.get("available"):
-        tile8 = _tile("Open PRs", str(host["open_prs"]))
+        tile8 = _tile("Open PRs", escape(str(host["open_prs"])))
     else:
         tile8 = _tile("WIP branches", str(k["stale_branches"]))
     tiles = [
@@ -76,11 +76,11 @@ def _delivery(d: dict) -> str:
     if host.get("available"):
         cyc = host["pr_median_age_days"]
         host_col = (f'<div class="col"><div class="label">from {escape(host["host"])}</div>'
-                    f'<div class="named">{host["open_prs"]} open PRs'
+                    f'<div class="named">{escape(str(host["open_prs"]))} open PRs'
                     + (f' · median age {cyc}d' if cyc is not None else '') + '</div>'
                     + (f'<div class="named">CI pass {host["ci_pass_rate"]*100:.0f}%</div>'
                        if host.get("ci_pass_rate") is not None else '')
-                    + f'<div class="named">{host["open_issues"]} open issues</div></div>')
+                    + f'<div class="named">{escape(str(host["open_issues"]))} open issues</div></div>')
     return _lens("Delivery & Momentum", L["light"],
                  f'Commit cadence (26 wks) · throughput {L["throughput"]}/wk · {rel_txt}',
                  f'<div class="col">{spark}<div class="named">{rel_txt}</div></div>'

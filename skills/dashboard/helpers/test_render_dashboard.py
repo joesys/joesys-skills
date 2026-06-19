@@ -50,8 +50,14 @@ def test_escapes_hostile_json_text():
     data["lenses"]["health"]["hotspots"] = [{"file": "<b>a.py</b>", "changes": 5}]
     data["lenses"]["team"]["bus_factor"] = {"count": 1, "top_author": "<i>sam</i>", "top_share": 0.71}
     data["overall"]["summary"] = "<svg onload=alert(1)>"
+    data["host"] = {"available": True, "host": "github", "open_prs": "<script>p</script>",
+                    "pr_median_age_days": 3.5, "ci_pass_rate": 0.9, "open_issues": "<img src=x>"}
+    data["code_quality"] = {"available": True, "date": "<b>d</b>", "commit": "<i>c</i>",
+                            "overall_grade": "A+", "criteria": {"<u>x</u>": "<s>A</s>"},
+                            "commits_behind": 5, "stale": False, "report_path": "p", "trend": []}
     html = rd.render(data)
-    for bad in ["<script>evil", "<img src=x>", "<b>a.py</b>", "<i>sam</i>", "<svg onload"]:
+    for bad in ["<script>evil", "<img src=x>", "<b>a.py</b>", "<i>sam</i>", "<svg onload",
+                "<script>p", "<b>d</b>", "<i>c</i>", "<u>x</u>", "<s>A</s>"]:
         assert bad not in html, f"unescaped: {bad}"
     # escaped forms should be present instead
     assert "&lt;script&gt;evil" in html

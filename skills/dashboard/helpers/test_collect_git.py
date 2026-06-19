@@ -4,7 +4,23 @@ import json, subprocess
 from pathlib import Path
 import pytest
 
+import collect_git
+
 SCRIPT = str(Path(__file__).parent / "collect_git.py")
+
+
+def test_dedupe_branches_collapses_local_and_remote():
+    branches = [
+        {"name": "feature/x", "last_ts": 100},
+        {"name": "origin/feature/x", "last_ts": 200},
+        {"name": "feature/y", "last_ts": 50},
+    ]
+    out = collect_git._dedupe_branches(branches)
+    names = sorted(b["name"][len("origin/"):] if b["name"].startswith("origin/") else b["name"] for b in out)
+    assert names == ["feature/x", "feature/y"]   # x collapsed to one
+    # most-recent ts kept for the collapsed pair
+    x = [b for b in out if b["name"].endswith("feature/x")][0]
+    assert x["last_ts"] == 200
 
 
 def _git(args, cwd):

@@ -17,6 +17,21 @@ import metrics
 import thresholds as TH
 
 
+def _dedupe_branches(branches: list[dict]) -> list[dict]:
+    """Collapse a local branch and its origin/ remote-tracking copy into one,
+    keeping the most-recent last_ts. Normalizes by stripping a leading 'origin/'.
+
+    v1 limitation: only the 'origin/' remote prefix is stripped; branches on
+    other named remotes (e.g. 'upstream/x') are not collapsed against locals.
+    """
+    best: dict[str, dict] = {}
+    for b in branches:
+        key = b["name"][len("origin/"):] if b["name"].startswith("origin/") else b["name"]
+        if key not in best or b["last_ts"] > best[key]["last_ts"]:
+            best[key] = b
+    return list(best.values())
+
+
 def build(repo: str, now_ts: int) -> dict:
     cfg = TH.load_config(repo)
     commits_all = gitlog.get_commits(repo)
@@ -26,6 +41,9 @@ def build(repo: str, now_ts: int) -> dict:
     default = gitlog.default_branch(repo)
     branches = [b for b in gitlog.get_branches(repo)
                 if b["name"] != default and not b["name"].endswith("/" + default)]
+    # Collapse local + origin/ remote-tracking copies so one logical branch
+    # is not counted twice in stale_branches (which can tip the Health light).
+    branches = _dedupe_branches(branches)
     head = gitlog.repo_head(repo)
     idle_days = cfg["thresholds"]["stale_branch_days"]
 
