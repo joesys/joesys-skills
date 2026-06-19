@@ -28,3 +28,9 @@ codex/
 
 # Git worktrees
 .worktrees/
+
+# Brainstorming visual-companion scratch (not for history)
+.superpowers/
+
+# Dashboard skill generated output (re-stamps commit hash + timestamp each run)
+docs/dashboard/
