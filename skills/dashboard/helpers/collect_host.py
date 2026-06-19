@@ -50,10 +50,22 @@ def _open_prs(repo: str) -> dict:
     ages = []
     for pr in data:
         # createdAt like 2026-06-01T10:00:00Z
-        ts = time.mktime(time.strptime(pr["createdAt"], "%Y-%m-%dT%H:%M:%SZ"))
+        raw = pr.get("createdAt")
+        if not raw:
+            continue
+        try:
+            ts = time.mktime(time.strptime(raw, "%Y-%m-%dT%H:%M:%SZ"))
+        except (ValueError, TypeError):
+            continue
         ages.append((now - ts) / 86400)
     ages.sort()
-    median = round(ages[len(ages) // 2], 1) if ages else None
+    n = len(ages)
+    if n == 0:
+        median = None
+    elif n % 2 == 1:
+        median = round(ages[n // 2], 1)
+    else:
+        median = round((ages[n // 2 - 1] + ages[n // 2]) / 2, 1)
     return {"count": len(data), "median_age_days": median}
 
 
