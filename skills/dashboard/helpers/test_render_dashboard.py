@@ -41,6 +41,21 @@ def test_verdict_dot_reflects_overall():
     assert 'class="dot red"' in html
 
 
+def test_escapes_hostile_json_text():
+    import copy
+    data = copy.deepcopy(SAMPLE)
+    data["repo"]["name"] = "<script>evil</script>"
+    data["lenses"]["delivery"]["release"] = {"has_tags": True, "days_since": 3, "last_tag": "v1<img src=x>&"}
+    data["lenses"]["health"]["hotspots"] = [{"file": "<b>a.py</b>", "changes": 5}]
+    data["lenses"]["team"]["bus_factor"] = {"count": 1, "top_author": "<i>sam</i>", "top_share": 0.71}
+    data["overall"]["summary"] = "<svg onload=alert(1)>"
+    html = rd.render(data)
+    for bad in ["<script>evil", "<img src=x>", "<b>a.py</b>", "<i>sam</i>", "<svg onload"]:
+        assert bad not in html, f"unescaped: {bad}"
+    # escaped forms should be present instead
+    assert "&lt;script&gt;evil" in html
+
+
 def test_cli_writes_file(tmp_path):
     metrics_path = tmp_path / "d.json"
     metrics_path.write_text(json.dumps(SAMPLE), encoding="utf-8")

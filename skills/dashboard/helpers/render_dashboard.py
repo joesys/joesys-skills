@@ -62,7 +62,7 @@ def _delivery(d: dict) -> str:
     L = d["lenses"]["delivery"]
     spark = charts.sparkline(L["cadence"])
     rel = L["release"]
-    rel_txt = f'last release {rel["last_tag"]} ({rel["days_since"]}d ago)' \
+    rel_txt = f'last release {escape(str(rel["last_tag"]))} ({rel["days_since"]}d ago)' \
         if rel["has_tags"] else "no releases tagged"
     mods = "".join(f'<div class="named">{escape(m["module"])}: {m["commits_30d"]} commits/30d</div>'
                    for m in L["modules"][:8])
