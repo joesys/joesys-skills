@@ -102,3 +102,76 @@ def commit_message_hygiene(commits: list[dict]) -> dict:
     wip = sum(1 for c in commits if _WIP_RE.match(c["subject"]))
     n = len(commits)
     return {"conventional_pct": round(conv / n, 4), "wip_pct": round(wip / n, 4)}
+
+
+from collections import Counter
+
+
+# ── Team ────────────────────────────────────────────────────────────────
+
+def bus_factor(commits: list[dict], now_ts: int, days: int = 90, share: float = 0.5) -> dict:
+    window = _within(commits, now_ts, 0, days)
+    if not window:
+        return {"count": 0, "top_author": None, "top_share": 0.0}
+    counts = Counter(c["author"] for c in window)
+    total = sum(counts.values())
+    ranked = counts.most_common()
+    cumulative = 0
+    count = 0
+    for _, n in ranked:
+        cumulative += n
+        count += 1
+        if cumulative / total > share:
+            break
+    top_author, top_n = ranked[0]
+    return {"count": count, "top_author": top_author,
+            "top_share": round(top_n / total, 4)}
+
+
+def active_authors(commits: list[dict], now_ts: int, days: int = 30) -> int:
+    return len({c["author"] for c in _within(commits, now_ts, 0, days)})
+
+
+def contribution_distribution(commits: list[dict], now_ts: int, days: int = 90) -> dict:
+    window = _within(commits, now_ts, 0, days)
+    counts = Counter(c["author"] for c in window)
+    authors = [{"author": a, "commits": n} for a, n in counts.most_common()]
+    return {"authors": authors, "gini": _gini([n for _, n in counts.most_common()])}
+
+
+def _gini(values: list[int]) -> float:
+    if not values or sum(values) == 0:
+        return 0.0
+    xs = sorted(values)
+    n = len(xs)
+    cum = sum((i + 1) * x for i, x in enumerate(xs))
+    return round((2 * cum) / (n * sum(xs)) - (n + 1) / n, 4)
+
+
+def dormant_authors(commits: list[dict], now_ts: int, silent_days: int = 90) -> dict:
+    last_seen: dict[str, int] = {}
+    first_seen: dict[str, int] = {}
+    for c in commits:
+        a = c["author"]
+        last_seen[a] = max(last_seen.get(a, 0), c["ts"])
+        first_seen[a] = min(first_seen.get(a, c["ts"]), c["ts"])
+    gone = [a for a, ts in last_seen.items() if (now_ts - ts) // DAY > silent_days]
+    newly = [a for a, ts in first_seen.items() if (now_ts - ts) // DAY <= 30]
+    return {"gone_quiet": sorted(gone), "newly_active": sorted(newly)}
+
+
+def off_hours_pct(commits: list[dict], now_ts: int, days: int = 30) -> float:
+    import time
+    window = _within(commits, now_ts, 0, days)
+    if not window:
+        return 0.0
+    off = 0
+    for c in window:
+        tm = time.gmtime(c["ts"])
+        if tm.tm_wday >= 5 or tm.tm_hour < 8 or tm.tm_hour >= 19:
+            off += 1
+    return round(off / len(window), 4)
+
+
+def is_solo(commits: list[dict]) -> bool:
+    return len({c["author"] for c in commits}) <= 2

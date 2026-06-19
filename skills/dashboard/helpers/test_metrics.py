@@ -98,3 +98,30 @@ def test_commit_message_hygiene():
     h = metrics.commit_message_hygiene(commits)
     assert round(h["conventional_pct"], 2) == 0.5
     assert round(h["wip_pct"], 2) == 0.25
+
+
+def test_bus_factor_single_dominant_author():
+    commits = [c(1, author="Alice")] * 7 + [c(1, author="Bob")] * 3
+    bf = metrics.bus_factor(commits, NOW, days=90)
+    assert bf["count"] == 1            # Alice alone >= 50%
+    assert bf["top_author"] == "Alice"
+    assert round(bf["top_share"], 2) == 0.70
+
+def test_bus_factor_even_split():
+    commits = [c(1, author="A")] * 5 + [c(1, author="B")] * 5
+    bf = metrics.bus_factor(commits, NOW, days=90)
+    assert bf["count"] == 2
+
+def test_active_authors():
+    commits = [c(1, author="A"), c(2, author="B"), c(40, author="C")]
+    assert metrics.active_authors(commits, NOW, days=30) == 2
+
+def test_dormant_authors():
+    commits = [c(120, author="Gone"), c(2, author="Here")]
+    d = metrics.dormant_authors(commits, NOW, silent_days=90)
+    assert "Gone" in d["gone_quiet"]
+    assert "Here" not in d["gone_quiet"]
+
+def test_is_solo():
+    assert metrics.is_solo([c(1, author="A"), c(2, author="A")]) is True
+    assert metrics.is_solo([c(1, author="A"), c(2, author="B"), c(3, author="C")]) is False
