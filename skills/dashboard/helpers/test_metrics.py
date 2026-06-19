@@ -61,3 +61,40 @@ def test_throughput_counts_only_merges():
     commits = [c(1, is_merge=True), c(2, is_merge=True), c(3)]
     tp = metrics.throughput_per_week(commits, NOW, weeks=1)
     assert tp == 2.0
+
+
+def test_firefighting_excludes_plain_fix():
+    commits = [
+        c(1, subject="revert: bad change"),
+        c(1, subject="hotfix: prod down"),
+        c(1, subject="fix: normal bug"),     # excluded
+        c(1, subject="feat: thing"),
+    ]
+    rate = metrics.firefighting_rate(commits, NOW)
+    assert round(rate, 3) == 0.5  # 2 of 4
+
+
+def test_churn_hotspots_sorted():
+    counts = {"a.py": 10, "b.py": 3, "c.py": 7}
+    hs = metrics.churn_hotspots(counts, top=2)
+    assert [h["file"] for h in hs] == ["a.py", "c.py"]
+    assert hs[0]["changes"] == 10
+
+
+def test_stale_branches_filters_and_sorts():
+    branches = [
+        {"name": "old", "last_ts": NOW - 100 * DAY},
+        {"name": "fresh", "last_ts": NOW - 5 * DAY},
+        {"name": "older", "last_ts": NOW - 200 * DAY},
+    ]
+    sb = metrics.stale_branches(branches, NOW, idle_days=30)
+    assert [b["name"] for b in sb] == ["older", "old"]
+    assert sb[0]["idle_days"] == 200
+
+
+def test_commit_message_hygiene():
+    commits = [c(1, subject="feat: a"), c(1, subject="fix: b"),
+               c(1, subject="WIP"), c(1, subject="random text")]
+    h = metrics.commit_message_hygiene(commits)
+    assert round(h["conventional_pct"], 2) == 0.5
+    assert round(h["wip_pct"], 2) == 0.25

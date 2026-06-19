@@ -61,3 +61,44 @@ def when_we_work(commits: list[dict]) -> list[list[int]]:
         tm = time.gmtime(c["ts"])
         grid[tm.tm_wday][tm.tm_hour] += 1
     return grid
+
+
+import re
+
+_FIRE_RE = re.compile(r"^\s*(revert|rollback|hotfix)\b|^\s*fix!", re.IGNORECASE)
+_CONV_RE = re.compile(
+    r"^(feat|fix|docs|chore|build|ci|style|refactor|perf|test)(\(.+\))?!?:", re.IGNORECASE)
+_WIP_RE = re.compile(r"^\s*(wip\b|fixup!|squash!|\.+$)", re.IGNORECASE)
+
+
+# ── Health ──────────────────────────────────────────────────────────────
+
+def firefighting_rate(commits: list[dict], now_ts: int, days: int = 30) -> float:
+    window = _within(commits, now_ts, 0, days)
+    if not window:
+        return 0.0
+    fires = sum(1 for c in window if _FIRE_RE.search(c["subject"]))
+    return round(fires / len(window), 4)
+
+
+def churn_hotspots(file_change_counts: dict[str, int], top: int = 5) -> list[dict]:
+    ranked = sorted(file_change_counts.items(), key=lambda kv: kv[1], reverse=True)
+    return [{"file": f, "changes": n} for f, n in ranked[:top]]
+
+
+def stale_branches(branches: list[dict], now_ts: int, idle_days: int = 30) -> list[dict]:
+    out = []
+    for b in branches:
+        idle = (now_ts - b["last_ts"]) // DAY
+        if idle > idle_days:
+            out.append({"name": b["name"], "idle_days": idle})
+    return sorted(out, key=lambda x: x["idle_days"], reverse=True)
+
+
+def commit_message_hygiene(commits: list[dict]) -> dict:
+    if not commits:
+        return {"conventional_pct": 0.0, "wip_pct": 0.0}
+    conv = sum(1 for c in commits if _CONV_RE.match(c["subject"]))
+    wip = sum(1 for c in commits if _WIP_RE.match(c["subject"]))
+    n = len(commits)
+    return {"conventional_pct": round(conv / n, 4), "wip_pct": round(wip / n, 4)}
