@@ -126,6 +126,18 @@ Three lenses: `delivery`, `health`, `team`. Each has a `light` plus supporting m
 
 ---
 
+## `narrative`
+
+Optional block filled by the host-agent narrative step (`null` until written).
+Explains the already-computed numbers; it never recomputes or overrides a light.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `overall_summary` | str | ≤20-word summary; also copied into `overall.summary`. |
+| `delivery_why` / `health_why` / `team_why` | str | One-sentence explanation per lens; also copied into each `lenses.*.why`. |
+| `callouts` | str[] | 2–4 prioritized "look here" items, each naming a file/branch/person. |
+| `analysis` | object | Per-metric tooltip text: `{<metric_id>: <one-sentence per-repo reading>}`. Powers the dashboard's on-hover "In this repo" line. Keys are the canonical metric ids (see `references/narrative-prompt.md`); ids without data are omitted. The static "what / why" half of each tooltip is **not** here — it lives in `helpers/tooltips.py` and is added by the renderer regardless (so tooltips still work on `--no-llm`). |
+
 ## `host` enrichment
 
 Produced by `helpers/collect_host.py` (GitHub via `gh`; GitLab is not yet

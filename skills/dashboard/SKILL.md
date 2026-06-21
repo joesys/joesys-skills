@@ -1,6 +1,6 @@
 ---
 name: dashboard
-version: "1.0.0"
+version: "1.1.0"
 description: "Use when the user invokes /dashboard to generate a self-contained HTML project-health dashboard for PMs/EMs from local git + repo state, with optional GitHub/GitLab and /codebase-audit enrichment."
 ---
 
@@ -110,9 +110,15 @@ This is the only LLM step, and it is **a single host-agent pass — there is NO 
      "delivery_why": "one sentence explaining the delivery light",
      "health_why": "one sentence explaining the health light",
      "team_why": "one sentence explaining the team light",
-     "callouts": ["2-4 prioritized 'look here' items, each naming a file/branch/person"]
+     "callouts": ["2-4 prioritized 'look here' items, each naming a file/branch/person"],
+     "analysis": {"<metric_id>": "one sentence on what this metric shows in THIS repo", "...": "..."}
    }
    ```
+   The `analysis` map is the per-metric tooltip text (the dashboard's on-hover
+   "In this repo" line). Keys are the canonical metric ids listed in
+   `references/narrative-prompt.md`; omit any metric that has no data. The static
+   "what / why" half of each tooltip lives in `helpers/tooltips.py` and is added
+   by the renderer regardless — `analysis` only supplies the per-repo reading.
 3. The narrative **explains, never recomputes.** It must not invent numbers absent from the JSON, must not soften a red or inflate a green (the engine fixed the light), must cite borrowed host/audit figures with "as of," and — when `flags.solo` is set — must frame Team concentration as expected, not alarming.
 4. Save the returned object to `/tmp/narrative.json` for the merge.
 
@@ -134,7 +140,7 @@ Load `docs/dashboard/dashboard.json` as `data`, then:
 | `data["lenses"]["delivery"]["why"]` | narrative `delivery_why` | only if a narrative was produced |
 | `data["lenses"]["health"]["why"]` | narrative `health_why` | only if a narrative was produced |
 | `data["lenses"]["team"]["why"]` | narrative `team_why` | only if a narrative was produced |
-| `data["narrative"]` | the full narrative object (incl. `callouts`) | only if a narrative was produced |
+| `data["narrative"]` | the full narrative object (incl. `callouts` and the per-metric `analysis` map) | only if a narrative was produced |
 
 Do **not** touch any `light` value or any computed metric — the merge only adds the optional layers. Write the merged dict back out (e.g. to `docs/dashboard/dashboard.json` or a sibling `merged.json`), then render:
 
@@ -142,7 +148,7 @@ Do **not** touch any `light` value or any computed metric — the merge only add
 python skills/dashboard/helpers/render_dashboard.py --metrics docs/dashboard/dashboard.json --out docs/dashboard/dashboard.html
 ```
 
-The renderer inlines the template (`templates/dashboard.html`) and emits a single self-contained HTML file with zero external dependencies — no CDN, no `http://`/`https://`, sharable by email/Slack. It reads `host` for the KPI strip + Delivery host column, `code_quality` for the Health code-quality block, and `overall.summary` for the verdict line (falling back to the templated summary when `summary` is `null`).
+The renderer inlines the template (`templates/dashboard.html`) and emits a single self-contained HTML file with zero external dependencies — no CDN, no `http://`/`https://`, sharable by email/Slack. It reads `host` for the KPI strip + Delivery host column, `code_quality` for the Health code-quality block, and `overall.summary` for the verdict line (falling back to the templated summary when `summary` is `null`). It also attaches an explanatory tooltip to every metric and section — static "what this measures / why it matters" copy from `helpers/tooltips.py` plus the optional per-repo `narrative.analysis` line (the "In this repo" block, omitted on `--no-llm`).
 
 ---
 
