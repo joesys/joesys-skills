@@ -112,3 +112,45 @@ def test_code_quality_stale_warns():
 
 def test_code_quality_absent_shows_not_measured():
     assert "not measured" in rd.render(SAMPLE)
+
+
+# ---- tooltips ----
+
+def test_tooltip_markup_present_for_metrics():
+    html = rd.render(SAMPLE)
+    assert "tip-pop" in html
+    assert "What this measures" in html
+    assert "Why it matters" in html
+
+
+def test_in_this_repo_present_when_analysis_supplied():
+    data = copy.deepcopy(SAMPLE)
+    data["narrative"] = {"analysis": {"kpi.bus_factor": "One author owns most commits here."}}
+    html = rd.render(data)
+    assert "In this repo" in html
+    assert "One author owns most commits here." in html
+
+
+def test_in_this_repo_absent_without_analysis():
+    html = rd.render(SAMPLE)  # narrative is None
+    assert "In this repo" not in html
+
+
+def test_analysis_text_is_escaped():
+    data = copy.deepcopy(SAMPLE)
+    data["narrative"] = {"analysis": {"overall": "<script>x</script>"}}
+    html = rd.render(data)
+    assert "<script>x</script>" not in html
+    assert "&lt;script&gt;x" in html
+
+
+def test_unknown_analysis_key_is_ignored():
+    data = copy.deepcopy(SAMPLE)
+    data["narrative"] = {"analysis": {"made.up.key": "should never appear"}}
+    html = rd.render(data)
+    assert "should never appear" not in html
+
+
+def test_kpi_bus_factor_gets_red_accent():
+    html = rd.render(SAMPLE)  # bus_factor 1 -> red per defaults
+    assert "tile red" in html

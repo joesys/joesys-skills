@@ -24,7 +24,11 @@ Return ONLY this JSON:
   "delivery_why": "one sentence explaining the delivery light",
   "health_why": "one sentence explaining the health light",
   "team_why": "one sentence explaining the team light",
-  "callouts": ["2-4 prioritized 'look here' items, each naming a specific file/branch/person"]
+  "callouts": ["2-4 prioritized 'look here' items, each naming a specific file/branch/person"],
+  "analysis": {
+    "<metric_id>": "one sentence: what this metric shows in THIS repo",
+    "...": "... one entry per metric id (below) that has data ..."
+  }
 }
 ```
 
@@ -44,6 +48,13 @@ Rules:
 - If `flags.solo` is set, frame Team concentration as **expected, not
   alarming** — a single dominant contributor is normal for a solo project, and
   the Team light will be `"na"`.
+- `analysis` powers the dashboard's on-hover tooltips (the "In this repo" line).
+  For each metric id below that has data, write **one** plain-English sentence on
+  what the metric shows *in this repo* — same rules: cite only numbers in the
+  JSON, "as of" for borrowed figures, never override a light. Omit ids whose data
+  is absent: `delivery.host` when host is unavailable, `team.off_hours` when
+  `off_hours_pct` is null, and `kpi.open_prs` vs `kpi.wip_branches` — emit only
+  whichever the dashboard shows (open PRs when `host.available`, else WIP).
 
 ---
 
@@ -56,3 +67,23 @@ Rules:
 | `health_why` | written into the health narrative | One sentence. Likely drivers: `firefighting_pct`, `stale_branches`, `hotspots`, `debt`, `hygiene`. |
 | `team_why` | written into the team narrative | One sentence. Likely drivers: `bus_factor`, `distribution.gini`, `dormant`. If `flags.solo`, say concentration is expected. |
 | `callouts` | actionable "look here" list | 2–4 items, prioritized worst-first. Each names a concrete file, branch, or person drawn from the JSON (e.g. a `hotspots` file, a `stale_branches` name, a `dormant.gone_quiet` author). |
+| `analysis` | per-metric tooltip text | Object keyed by the metric ids below. One sentence each, present-tense, citing only JSON numbers. Omit ids without data. |
+
+---
+
+## Tooltip analysis ids (`analysis` keys)
+
+These are the canonical metric ids the renderer attaches tooltips to (defined in
+`helpers/tooltips.py`). Provide an `analysis` entry for each one that has data:
+
+- **Overall:** `overall`
+- **KPIs:** `kpi.pulse`, `kpi.last_commit`, `kpi.bus_factor`, `kpi.active_devs`,
+  `kpi.firefighting`, `kpi.stale_branches`, `kpi.last_release`, and **one of**
+  `kpi.open_prs` (host available) or `kpi.wip_branches` (no host)
+- **Delivery:** `lens.delivery`, `delivery.cadence`, `delivery.throughput`,
+  `delivery.release`, `delivery.modules`, `delivery.heatmap`,
+  `delivery.host` *(only if `host.available`)*
+- **Health:** `lens.health`, `health.hotspots`, `health.stale_branches`,
+  `health.hygiene`, `health.debt`, `health.code_quality`
+- **Team:** `lens.team`, `team.bus_factor`, `team.distribution`, `team.dormant`,
+  `team.off_hours` *(only if `off_hours_pct` is not null)*
