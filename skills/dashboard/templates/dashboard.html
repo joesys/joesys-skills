@@ -92,6 +92,7 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;op
 /* ============ lenses ============ */
 .lens{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
   padding:20px 22px;margin-bottom:16px;box-shadow:var(--shadow)}
+.lens:hover,.lens:focus-within{position:relative;z-index:40} /* lift active section so its metric tooltip wins paint order over later sections (whose `animation:rise both` makes each its own stacking context) */
 .lens summary{display:flex;align-items:center;gap:11px;cursor:pointer;list-style:none}
 .lens summary::-webkit-details-marker{display:none}
 .lens-title{font-family:var(--serif);font-weight:600;font-size:20px;letter-spacing:-.005em;
