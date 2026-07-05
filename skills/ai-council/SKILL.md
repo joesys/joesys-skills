@@ -189,7 +189,7 @@ After presenting the synthesis, always offer:
 
 1. **Resume individual sessions** — "Would you like to continue the conversation with any of the models? Use `/codex resume`, `/antigravity resume`, or `/claude resume` to explore their reasoning further."
    - Resume is only available for legs that used CLI (not subagent). If the Claude leg used a subagent, note that `/claude resume` is not available for this council run.
-   - For Codex, resume is only reliable immediately after the council run (before other Codex sessions are started).
+   - For Codex, a `--last` resume is only reliable immediately after the council run; `codex exec resume <SESSION_ID>` works at any time if the `session id:` line was captured from the dispatch banner (stderr — see the `/codex` skill).
 2. **Retry failed legs** (if applicable) — "Would you like to retry [failed leg]? I can rerun it and update the synthesis."
 
 If the user resumes and gets new insight, they can invoke `/ai-council` again with a refined question. The skill does not auto-update from individual resume sessions.

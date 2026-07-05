@@ -14,7 +14,7 @@ For comprehensive 7-domain reviews, use `/codereview`.
 
 This skill MUST NOT:
 - Modify source code without explicit user approval. Quick-review is **report-only** — there is no fix dispatch phase. If the user wants fixes, they invoke `/codereview`.
-- Expand fixes beyond what was flagged. Same constraint applies if the user asks for fixes inline.
+- Apply fixes even when the user asks for them inline — hand the findings to `/codereview`, which owns fix dispatch.
 - Report on code outside the resolved scope. If the diff/file/PR doesn't include a file, do not flag findings in it — even if you notice them while gathering context.
 - Inflate severity to look thorough. P0 means actual bug or security hole. Style polish is P3/P4 (and this skill skips P3/P4 entirely).
 - Downgrade real bugs to manage report volume. If correctness or security found something genuine, it stays at its true severity.

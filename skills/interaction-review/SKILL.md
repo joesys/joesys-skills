@@ -77,7 +77,7 @@ Read `shared/skill-context.md` for the full protocol. In brief:
 
 ### 1.1 Resolve Session Directory
 
-1. Determine the project directory slug: take the current working directory path and replace all path separators with `--` (e.g., `C:\Users\joesy\Projects\my-project` becomes `C--Users-joesy-Projects-my-project`).
+1. Determine the project directory slug: take the current working directory path and replace every non-alphanumeric character (`:`, `\`, `/`) with a single `-` (e.g., `C:\Users\joesy\Projects\my-project` becomes `C--Users-joesy-Projects-my-project` — the double dash after the drive letter is `:` and `\` each becoming one `-`).
 2. Session files are at: `~/.claude/projects/<project-slug>/*.jsonl`
 
 ### 1.2 List and Filter Sessions

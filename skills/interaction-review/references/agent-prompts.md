@@ -32,7 +32,7 @@ Each agent operates within a **~4,000 line read budget** to prevent context exha
 ### Session Resolution
 
 Determine the active project's session files:
-1. The project directory is derived from the current working directory with path separators replaced by `--` (e.g., `D:\joesys\Projects\my-project` becomes `D--joesys-Projects-my-project`).
+1. The project directory is derived from the current working directory with every non-alphanumeric character (`:`, `\`, `/`) replaced by a single `-` (e.g., `D:\joesys\Projects\my-project` becomes `D--joesys-Projects-my-project`).
 2. Session JSONL files are at `~/.claude/projects/<project-dir>/<sessionId>.jsonl`
 3. Focus on `user` and `assistant` message types. Skip `tool_result`, `progress`, and `file-history-snapshot` entries — they are bulk data that obscures the thinking.
 
