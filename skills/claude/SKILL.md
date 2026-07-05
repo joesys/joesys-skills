@@ -38,7 +38,7 @@ Read `shared/skill-context.md` for the full protocol. Load `.claude/skill-contex
 2. Derive a short session name from the prompt topic (kebab-case, 2–4 words).
 3. Assemble and dispatch the command (use 600000ms timeout on the Bash tool).
 
-   Use the temp-file-and-pipe pattern from `shared/delegation-common.md` § Prompt Delivery. For short, simple prompts with no special characters, direct `-p "<text>"` is acceptable.
+   Use the temp-file-and-pipe pattern from `shared/delegation-common.md` § Prompt Delivery. (Direct `-p "<text>"` is reserved for short, simple *resume* prompts — see that file's § Direct `-p` exception.)
 
    Substitute `<CLAUDE_CMD>` with the current invocation from `shared/model-defaults.md` § Claude CLI, layering any user overrides on top. Append `--name "<derived-name>"` for resumability.
 
@@ -60,15 +60,9 @@ Read `shared/skill-context.md` for the full protocol. Load `.claude/skill-contex
 When the user invokes `/claude resume`:
 
 1. If no prompt is provided, use `AskUserQuestion` to ask what they want to follow up on.
-2. Determine the resume target:
-   - `/claude resume <PROMPT>` — continue the most recent session:
-     ```bash
-     claude -c -p "<FOLLOW_UP_PROMPT>" 2>/dev/null
-     ```
-   - `/claude resume <NAME> <PROMPT>` — resume a specific named session:
-     ```bash
-     claude --resume "<NAME>" -p "<FOLLOW_UP_PROMPT>" 2>/dev/null
-     ```
+2. Determine the resume target — commands per `shared/model-defaults.md` § Claude CLI Resume:
+   - `/claude resume <PROMPT>` — continue the most recent session (`claude -c`).
+   - `/claude resume <NAME> <PROMPT>` — resume a specific named session (`claude --resume "<NAME>"`).
 3. **Resume rules:**
    - Resumed sessions inherit model, effort, and permission mode from the original run.
    - `--model`, `--effort`, `--permission-mode`, `--bare` MAY be overridden on resume only when the user explicitly requests it.

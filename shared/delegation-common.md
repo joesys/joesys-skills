@@ -40,7 +40,7 @@ If `mktemp` is unavailable, fall back to a deterministic path: `/tmp/<skill>-pro
 
 The `-p ""` flag (Claude, Antigravity) or no `-p` flag (Codex) triggers non-interactive mode while stdin provides the actual prompt.
 
-**Why `2>/dev/null`?** CLI tools emit progress indicators, ANSI escape codes, and status messages on stderr. These pollute captured output when running programmatically.
+**Why `2>/dev/null`?** CLI tools emit progress indicators, ANSI escape codes, and status messages on stderr. These pollute captured output when running programmatically. **Exception:** Codex prints its `session id:` banner on stderr — when resume matters, capture stderr to a temp file instead (see `shared/model-defaults.md` § Codex Resume).
 
 **Why a temp file?** Single-quoted heredoc delimiters prevent shell expansion of `$`, backticks, and `!`. Long prompts as positional `-p "..."` arguments trip on these characters.
 

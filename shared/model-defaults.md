@@ -29,7 +29,22 @@ codex exec --model gpt-5.5 -c model_reasoning_effort="xhigh" \
 | `-c model_reasoning_effort="xhigh"` | Maximum reasoning depth |
 | `--sandbox read-only` | Safety: no file writes |
 | `--skip-git-repo-check` | Required for piped input |
-| `2>/dev/null` | Suppress progress/ANSI noise on stderr |
+| `2>/dev/null` | Suppress progress/ANSI noise on stderr — but see Resume: capture to a file instead when resume matters |
+
+**Resume:**
+
+```bash
+codex exec resume <SESSION_ID> --skip-git-repo-check "<PROMPT>" 2>/dev/null   # by session id (preferred)
+codex exec resume --last --skip-git-repo-check "<PROMPT>" 2>/dev/null         # most recent session
+```
+
+| Rule | Detail |
+|---|---|
+| Session ID capture | `codex exec` prints `session id: <UUID>` on **stderr** — dispatch with `2>"$CODEX_LOG"` and `grep -m1 "session id:"` it; a discarded banner leaves only `--last` resume |
+| Flag order | `--skip-git-repo-check` goes after `resume`, not between `exec` and `resume` |
+| Not accepted on resume | `--sandbox`, `--full-auto` |
+| Write access on resume | `-c sandbox_mode="workspace-write"` |
+| Inheritance | Resumed sessions keep model, reasoning effort, and sandbox from the original run |
 
 ### Antigravity
 
@@ -71,9 +86,20 @@ claude --model opus --effort high --permission-mode plan -p "" 2>/dev/null
 | `-p ""` | Non-interactive mode (stdin provides the prompt) |
 | `2>/dev/null` | Suppress progress/ANSI noise on stderr |
 
+**Resume:**
+
+```bash
+claude -c -p "<PROMPT>" 2>/dev/null                  # most recent session
+claude --resume "<NAME>" -p "<PROMPT>" 2>/dev/null   # named session (set at dispatch via --name)
+```
+
+## Agent Tool (Subagent) Model
+
+Skills that spawn subagents via the Agent tool pin `model: "opus"` — an alias resolving to the latest Opus, matching this plugin's expected host runtime. This section is the single source of truth for that choice: if the default subagent model ever changes, update this section and the inline literals (`grep -rn 'model: "opus"' skills/`).
+
 ## Why `2>/dev/null`
 
-CLI tools emit progress indicators, ANSI escape codes, and status messages on stderr. These are useful interactively but pollute captured output when running programmatically. Suppressing stderr keeps the response clean while stdout carries the actual model output.
+CLI tools emit progress indicators, ANSI escape codes, and status messages on stderr. These are useful interactively but pollute captured output when running programmatically. Suppressing stderr keeps the response clean while stdout carries the actual model output. **Exception:** Codex prints its `session id:` banner on stderr — when resume matters, capture stderr to a temp file instead (see § Codex Resume).
 
 ## Standard Timeout
 

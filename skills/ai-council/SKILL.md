@@ -114,7 +114,7 @@ Clean up temporary files after all legs complete: `rm -f "$CODEX_PROMPT" "$AGY_P
 
 ### Codex Leg (Bash, 600000ms timeout)
 
-**MUST deliver via stdin pipe** (see Prompt Size Safety). Substitute `<CODEX_CMD>` with the current invocation from `shared/model-defaults.md` § Codex.
+**MUST deliver via stdin pipe** (see Prompt Size Safety). Substitute `<CODEX_CMD>` with the current invocation from `shared/model-defaults.md` § Codex. For resumability, replace the template's trailing `2>/dev/null` with `2>"$CODEX_LOG"` and grep the `session id:` line after the run (see § Codex Resume) — that ID is what makes the Post-Synthesis resume offer reliable.
 
 ```bash
 cat "$CODEX_PROMPT" | <CODEX_CMD>
