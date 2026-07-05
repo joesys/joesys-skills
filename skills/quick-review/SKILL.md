@@ -12,13 +12,11 @@ For comprehensive 7-domain reviews, use `/codereview`.
 ## Out of Scope
 
 This skill MUST NOT:
-- Modify source code without explicit user approval. Quick-review is **report-only** — there is no fix dispatch phase. If the user wants fixes, they invoke `/codereview`.
-- Apply fixes even when the user asks for them inline — hand the findings to `/codereview`, which owns fix dispatch.
+- Modify source code or apply fixes, even when the user asks for them inline. Quick-review is **report-only** — there is no fix-dispatch phase; hand the findings to `/codereview`, which owns fix dispatch.
 - Report on code outside the resolved scope. If the diff/file/PR doesn't include a file, do not flag findings in it — even if you notice them while gathering context.
-- Inflate severity to look thorough. P0 means actual bug or security hole. Style polish is P3/P4 (and this skill skips P3/P4 entirely).
+- Inflate severity to look thorough. P0 means actual bug or security hole. Style polish is P3/P4.
 - Downgrade real bugs to manage report volume. If correctness or security found something genuine, it stays at its true severity.
 - Include P3 (polish) or P4 (style) findings. The skill reports P0–P2 only, even if subagents return lower-severity findings.
-- Add a fix-dispatch phase. Quick-review is report-only.
 - Load full files. Quick-review uses `git diff -U50` exclusively for context — full-file loading is reserved for `/codereview`.
 
 ## Invocation
@@ -230,7 +228,7 @@ Omit empty severity sections. If there are zero findings across all severities, 
 
 > "No bugs or security issues found. Code looks solid."
 
-**No P3/P4 sections.** No before/after code blocks (keeps output scannable — use `/codereview` for detailed treatment). Findings reference `file:line` for quick navigation. **No fix dispatch phase** — report only.
+**No P3/P4 sections.** No before/after code blocks (keeps output scannable — use `/codereview` for detailed treatment). Findings reference `file:line` for quick navigation.
 
 ---
 
@@ -240,8 +238,7 @@ Read `shared/review-common.md` § Cross-Skill Discipline for the base constraint
 
 Additional quick-review-specific guardrails:
 
-1. **P0–P2 only.** Never include P3 (polish) or P4 (style) findings in the output. Subagents are instructed to skip them; synthesis discards any that slip through.
-2. **Diff-only context has limits.** Quick-review uses `-U50` diff context, not full files. Issues requiring broader file analysis (e.g., unused imports, unreachable code paths, architectural problems) may not be detected. Use `/codereview` for full-file analysis.
+1. **Diff-only context has limits.** Quick-review uses `-U50` diff context, not full files. Issues requiring broader file analysis (e.g., unused imports, unreachable code paths, architectural problems) may not be detected. Use `/codereview` for full-file analysis.
 
 ---
 

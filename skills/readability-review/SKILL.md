@@ -132,19 +132,15 @@ You are a senior readability reviewer. Your job is to grade code on how well it
 <DIFF_CONTENT_OR_"N/A — directory/file scan mode">
 
 ## Output Format
-For each file, output:
+For each file, output a table with one row per dimension (all 8, in the
+principle file's order). Fill the Weight column with the weights you used —
+the principle file's defaults, or the custom weights above if provided:
 
 ### <filename>
 | # | Dimension | Score | Weight | Weighted |
 |---|-----------|-------|--------|----------|
-| 1 | Narrative Flow | X/10 | 20% | X.X |
-| 2 | Naming as Intent | X/10 | 15% | X.X |
-| 3 | Cognitive Chunking | X/10 | 15% | X.X |
-| 4 | Abstraction Consistency (SLAP) | X/10 | 14% | X.X |
-| 5 | Function Focus | X/10 | 10% | X.X |
-| 6 | Structural Clarity | X/10 | 10% | X.X |
-| 7 | Documentation Quality | X/10 | 10% | X.X |
-| 8 | No Clever Tricks | X/10 | 6% | X.X |
+| 1 | <dimension> | X/10 | XX% | X.X |
+| ... | | | | |
 | | **Weighted Total** | | | **X.X/100** |
 
 #### Findings

@@ -12,7 +12,7 @@ Create git commits with consistent, well-structured commit messages following Co
 ## Out of Scope
 
 This skill MUST NOT:
-- Run `git push` in any form (normal, `--force`, `--force-with-lease`, tag push, branch push) without an express **current-turn** instruction naming the push action. (Full rule below — promoted to Preflight.)
+- Run `git push` in any form without express current-turn authorization — full rule in the Preflight section below.
 - Use `--amend` on commits already pushed to a remote. Amend is for unpublished commits only.
 - Commit files containing secrets, credentials, API keys, or `.env` files. **MUST verify** before staging — if a file looks suspicious, ask.
 - Bundle unrelated changes into a single commit just to be expedient. The decomposition analysis exists to prevent this — when the changeset is multi-unit, propose the split.
@@ -116,7 +116,7 @@ A feature branch is used in two scenarios:
 4. *(Optional)* Clean up the commit sequence if needed (squash fixups, reorder)
 5. Merge back into the **parent branch** with `--no-ff` to create a merge commit
 6. Delete the temporary branch
-7. If the rewrite affected already-pushed commits, a force push will be needed — **MUST NOT push automatically**. STOP and follow the "Never `git push` Without Express Authorization" rule above: present the command, ask, wait for a push-specific answer.
+7. If the rewrite affected already-pushed commits, a force push will be needed — **MUST NOT push automatically**; STOP and follow the Preflight "Never `git push` Without Express Authorization" rule.
 
 **Cascading merge rule:** Always merge back into the branch you branched off from — never skip levels. If you're on `feat/auth` and create `feat/auth-tests`, merge back into `feat/auth`, not `main`. This keeps history cascading cleanly.
 
@@ -388,33 +388,7 @@ git reset --hard <base-commit-hash>
 git rev-list --count <base-commit-hash>..<type>/<short-description>
 ```
 
-- **If 2+ commits** — merge with `--no-ff` to create a bubble:
-
-```bash
-git merge --no-ff <type>/<short-description> -m "$(cat <<'EOF'
-<type>(<scope>): <merge description summarizing the logical unit>
-
-Intent paragraph — why these commits belong together as one logical feature.
-
-[--- Changes ---]
-
-- Commits included:
-  - <hash-abbrev> <subject line> (retroactive)
-  - <hash-abbrev> <subject line> (retroactive)
-  - <hash-abbrev> <subject line> (new)
-
-[--- AI Review (<model name>) ---]
-
-Assessment of the grouped feature as a whole.
-EOF
-)"
-```
-
-- **If 1 commit** — fast-forward merge (no bubble needed for a single commit):
-
-```bash
-git merge <type>/<short-description>
-```
+Then merge exactly as in **B4** — fast-forward if 1 commit, `--no-ff` with the same merge-commit template if 2+ — annotating each sub-commit in the `[--- Changes ---]` list as `(retroactive)` or `(new)`.
 
 **C8.** **MUST NOT push automatically.** Retroactive grouping rewrites history, so if the branch has a remote upstream, a force push will be required to sync the remote — but per the "Never `git push` Without Express Authorization" rule at the top of this skill, **plan-level approval from earlier in the session is NOT push authorization**. Stop here and present the situation:
 
@@ -459,21 +433,7 @@ After a successful commit (any path), evaluate whether the commit is worth captu
    - OR it's a `--no-ff` merge commit (Path B or C) — these represent a complete feature
    - `docs`, `chore`, `style`, `ci`, `build`, `test`, `perf` commits are generally NOT significant unless they represent a non-trivial decision or pivot
 
-2. **There is something genuinely worth capturing from this session.** Type-significance is necessary but not sufficient — most `feat`/`fix`/`refactor` commits are routine and produce nothing worth re-reading later. Honestly judge whether the work behind this commit yielded an insight that the user, six months from now, would want to revisit. **MUST bias toward NO when uncertain.** Too many scraps is noisy and dilutes the value of the ones that actually matter.
-
-   **Worth capturing:**
-   - A non-obvious design decision or tradeoff was made
-   - A surprising root cause was discovered during debugging
-   - A novel pattern, technique, or approach emerged from the work
-   - A pivot or change of direction with a clear "why"
-   - An insight about the codebase, language, framework, or domain that wasn't obvious going in
-
-   **NOT worth capturing (skip even if the commit type is feat/fix/refactor):**
-   - Routine implementation following an established pattern in the codebase
-   - A straightforward feature with no design decisions or tradeoffs
-   - A bug fix that was a typo, off-by-one, or other mechanical correction
-   - A mechanical refactor (rename, extract, reformat) with no judgment calls
-   - Work where you cannot articulate a specific insight in one concrete sentence
+2. **There is something genuinely worth capturing from this session.** Type-significance is necessary but not sufficient — most `feat`/`fix`/`refactor` commits are routine and produce nothing worth re-reading later. Honestly judge whether the work behind this commit yielded an insight that the user, six months from now, would want to revisit. Apply the capture bar defined in the devlog skill (see its "What's Worth Capturing" section); **MUST bias toward NO when uncertain.** Too many scraps is noisy and dilutes the value of the ones that actually matter.
 
    **The one-sentence test:** Try to complete the sentence *"The interesting thing about this commit is ___"* with something specific and non-trivial. If you can't — or if the completion is generic ("we added a feature", "we fixed a bug") — skip the scrap.
 

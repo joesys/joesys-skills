@@ -5,9 +5,7 @@ description: "Use when the user invokes /devlog to capture development insights 
 
 # Devlog Skill
 
-Capture development insights and turn them into devlog posts aimed at budding programmers. The skill operates as an interviewer and collaborator — it mines conversation history, git activity, and existing content scraps to reconstruct the developer's thinking, then brainstorms with the human operator to surface the real insight before drafting.
-
-The primary deliverable is **insight** — the thinking process behind decisions, not the technical how-to. The content that matters is the surprise (where a mental model broke), the judgment (why one path was chosen over another), and the messy middle (how ambiguity was navigated).
+Capture development insights and turn them into devlog posts aimed at budding programmers. The skill operates as an interviewer and collaborator — it mines conversation history, git activity, and existing content scraps to reconstruct the developer's thinking, then brainstorms with the human operator to surface the real insight before drafting. The primary deliverable is **insight** — the thinking behind decisions, not the technical how-to (the Writing Principles below define what that means in detail).
 
 **Target audience:** Budding programmers learning how experienced developers think through problems, especially when developing with AI.
 
@@ -174,13 +172,31 @@ Triggered when the first argument is `scrap`. After the gathering phase, scrap m
 
 1. Synthesize the content brief from the 3 agents' results
 2. Identify the most interesting moments — decision points, surprises, pivots, dead ends
-3. **MUST apply the one-sentence test** before generating any output. If you can't articulate the insight in one specific, non-trivial sentence, abort and report empty results (see below).
+3. **MUST apply the one-sentence test** before generating any output (see "What's Worth Capturing" below). If you can't articulate the insight in one specific, non-trivial sentence, abort and report empty results (see below).
 4. Infer the developer's thinking — reconstruct *why* decisions were made based on conversation flow and git history
 5. Generate a topic slug from the hint (if provided) or infer from the content (lowercase, hyphenated, 2–5 words)
 6. Write the scrap to `docs/devlog/.scraps/YYYYMMDD-<topic>.md`
 7. If a scrap with the same date and topic exists, append a numeric suffix: `YYYYMMDD-<topic>-2.md`
 8. Create the `.scraps/` directory if it doesn't exist
 9. Report the result to the user
+
+### What's Worth Capturing
+
+The capture bar for scraps — applied here and by the commit skill's auto-capture:
+
+**Worth capturing:**
+- A non-obvious design decision or tradeoff was made
+- A surprising root cause was discovered during debugging
+- A novel pattern, technique, or approach emerged from the work
+- A pivot or change of direction with a clear "why"
+- An insight about the codebase, language, framework, or domain that wasn't obvious going in
+
+**NOT worth capturing:**
+- Routine implementation following an established pattern in the codebase
+- A straightforward feature with no design decisions or tradeoffs
+- A bug fix that was a typo, off-by-one, or other mechanical correction
+- A mechanical refactor (rename, extract, reformat) with no judgment calls
+- Work where you cannot articulate a specific insight in one concrete sentence
 
 ### Scrap Structure
 
@@ -234,28 +250,23 @@ Triggered when the invocation is not `scrap` or `list`. This is a **brainstormin
 
 ### Phase 3b.1: Present Inferred Narrative
 
-Synthesize the content brief and present your interpretation of what happened. Be specific — reference actual commits, conversation moments, and code changes:
-
-> "Here's what I think happened: You were working on [specific thing], and hit [specific problem]. I can see from the git history that you first tried [approach A] (commit `abc123`), then pivoted to [approach B]. In the conversation, you [specific exchange]. The key moment seems to be when [specific decision point]. It looks like you changed direction because [inferred reasoning]. Is that right?"
+Synthesize the content brief and present your interpretation of what happened. Be specific — reference actual commits, conversation moments, and code changes: the problem, the approaches tried (with commit hashes), the key decision point, and the inferred reasoning behind any change of direction. End by asking whether the interpretation is right (Writing Principle 9).
 
 Wait for the developer to correct, expand, or confirm. This grounds the conversation in specifics.
 
-If the content brief contains material from scraps, mention them: "I also found a scrap from [date] about [topic] that seems related — it noted [key insight from scrap]."
+If the content brief contains material from scraps, mention them — which scrap, its date and topic, and the key insight it noted.
 
 ### Phase 3b.2: Find the Insight
 
-Dig deeper through conversation. Ask targeted questions based on the inferred narrative — not generic questions. Examples of good questions:
+Dig deeper through conversation. Ask targeted questions based on the inferred narrative — not generic questions. For example:
 
 - "You overrode the AI's suggestion to [specific thing] — what felt wrong about it?"
-- "You spent a while on [approach A] before switching to [approach B] — was there a specific moment it clicked that A wasn't working?"
 - "The git history shows you reverted [commit] almost immediately — what did you see that told you it was wrong?"
-- "This pattern — [specific pattern] — shows up in your other work too. Is this a general principle for you, or specific to this situation?"
-- "What would you tell a junior developer who's about to make the same mistake you almost made here?"
 
 **Rules for this phase:**
 - **MUST ask one question at a time**
 - Each question MUST reference something specific from the content brief — no generic "tell me more" questions
-- The goal is to surface the **surprise** (where the mental model broke) and the **judgment** (the thinking that isn't obvious from the code)
+- The goal is to surface the **surprise** and the **judgment** (Writing Principles 2–3)
 - Continue until you have a clear insight or the developer indicates they're done
 - If the developer's answer reveals a different insight than what you inferred, pivot to explore that instead
 
@@ -265,31 +276,20 @@ After the brainstorming conversation, assess how many strong insights emerged:
 
 **Single insight:** Proceed directly to drafting.
 
-**Multiple insights:** Present them to the developer:
-
-> "I see [N] potential devlogs here:
-> 1. **[Title A]** — [one-sentence summary of insight A]
-> 2. **[Title B]** — [one-sentence summary of insight B]
-> 3. **[Title C]** — [one-sentence summary of insight C]
->
-> Want to write all of them, pick some, or save the rest as scraps?"
+**Multiple insights:** Present them to the developer as a numbered list — a title plus a one-sentence insight summary for each — and ask whether to write all of them, pick some, or save the rest as scraps.
 
 Each approved post gets its own draft-review-publish cycle (phases 3b.4 and 3b.5). Unselected insights can be saved as scraps using the Scrap Mode workflow.
 
 ### Phase 3b.4: Draft the Post
 
-Write the devlog post following the Writing Principles (see below). The structure is **freeform** — shaped by the content, not a rigid template. However, every post should:
+Write the devlog post following the Writing Principles (see below) — they define the voice, length, and insight bar. The structure is **freeform** — shaped by the content, not a rigid template. However, every post should:
 
 1. **Open with the situation** — what you were doing and why, in 2–3 casual sentences
 2. **Show the journey** — what happened, including wrong turns and dead ends
 3. **Land the insight** — the transferable takeaway, grounded in the specific story
 4. **Close short** — no summary paragraph, no "in conclusion." The insight is the ending.
 
-**Voice:** First person from the developer's perspective. Casual and conversational — "So I was trying to..." not "In this post, we'll explore..." Use the developer's actual words from the brainstorming conversation where possible.
-
-**Code snippets:** Include focused before/after snippets only where they serve the narrative. Never include full files. Code should illustrate the insight, not document the implementation.
-
-**Length:** Aim for 400–800 words. A focused post is better than a comprehensive one.
+Use the developer's actual words from the brainstorming conversation where possible. Include focused before/after code snippets only where they serve the narrative — never full files.
 
 Present the draft to the developer for review before publishing.
 

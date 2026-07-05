@@ -1560,10 +1560,12 @@ This chapter MUST include danger zone callouts as visually distinct blockquote w
 
 ### Danger Zone Sources
 Identify danger zones from:
-- **Git Archaeologist:** Files with high churn + low test coverage (fragile areas)
+- **Git Archaeologist:** Files with high churn plus high complexity or low test coverage (fragile areas)
 - **Git Archaeologist:** Files frequently appearing in bug-fix commits
 - **Interview answers:** Areas explicitly flagged as dangerous or fragile
-- **Code analysis:** Files handling money, authentication, encryption, data deletion, or irreversible state changes
+- **Code analysis:** Business-critical code -- files handling money, authentication, encryption, data deletion, or irreversible state changes
+- **Code analysis:** Code with hidden side effects or concurrency-sensitive logic
+- **Code analysis:** Legacy modules with poor test coverage
 - **Architecture analysis:** Shared libraries with many downstream dependents
 
 Include at least 3 danger zone callouts. If the project has no clear danger zones, state that explicitly and explain why (e.g., "small project with good test coverage").

@@ -13,12 +13,6 @@ This skill MUST NOT:
 - Modify source code without explicit user approval after the report. The skill produces findings; fixing happens only via the Phase 4 Fix Dispatch, only after the user picks "yes" or names specific findings.
 - Expand fixes beyond what was flagged. When the user approves fixes, fix exactly the reported findings — do not bundle "while I'm in this file" cleanup, renames, or unrelated improvements.
 - Report on code outside the resolved scope. If the diff/file/PR doesn't include a file, do not flag findings in it — even if you notice them while gathering context.
-- Inflate severity to look thorough. P0 means actual bug or security hole. Style polish is P3/P4.
-- Downgrade real bugs to manage report volume. If correctness or security found something genuine, it stays at its true severity even if `--min-severity` would otherwise filter it.
-- Merge findings whose proposed fixes differ. Deduplication is for same-location-same-fix cases. If two domains flag the same line but suggest incompatible fixes, both findings stay separate.
-- Skip the cross-model corroboration annotation. When two models independently flag the same issue, the `[Corroborated by: ...]` tag is mandatory — it's the user's signal that confidence is high.
-- Rewrite findings during the Phase 3.7 Tech Lead re-review for style or wording alone. The tech lead may only modify a finding when judgment changes the verdict — severity, fix strategy, or accept/reject. Cosmetic edits are out of scope.
-- Silently modify findings during Phase 3.7. Every tech-lead change MUST carry a stated reason in the inline annotation (e.g., `[Tech Lead: P2→P0 — this is SQL injection, not style]`). No reasonless rewrites.
 
 ## Invocation
 
@@ -224,6 +218,8 @@ For each violation:
 **Why**: Explanation of why this matters and what could go wrong.
 ```
 
+Severity levels are defined in `shared/review-common.md` § Severity Scale (P0 critical through P4 optional).
+
 **MUST spawn subagents** with `model: "opus"` to ensure high-quality analysis.
 
 #### Story Readability Subagent Adjustments
@@ -235,23 +231,6 @@ The Story Readability subagent (domain 7) uses the same prompt template as the o
    - P2: Functions that actively mislead (e.g., a function named `validate` that also mutates state)
    - P3: Functions that don't read as stories but aren't misleading (e.g., missing cognitive chunking, mixed abstraction levels)
    - P4: Minor narrative polish (e.g., paragraph spacing, slight naming improvements)
-
-### Subagent Output Format
-
-Each subagent returns zero or more findings in this structure:
-
-```
-### [Principle Name] — [Specific Issue]
-**Severity**: P0 | P1 | P2 | P3 | P4
-**Location**: `file.ext:line_number`
-**Problem**: Description
-**Suggested Fix**: 1–2 sentences stating the fix approach (strategy, not diff). MUST agree with the After block.
-**Before**: (code block in target language)
-**After**: (code block in target language)
-**Why**: Explanation
-```
-
-Severity levels are defined in `shared/review-common.md` § Severity Scale (P0 critical through P4 optional).
 
 ### Cross-Model Dispatch
 
@@ -287,18 +266,13 @@ You are a comprehensive code reviewer. Analyze the following code changes for bu
 
 ## Output Format
 For each finding:
-### [Category] — [Specific Issue]
-**Severity**: P0 | P1 | P2 | P3 | P4
-**Location**: `file.ext:line_number`
-**Problem**: What is wrong.
-**Suggested Fix**: 1–2 sentences stating the fix approach (strategy, not diff). MUST agree with the After block.
-**Before**: (code block in target language)
-**After**: (code block in target language)
-**Why**: What could go wrong.
+<FINDING_FORMAT>
 
 If you find no issues, output: "No issues found."
 PROMPT_EOF
 ```
+
+Substitute `<FINDING_FORMAT>` with the finding structure from the § Subagent Prompt Template's Output Format (`### [Principle Name] — [Specific Issue]` through `**Why**`), using `[Category]` in place of `[Principle Name]`.
 
 Write the prompt to **two** separate temp files (one per cross-model CLI) using `mktemp`. Dispatch both in parallel using the CLI command templates from `shared/cross-model-dispatch.md`. Use 600000ms timeout. Clean up both temp files after completion.
 
@@ -306,7 +280,7 @@ Both cross-model reviewers receive the **same full file content and diff** that 
 
 #### Failure Handling
 
-If one cross-model dispatch fails, continue with the other's results. If both fail, continue with the 7 domain subagents only. Note unavailable models in the report header.
+Cross-model dispatch failures are handled per § Error Handling — continue with whatever sources returned and note unavailable models in the report header.
 
 ---
 
@@ -334,7 +308,7 @@ Its job is to find issues that span two or more clusters — things no single-cl
 - Security invariants spread across clusters no longer compose (e.g., cluster A adds input, cluster C trusts it)
 - Refactor cluster removes a guard that feature cluster's new code needs
 
-Output findings in the same format as domain subagents (§ Subagent Output Format), with one addition — after `**Location**`:
+Output findings in the same format as domain subagents (the Output Format in § Subagent Prompt Template), with one addition — after `**Location**`:
 
 ```
 **Spans clusters:** Cluster 2 (auth refactor), Cluster 4 (new login flow)
@@ -428,7 +402,7 @@ When Phase 3.7 failed:
 
 ### P0: Critical
 #### file.py
-- [findings with full details: problem, before/after, why]
+- [findings in the canonical format from § Subagent Prompt Template]
 
 ### P1: High
 #### file.py
@@ -559,17 +533,11 @@ The tech lead is always the **last** judgment pass before presentation.
 
 ### 3.7.6 Failure Handling
 
-If the tech lead subagent fails or times out:
-- Fall back to the mechanical §3.6 output unchanged
-- Header line replaces the Re-review segment with: `Tech Lead re-review: unavailable ([reason])`
-- Present the report, then offer retry: "Tech Lead re-review failed. Want to retry it? Or proceed with the synthesized findings as-is?"
+If the tech lead subagent fails or times out, handle per § Error Handling — fall back to the mechanical §3.6 output unchanged and offer a retry.
 
 ### 3.7.7 Phase 4 (Fix Dispatch) Interaction
 
-When the user approves fixes:
-- Fix agents apply the tech lead's **rewritten** Suggested Fix + After code where present, **not** the original from the domain agents
-- Findings added by the tech lead are eligible for Fix Dispatch like any other
-- Rejected findings (in `## Rejected by Re-review`) are NOT eligible for Fix Dispatch
+How tech-lead verdicts govern fixes — rewrites win, added findings are eligible, rejected findings are not — is defined in Phase 4 § Parallel Fix Strategy.
 
 ---
 
@@ -595,7 +563,7 @@ After presenting the report, ask:
 - When Phase 3.7 rewrote a fix, the **Suggested Fix and After block reflect the tech lead's rewrite** — apply that, not the original from the domain agent
 - Fix agents **MUST verify** the before-code still matches (code may have shifted since analysis)
 - Fix agents **MUST NOT expand scope** — apply exactly what was flagged, nothing more
-- Rejected findings (those in `## Rejected by Re-review`) are NOT eligible for Fix Dispatch
+- Rejected findings (those in `## Rejected by Re-review`) are NOT eligible for Fix Dispatch; findings added by the tech lead are eligible like any other
 
 ### Post-Fix Summary
 

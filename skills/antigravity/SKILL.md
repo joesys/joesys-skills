@@ -68,3 +68,4 @@ When the user invokes `/antigravity resume`:
 ## Critical Evaluation & Error Handling
 
 Read `shared/delegation-common.md` and apply to Antigravity.
+**Timeout suggestion:** raise `AGY_ADAPTER_TIMEOUT` (see `shared/model-defaults.md` § Antigravity) or simplify the prompt.

@@ -17,8 +17,8 @@ This skill MUST NOT:
 - Grade model quality. The user cannot control which model they get — only how they interact with it.
 - Apply changes automatically. The report contains suggestions; the user decides what to act on.
 - Coach in real-time. Analysis is post-hoc, applied to completed session transcripts.
-- Rewrite findings during Phase 3.5 for wording alone. The coach may only modify when judgment changes the assessment.
-- Silently modify findings in Phase 3.5. Every coach change MUST carry a reason citation as `[Coach: reason]`.
+- Rewrite findings during Phase 3.5 for wording alone (see Phase 3.5).
+- Silently modify findings in Phase 3.5 (see Phase 3.5).
 
 ## Reference Files
 
@@ -171,7 +171,7 @@ If a previous report exists:
 
 1. Collect all improvement suggestions from all 5 agents (10–15 total).
 2. For each, estimate: score impact (how many points it could add), frequency (how often the pattern occurred), and effort (quick win / moderate / habit change).
-3. Rank by: `(score_impact × frequency) / effort`
+3. Rank by expected impact relative to effort — quick wins (high impact, low effort) first.
 4. Select the top 5 as the "Your Next Steps" roadmap.
 5. For each selected item, flesh out: what to change, why it matters (cite specific findings), expected impact (estimated score improvement), effort level, and priority rank.
 
@@ -207,6 +207,8 @@ One Agent call, `model: "opus"`. Sequential — runs after Phase 3 produces the 
 | 4 | Flag missed patterns | Observations the 5 agents didn't catch |
 | 5 | Validate continuity | Prior report progress acknowledged, recurring issues flagged |
 | 6 | Set the tone | Coaching-oriented, encouraging, not punitive |
+
+The coach may only modify a finding when judgment changes the assessment — never for wording alone. Every coach change MUST carry a reason citation as `[Coach: reason]`.
 
 ### Coach Output
 
@@ -250,7 +252,8 @@ If the renderer fails, warn the user but do not fail the skill.
 
 1. Send the HTML file to the user using `SendUserFile` (if HTML was generated successfully).
 2. If HTML failed, send the markdown file instead.
-3. Display a brief summary: overall score/grade, biggest improvement, and Coach's Note.
+3. If `SendUserFile` is unavailable in this harness, print the absolute report path instead.
+4. Display a brief summary: overall score/grade, biggest improvement, and Coach's Note.
 
 ### 4.4 Devlog Scrap (Optional)
 
