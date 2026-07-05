@@ -94,13 +94,14 @@ Dispatch a **single subagent** via the Agent tool. Readability grading is a unif
 
 ### Subagent Prompt
 
+Substitute `<PRINCIPLE_PATH>` with the **absolute path** to `shared/story-readability.md`, resolved against the plugin root (two levels above this SKILL.md) — never against the project's working directory. Subagents start in the project cwd and cannot find plugin files by relative path.
+
 ```
 You are a senior readability reviewer. Your job is to grade code on how well it
 "reads like a story" using 8 weighted dimensions.
 
 ## Instructions
-1. Read the principle file at: shared/story-readability.md
-   (This file is relative to the project root — find and read it first.)
+1. Read the principle file at: <PRINCIPLE_PATH>
 2. For each file under review, score ALL 8 dimensions on a 1-10 scale.
    Use the calibration examples in the principle file as anchors:
    - 9-10 = matches the "excellent" calibration example

@@ -33,15 +33,15 @@ codex exec --model gpt-5.5 -c model_reasoning_effort="xhigh" \
 
 ### Antigravity
 
-Dispatch through the adapter, **not** `agy` directly:
+Dispatch through the adapter, **not** `agy` directly. `<ADAPTER>` is the **absolute path** to `scripts/agy_adapter.py` under the plugin root (the directory containing this file's parent, `shared/`) — resolve it before running; the project's working directory does not contain the adapter:
 
 ```bash
-python scripts/agy_adapter.py --sandbox
+python <ADAPTER> --sandbox
 ```
 
 | Part | Purpose |
 |---|---|
-| `scripts/agy_adapter.py` | Recovers the reply `agy` writes only to a TTY (see below) |
+| `<ADAPTER>` (`scripts/agy_adapter.py`) | Recovers the reply `agy` writes only to a TTY (see below) |
 | `--sandbox` | Safety: read-only (forwarded to `agy`) |
 
 The prompt is delivered on **stdin** — the adapter forwards its own args to `agy`

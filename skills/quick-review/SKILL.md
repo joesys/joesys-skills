@@ -116,14 +116,13 @@ Static analysis ran in Phase 1.5 before this phase. Include TOOLING_CONTEXT in b
 
 #### Subagent Prompt Template
 
-Each subagent receives a prompt structured as follows. Adjust `<DOMAIN>` and `<PRINCIPLE_FILE>` per agent:
+Each subagent receives a prompt structured as follows. Adjust `<DOMAIN>` and `<PRINCIPLE_PATH>` per agent. Substitute `<PRINCIPLE_PATH>` with the **absolute path** to the roster file, resolved against the plugin root (two levels above this SKILL.md — the roster paths point into the sibling `codereview` skill) — never against the project's working directory. Subagents start in the project cwd and cannot find plugin files by relative path.
 
 ```
 You are a senior <DOMAIN> reviewer performing a quick, bug-focused review.
 
 ## Instructions
-1. Read the principle file at: <PRINCIPLE_FILE>
-   (This file is relative to the project root — find and read it first.)
+1. Read the principle file at: <PRINCIPLE_PATH>
 2. Analyze the diff and surrounding context below against every principle in that file.
 3. For each violation found, output it in the structured format below.
 4. **Only report P0, P1, or P2 severity findings.** Skip P3 (polish) and P4 (style) entirely.

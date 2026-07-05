@@ -129,7 +129,7 @@ If confirmed, delete all files in `.claude/skill-context/`.
 
 ### Step 1: Validate the Skill Name
 
-Check if `skills/<skill-name>/SKILL.md` exists. If not:
+Check if `skills/<skill-name>/SKILL.md` exists under the plugin root (two levels above this SKILL.md — not the project's working directory). If not:
 
 > Skill "{skill-name}" not found. Available skills: {list}.
 

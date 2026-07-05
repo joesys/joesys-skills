@@ -181,14 +181,13 @@ Then continue with codereview-specific steps:
 
 ### Subagent Prompt Template
 
-Each subagent receives a prompt structured as follows. Adjust `<DOMAIN>` and `<PRINCIPLE_FILE>` per agent:
+Each subagent receives a prompt structured as follows. Adjust `<DOMAIN>` and `<PRINCIPLE_PATH>` per agent. Substitute `<PRINCIPLE_PATH>` with the **absolute path** to the roster file: resolve `principles/...` entries against this skill's own directory and `shared/...` entries against the plugin root (two levels above this SKILL.md) — never against the project's working directory. Subagents start in the project cwd and cannot find plugin files by relative path.
 
 ```
 You are a senior <DOMAIN> reviewer.
 
 ## Instructions
-1. Read the principle file at: skills/codereview/<PRINCIPLE_FILE>
-   (This file is relative to the project root — find and read it first.)
+1. Read the principle file at: <PRINCIPLE_PATH>
 2. Analyze the code below against every principle in that file.
 3. For each violation found, output it in the structured format below.
 4. All code examples (Before/After) MUST be in <TARGET_LANGUAGE> — do NOT use Python or any other language unless the target code is in that language.
