@@ -1,7 +1,6 @@
 ---
 name: human-review-guide
-version: "1.0.0"
-description: "Use when the user invokes /human-review-guide to generate a personalized reading guide for human review — triages changes into attention tiers (DECIDE/READ/SKIM/SKIP), analyzes decision-heavy sections, and produces a guided reading order focused on decisions requiring human judgment."
+description: "Use when the user invokes /human-review-guide to generate a guided reading order that helps a human reviewer focus on the decisions that need their judgment."
 ---
 
 # Human Review Guide Skill
@@ -153,15 +152,7 @@ Dispatch a **single subagent** (`model: "opus"`) to classify every chunk. Read `
 3. The user's calibration profile (role, review focus, skip tolerance)
 4. File stats summary (number of files, lines changed)
 
-**Agent returns structured JSON-like markdown for each chunk:**
-
-```markdown
-### Chunk: {file_path}:{line_range} (or {file_path}:{section_heading})
-
-- **Tier:** DECIDE | READ | SKIM | SKIP
-- **Reason:** {one-line explanation}
-- **Related to:** {other chunk IDs this decision connects to, if any}
-```
+**Agent returns structured JSON-like markdown for each chunk** (tier, one-line reason, `Related to` links) — output format in `references/agent-prompts.md` § Triage Agent.
 
 **Classification tiers:**
 
@@ -203,41 +194,11 @@ Dispatch a **single subagent** (`model: "opus"`) that processes all DECIDE and R
 
 ### DECIDE Chunk Analysis
 
-For each `DECIDE` chunk, the agent produces:
-
-````markdown
-### DECIDE: {file_path}:{line_range}
-
-**The decision:** {What choice was made, stated plainly}
-
-**Alternatives not taken:**
-- {Alternative 1} — {Why it likely wasn't chosen, or why it should have been}
-- {Alternative 2} — {Same}
-
-**Consequences:** {What this locks in, makes harder, or makes easier down the road}
-
-**Ask yourself:**
-1. {Specific question tailored to this decision — not generic}
-2. {Second question if warranted}
-
-**Reversibility:** {easy | moderate | costly} — {one-line explanation}
-````
+For each `DECIDE` chunk, the agent produces the decision analysis block (decision, alternatives not taken, consequences, ask-yourself questions, reversibility) — template in `references/agent-prompts.md` § Deep Analysis Agent.
 
 ### READ Chunk Analysis
 
-For each `READ` chunk, the agent produces:
-
-````markdown
-### READ: {file_path}:{line_range}
-
-**What this does:** {Brief summary of the logic}
-
-**Why we do it this way:** {Reasoning behind the implementation approach}
-
-**Why it matters:** {How it connects to DECIDE chunks — e.g., "implements the retry policy chosen in db.go:45"}
-
-**Gotchas:** {Non-obvious things a reviewer might miss on a skim, or "None" if straightforward}
-````
+For each `READ` chunk, the agent produces the comprehension block (what this does, why this way, why it matters, gotchas) — template in `references/agent-prompts.md` § Deep Analysis Agent.
 
 ### `--with-review` Enrichment
 
@@ -280,24 +241,11 @@ If no dependency links exist (all chunks are independent), order DECIDE chunks b
 
 ### 3.3 Build Decision Map
 
-A table of all DECIDE chunks listed upfront, ordered by reading sequence:
-
-````markdown
-| # | Decision | Location | Reversibility |
-|---|----------|----------|---------------|
-| 1 | {one-line decision description} | `{file:line}` | {easy/moderate/costly} |
-````
-
-This is the table of contents for the review — the reviewer can scan this first to know what's coming.
+A table of all DECIDE chunks listed upfront, ordered by reading sequence — table template in `references/output-formats.md`. This is the table of contents for the review — the reviewer can scan this first to know what's coming.
 
 ### 3.4 Build Review Checklist
 
-Derive concrete yes/no items from DECIDE chunks:
-
-````markdown
-- [ ] {Actionable question from DECIDE chunk 1's "Ask yourself" field}
-- [ ] {Actionable question from DECIDE chunk 2's "Ask yourself" field}
-````
+Derive concrete yes/no items from each DECIDE chunk's "Ask yourself" questions — checklist format in `references/output-formats.md`.
 
 ### 3.5 Build Open Questions
 
@@ -310,12 +258,7 @@ If none: omit this section.
 
 ### 3.6 Determine Output Format
 
-| Change size | Measurement | Output |
-|-------------|-------------|--------|
-| Small | ≤5 files **and** ≤200 lines changed | Terminal markdown inline |
-| Large | >5 files **or** >200 lines changed | HTML report file |
-
-For artifact mode: use terminal markdown unless the artifact is >200 lines.
+Choose terminal markdown (small changes) or an HTML report file (large changes) — size thresholds in `references/output-formats.md` § Output Size Thresholds.
 
 ### 3.7 Render Output
 
@@ -335,6 +278,7 @@ python scripts/html_render.py <report_path> --profile analytical
 
 4. If the renderer succeeds: deliver the HTML file via `SendUserFile`.
 5. If the renderer fails: deliver the markdown file via `SendUserFile` with a warning.
+6. If `SendUserFile` is unavailable in this harness, print the absolute report path instead.
 
 **In both formats:**
 - File references use `file:line` format

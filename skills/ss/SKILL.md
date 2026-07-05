@@ -1,6 +1,5 @@
 ---
 name: ss
-version: "1.1.0"
 description: "Use when the user invokes /ss to grab recent screenshots from a configured folder, analyze visual content, and act on them — explaining, fixing errors, creating outputs, or routing to sibling skills based on the user's intent."
 ---
 
@@ -140,13 +139,7 @@ For each selected file:
 
 ### Edge Cases
 
-| Condition | Action |
-|---|---|
-| Screenshot folder doesn't exist | Re-prompt for path (Phase 1) |
-| No files found | "No screenshots found in `<path>`. Did you save to a different location?" |
-| Image file can't be read | Tell the user which file failed and why; continue with remaining |
-| Fewer files than requested | Grab all available; note the shortfall |
-| All requested files are videos | "All N recent files are videos. Video analysis isn't supported yet. Want me to look further back for images?" |
+See the consolidated Error Handling table at the end of this skill.
 
 ## Phase 3: Action Interpretation & Dispatch
 
@@ -193,21 +186,11 @@ When a sibling skill is a natural fit, **suggest it — never auto-invoke**:
 
 The user always decides whether to chain. **MUST NOT silently hand off** to another skill.
 
-**Available skills in this plugin:**
-- `/codereview` — deep code review (correctness, security, architecture)
-- `/quick-review` — fast bug-focused review (P0–P2 only)
-- `/readability-review` — story-readability grading (8 dimensions)
-- `/explain` — layered codebase/symbol explanation
-- `/export` — convert files to PDF/HTML/PNG
-- `/commit` — conventional commit with structured body
-- `/codebase-audit` — full codebase quality audit
-- `/devlog` — capture development insights
-- `/ai-council` — consult 3 AI models in parallel
-- `/retrospective` — structured retrospective with action items
+Suggest whichever sibling skill in this plugin fits the user's intent — the current list lives in the plugin's skill listing; do not rely on a memorized roster. Illustrative examples:
 
-**Available superpowers skills:**
-- `superpowers:systematic-debugging` — structured debugging workflow
-- `superpowers:brainstorming` — explore ideas before implementation
+- Error screenshot → offer to fix it directly, or via `superpowers:systematic-debugging`
+- Screenshot showing this project's UI or code → suggest the relevant review skill
+- Screenshot of changes ready to commit → suggest `/commit`
 
 ## Output Format
 
@@ -234,31 +217,17 @@ Scale the output to the complexity of the request.
 [Context-aware interpretation + action or confirmation prompt]
 ```
 
-### Single Screenshot + Clear Action
-
-Collapse to minimal output — no table when there's one image and the intent is obvious. Jump straight to analysis and action.
-
-### Bare `/ss` (No Action)
-
-Show analysis, then present your best guess and ask for confirmation.
-
 ## Error Handling
 
 | Condition | Action |
 |---|---|
-| Screenshot folder doesn't exist | Re-prompt for path |
-| No files found | Ask if user saved to a different location |
-| Image file can't be read | Report the failure, continue with remaining files |
-| Count exceeds available files | Grab all available; note the shortfall |
-| Action is ambiguous | Present 2–3 interpretations, ask user to pick |
-| Video file encountered | List it, note video analysis is unsupported, continue |
-
-## Graceful Degradation
-
-| Scenario | Fallback |
-|---|---|
+| Screenshot folder doesn't exist | Re-prompt for path (Phase 1) |
 | No skill-context directory exists | Create it during bootstrap |
 | Global memory unavailable | Ask for screenshot folder from scratch |
+| No files found (folder empty) | "No screenshots found in `<path>`. Did you save to a different location?" |
+| Fewer files than requested | Grab all available; note the shortfall |
+| Image file can't be read | Tell the user which file failed and why (if possible); continue with remaining |
 | All images fail to read | Report all failures, suggest checking file permissions or format |
-| Screenshot folder is empty | Ask if user saved to a different location |
-| User provides ambiguous action | Present interpretations, ask for clarification |
+| Video file encountered | List it, note video analysis is unsupported, continue |
+| All requested files are videos | "All N recent files are videos. Video analysis isn't supported yet. Want me to look further back for images?" |
+| Action is ambiguous | Present 2–3 interpretations, ask the user to pick |

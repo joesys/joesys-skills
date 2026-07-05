@@ -1,6 +1,5 @@
 ---
 name: ai-council
-version: "1.1.0"
 description: "Use when the user invokes /ai-council to consult three frontier AI models (Claude, GPT, Antigravity) in parallel and synthesize their responses into a consensus analysis"
 ---
 
@@ -88,25 +87,15 @@ Reword the user's question into a clear, logical form with explicit framing (con
 
 Read `shared/delegation-common.md` § Prompt Delivery and `shared/model-defaults.md` for the standard prompt delivery pattern and current CLI command templates.
 
-**MUST always** write prompts to temporary files using `mktemp` and pipe them to CLI tools. Use single-quoted heredoc delimiters to prevent shell expansion:
+**MUST always** write the three prompt files using that temp-file-and-heredoc pattern, with leg-specific names — each file gets the four-part prompt with its leg-specific preamble:
 
 ```bash
 CODEX_PROMPT=$(mktemp /tmp/council-codex-XXXXXX.txt)
 AGY_PROMPT=$(mktemp /tmp/council-antigravity-XXXXXX.txt)
 CLAUDE_PROMPT=$(mktemp /tmp/council-claude-XXXXXX.txt)
-
-cat > "$CODEX_PROMPT" << 'PROMPT_EOF'
-<prompt content>
-PROMPT_EOF
-# (repeat for each leg with leg-specific preamble)
 ```
 
-Then pipe each prompt file to its corresponding CLI. Substitute the placeholders below with the current invocations from `shared/model-defaults.md`:
-- **Codex:** `cat "$CODEX_PROMPT" | <CODEX_CMD>`
-- **Antigravity:** `cat "$AGY_PROMPT" | <AGY_CMD>`
-- **Claude CLI:** `cat "$CLAUDE_PROMPT" | <CLAUDE_CMD> --name "council-<topic>"`
-
-Clean up temporary files after all legs complete: `rm -f "$CODEX_PROMPT" "$AGY_PROMPT" "$CLAUDE_PROMPT"`
+Dispatch happens in Phase 3. Clean up temporary files after all legs complete: `rm -f "$CODEX_PROMPT" "$AGY_PROMPT" "$CLAUDE_PROMPT"`
 
 ## Phase 3: Parallel Dispatch
 
@@ -114,7 +103,7 @@ Clean up temporary files after all legs complete: `rm -f "$CODEX_PROMPT" "$AGY_P
 
 ### Codex Leg (Bash, 600000ms timeout)
 
-**MUST deliver via stdin pipe** (see Prompt Size Safety). Substitute `<CODEX_CMD>` with the current invocation from `shared/model-defaults.md` § Codex.
+**MUST deliver via stdin pipe** (see Prompt Size Safety). Substitute `<CODEX_CMD>` with the current invocation from `shared/model-defaults.md` § Codex. For resumability, replace the template's trailing `2>/dev/null` with `2>"$CODEX_LOG"` and grep the `session id:` line after the run (see § Codex Resume) — that ID is what makes the Post-Synthesis resume offer reliable.
 
 ```bash
 cat "$CODEX_PROMPT" | <CODEX_CMD>
@@ -189,11 +178,9 @@ After presenting the synthesis, always offer:
 
 1. **Resume individual sessions** — "Would you like to continue the conversation with any of the models? Use `/codex resume`, `/antigravity resume`, or `/claude resume` to explore their reasoning further."
    - Resume is only available for legs that used CLI (not subagent). If the Claude leg used a subagent, note that `/claude resume` is not available for this council run.
-   - For Codex, resume is only reliable immediately after the council run (before other Codex sessions are started).
+   - For Codex, a `--last` resume is only reliable immediately after the council run; `codex exec resume <SESSION_ID>` works at any time if the `session id:` line was captured from the dispatch banner (stderr — see the `/codex` skill).
+   - If the user resumes and gets new insight, they can invoke `/ai-council` again with a refined question. The skill does not auto-update from individual resume sessions.
 2. **Retry failed legs** (if applicable) — "Would you like to retry [failed leg]? I can rerun it and update the synthesis."
-
-If the user resumes and gets new insight, they can invoke `/ai-council` again with a refined question. The skill does not auto-update from individual resume sessions.
-
 3. **Devlog suggestion** (if noteworthy) — If the synthesis revealed something genuinely interesting — a surprising disagreement between models, a non-obvious consensus, a tension that changed the developer's thinking, or a recommendation that contradicts conventional wisdom — suggest capturing it as a devlog scrap:
    > "This council session surfaced [brief description of the noteworthy finding]. That might make a good devlog post. Want me to run `/devlog scrap --from-context` to capture it?"
    - Only suggest when the findings are genuinely insightful — not for routine confirmations or questions with obvious answers

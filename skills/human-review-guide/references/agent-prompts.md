@@ -66,7 +66,7 @@ You are classifying a change set into attention tiers for a human reviewer. Your
 
 ## Output Format
 
-For each chunk:
+For each chunk. Identifiers are `{file_path}:{line_range}` for code, or `{file_path}:{section_heading}` for artifact sections:
 
 ### Chunk: {identifier}
 
@@ -134,7 +134,7 @@ You are producing deep analysis for chunks that a triage pass identified as need
 **Consequences:** {what this locks in, makes harder, or makes easier}
 
 **Ask yourself:**
-1. {specific question for the reviewer}
+1. {specific question tailored to this decision — not generic}
 2. {second question if warranted}
 
 **Reversibility:** {easy | moderate | costly} — {explanation}
@@ -147,7 +147,7 @@ You are producing deep analysis for chunks that a triage pass identified as need
 
 **Why we do it this way:** {reasoning behind the approach}
 
-**Why it matters:** {connection to DECIDE chunks or overall architecture}
+**Why it matters:** {connection to DECIDE chunks or overall architecture — e.g., "implements the retry policy chosen in db.go:45"}
 
-**Gotchas:** {non-obvious things, or "None"}
+**Gotchas:** {non-obvious things a reviewer might miss on a skim, or "None"}
 ~~~

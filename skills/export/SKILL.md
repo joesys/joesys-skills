@@ -1,6 +1,5 @@
 ---
 name: export
-version: "1.1.0"
 description: "Use when the user invokes /export to convert markdown, text, or code files into polished PDF, HTML, or PNG with proper typography, syntax highlighting, and responsive layout."
 ---
 
@@ -20,7 +19,7 @@ This skill MUST NOT:
 
 Before rendering, **MUST**:
 1. Confirm the input file exists.
-2. Verify required dependencies are installed for the requested format (Pandoc always; LuaLaTeX for PDF; Chromium for PNG). Report install instructions for any missing dependency.
+2. Verify required dependencies are installed for the requested format — see § Dependencies for what each format needs. Report install instructions for any missing dependency.
 
 ## Invocation
 
@@ -112,17 +111,15 @@ python scripts/md_export.py <input_or_temp_file> \
 
 Each format uses a different rendering pipeline:
 
-| Format | Pipeline | Theme assets | Dependencies |
-|---|---|---|---|
-| **HTML** | Pandoc → self-contained HTML | CSS (`scripts/themes/`) | Pandoc |
-| **PDF** | Pandoc + LuaLaTeX → PDF | LaTeX templates (`scripts/templates/`) | Pandoc, LuaLaTeX |
-| **PNG** | Pandoc → temp HTML → headless browser screenshot → auto-trim | CSS (`scripts/themes/`) | Pandoc, Chromium browser |
+| Format | Pipeline | Theme assets |
+|---|---|---|
+| **HTML** | Pandoc → self-contained HTML | CSS (`scripts/themes/`) |
+| **PDF** | Pandoc + LuaLaTeX → PDF | LaTeX templates (`scripts/templates/`) |
+| **PNG** | Pandoc → temp HTML → headless browser screenshot → auto-trim | CSS (`scripts/themes/`) |
 
 The script handles input detection (markdown vs code) and wraps code files in fenced blocks with syntax highlighting before passing to Pandoc.
 
-**PDF typography:** PDF output uses Segoe UI for body text and Cascadia Code for code blocks (scaled to 0.88). These are system fonts — if missing, LuaLaTeX falls back to defaults. Orientation is controlled via LaTeX geometry options.
-
-**PNG sizing:** `--scope` affects PNG dimensions — `1pager` renders at A4-equivalent resolution (794×1123 portrait, 1123×794 landscape); `full`/`summary` use a narrow 430px-wide viewport with auto-height trimmed to content.
+**Format notes:** PDF typography and page geometry come from the LaTeX templates (system fonts with automatic fallbacks); for PNG, `--scope 1pager` renders a single A4-equivalent page while `full`/`summary` produce a narrow auto-height image trimmed to content.
 
 ### Step 4 — Report Results
 
@@ -133,14 +130,14 @@ After successful rendering, report:
 
 If `--format all` was used, list all three output files.
 
-If rendering fails, show the error from the script and suggest troubleshooting:
+If rendering fails, show the error from the script (it prints install instructions for missing dependencies — see § Dependencies):
 
-| Error | Likely cause | Suggestion |
-|---|---|---|
-| "Pandoc is required but not found" | Pandoc not installed | Platform-specific install instructions (shown by script) |
-| "LuaLaTeX is required" | No TeX distribution | `choco install miktex` / `brew install --cask mactex-no-gui` / `apt install texlive-luatex` |
-| "Chromium-based browser is required" | No browser for PNG | Edge is usually pre-installed on Windows; otherwise install Chrome |
-| "PDF rendering failed" | LaTeX compilation error | Check for unsupported Unicode characters or missing fonts |
+| Error | Likely cause |
+|---|---|
+| "Pandoc is required but not found" | Pandoc not installed |
+| "LuaLaTeX is required" | No TeX distribution |
+| "Chromium-based browser is required" | No browser for PNG |
+| "PDF rendering failed" | LaTeX compilation error — often unsupported Unicode characters or missing fonts |
 
 ### Step 5 — Cleanup
 
@@ -174,8 +171,6 @@ Each theme has both a CSS file (for HTML and PNG) and a LaTeX template (for PDF)
 | `minimal` (default) | `scripts/themes/minimal.css` | `scripts/templates/minimal.tex` | Clean white, bold black headings, no accents. Content-first typography. |
 | `modern` | `scripts/themes/modern.css` | `scripts/templates/modern.tex` | Muted slate accents, structured layout with subtle top border. |
 | `dark` | `scripts/themes/dark.css` | `scripts/templates/dark.tex` | Deep navy background, purple accents. Good for screenshots and screen sharing. |
-
-Syntax highlighting style varies by theme: `pygments` (minimal), `tango` (modern), `breezedark` (dark).
 
 ## Dependencies
 

@@ -22,7 +22,7 @@ interfaces, update all callers listed below.
 
 ## Delegation Skill Resume Interfaces
 
-**Codex resume:** `/codex resume [prompt]`
+**Codex resume:** `/codex resume [prompt]` or `/codex resume <SESSION_ID> [prompt]`
 **Antigravity resume:** `/antigravity resume [prompt]` or `/antigravity resume <ID> [prompt]`
 **Claude resume:** `/claude resume [prompt]` or `/claude resume <name> [prompt]`
 

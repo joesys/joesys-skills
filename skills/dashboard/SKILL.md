@@ -1,6 +1,5 @@
 ---
 name: dashboard
-version: "1.1.0"
 description: "Use when the user invokes /dashboard to generate a self-contained HTML project-health dashboard for PMs/EMs from local git + repo state, with optional GitHub/GitLab and /codebase-audit enrichment."
 ---
 
@@ -103,22 +102,7 @@ Run the collectors. **These are strictly read-only — they only read git, the f
 This is the only LLM step, and it is **a single host-agent pass — there is NO subagent fan-out.** This is a deliberate departure from `/handbook`'s multi-agent dispatch: the data is *already computed and small*, so there is nothing to parallelise. The host agent reads one JSON and writes one JSON.
 
 1. Read `docs/dashboard/dashboard.json`.
-2. Follow `references/narrative-prompt.md` exactly. Feed it the full `dashboard.json`. It returns ONLY this object:
-   ```json
-   {
-     "overall_summary": "<=20 words; the single dominant driver of the overall light",
-     "delivery_why": "one sentence explaining the delivery light",
-     "health_why": "one sentence explaining the health light",
-     "team_why": "one sentence explaining the team light",
-     "callouts": ["2-4 prioritized 'look here' items, each naming a file/branch/person"],
-     "analysis": {"<metric_id>": "one sentence on what this metric shows in THIS repo", "...": "..."}
-   }
-   ```
-   The `analysis` map is the per-metric tooltip text (the dashboard's on-hover
-   "In this repo" line). Keys are the canonical metric ids listed in
-   `references/narrative-prompt.md`; omit any metric that has no data. The static
-   "what / why" half of each tooltip lives in `helpers/tooltips.py` and is added
-   by the renderer regardless — `analysis` only supplies the per-repo reading.
+2. Follow `references/narrative-prompt.md` exactly. Feed it the full `dashboard.json`. It returns a small JSON object — see the reference for the exact shape, including the per-metric `analysis` map and its canonical metric ids. (How the renderer turns `analysis` into tooltips is described in Phase 3.)
 3. The narrative **explains, never recomputes.** It must not invent numbers absent from the JSON, must not soften a red or inflate a green (the engine fixed the light), must cite borrowed host/audit figures with "as of," and — when `flags.solo` is set — must frame Team concentration as expected, not alarming.
 4. Save the returned object to `/tmp/narrative.json` for the merge.
 

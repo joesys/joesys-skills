@@ -1,6 +1,5 @@
 ---
 name: preferences
-version: "1.1.0"
 description: "Use when the user invokes /preferences to set, view, or update their personal skill preferences. Also invoked automatically by other skills on first contact when no preferences file exists. Captures communication style, explanation preferences, experience level, and project context — shared across every skill in the collection."
 ---
 
@@ -129,7 +128,7 @@ If confirmed, delete all files in `.claude/skill-context/`.
 
 ### Step 1: Validate the Skill Name
 
-Check if `skills/<skill-name>/SKILL.md` exists. If not:
+Check if `skills/<skill-name>/SKILL.md` exists under the plugin root (two levels above this SKILL.md — not the project's working directory). If not:
 
 > Skill "{skill-name}" not found. Available skills: {list}.
 
@@ -141,63 +140,7 @@ If `.claude/skill-context/preferences.md` doesn't exist, run the full interview 
 
 Ask 1–3 targeted questions based on the skill. Questions MUST be things the skill actually uses — not abstract preferences that don't shape output.
 
-#### Skill-Specific Question Bank
-
-**explain:**
-> How do you prefer explanations structured?
-> - Top-down (big picture first, then details)
-> - Bottom-up (start with specifics, build to the whole)
-> - Workflow-driven (follow the data/request through the system)
->
-> Any areas you want the explanation to emphasize or skip?
-
-**codereview:**
-> What matters most in code reviews?
-> - Rank by priority: Security, Correctness, Performance, Architecture, Clean Code, Reliability
-> - Should I include minor style findings (P3/P4), or focus on real bugs and security issues only?
-> - Prefer before/after code examples, or just descriptions?
-
-**quick-review:**
-> Same as codereview — read and reuse codereview preferences if they exist.
-> Only ask if codereview preferences are missing.
-
-**codebase-audit:**
-> Any known trade-offs I should be aware of?
-> (intentional debt, upcoming migrations, things that look bad but are deliberate)
->
-> What deployment cadence does this project use?
-> (Continuous / Weekly / Monthly / Release-based / Not yet)
-
-**commit:**
-> Any commit message preferences beyond Conventional Commits?
-> - Max subject line length?
-> - Always include scope?
-> - Any specific scopes this project uses?
-> - Should commits automatically capture devlog scraps for interesting
->   changes? (on by default — turn off if you don't use the devlog skill
->   or prefer manual capture)
-
-**devlog:**
-> Who's the target audience for your devlog?
-> (Fellow engineers / General tech audience / Personal notes / Company-internal / Blog readers)
->
-> What tone should devlog entries use?
-> (Technical and precise / Conversational / Narrative storytelling)
-
-**retrospective:**
-> How formal should retrospectives be?
-> (Casual team reflection / Structured process review / Formal with action items and owners)
-
-**export:**
-> Any default export preferences?
-> - Preferred format: PDF / HTML / PNG
-> - Theme: light / dark
-> - Include table of contents?
-
-**ai-council, claude, codex, antigravity:**
-> These delegation skills use shared communication preferences.
-> No additional questions needed — they read your shared preferences.
-> [Skip to save]
+Read `question-bank.md` (in this skill's directory) for the per-skill questions. For any skill without a bank entry, derive 1–3 questions from the target skill's "How preferences shape this skill" table in its SKILL.md.
 
 ### Step 4: Save
 
@@ -222,20 +165,13 @@ This keeps the interruption brief while still capturing the essentials.
 
 ## Error Handling
 
-| Error | Behavior |
+| Situation | Behavior |
 |---|---|
 | `.claude/` directory doesn't exist | Create `.claude/skill-context/` |
 | Write permission denied | Report error, suggest checking permissions |
+| File system read-only | Hold preferences in memory for the session, warn that they won't persist |
 | User cancels mid-interview | Save whatever was captured so far |
+| User refuses to answer questions | Proceed with defaults, note in file |
 | Invalid skill name | List available skills |
 | Corrupt preferences file | Warn, offer to reset and re-interview |
-
----
-
-## Graceful Degradation
-
-| Situation | Behavior |
-|---|---|
-| User refuses to answer questions | Proceed with defaults, note in file |
 | Calling skill needs preferences NOW | Capture minimum (detail level + experience), skip the rest |
-| File system read-only | Hold preferences in memory for the session, warn that they won't persist |

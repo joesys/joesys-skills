@@ -1,6 +1,5 @@
 ---
 name: codebase-audit
-version: "1.2.0"
 description: "Use when the user invokes /codebase-audit to run a language-agnostic codebase quality audit measuring up to 12 quality criteria + development velocity with industry benchmarks, grading, and actionable recommendations."
 ---
 
@@ -179,11 +178,7 @@ This is the "structural breadth" half of large-tier analysis. The "risk depth" h
 
 ### Failure Handling
 
-- **Agent timeout:** 60s default. Proceed with available data, note missing agent.
-- **Helper script failure:** Agent falls back to qualitative-only. Metrics marked "Not measured."
-- **No test runner:** Tests agent does static analysis only.
-- **Live commands declined:** Static analysis fallback. Mark as "Skipped (live commands declined)."
-- **Large tier — partial module failure:** If some modules' qualitative agents fail, proceed with successful modules. Roll-up grade notes "N of M modules analyzed."
+Agent timeout is 60s by default. All failure conditions and fallbacks are in the § Graceful Degradation table.
 
 ---
 
@@ -263,27 +258,21 @@ Grading is relative to resolved benchmarks (language-specific → general fallba
 
 Print a summary table directly in the conversation:
 
-```
-╔══════════════════════════════════════════════════════════════╗
-║  CODEBASE AUDIT — {Project Name}                           ║
-║  {Domain Summary} · {Language} · {Date}                    ║
-╠══════════════════════════════════════════════════════════════╣
-║  Overall Grade: {GRADE} (confidence: {CONFIDENCE})         ║
-╠══════════════════════════════════════════════════════════════╣
-║  #  Criterion        Grade  Key Metric         Benchmark   ║
-║  ── ──────────────── ────── ────────────────── ─────────── ║
-║   1 Maintainability    B    CC avg: 8.2        ≤ 10        ║
-║   2 Evolvability       B+   Fan-out avg: 3.1   ≤ 5         ║
-║  ...                                                       ║
-║  12 Story Readability  B+   Narr: 8, Chunk: 6 ≥ 7 avg     ║
-║  ── ──────────────── ────── ────────────────── ─────────── ║
-║  13 Velocity           —    +2.1k lines/30d    —           ║
-╠══════════════════════════════════════════════════════════════╣
-║  Top Risk: {criterion} ({grade}) — {reason}                ║
-║  Top Strength: {criterion} ({grade}) — {reason}            ║
-║  Danger Zone: {file} (CC:{N}, {N} changes)                 ║
-╚══════════════════════════════════════════════════════════════╝
-```
+**CODEBASE AUDIT — {Project Name}**
+{Domain Summary} · {Language} · {Date}
+**Overall Grade: {GRADE}** (confidence: {CONFIDENCE})
+
+| # | Criterion | Grade | Key Metric | Benchmark |
+|---|---|---|---|---|
+| 1 | Maintainability | B | CC avg: 8.2 | ≤ 10 |
+| 2 | Evolvability | B+ | Fan-out avg: 3.1 | ≤ 5 |
+| ... | | | | |
+| 12 | Story Readability | B+ | Narr: 8, Chunk: 6 | ≥ 7 avg |
+| 13 | Velocity | — | +2.1k lines/30d | — |
+
+**Top Risk:** {criterion} ({grade}) — {reason}
+**Top Strength:** {criterion} ({grade}) — {reason}
+**Danger Zone:** {file} (CC:{N}, {N} changes)
 
 Dynamically generated — only measured criteria appear. Failed/skipped agents show "—" with a note.
 
@@ -413,16 +402,14 @@ fi
 
 ## Guardrails
 
-1. **Never present a benchmark without a source citation.** Unsourced benchmarks look made up.
-2. **Never grade a criterion without at least one measured metric.** Grades based on vibes are worthless.
-3. **Never claim "no issues found" without having actually measured.** Absence of evidence ≠ evidence of absence.
-4. **If a helper script fails, mark affected metrics as "Not measured" — not "Good."**
-5. **Always show delta direction (improved/declined/stable) when comparing.**
-6. **Domain inference must be stated explicitly** so the user can challenge it.
-7. **Criteria priority rationale must be shown in the report.**
-8. **Effort estimates must reference codebase size and team context.**
-9. **All Danger Zone files must be named explicitly.**
-10. **User context trade-offs must be acknowledged** in relevant criterion sections.
+Sourcing, grading, and no-issues-found discipline is defined in Out of Scope. In addition:
+
+1. **Always show delta direction (improved/declined/stable) when comparing.**
+2. **Domain inference must be stated explicitly** so the user can challenge it.
+3. **Criteria priority rationale must be shown in the report.**
+4. **Effort estimates must reference codebase size and team context.**
+5. **All Danger Zone files must be named explicitly.**
+6. **User context trade-offs must be acknowledged** in relevant criterion sections.
 
 ---
 
@@ -432,6 +419,7 @@ fi
 |---|---|
 | 1–2 agents fail or time out | Proceed with available data. Note missing agents. Offer to retry. |
 | All agents fail | Report failure. Suggest retrying or narrowing scope. |
+| Large tier — partial module failure | Proceed with successful modules. Roll-up grade notes "N of M modules analyzed." |
 | No git history | Git/Velocity agent skips. Churn/bus factor marked "No git history." |
 | No test runner detected | Tests agent does static analysis only. |
 | Helper script fails | Agent falls back to qualitative-only. Metrics marked "Not measured." |

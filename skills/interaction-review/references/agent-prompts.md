@@ -2,6 +2,8 @@
 
 Full prompt templates for the 5 analysis lens agents (Phase 2) and the coach re-reviewer (Phase 3.5). Each lens agent receives the session list, its principles file, and previous report context.
 
+**Path substitution (required before dispatch):** replace `<PRINCIPLES_PATH>` in each prompt with the **absolute path** to that lens's principles file (roster in SKILL.md), resolved against this skill's directory in the plugin install — never against the project's working directory. Subagents start in the project cwd and cannot find plugin files by relative path.
+
 ## Table of Contents
 
 - [Guiding Principles](#guiding-principles)
@@ -32,7 +34,7 @@ Each agent operates within a **~4,000 line read budget** to prevent context exha
 ### Session Resolution
 
 Determine the active project's session files:
-1. The project directory is derived from the current working directory with path separators replaced by `--` (e.g., `D:\joesys\Projects\my-project` becomes `D--joesys-Projects-my-project`).
+1. The project directory is derived from the current working directory with every non-alphanumeric character (`:`, `\`, `/`) replaced by a single `-` (e.g., `D:\joesys\Projects\my-project` becomes `D--joesys-Projects-my-project`).
 2. Session JSONL files are at `~/.claude/projects/<project-dir>/<sessionId>.jsonl`
 3. Focus on `user` and `assistant` message types. Skip `tool_result`, `progress`, and `file-history-snapshot` entries — they are bulk data that obscures the thinking.
 
@@ -47,7 +49,7 @@ You are analyzing Claude Code conversation transcripts to evaluate the quality o
 
 ## Instructions
 1. Read the specified JSONL session files.
-2. Read the principles file at `skills/interaction-review/principles/prompt-craft.md`.
+2. Read the principles file at `<PRINCIPLES_PATH>`.
 3. Focus on user messages — these are the prompts being evaluated. Read assistant messages for context on how the agent interpreted the prompt.
 4. Stay within the ~4,000 line read budget.
 
@@ -102,7 +104,7 @@ You are analyzing Claude Code conversation transcripts to evaluate the efficienc
 
 ## Instructions
 1. Read the specified JSONL session files.
-2. Read the principles file at `skills/interaction-review/principles/workflow-efficiency.md`.
+2. Read the principles file at `<PRINCIPLES_PATH>`.
 3. Count turns, identify correction loops, and measure goal directness.
 4. Stay within the ~4,000 line read budget.
 
@@ -161,7 +163,7 @@ You are analyzing Claude Code conversation transcripts to evaluate whether the u
 
 ## Instructions
 1. Read the specified JSONL session files.
-2. Read the principles file at `skills/interaction-review/principles/agentic-leverage.md`.
+2. Read the principles file at `<PRINCIPLES_PATH>`.
 3. Look for moments where the user did manually what the agent could have done autonomously.
 4. Stay within the ~4,000 line read budget.
 
@@ -218,7 +220,7 @@ You are analyzing Claude Code conversation transcripts to evaluate how both the 
 
 ## Instructions
 1. Read the specified JSONL session files.
-2. Read the principles file at `skills/interaction-review/principles/error-recovery.md`.
+2. Read the principles file at `<PRINCIPLES_PATH>`.
 3. Identify every correction, redirect, and pivot. Measure detection speed and recovery efficiency.
 4. Stay within the ~4,000 line read budget.
 
@@ -277,7 +279,7 @@ You are analyzing Claude Code conversation transcripts to evaluate how well the 
 
 ## Instructions
 1. Read the specified JSONL session files.
-2. Read the principles file at `skills/interaction-review/principles/context-instruction.md`.
+2. Read the principles file at `<PRINCIPLES_PATH>`.
 3. Also check for the existence and quality of CLAUDE.md files and memory entries in the current project.
 4. Stay within the ~4,000 line read budget.
 

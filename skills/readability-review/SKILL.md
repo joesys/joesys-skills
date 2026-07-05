@@ -1,7 +1,6 @@
 ---
 name: readability-review
-version: "1.1.0"
-description: "Use when the user invokes /readability-review to grade code on 8 story-readability dimensions with numeric scoring (0-100), letter grades, and concrete before/after refactoring suggestions."
+description: "Use when the user invokes /readability-review to grade how well code reads as a story, with letter grades and concrete refactoring suggestions. SKIP if the user wants a bug-focused review — that's /quick-review or /codereview."
 ---
 
 # Readability Review Skill
@@ -94,13 +93,14 @@ Dispatch a **single subagent** via the Agent tool. Readability grading is a unif
 
 ### Subagent Prompt
 
+Substitute `<PRINCIPLE_PATH>` with the **absolute path** to `shared/story-readability.md`, resolved against the plugin root (two levels above this SKILL.md) — never against the project's working directory. Subagents start in the project cwd and cannot find plugin files by relative path.
+
 ```
 You are a senior readability reviewer. Your job is to grade code on how well it
 "reads like a story" using 8 weighted dimensions.
 
 ## Instructions
-1. Read the principle file at: shared/story-readability.md
-   (This file is relative to the project root — find and read it first.)
+1. Read the principle file at: <PRINCIPLE_PATH>
 2. For each file under review, score ALL 8 dimensions on a 1-10 scale.
    Use the calibration examples in the principle file as anchors:
    - 9-10 = matches the "excellent" calibration example
@@ -132,19 +132,15 @@ You are a senior readability reviewer. Your job is to grade code on how well it
 <DIFF_CONTENT_OR_"N/A — directory/file scan mode">
 
 ## Output Format
-For each file, output:
+For each file, output a table with one row per dimension (all 8, in the
+principle file's order). Fill the Weight column with the weights you used —
+the principle file's defaults, or the custom weights above if provided:
 
 ### <filename>
 | # | Dimension | Score | Weight | Weighted |
 |---|-----------|-------|--------|----------|
-| 1 | Narrative Flow | X/10 | 20% | X.X |
-| 2 | Naming as Intent | X/10 | 15% | X.X |
-| 3 | Cognitive Chunking | X/10 | 15% | X.X |
-| 4 | Abstraction Consistency (SLAP) | X/10 | 14% | X.X |
-| 5 | Function Focus | X/10 | 10% | X.X |
-| 6 | Structural Clarity | X/10 | 10% | X.X |
-| 7 | Documentation Quality | X/10 | 10% | X.X |
-| 8 | No Clever Tricks | X/10 | 6% | X.X |
+| 1 | <dimension> | X/10 | XX% | X.X |
+| ... | | | | |
 | | **Weighted Total** | | | **X.X/100** |
 
 #### Findings

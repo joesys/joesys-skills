@@ -1,6 +1,5 @@
 ---
 name: handbook
-version: "1.0.0"
 description: "Use when the user invokes /handbook to generate comprehensive project documentation as a single self-contained HTML file — a reference handbook for intermediate programmers and a guided walkthrough for beginners."
 ---
 
@@ -215,9 +214,7 @@ Plus agent-specific fields defined in `references/output-schemas.md`.
 
 ### Failure Handling
 
-- **Agent timeout:** If an agent times out or fails, proceed with available agents. Note the missing analysis domain in affected chapters.
-- **Malformed output:** If an agent returns output that does not match the schema, extract what is usable and note the issue.
-- **All agents fail:** Stop and report: "Analysis failed -- cannot generate handbook. Try a narrower scope."
+Agent timeouts, malformed output, and total analysis failure are handled per the consolidated Error Handling table at the end of this document.
 
 ### Progress Indication
 
@@ -256,31 +253,7 @@ All interview answers are persisted to `.claude/skill-context/handbook.md`. On s
 
 ### Interview Context File Format
 
-`.claude/skill-context/handbook.md`:
-
-```markdown
-# Handbook Preferences
-
-Last updated: <DATE>
-
-## Design Rationale
-- <question>: <answer>
-
-## Extension Points
-- <question>: <answer>
-
-## Danger Zones
-- <question>: <answer>
-
-## Tribal Knowledge
-- <question>: <answer>
-
-## Style & Conventions
-- <question>: <answer>
-
-## Corrections
-- <question>: <answer>
-```
+`.claude/skill-context/handbook.md` is a bulleted markdown file: a `# Handbook Preferences` heading with a `Last updated: <DATE>` line, then one `##` section per question category (Design Rationale, Extension Points, Danger Zones, Tribal Knowledge, Style & Conventions, Corrections), each holding `- <question>: <answer>` bullets.
 
 ---
 
@@ -292,7 +265,7 @@ Read `references/agent-prompts.md` for the full prompt template for each chapter
 
 Each writer receives:
 - The Guiding Principles block (prepended to every prompt)
-- All 6 analysis agent outputs (or the available subset if graceful degradation is active)
+- All 6 analysis agent outputs (or the available subset if some analysis agents failed -- see Error Handling)
 - Human interview answers from Phase 2
 - The writing style guide from `references/writing-style-guide.md` (injected into prompt)
 - Their previous chapter content (if previous handbook exists, for continuity)
@@ -303,52 +276,33 @@ Dispatch all core chapter writers plus any triggered conditional chapter writers
 
 ### Core Chapters (always dispatched -- 13 agents)
 
-| # | Chapter | Writer Prompt Key | Key Content |
-|---|---|---|---|
-| 1 | Overview & Architecture | `chapter-overview` | Project purpose, TL;DR, architecture Mermaid diagram, major subsystems, tech stack table, design philosophy |
-| 2 | Repository Map & Navigation | `chapter-repo-map` | Annotated folder tree, naming conventions, "if you need to change X, start here" quick-reference table, key files index |
-| 3 | Domain Model & Core Concepts | `chapter-domain` | Business/domain vocabulary, main entities and lifecycles, core workflows, important invariants, state transition Mermaid diagrams |
-| 4 | Module Deep Dives | `chapter-modules` | Per-module: purpose, public interfaces, internal structure, key files/classes/functions, connections to other modules. One H3 per module. |
-| 5 | Code Walkthroughs & Execution Flow | `chapter-walkthroughs` | Layered step-throughs with `<details>` format: app startup, main request/event lifecycle, hot paths, key workflows |
-| 6 | Dependencies & Integration | `chapter-dependencies` | Each dependency with justification (table: name, version, purpose, replaceability), internal deps, external APIs, failure modes |
-| 7 | Configuration & Environment | `chapter-config` | Env vars table (name, required, default, description), config files, local/dev/staging/prod differences, secrets management, feature flags |
-| 8 | Getting Started | `chapter-getting-started` | Numbered setup steps (each verifiable with expected output), first successful run, seed/test data, common setup problems and fixes |
-| 9 | Testing Guide | `chapter-testing` | Test philosophy, unit/integration/e2e breakdown, how to run full suite, how to run single test, how to add new test, test data strategy, CI gates |
-| 10 | Design Rationale | `chapter-rationale` | Major decisions as ADRs: Context, Decision, Consequences, Status. Alternatives considered, why rejected, trade-offs acknowledged |
-| 11 | Extension Guide, Change Recipes & Style | `chapter-extension` | How to add modules/endpoints/jobs, change recipe tables, coding style and conventions from linter/formatter configs |
-| 12 | Troubleshooting, Danger Zones & FAQ | `chapter-troubleshooting` | Common errors (symptom, cause, fix), danger zone callouts, debugging recipes, known issues, technical debt, FAQ as H3 subsections |
-| 13 | Glossary & Quick Reference | `chapter-glossary` | Domain terms table (term, definition, where defined), acronyms, common commands, important links, key files quick-index |
+| # | Chapter | Writer Prompt Key |
+|---|---|---|
+| 1 | Overview & Architecture | `chapter-overview` |
+| 2 | Repository Map & Navigation | `chapter-repo-map` |
+| 3 | Domain Model & Core Concepts | `chapter-domain` |
+| 4 | Module Deep Dives | `chapter-modules` |
+| 5 | Code Walkthroughs & Execution Flow | `chapter-walkthroughs` |
+| 6 | Dependencies & Integration | `chapter-dependencies` |
+| 7 | Configuration & Environment | `chapter-config` |
+| 8 | Getting Started | `chapter-getting-started` |
+| 9 | Testing Guide | `chapter-testing` |
+| 10 | Design Rationale | `chapter-rationale` |
+| 11 | Extension Guide, Change Recipes & Style | `chapter-extension` |
+| 12 | Troubleshooting, Danger Zones & FAQ | `chapter-troubleshooting` |
+| 13 | Glossary & Quick Reference | `chapter-glossary` |
+
+Each chapter's content requirements and primary analysis-agent sources are fully specified in its writer prompt in `references/agent-prompts.md`.
 
 ### Conditional Chapters (dispatched only if Phase 0 detected evidence)
 
-| Chapter | Prompt Key | Insertion Point |
-|---|---|---|
-| Data Model & Persistence | `chapter-data-model` | After Module Deep Dives (becomes chapter 5, shifting subsequent numbers) |
-| Security & Permissions | `chapter-security` | After Configuration & Environment |
-| Build, Deployment & Ops | `chapter-build-deploy` | After Testing Guide |
-
-### Analysis-to-Chapter Data Flow
-
-While every writer receives all 6 agent outputs, each chapter primarily draws from specific agents:
-
-| Chapter | Primary Agent Sources |
+| Chapter | Prompt Key |
 |---|---|
-| 1. Overview & Architecture | Architecture Analyst, Domain & Data Analyst |
-| 2. Repository Map | Architecture Analyst |
-| 3. Domain Model | Domain & Data Analyst |
-| 4. Module Deep Dives | Architecture Analyst, Code Flow Tracer |
-| 5. Code Walkthroughs | Code Flow Tracer, Architecture Analyst |
-| 6. Dependencies | Dependency Analyst |
-| 7. Configuration | Dependency Analyst, Beginner Path Scout |
-| 8. Getting Started | Beginner Path Scout |
-| 9. Testing Guide | Beginner Path Scout, Code Flow Tracer |
-| 10. Design Rationale | Git Archaeologist, interview answers |
-| 11. Extension Guide | Architecture Analyst, Git Archaeologist, interview answers |
-| 12. Troubleshooting | Git Archaeologist, Beginner Path Scout, interview answers |
-| 13. Glossary | Domain & Data Analyst, Dependency Analyst |
-| Data Model (conditional) | Domain & Data Analyst |
-| Security (conditional) | Architecture Analyst, Dependency Analyst |
-| Build/Deploy (conditional) | Beginner Path Scout, Dependency Analyst |
+| Data Model & Persistence | `chapter-data-model` |
+| Security & Permissions | `chapter-security` |
+| Build, Deployment & Ops | `chapter-build-deploy` |
+
+Insertion points and renumbering are defined in Phase 4 under Chapter Numbering.
 
 ### Chapter Writer Output Contract
 
@@ -358,76 +312,7 @@ Each writer returns a structured object:
 - `cross_references` -- list of `{target_chapter, anchor, context}` for cross-linking during assembly
 - `diagrams` -- list of Mermaid blocks with titles
 
-### Code Walkthrough Format (Chapter 5 specific)
-
-The Code Walkthroughs chapter uses a layered format:
-- **High-level narrative** is visible by default (prose description of the flow)
-- **Annotated code snippets** are wrapped in `<details><summary>View code</summary>` blocks
-- Each code snippet includes a relative source link: `[source](../../path/to/file.ts#L42)`
-- Snippets are 30 lines or fewer with inline annotations as comments
-
-Example output format:
-
-```html
-### App Startup Flow
-
-When the application starts, `main()` in `src/index.ts` initializes the configuration,
-connects to the database, and starts the HTTP server.
-
-<details>
-<summary>View code -- src/index.ts:15-28</summary>
-
-```typescript
-// Load environment-specific config
-const config = loadConfig(process.env.NODE_ENV);
-
-// Initialize database connection pool
-const db = await createPool(config.database);
-
-// Register routes and middleware
-const app = createServer(config, db);
-
-// Start listening
-app.listen(config.port, () => {
-  logger.info(`Server ready on :${config.port}`);
-});
-```
-
-[source](../../src/index.ts#L15)
-</details>
-```
-
-### Change Recipe Table Format (Chapter 11 specific)
-
-Chapter 11 MUST include change recipe tables:
-
-| Task | Where to Start | What to Modify | Tests Needed | Common Pitfall |
-|------|---------------|----------------|--------------|----------------|
-| Add new API endpoint | `src/routes/` | Controller, service, DTO, tests | Unit + integration | Forgetting auth middleware |
-| Add new DB field | Schema/migration folder | Migration, model, serializer | Migration + regression | Breaking old data |
-
-Recipes are inferred from the codebase structure. Every file path in a recipe MUST exist in the file inventory.
-
-### Danger Zone Callout Format (Chapter 12 specific)
-
-Chapter 12 MUST include danger zone callouts as visually distinct blockquote warnings:
-
-```markdown
-> **Danger Zone: `src/billing/charge.ts`**
-> This file handles payment processing with Stripe. Changes here can cause double-charges
-> if the idempotency key logic is altered. High churn (47 commits in 6 months) with
-> moderate test coverage (62%). Always test with Stripe's test mode before merging.
-> [source](../../src/billing/charge.ts)
-```
-
-Danger zones are identified from:
-- Business-critical code
-- Code with hidden side effects
-- Legacy modules with poor test coverage
-- Shared libraries with many downstream dependents
-- Concurrency-sensitive code
-- Irreversible state changes
-- Areas flagged by Git Archaeologist (high churn + high complexity)
+Per-chapter format specs -- the layered `<details>` walkthrough format (Chapter 5), change recipe tables (Chapter 11), and danger zone callouts (Chapter 12) -- live with their writer prompts in `references/agent-prompts.md`.
 
 ---
 
@@ -451,11 +336,7 @@ Stitch all chapter outputs into a single markdown document. This phase is NOT di
 
 2. **TL;DR Summary** -- Project purpose (1-2 sentences), key stats (language, file count, module count), architecture one-liner, tech stack, quick-links to most-used chapters (Getting Started, Code Walkthroughs, Extension Guide, Troubleshooting).
 
-3. **Chapter content** in order -- core chapters 1-13, with conditional chapters inserted at their specified positions:
-   - Data Model after Module Deep Dives (ch 4)
-   - Security after Configuration & Environment (ch 7)
-   - Build/Deploy after Testing Guide (ch 9)
-   - Renumber all chapters sequentially after insertion.
+3. **Chapter content** in order -- core chapters 1-13, with conditional chapters inserted and renumbered per Chapter Numbering below.
 
 4. **Cross-references** -- Resolve all `cross_references` from chapter writers into markdown links: `[See Change Recipes](#extension-guide-change-recipes-style)`.
 
@@ -581,30 +462,7 @@ This produces `docs/handbook/handbook.html` -- a single self-contained HTML file
 - No external fonts or CDN links
 - Single file, sharable via email/Slack/etc.
 
-**Layout:**
-- TL;DR summary hero section at top
-- Sticky left sidebar with collapsible TOC (chapter, section, subsection levels)
-- Main content area with comfortable reading width
-- Responsive -- sidebar collapses on narrow screens, content reflows
-- Print-friendly styles (hide sidebar, expand all details)
-
-**Interactive elements:**
-- Collapsible `<details>` for layered code walkthroughs (narrative visible, code expandable)
-- Danger zone callouts as visually distinct warning blocks (red-bordered blockquotes)
-- Change recipe tables
-- Source links as relative paths from `docs/handbook/`
-- Theme toggle (light/dark)
-
-**Visual hierarchy:**
-- Clear chapter demarcation
-- Code blocks with syntax highlighting and filename headers
-- Callout box styles: info (blue), warning/danger (red/orange), tip (green)
-
-**Metadata footer:**
-- Generated timestamp
-- Project commit hash at generation time
-- Skill version
-- "Generated by /handbook" attribution
+**Layout and interactivity:** The TL;DR hero, sticky collapsible TOC sidebar, responsive and print styles, collapsible code walkthroughs, danger-zone callout styling, syntax highlighting, theme toggle, and footer are implemented by the `handbook` render profile and its template -- no additional layout work is needed. (Metadata footer content is set during Phase 4 assembly.)
 
 ### Step 6.3: Report Results
 
@@ -650,34 +508,21 @@ HTML render failed (markdown still saved): <error>
 
 ---
 
-## Graceful Degradation
-
-| Failure | Behavior |
-|---|---|
-| 1-2 analysis agents fail | Synthesize from available agents. Note which analysis is missing in affected chapters. Offer to retry. |
-| Human declines interview | Proceed with AI-inferred content. Mark uncertain sections with visual indicators. |
-| `html_render.py` fails | Deliver markdown only. Report the error with the markdown path. |
-| No tests/DB/CI in project | Conditional chapters do not appear. Testing Guide notes "no test infrastructure detected." |
-| Previous handbook is stale | Chapter writers use it as reference but are not bound by it -- they follow current codebase state. |
-| JSONL chat logs unavailable | Proceed without conversation context -- interview covers the gap. |
-| All 6 analysis agents fail | Report: "Analysis failed -- cannot generate handbook. Try a narrower scope." |
-| All chapter writers fail | Report: "Chapter generation failed. Analysis data is available but could not be assembled into chapters." |
-| Scope too large (>5000 source files) | Warn and ask for confirmation before proceeding. |
-| Pandoc not installed | Report: "pandoc is required for HTML rendering but was not found on PATH. Markdown output is still available." |
-
----
-
 ## Error Handling
 
 | Condition | Action |
 |---|---|
-| No source files found in scope | Report: "No source files found in `<scope>`. Check the path and try again." |
-| All 6 analysis agents fail | Report: "Analysis failed -- cannot generate handbook. Try a narrower scope." |
-| All chapter writers fail | Report: "Chapter generation failed. Analysis data is available but could not be assembled into chapters." |
-| `html_render.py` fails | Deliver markdown only. Report: "HTML render failed (markdown still saved at `docs/handbook/handbook.md`): `<error>`" |
-| Pandoc not installed | Report: "pandoc is required for HTML rendering but was not found on PATH. Install: `choco install pandoc` / `brew install pandoc`. Markdown output is still available." |
-| Previous handbook is corrupted/unparseable | Ignore previous handbook, proceed as fresh generation. Note in output. |
-| User cancels interview | Proceed with AI-inferred content. Mark uncertain sections with visual indicators. |
-| Scope too large (>5000 source files) | Warn: "This scope contains `<N>` source files. Generation will be thorough but may take several minutes and use significant tokens. Proceed?" |
 | Scoped path does not exist | Report: "Path not found: `<path>`. Check the path and try again." |
+| No source files found in scope | Report: "No source files found in `<scope>`. Check the path and try again." |
+| Scope too large (>5000 source files) | Warn and ask for confirmation before proceeding (warning text in Step 0.6). |
+| 1-2 analysis agents time out or fail | Synthesize from available agents. Note the missing analysis domain in affected chapters. Offer to retry. |
+| All 6 analysis agents fail | Report: "Analysis failed -- cannot generate handbook. Try a narrower scope." |
 | Agent returns malformed output | Use what is parseable from the agent, note the issue in the affected chapter. |
+| All chapter writers fail | Report: "Chapter generation failed. Analysis data is available but could not be assembled into chapters." |
+| User declines or cancels interview | Proceed with AI-inferred content. Mark uncertain sections with visual indicators. |
+| JSONL chat logs unavailable | Proceed without conversation context -- interview covers the gap. |
+| No tests/DB/CI in project | Conditional chapters do not appear. Testing Guide notes "no test infrastructure detected." |
+| Previous handbook is stale | Chapter writers use it as reference but are not bound by it -- they follow current codebase state. |
+| Previous handbook is corrupted/unparseable | Ignore previous handbook, proceed as fresh generation. Note in output. |
+| `html_render.py` fails | Deliver markdown only. Report the error with the markdown path (report format in Step 6.3). |
+| Pandoc not installed | Report: "pandoc is required for HTML rendering but was not found on PATH. Install: `choco install pandoc` / `brew install pandoc`. Markdown output is still available." |

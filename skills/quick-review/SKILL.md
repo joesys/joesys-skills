@@ -1,6 +1,5 @@
 ---
 name: quick-review
-version: "1.1.0"
 description: "Use when the user invokes /quick-review for a fast bug-focused code review using parallel analysis (correctness + security, P0-P2 only). SKIP if the user wants a comprehensive review with style and architecture findings — that's /codereview."
 ---
 
@@ -13,13 +12,11 @@ For comprehensive 7-domain reviews, use `/codereview`.
 ## Out of Scope
 
 This skill MUST NOT:
-- Modify source code without explicit user approval. Quick-review is **report-only** — there is no fix dispatch phase. If the user wants fixes, they invoke `/codereview`.
-- Expand fixes beyond what was flagged. Same constraint applies if the user asks for fixes inline.
+- Modify source code or apply fixes, even when the user asks for them inline. Quick-review is **report-only** — there is no fix-dispatch phase; hand the findings to `/codereview`, which owns fix dispatch.
 - Report on code outside the resolved scope. If the diff/file/PR doesn't include a file, do not flag findings in it — even if you notice them while gathering context.
-- Inflate severity to look thorough. P0 means actual bug or security hole. Style polish is P3/P4 (and this skill skips P3/P4 entirely).
+- Inflate severity to look thorough. P0 means actual bug or security hole. Style polish is P3/P4.
 - Downgrade real bugs to manage report volume. If correctness or security found something genuine, it stays at its true severity.
 - Include P3 (polish) or P4 (style) findings. The skill reports P0–P2 only, even if subagents return lower-severity findings.
-- Add a fix-dispatch phase. Quick-review is report-only.
 - Load full files. Quick-review uses `git diff -U50` exclusively for context — full-file loading is reserved for `/codereview`.
 
 ## Invocation
@@ -116,14 +113,13 @@ Static analysis ran in Phase 1.5 before this phase. Include TOOLING_CONTEXT in b
 
 #### Subagent Prompt Template
 
-Each subagent receives a prompt structured as follows. Adjust `<DOMAIN>` and `<PRINCIPLE_FILE>` per agent:
+Each subagent receives a prompt structured as follows. Adjust `<DOMAIN>` and `<PRINCIPLE_PATH>` per agent. Substitute `<PRINCIPLE_PATH>` with the **absolute path** to the roster file, resolved against the plugin root (two levels above this SKILL.md — the roster paths point into the sibling `codereview` skill) — never against the project's working directory. Subagents start in the project cwd and cannot find plugin files by relative path.
 
 ```
 You are a senior <DOMAIN> reviewer performing a quick, bug-focused review.
 
 ## Instructions
-1. Read the principle file at: <PRINCIPLE_FILE>
-   (This file is relative to the project root — find and read it first.)
+1. Read the principle file at: <PRINCIPLE_PATH>
 2. Analyze the diff and surrounding context below against every principle in that file.
 3. For each violation found, output it in the structured format below.
 4. **Only report P0, P1, or P2 severity findings.** Skip P3 (polish) and P4 (style) entirely.
@@ -232,7 +228,7 @@ Omit empty severity sections. If there are zero findings across all severities, 
 
 > "No bugs or security issues found. Code looks solid."
 
-**No P3/P4 sections.** No before/after code blocks (keeps output scannable — use `/codereview` for detailed treatment). Findings reference `file:line` for quick navigation. **No fix dispatch phase** — report only.
+**No P3/P4 sections.** No before/after code blocks (keeps output scannable — use `/codereview` for detailed treatment). Findings reference `file:line` for quick navigation.
 
 ---
 
@@ -242,8 +238,7 @@ Read `shared/review-common.md` § Cross-Skill Discipline for the base constraint
 
 Additional quick-review-specific guardrails:
 
-1. **P0–P2 only.** Never include P3 (polish) or P4 (style) findings in the output. Subagents are instructed to skip them; synthesis discards any that slip through.
-2. **Diff-only context has limits.** Quick-review uses `-U50` diff context, not full files. Issues requiring broader file analysis (e.g., unused imports, unreachable code paths, architectural problems) may not be detected. Use `/codereview` for full-file analysis.
+1. **Diff-only context has limits.** Quick-review uses `-U50` diff context, not full files. Issues requiring broader file analysis (e.g., unused imports, unreachable code paths, architectural problems) may not be detected. Use `/codereview` for full-file analysis.
 
 ---
 
