@@ -1,6 +1,5 @@
 ---
 name: ai-council
-version: "1.1.0"
 description: "Use when the user invokes /ai-council to consult three frontier AI models (Claude, GPT, Antigravity) in parallel and synthesize their responses into a consensus analysis"
 ---
 

@@ -1,6 +1,5 @@
 ---
 name: quick-review
-version: "1.1.0"
 description: "Use when the user invokes /quick-review for a fast bug-focused code review using parallel analysis (correctness + security, P0-P2 only). SKIP if the user wants a comprehensive review with style and architecture findings — that's /codereview."
 ---
 

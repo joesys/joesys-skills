@@ -1,7 +1,6 @@
 ---
 name: devlog
-version: "1.1.0"
-description: "Use when the user invokes /devlog to capture development insights as devlog posts or content scraps. Mines git history, conversation history, and existing scraps to reconstruct the developer's thinking, then brainstorms to surface the real insight before drafting."
+description: "Use when the user invokes /devlog to capture development insights as devlog posts or content scraps aimed at budding programmers."
 ---
 
 # Devlog Skill

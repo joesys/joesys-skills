@@ -1,6 +1,5 @@
 ---
 name: claude
-version: "1.1.0"
 description: "Use when the user invokes /claude to delegate a prompt to Claude Code CLI, or /claude resume to continue a previous Claude session. SKIP if the user wants you to answer directly — this skill exists to consult a separate Claude instance, not to substitute your own answer."
 ---
 

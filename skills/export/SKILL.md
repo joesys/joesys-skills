@@ -1,6 +1,5 @@
 ---
 name: export
-version: "1.1.0"
 description: "Use when the user invokes /export to convert markdown, text, or code files into polished PDF, HTML, or PNG with proper typography, syntax highlighting, and responsive layout."
 ---
 

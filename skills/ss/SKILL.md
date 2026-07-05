@@ -1,6 +1,5 @@
 ---
 name: ss
-version: "1.1.0"
 description: "Use when the user invokes /ss to grab recent screenshots from a configured folder, analyze visual content, and act on them — explaining, fixing errors, creating outputs, or routing to sibling skills based on the user's intent."
 ---
 

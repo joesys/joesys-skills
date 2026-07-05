@@ -1,6 +1,5 @@
 ---
 name: antigravity
-version: "2.0.0"
 description: "Use when the user invokes /antigravity to delegate a prompt to Google Antigravity CLI (agy), or /antigravity resume to continue a previous Antigravity session. SKIP if the user wants you to answer directly — this skill exists to consult Antigravity, not to substitute your own answer."
 ---
 

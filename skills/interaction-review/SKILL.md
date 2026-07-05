@@ -1,7 +1,6 @@
 ---
 name: interaction-review
-version: "1.0.0"
-description: "Use when the user invokes /interaction-review to analyze Claude Code conversation transcripts, grade human-AI collaboration across 5 dimensions, and produce an actionable improvement report with coaching recommendations."
+description: "Use when the user invokes /interaction-review to grade the human-AI collaboration quality of past Claude Code sessions and produce a coaching report."
 ---
 
 # Interaction Review Skill

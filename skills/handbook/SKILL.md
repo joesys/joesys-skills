@@ -1,6 +1,5 @@
 ---
 name: handbook
-version: "1.0.0"
 description: "Use when the user invokes /handbook to generate comprehensive project documentation as a single self-contained HTML file — a reference handbook for intermediate programmers and a guided walkthrough for beginners."
 ---
 

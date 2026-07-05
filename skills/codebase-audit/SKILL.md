@@ -1,6 +1,5 @@
 ---
 name: codebase-audit
-version: "1.2.0"
 description: "Use when the user invokes /codebase-audit to run a language-agnostic codebase quality audit measuring up to 12 quality criteria + development velocity with industry benchmarks, grading, and actionable recommendations."
 ---
 

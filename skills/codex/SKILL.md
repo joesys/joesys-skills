@@ -1,6 +1,5 @@
 ---
 name: codex
-version: "1.1.0"
 description: "Use when the user invokes /codex to delegate a prompt to OpenAI Codex CLI, or /codex resume to continue a previous Codex session. SKIP if the user wants you to answer directly — this skill exists to consult GPT, not to substitute your own answer."
 ---
 

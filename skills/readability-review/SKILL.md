@@ -1,7 +1,6 @@
 ---
 name: readability-review
-version: "1.1.0"
-description: "Use when the user invokes /readability-review to grade code on 8 story-readability dimensions with numeric scoring (0-100), letter grades, and concrete before/after refactoring suggestions."
+description: "Use when the user invokes /readability-review to grade how well code reads as a story, with letter grades and concrete refactoring suggestions. SKIP if the user wants a bug-focused review — that's /quick-review or /codereview."
 ---
 
 # Readability Review Skill

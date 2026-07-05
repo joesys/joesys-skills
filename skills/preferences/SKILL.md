@@ -1,6 +1,5 @@
 ---
 name: preferences
-version: "1.1.0"
 description: "Use when the user invokes /preferences to set, view, or update their personal skill preferences. Also invoked automatically by other skills on first contact when no preferences file exists. Captures communication style, explanation preferences, experience level, and project context — shared across every skill in the collection."
 ---
 

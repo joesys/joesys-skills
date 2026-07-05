@@ -1,6 +1,5 @@
 ---
 name: dashboard
-version: "1.1.0"
 description: "Use when the user invokes /dashboard to generate a self-contained HTML project-health dashboard for PMs/EMs from local git + repo state, with optional GitHub/GitLab and /codebase-audit enrichment."
 ---
 

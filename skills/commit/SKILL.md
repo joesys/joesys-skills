@@ -1,7 +1,6 @@
 ---
 name: commit
-version: "1.3.0"
-description: "Create a git commit following Conventional Commits with a structured body format (intent paragraph, changes changelog, AI review). Uses OneFlow Option 3 (rebase + merge --no-ff) for decomposed multi-commit changesets."
+description: "Use when the user invokes /commit or any git commit is about to be created — applies Conventional Commits, the structured body format, and OneFlow branching."
 ---
 
 # Commit Skill

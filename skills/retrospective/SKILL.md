@@ -1,7 +1,6 @@
 ---
 name: retrospective
-version: "1.1.0"
-description: "Use when the user invokes /retrospective to run a structured retrospective — mines git history, conversations, code quality, plans, and tests, then facilitates topic-by-topic discussion with the human to produce action items, process improvements, and a narrative summary."
+description: "Use when the user invokes /retrospective to run a structured, discussion-driven retrospective of recent work that produces action items and process improvements."
 ---
 
 # Retrospective Skill

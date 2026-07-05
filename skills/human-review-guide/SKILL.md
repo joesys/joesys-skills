@@ -1,7 +1,6 @@
 ---
 name: human-review-guide
-version: "1.0.0"
-description: "Use when the user invokes /human-review-guide to generate a personalized reading guide for human review — triages changes into attention tiers (DECIDE/READ/SKIM/SKIP), analyzes decision-heavy sections, and produces a guided reading order focused on decisions requiring human judgment."
+description: "Use when the user invokes /human-review-guide to generate a guided reading order that helps a human reviewer focus on the decisions that need their judgment."
 ---
 
 # Human Review Guide Skill
