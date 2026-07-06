@@ -44,7 +44,7 @@ Parse the user's `/ss` arguments to determine count and action:
 
 ## User Preferences
 
-Read `shared/skill-context.md` for the full protocol. In brief:
+Read `shared/skill-context.md` for the full protocol (resolve `shared/...` against the plugin root — two levels above this SKILL.md — never the project's working directory). In brief:
 
 1. Read `.claude/skill-context/preferences.md` — if missing, proceed with defaults (do not interrupt the workflow).
 2. Read `.claude/skill-context/ss.md` for the screenshot folder path (see Configuration Bootstrap below).

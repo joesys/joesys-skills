@@ -36,7 +36,7 @@ If unsure whether something counts as an express order, assume it does **NOT**. 
 
 ## User Preferences
 
-Read `shared/skill-context.md` for the full protocol. In brief:
+Read `shared/skill-context.md` for the full protocol (resolve `shared/...` against the plugin root — two levels above this SKILL.md — never the project's working directory). In brief:
 
 1. Read `.claude/skill-context/preferences.md` — if missing, proceed with defaults (don't interrupt the commit flow with an interview).
 2. Read `.claude/skill-context/commit.md` (if it exists) for commit-specific preferences.

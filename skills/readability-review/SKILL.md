@@ -45,7 +45,7 @@ If the invocation is ambiguous or unrecognizable, ask the user to clarify before
 
 ### 0.1 Load User Preferences
 
-Read `shared/skill-context.md` for the full protocol. In brief:
+Read `shared/skill-context.md` for the full protocol (resolve `shared/...` against the plugin root — two levels above this SKILL.md — never the project's working directory). In brief:
 
 1. Read `.claude/skill-context/preferences.md` — if missing, proceed with defaults (do not interrupt the workflow with an interview).
 2. Read `.claude/skill-context/readability-review.md` (if it exists) for readability-specific preferences.

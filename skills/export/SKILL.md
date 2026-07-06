@@ -52,7 +52,7 @@ If the invocation is ambiguous or the file path is unrecognizable, ask the user 
 
 ## User Preferences
 
-Read `shared/skill-context.md` for the full protocol. In brief:
+Read `shared/skill-context.md` for the full protocol (resolve `shared/...` against the plugin root — two levels above this SKILL.md — never the project's working directory). In brief:
 
 1. Read `.claude/skill-context/preferences.md` — if missing, proceed with defaults (do not interrupt the export flow).
 2. Read `.claude/skill-context/export.md` (if it exists) for export-specific preferences.
@@ -98,7 +98,7 @@ For code files (`.py`, `.cpp`, etc.) with `summary` or `1pager` scope: extract t
 
 ### Step 3 — Render
 
-Invoke the rendering script:
+Invoke the rendering script. **Resolve `scripts/md_export.py` to its absolute path under the plugin root (two levels above this SKILL.md) before running** — the command executes in the user's project working directory, which does not contain the plugin's `scripts/` folder.
 
 ```bash
 python scripts/md_export.py <input_or_temp_file> \

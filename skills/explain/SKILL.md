@@ -55,7 +55,7 @@ If the invocation is ambiguous or unrecognizable, ask the user to clarify before
 
 ### 1.0 Load User Preferences
 
-Read `shared/skill-context.md` for the full protocol. In brief:
+Read `shared/skill-context.md` for the full protocol (resolve `shared/...` against the plugin root — two levels above this SKILL.md — never the project's working directory). In brief:
 
 1. Read `.claude/skill-context/preferences.md`.
    - If missing: invoke `/preferences` (streamlined mode — core questions only, then return here).
@@ -244,7 +244,7 @@ Scope name derivation:
    profile: "analytical"
    ---
    ```
-2. **Render the HTML companion.** After the markdown is written, invoke the HTML renderer (best-effort; if it fails, log a warning and continue — the markdown is already saved):
+2. **Render the HTML companion.** After the markdown is written, invoke the HTML renderer (best-effort; if it fails, log a warning and continue — the markdown is already saved). **Resolve `scripts/html_render.py` to its absolute path under the plugin root (two levels above this SKILL.md) before running** — the command executes in the user's project cwd, which does not contain the plugin's `scripts/` folder:
    ```bash
    python scripts/html_render.py <report-path>.md --profile analytical
    ```

@@ -31,6 +31,8 @@ This skill uses progressive disclosure — read reference files only when needed
 
 All under `skills/dashboard/helpers/`. All are read-only with respect to the repo.
 
+**Path resolution (required before every invocation in Phases 1 and 3):** resolve `skills/dashboard/helpers/` to its absolute path under the plugin root (two levels above this SKILL.md) before running any command below. The commands execute in the user's project working directory, which does not contain the plugin's helpers — a bare `skills/dashboard/helpers/...` path fails when the skill is installed.
+
 | Script | Role | Key flags |
 |---|---|---|
 | `collect_git.py` | Deterministic local-git collector — the source of truth. Builds the entire `dashboard.json` (lights, KPIs, three lenses). | `--repo <path> --out <file> [--now <unix_ts>]` |

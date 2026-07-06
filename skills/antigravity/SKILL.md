@@ -19,7 +19,7 @@ This skill MUST NOT:
 ## Preflight
 
 Before dispatching, **MUST**:
-1. Read `shared/model-defaults.md` § Antigravity for the current required flags. Never hardcode values.
+1. Read `shared/model-defaults.md` § Antigravity for the current required flags — resolve `shared/...` against the plugin root (two levels above this SKILL.md), never the project's working directory. Never hardcode values.
 2. Confirm the user's prompt is non-empty. For `/antigravity resume` with no prompt, use `AskUserQuestion` to ask what they want to follow up on.
 
 ## User Preferences

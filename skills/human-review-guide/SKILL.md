@@ -51,7 +51,7 @@ If the invocation is ambiguous or unrecognizable, ask the user to clarify before
 
 ### 0.1 Load User Preferences
 
-Read `shared/skill-context.md` for the full protocol. In brief:
+Read `shared/skill-context.md` for the full protocol (resolve `shared/...` against the plugin root — two levels above this SKILL.md — never the project's working directory). In brief:
 
 1. Read `.claude/skill-context/preferences.md` — if missing, invoke `/preferences` (streamlined).
 2. Read `.claude/skill-context/human-review-guide.md` (if it exists) for skill-specific preferences.
@@ -270,7 +270,7 @@ Assemble the guide inline using the terminal markdown template from `references/
 
 1. Write the guide as markdown to a temporary location following the HTML report template from `references/output-formats.md`.
 2. Include YAML front-matter per `shared/html-reports.md`.
-3. Call the HTML renderer:
+3. Call the HTML renderer. **Resolve `scripts/html_render.py` to its absolute path under the plugin root (two levels above this SKILL.md) before running** — the command executes in the user's project cwd, which does not contain the plugin's `scripts/` folder:
 
 ````bash
 python scripts/html_render.py <report_path> --profile analytical

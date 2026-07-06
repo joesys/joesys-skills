@@ -33,7 +33,7 @@ If the question is empty or unintelligible, use `AskUserQuestion` to ask the use
 
 ## Phase 0: Load User Preferences
 
-Read `shared/skill-context.md` for the full protocol. In brief:
+Read `shared/skill-context.md` for the full protocol (resolve `shared/...` against the plugin root — two levels above this SKILL.md — never the project's working directory). In brief:
 
 1. Read `.claude/skill-context/preferences.md` — if missing, invoke `/preferences` (streamlined).
 2. No skill-specific preferences file for ai-council — shared preferences are sufficient.

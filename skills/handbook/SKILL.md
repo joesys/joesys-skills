@@ -63,7 +63,7 @@ When scoped, the handbook covers only the targeted subtree but still includes:
 
 ### Step 0.1: Load Preferences
 
-Read `shared/skill-context.md` for the full protocol. This skill is **full interview** category.
+Read `shared/skill-context.md` for the full protocol (resolve `shared/...` against the plugin root — two levels above this SKILL.md — never the project's working directory). This skill is **full interview** category.
 
 1. Check for `.claude/skill-context/preferences.md` -- if missing, invoke `/preferences` before proceeding.
 2. Check for `.claude/skill-context/handbook.md` -- if found, load previous interview answers and context.
@@ -442,7 +442,7 @@ Write the polished markdown to `docs/handbook/handbook.md`. Create the directory
 
 ### Step 6.2: Render Portable HTML
 
-Call the renderer with the `handbook` profile. The renderer inlines all vendor CSS/JS into the template skeleton at render time, producing a single file with zero external dependencies.
+Call the renderer with the `handbook` profile. The renderer inlines all vendor CSS/JS into the template skeleton at render time, producing a single file with zero external dependencies. **Resolve `scripts/html_render.py` to its absolute path under the plugin root (two levels above this SKILL.md) before running** — the command executes in the user's project working directory, which does not contain the plugin's `scripts/` folder.
 
 ```bash
 python scripts/html_render.py docs/handbook/handbook.md --profile handbook
