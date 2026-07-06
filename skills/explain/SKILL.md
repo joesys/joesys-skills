@@ -122,6 +122,7 @@ Each subagent receives a prompt containing:
 - The resolved scope (what to analyze)
 - The file list (for non-project scopes)
 - The full Guiding Principles block (see below) — prepend it to every subagent prompt before dispatch
+- The **Diagram Standards** — append the contents of `references/diagram-standards.md` (resolved against this skill's directory, not the project cwd) after the Guiding Principles, so agents that emit diagrams follow them without needing a file read
 - **User preferences** (loaded in Phase 1.0) — append the relevant subset after the Guiding Principles. Format as a `## User Preferences` section with only the fields that affect that subagent's lens. For example, Agent 1 (Structure) gets explanation style and detail level; Agent 5 (Health) gets experience level and project phase.
 
 ### Guiding Principles (included in every subagent prompt)
@@ -131,7 +132,7 @@ Each subagent receives a prompt containing:
 3. **Use LSP tools if available, fall back to Glob/Grep/Read.** Do not fail if LSP is unavailable.
 4. **Respect scope boundaries.** Focus on the requested scope. Reference external context where necessary ("this module is called from `src/api/routes.ts`") but do not produce full analysis of unrelated modules.
 5. **Don't reproduce source code.** Reference code with `file:line_number` pointers and short snippets for clarity. The user has the code — they need understanding, not a copy.
-6. **Diagrams MUST use Mermaid syntax and follow the shared Diagram Standards.** Read `references/diagram-standards.md` for the syntax patterns per diagram type, adaptive detail rules, and authoring notes — these standards are prepended to every subagent prompt that produces diagrams. ASCII box-drawing for graphs is not permitted.
+6. **Diagrams MUST use Mermaid syntax and follow the Diagram Standards included in this prompt** (the host appends them below — syntax patterns per diagram type, adaptive detail rules, and authoring notes). ASCII box-drawing for graphs is not permitted.
 7. **No value judgments in non-Health lenses.** Agents 1–4 describe and explain. Only Agent 5 (Health & Risk) assesses quality and risk.
 
 ### Subagent Roster

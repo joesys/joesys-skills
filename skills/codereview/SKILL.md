@@ -369,7 +369,9 @@ When cross-model dispatch produced findings:
 
 ### 3.3 Apply Severity Filter
 
-If `--min-severity` was specified, filter findings **now** (not during analysis — subagents always perform full analysis). Remove any finding below the threshold. Severity order: P0 > P1 > P2 > P3 > P4.
+If `--min-severity` was specified, filter findings (not during analysis — subagents always perform full analysis). Remove any finding below the threshold. Severity order: P0 > P1 > P2 > P3 > P4.
+
+**Timing — this is deferred when re-review runs.** Phase 3.7 (tech-lead re-review) is on by default; it receives ALL findings so it can upgrade a misclassified finding across the threshold, and the filter applies to its verdict afterward (§ 3.7.5). So apply this filter **now only under `--no-re-review`**; otherwise defer it until after Phase 3.7.
 
 ### 3.4 Prioritize Correctness
 

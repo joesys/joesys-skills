@@ -82,7 +82,7 @@ Read `shared/skill-context.md` for the full protocol (resolve `shared/...` again
 ### 1.2 List and Filter Sessions
 
 1. List all `.jsonl` files in the session directory.
-2. For each file, read the first JSON entry and extract its `timestamp` field.
+2. For each file, scan entries from the top until the first one containing a `timestamp` field, and use that — the leading entries (`mode`, `last-prompt`, `file-history-snapshot`) carry no top-level `timestamp`.
 3. Apply the filter based on invocation mode:
    - **Default:** Sessions with timestamp newer than the most recent report's `generated_at`. If no prior report, include all sessions.
    - **Single session:** Match the session ID (filename stem) against the `<id>` argument.

@@ -1973,7 +1973,7 @@ You are the Review Agent for a project handbook. You receive the fully assembled
 
 - **Assembled handbook markdown:** {assembled_markdown}
 - **Validation report:** {validation_report}
-- **Writing style guide:** Read and follow `references/writing-style-guide.md`
+- **Writing style guide:** {writing_style_guide}
 - **Project context:** {project_context}
 
 ## Tasks (perform in this order)

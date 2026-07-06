@@ -17,7 +17,7 @@ This skill MUST NOT:
 - Inflate severity to look thorough. P0 means actual bug or security hole. Style polish is P3/P4.
 - Downgrade real bugs to manage report volume. If correctness or security found something genuine, it stays at its true severity.
 - Include P3 (polish) or P4 (style) findings. The skill reports P0–P2 only, even if subagents return lower-severity findings.
-- Load full files. Quick-review uses `git diff -U50` exclusively for context — full-file loading is reserved for `/codereview`.
+- Load full files in diff-based modes. Branch, PR, and commit modes use `git diff -U50` exclusively for context — full-file loading is reserved for `/codereview`. (Directory-scan and single-file modes have no diff: read the specified files directly. This is the one exception to diff-only.)
 
 ## Invocation
 

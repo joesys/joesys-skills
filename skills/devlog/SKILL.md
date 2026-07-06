@@ -91,11 +91,11 @@ Before dispatching gathering agents, resolve the timeframe for content mining.
 
 Determine the active session by reading the session pointer file:
 
-1. Find the current shell's PID
-2. Read `~/.claude/sessions/<PID>.json` to get the `sessionId`
+1. List `~/.claude/sessions/*.json`. Each pointer file is written by Claude Code and records the Claude Code process `pid`, its `cwd`, the `sessionId`, and a start timestamp — do NOT use the Bash tool's `$$`, which is a transient subprocess PID that never matches these files.
+2. Select the pointer whose `cwd` equals the current working directory; if more than one matches, take the most recently modified file. Read its `sessionId`.
 3. The session JSONL file is at `~/.claude/projects/<project-dir>/<sessionId>.jsonl`
 
-The `<project-dir>` is derived from the current working directory with path separators replaced by `--` (e.g., `D:\joesys\Projects\joesys-skills` becomes `D--joesys-Projects-joesys-skills`).
+The `<project-dir>` is derived from the current working directory by replacing every non-alphanumeric character (the drive `:`, path separators `\` and `/`) with a single `-` (e.g., `D:\joesys\Projects\joesys-skills` becomes `D--joesys-Projects-joesys-skills` — the `--` after the drive letter is `:` and `\` each becoming one `-`; on POSIX, `/home/user/app` becomes `-home-user-app`). If unsure, list `~/.claude/projects/` and match the entry against the transformed cwd.
 
 ### 1.2 Timeframe Computation
 

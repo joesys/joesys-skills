@@ -56,7 +56,7 @@ Flags combine: `/dashboard --no-llm --no-host` is the fully deterministic, fully
 ### Scope Detection
 
 - No argument → whole repo. `collect_git.py` auto-detects top-level source directories as modules.
-- An argument that matches an existing directory → pass it through so module activity centres on that subtree. The lights and KPIs still reflect the whole repo's git history (they are repo-wide signals), but the Delivery lens's per-module breakdown highlights the scoped path.
+- An argument that matches an existing directory → treat it as a **focus hint for the report layer**, not a collector argument. Still run `collect_git.py --repo <repo>` against the whole repo — there is no per-subtree scope flag, and passing the subtree as `--repo` would mis-scope every metric (wrong repo name, modules, branch stats). The lights and KPIs reflect the whole repo's git history (they are repo-wide signals); in Phase 4, highlight the matching module from `lenses.delivery.modules` in the summary.
 - If the argument matches no directory → report: "Path not found: `<path>`. Check the path and try again." and stop.
 
 ---

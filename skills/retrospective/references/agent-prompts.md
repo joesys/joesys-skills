@@ -85,7 +85,7 @@ You are reading Claude Code conversation transcripts to find moments of human co
 
 ## Session Resolution
 Determine the active project's session files:
-1. The project directory is derived from the current working directory with path separators replaced by `--` (e.g., `D:\joesys\Projects\my-project` becomes `D--joesys-Projects-my-project`).
+1. The project directory is derived from the current working directory by replacing every non-alphanumeric character (the drive `:`, path separators `\` and `/`) with a single `-` (e.g., `D:\joesys\Projects\my-project` becomes `D--joesys-Projects-my-project` — the `--` after the drive letter is `:` and `\` each becoming one `-`; on POSIX, `/home/user/app` becomes `-home-user-app`). If unsure, list `~/.claude/projects/` and match the entry against the transformed cwd.
 2. Session JSONL files are at `~/.claude/projects/<project-dir>/<sessionId>.jsonl`
 3. Filter sessions to those with timestamps within the retro time boundary. Check the first entry's `timestamp` field in each JSONL file.
 

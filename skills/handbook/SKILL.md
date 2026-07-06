@@ -398,7 +398,7 @@ Emit the validation report as a structured checklist. Pass it to Phase 5b.
 Dispatch a single review agent (`model: "opus"`) with:
 - The full assembled markdown from Phase 4
 - The mechanical validation report from Phase 5a
-- The writing style guide from `references/writing-style-guide.md`
+- The writing style guide — inject the contents of `references/writing-style-guide.md` (resolved against this skill's directory) into the prompt's `{writing_style_guide}` placeholder, exactly as Phase 3 does for chapter writers
 - The project context block from Phase 0
 
 ### Review Agent Tasks

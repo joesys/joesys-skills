@@ -108,7 +108,7 @@ ls -1t "<screenshot_folder>"/*.{png,jpg,jpeg,bmp,gif,webp,mp4,mov,mkv,avi,webm} 
 On Windows, PowerShell may be more reliable:
 
 ```powershell
-Get-ChildItem "<screenshot_folder>" -Include *.png,*.jpg,*.jpeg,*.bmp,*.gif,*.webp,*.mp4,*.mov,*.mkv,*.avi,*.webm | Sort-Object LastWriteTime -Descending
+Get-ChildItem "<screenshot_folder>\*" -Include *.png,*.jpg,*.jpeg,*.bmp,*.gif,*.webp,*.mp4,*.mov,*.mkv,*.avi,*.webm | Sort-Object LastWriteTime -Descending
 ```
 
 If no files are found:
