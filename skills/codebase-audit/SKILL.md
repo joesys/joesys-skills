@@ -78,7 +78,7 @@ Read `references/detection-defaults.md` for language marker files, language defa
 ### Detection Steps
 
 1. **Parse arguments** — determine invocation mode: `full`, `metrics`, `analysis`, `delta`, or `scoped`
-2. **Load user preferences** — read `shared/skill-context.md` for the full protocol. Load `.claude/skill-context/preferences.md` (shared) and `.claude/skill-context/codebase-audit.md` (skill-specific). If no shared preferences exist, invoke `/preferences` (streamlined mode). Shared preferences supply project phase, team size, and business priority — Phase 3 will skip questions already answered here.
+2. **Load user preferences** — read `shared/skill-context.md` for the full protocol (resolve `shared/...` against the plugin root — two levels above this SKILL.md — never the project's working directory). Load `.claude/skill-context/preferences.md` (shared) and `.claude/skill-context/codebase-audit.md` (skill-specific). If no shared preferences exist, invoke `/preferences` (streamlined mode). Shared preferences supply project phase, team size, and business priority — Phase 3 will skip questions already answered here.
 3. **Load config** — read `.claude/audit.yaml` if it exists (all fields optional)
 4. **Auto-detect language** — check marker files in priority order (see reference)
 5. **Apply language defaults** — function patterns, test runner, extension (see reference)

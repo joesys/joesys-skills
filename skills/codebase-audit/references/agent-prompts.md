@@ -2,6 +2,16 @@
 
 Full prompt templates for the 6 collection agents (Phase 1) and the analysis author agent (Phase 4). Each prompt receives `{PROJECT_CONTEXT_BLOCK}` and `{TOOLING_CONTEXT}` from Phase 0.
 
+## Path Substitution (required before dispatch)
+
+These templates contain **plugin-relative** paths — `skills/codebase-audit/...` (principle, benchmark, helper, and template files) and `shared/...` (cross-skill references). Dispatched subagents start in the **user's project working directory**, not the plugin, so they cannot resolve these paths.
+
+**Before dispatching each prompt, the host MUST rewrite every such path to an absolute path:**
+- Resolve `skills/codebase-audit/...` against this skill's own directory (the parent of this `references/` folder).
+- Resolve `shared/...` against the plugin root (two levels above the skill directory).
+
+This applies to both the file references (`Read ...`) and the helper-script invocations (`python skills/codebase-audit/helpers/...` — invoke with `python3` where present, falling back to `python` on Windows; stock macOS/Linux expose only `python3`). Leave no `skills/codebase-audit/...` or `shared/...` path in a dispatched prompt. Project-relative paths (e.g. `docs/reports/...`) resolve in the user's project and must **not** be rewritten.
+
 ## Table of Contents
 
 - [Agent 1: Structural](#agent-1-structural)

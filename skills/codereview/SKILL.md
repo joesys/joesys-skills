@@ -41,7 +41,7 @@ If the invocation is ambiguous or unrecognizable, ask the user to clarify before
 
 ### 1.0 Load User Preferences
 
-Read `shared/skill-context.md` for the full protocol. In brief:
+Read `shared/skill-context.md` for the full protocol (resolve `shared/...` against the plugin root — two levels above this SKILL.md — never the project's working directory). In brief:
 
 1. Read `.claude/skill-context/preferences.md` — if missing, invoke `/preferences` (streamlined).
 2. Read `.claude/skill-context/codereview.md` (if it exists) for review-specific preferences.
@@ -57,7 +57,7 @@ Read `shared/skill-context.md` for the full protocol. In brief:
 | Review-specific: severity focus | Override `--min-severity` default (e.g., user always wants P0–P1 only) |
 | Review-specific: priority domains | Reorder which domains get emphasis in the synthesis |
 
-Pass relevant preferences to each domain subagent in Phase 2 — append as a `## User Preferences` section after the principle file content.
+Pass relevant preferences to each domain subagent in Phase 2 — append a `## User Preferences` section to the subagent prompt (after its `## Instructions` block). The prompt carries the principle file as a `<PRINCIPLE_PATH>` reference, not inlined content, so there is no "principle file content" to append after.
 
 ### 1.1 Base Branch Detection
 
@@ -78,9 +78,9 @@ Three tiers based on diff size. Measure LOC from `git diff --shortstat <base>...
 
 | Tier | Trigger | Strategy |
 |---|---|---|
-| Small | ≤ 30 files | Single-shot: one dispatch of 7 domain subagents + cross-model over all files (Phase 2 as-is) |
-| Medium | 31–100 files | File-batching — see § 1.4a |
-| Large | > 100 files **OR** > 5,000 LOC changed | Logical-cluster dispatch — see § 1.4b |
+| Small | ≤ 30 files **and** ≤ 5,000 LOC | Single-shot: one dispatch of 7 domain subagents + cross-model over all files (Phase 2 as-is) |
+| Medium | 31–100 files **and** ≤ 5,000 LOC | File-batching — see § 1.4a |
+| Large | > 100 files **or** > 5,000 LOC changed | Logical-cluster dispatch — see § 1.4b. The LOC trigger takes precedence: a few files carrying a huge diff (generated code, lockfiles) is Large, not Small. |
 
 Thresholds are defaults. Users can override in `.claude/skill-context/codereview.md` with any of:
 - `medium_tier_threshold_files` (default `30`)
@@ -369,7 +369,9 @@ When cross-model dispatch produced findings:
 
 ### 3.3 Apply Severity Filter
 
-If `--min-severity` was specified, filter findings **now** (not during analysis — subagents always perform full analysis). Remove any finding below the threshold. Severity order: P0 > P1 > P2 > P3 > P4.
+If `--min-severity` was specified, filter findings (not during analysis — subagents always perform full analysis). Remove any finding below the threshold. Severity order: P0 > P1 > P2 > P3 > P4.
+
+**Timing — this is deferred when re-review runs.** Phase 3.7 (tech-lead re-review) is on by default; it receives ALL findings so it can upgrade a misclassified finding across the threshold, and the filter applies to its verdict afterward (§ 3.7.5). So apply this filter **now only under `--no-re-review`**; otherwise defer it until after Phase 3.7.
 
 ### 3.4 Prioritize Correctness
 

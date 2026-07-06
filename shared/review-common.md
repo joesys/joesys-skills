@@ -143,6 +143,8 @@ Quick-review discards tool findings below P2.
 | PR number not found | "PR #N not found. Check the number and try again." |
 | Commit hash not found | "Commit `<hash>` not found. Check the hash and try again." |
 | File not found (single file mode) | "File `<path>` not found. Check the path and try again." |
+| Not a git repository | For git-based modes (branch/PR/commit): report "This isn't a git repository — try directory-scan or `--file` mode instead of asking for a base branch." Do not loop on base-branch selection. |
+| `gh` missing or unauthenticated (PR mode) | Check `gh` availability before PR mode; if absent, report "PR mode needs the GitHub CLI — install it and run `gh auth login`, or use branch-diff / `--commit` mode." |
 | No violations found | codereview: "No violations detected. Code looks solid." quick-review: "No bugs or security issues found. Code looks solid." |
 | Too many files (>100) | codereview: large tier activates logical-cluster dispatch (§ 1.4b) — no warning needed. quick-review: warn about scope size, suggest narrowing with `--file` or a subdirectory, proceed if confirmed. |
 | Tool binary not found | Classify as `configured-but-unavailable`, skip, continue review. |

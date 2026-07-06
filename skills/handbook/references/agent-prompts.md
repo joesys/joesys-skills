@@ -4,6 +4,8 @@ Full prompt templates for every agent dispatched by the `/handbook` skill. The h
 
 **Total agents:** 6 analysis (Phase 1), 13 core chapter writers + 3 conditional chapter writers (Phase 3), 1 review agent (Phase 5b) = 23 maximum.
 
+**Path substitution (required before dispatch):** these templates reference plugin files by relative path (`references/output-schemas.md`, `references/writing-style-guide.md`). Dispatched subagents start in the user's project cwd and cannot resolve them. Before dispatch, the host MUST **inline the referenced content** into the prompt — substitute the relevant `references/output-schemas.md` section where a template says "following the schema in ...", and fill the `{writing_style_guide}` placeholder from `references/writing-style-guide.md` (resolved against this skill's directory). Never leave a bare `references/...` path for a subagent to open.
+
 ## Table of Contents
 
 - [Guiding Principles](#guiding-principles)
@@ -460,7 +462,7 @@ High churn in source files often indicates either active development or instabil
 ### 3. Fragile Areas
 Identify files that frequently appear in bug-fix commits:
 ```bash
-git log --since="6 months ago" --grep="fix" --grep="bug" --grep="hotfix" --grep="patch" --all-match --pretty=format: --name-only | sort | uniq -c | sort -rn | head -15
+git log --since="6 months ago" --grep="fix" --grep="bug" --grep="hotfix" --grep="patch" --pretty=format: --name-only | sort | uniq -c | sort -rn | head -15
 ```
 
 Also search for revert commits:
@@ -1973,7 +1975,7 @@ You are the Review Agent for a project handbook. You receive the fully assembled
 
 - **Assembled handbook markdown:** {assembled_markdown}
 - **Validation report:** {validation_report}
-- **Writing style guide:** Read and follow `references/writing-style-guide.md`
+- **Writing style guide:** {writing_style_guide}
 - **Project context:** {project_context}
 
 ## Tasks (perform in this order)

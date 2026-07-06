@@ -17,7 +17,7 @@ This skill MUST NOT:
 - Inflate severity to look thorough. P0 means actual bug or security hole. Style polish is P3/P4.
 - Downgrade real bugs to manage report volume. If correctness or security found something genuine, it stays at its true severity.
 - Include P3 (polish) or P4 (style) findings. The skill reports P0–P2 only, even if subagents return lower-severity findings.
-- Load full files. Quick-review uses `git diff -U50` exclusively for context — full-file loading is reserved for `/codereview`.
+- Load full files in diff-based modes. Branch, PR, and commit modes use `git diff -U50` exclusively for context — full-file loading is reserved for `/codereview`. (Directory-scan and single-file modes have no diff: read the specified files directly. This is the one exception to diff-only.)
 
 ## Invocation
 
@@ -42,7 +42,7 @@ If the invocation is ambiguous or unrecognizable, ask the user to clarify before
 
 ### 1.0 Load User Preferences
 
-Read `shared/skill-context.md` for the full protocol. In brief:
+Read `shared/skill-context.md` for the full protocol (resolve `shared/...` against the plugin root — two levels above this SKILL.md — never the project's working directory). In brief:
 
 1. Read `.claude/skill-context/preferences.md` — if missing, invoke `/preferences` (streamlined).
 2. Read `.claude/skill-context/codereview.md` (if it exists) — quick-review shares review preferences with codereview.
@@ -74,6 +74,8 @@ git diff -U50 <base>...HEAD
 ```
 
 The `-U50` flag expands each hunk to include ~50 lines of surrounding context — enough for local scope, function signatures, variable declarations, and control flow, without loading entire files.
+
+For non-branch modes, adjust the command so subagents still receive ~50-line context: `--commit <hash>` → `git diff -U50 <commit>^..<commit>`; `--pr <n>` → `gh pr diff` has no context-width flag, so fetch and diff locally with `git fetch origin pull/<n>/head && git diff -U50 $(git merge-base HEAD FETCH_HEAD)...FETCH_HEAD`. Do not tell subagents the diff has 50-line context if it was produced by a command that doesn't provide it.
 
 This is the primary time savings over the full codereview.
 

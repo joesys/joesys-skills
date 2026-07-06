@@ -52,7 +52,7 @@ If the invocation is ambiguous or the file path is unrecognizable, ask the user 
 
 ## User Preferences
 
-Read `shared/skill-context.md` for the full protocol. In brief:
+Read `shared/skill-context.md` for the full protocol (resolve `shared/...` against the plugin root — two levels above this SKILL.md — never the project's working directory). In brief:
 
 1. Read `.claude/skill-context/preferences.md` — if missing, proceed with defaults (do not interrupt the export flow).
 2. Read `.claude/skill-context/export.md` (if it exists) for export-specific preferences.
@@ -86,19 +86,19 @@ Based on `--scope`:
 - Identify key sections, findings, and conclusions.
 - Produce a focused summary — typically 30–50% of the original length.
 - Preserve code blocks, tables, and other structured elements central to the document's message.
-- Write the condensed markdown to a temporary file.
+- Write the condensed markdown to a temporary file. Because `md_export.py` derives the output name and location from its **input** file, pass `--output <original-dir>/<original-stem>-<scope>.<ext>` at render (Step 3) so the result lands beside the original with the right name, not in the temp directory. (For `--format all`, which rejects `--output`, write the temp file as `<original-stem>.md` in a scratch dir and move the three outputs next to the original afterward.)
 
 **`1pager`:** Read the input file and condense to ~one A4 page (~500–600 words):
 - Prioritize conclusions, key findings, critical code.
 - Use tighter prose — bullet points over paragraphs where appropriate.
 - Omit secondary details, verbose explanations, supporting examples.
-- Write the condensed markdown to a temporary file.
+- Write the condensed markdown to a temporary file. Because `md_export.py` derives the output name and location from its **input** file, pass `--output <original-dir>/<original-stem>-<scope>.<ext>` at render (Step 3) so the result lands beside the original with the right name, not in the temp directory. (For `--format all`, which rejects `--output`, write the temp file as `<original-stem>.md` in a scratch dir and move the three outputs next to the original afterward.)
 
 For code files (`.py`, `.cpp`, etc.) with `summary` or `1pager` scope: extract the most important functions/classes with brief descriptions. Do not attempt to summarize every line.
 
 ### Step 3 — Render
 
-Invoke the rendering script:
+Invoke the rendering script. **Resolve `scripts/md_export.py` to its absolute path under the plugin root (two levels above this SKILL.md) before running** — the command executes in the user's project working directory, which does not contain the plugin's `scripts/` folder. Invoke it with `python3` where present, falling back to `python` on Windows — stock macOS/Linux expose only `python3`.
 
 ```bash
 python scripts/md_export.py <input_or_temp_file> \
@@ -119,7 +119,7 @@ Each format uses a different rendering pipeline:
 
 The script handles input detection (markdown vs code) and wraps code files in fenced blocks with syntax highlighting before passing to Pandoc.
 
-**Format notes:** PDF typography and page geometry come from the LaTeX templates (system fonts with automatic fallbacks); for PNG, `--scope 1pager` renders a single A4-equivalent page while `full`/`summary` produce a narrow auto-height image trimmed to content.
+**Format notes:** PDF typography and page geometry come from the LaTeX templates (on Windows the body uses Segoe UI and code uses Cascadia Code; on macOS/Linux it falls back to the LaTeX default, Latin Modern, which every TeX install provides — so PDF never fails on a missing font); for PNG, `--scope 1pager` renders a single A4-equivalent page while `full`/`summary` produce a narrow auto-height image trimmed to content.
 
 ### Step 4 — Report Results
 

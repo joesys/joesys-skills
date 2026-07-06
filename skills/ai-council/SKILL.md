@@ -33,7 +33,7 @@ If the question is empty or unintelligible, use `AskUserQuestion` to ask the use
 
 ## Phase 0: Load User Preferences
 
-Read `shared/skill-context.md` for the full protocol. In brief:
+Read `shared/skill-context.md` for the full protocol (resolve `shared/...` against the plugin root — two levels above this SKILL.md — never the project's working directory). In brief:
 
 1. Read `.claude/skill-context/preferences.md` — if missing, invoke `/preferences` (streamlined).
 2. No skill-specific preferences file for ai-council — shared preferences are sufficient.
@@ -89,13 +89,21 @@ Read `shared/delegation-common.md` § Prompt Delivery and `shared/model-defaults
 
 **MUST always** write the three prompt files using that temp-file-and-heredoc pattern, with leg-specific names — each file gets the four-part prompt with its leg-specific preamble:
 
+Use **fixed, deterministic paths**, not `mktemp`. The Bash tool starts a fresh shell on every call, so a shell variable holding a randomized name would be gone before the Phase 3 dispatch and the cleanup call — the *files* persist on disk across calls, but the *variables* do not. On Windows (Git Bash), swap `/tmp` for `$TEMP`.
+
 ```bash
-CODEX_PROMPT=$(mktemp /tmp/council-codex-XXXXXX.txt)
-AGY_PROMPT=$(mktemp /tmp/council-antigravity-XXXXXX.txt)
-CLAUDE_PROMPT=$(mktemp /tmp/council-claude-XXXXXX.txt)
+cat > /tmp/council-codex.txt << 'PROMPT_EOF'
+<four-part prompt with the Codex-leg preamble>
+PROMPT_EOF
+cat > /tmp/council-antigravity.txt << 'PROMPT_EOF'
+<four-part prompt with the Antigravity-leg preamble>
+PROMPT_EOF
+cat > /tmp/council-claude.txt << 'PROMPT_EOF'
+<four-part prompt with the Claude-leg preamble>
+PROMPT_EOF
 ```
 
-Dispatch happens in Phase 3. Clean up temporary files after all legs complete: `rm -f "$CODEX_PROMPT" "$AGY_PROMPT" "$CLAUDE_PROMPT"`
+Dispatch happens in Phase 3, referencing these fixed paths. Clean up after all legs complete: `rm -f /tmp/council-codex.txt /tmp/council-antigravity.txt /tmp/council-claude.txt /tmp/council-codex.log`
 
 ## Phase 3: Parallel Dispatch
 
@@ -103,10 +111,10 @@ Dispatch happens in Phase 3. Clean up temporary files after all legs complete: `
 
 ### Codex Leg (Bash, 600000ms timeout)
 
-**MUST deliver via stdin pipe** (see Prompt Size Safety). Substitute `<CODEX_CMD>` with the current invocation from `shared/model-defaults.md` § Codex. For resumability, replace the template's trailing `2>/dev/null` with `2>"$CODEX_LOG"` and grep the `session id:` line after the run (see § Codex Resume) — that ID is what makes the Post-Synthesis resume offer reliable.
+**MUST deliver via stdin pipe** (see Prompt Size Safety). Substitute `<CODEX_CMD>` with the current invocation from `shared/model-defaults.md` § Codex. For resumability, replace the template's trailing `2>/dev/null` with `2>/tmp/council-codex.log` and grep the `session id:` line from that log after the run (see § Codex Resume) — that ID is what makes the Post-Synthesis resume offer reliable.
 
 ```bash
-cat "$CODEX_PROMPT" | <CODEX_CMD>
+cat /tmp/council-codex.txt | <CODEX_CMD>
 ```
 
 ### Antigravity Leg (Bash, 600000ms timeout)
@@ -114,7 +122,7 @@ cat "$CODEX_PROMPT" | <CODEX_CMD>
 The adapter runs `agy` non-interactively and appends `-p` itself — do **not** add `-p`. **MUST deliver the prompt via stdin pipe** (shell metacharacters break direct arguments). Substitute `<AGY_CMD>` with the current invocation from `shared/model-defaults.md` § Antigravity.
 
 ```bash
-cat "$AGY_PROMPT" | <AGY_CMD>
+cat /tmp/council-antigravity.txt | <AGY_CMD>
 ```
 
 ### Claude Leg (Heuristic)
@@ -126,7 +134,7 @@ Choose the mechanism based on whether the prompt is self-contained:
 **Use CLI** when the question references specific files or codepaths that Phase 1 could not fully resolve, and the Claude leg would benefit from tool access to explore further. Substitute `<CLAUDE_CMD>` with the current invocation from `shared/model-defaults.md` § Claude CLI, and append `--name` for resumability:
 
 ```bash
-cat "$CLAUDE_PROMPT" | <CLAUDE_CMD> --name "council-<topic>"
+cat /tmp/council-claude.txt | <CLAUDE_CMD> --name "council-<topic>"
 ```
 
 ### Fallback Behavior

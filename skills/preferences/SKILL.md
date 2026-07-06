@@ -7,7 +7,7 @@ description: "Use when the user invokes /preferences to set, view, or update the
 
 Capture and manage user preferences that shape how every skill in this collection behaves. Preferences are personal (per-user, per-project) and stored in `.claude/skill-context/`.
 
-Read `shared/skill-context.md` for the full file format specification and how other skills consume these preferences.
+Read `shared/skill-context.md` for the full file format specification and how other skills consume these preferences (resolve `shared/...` against the plugin root — two levels above this SKILL.md — never the project's working directory).
 
 ## Out of Scope
 

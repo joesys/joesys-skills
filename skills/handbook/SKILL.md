@@ -63,7 +63,7 @@ When scoped, the handbook covers only the targeted subtree but still includes:
 
 ### Step 0.1: Load Preferences
 
-Read `shared/skill-context.md` for the full protocol. This skill is **full interview** category.
+Read `shared/skill-context.md` for the full protocol (resolve `shared/...` against the plugin root — two levels above this SKILL.md — never the project's working directory). This skill is **full interview** category.
 
 1. Check for `.claude/skill-context/preferences.md` -- if missing, invoke `/preferences` before proceeding.
 2. Check for `.claude/skill-context/handbook.md` -- if found, load previous interview answers and context.
@@ -356,7 +356,7 @@ When conditional chapters are present, all chapters must be renumbered sequentia
 | Security & Permissions | Configuration & Environment (core ch 7) |
 | Build, Deployment & Ops | Testing Guide (core ch 9) |
 
-Example with all three conditional chapters present: chapters 1-4 (core), 5 (Data Model), 6-8 (core 5-7), 9 (Security), 10 (core 8-9), 11 (Build/Deploy), 12-16 (core 10-13).
+Example with all three conditional chapters present: chapters 1-4 (core 1-4), 5 (Data Model), 6-8 (core 5-7), 9 (Security), 10-11 (core 8-9), 12 (Build/Deploy), 13-16 (core 10-13).
 
 ### Assembly Validation
 
@@ -398,7 +398,7 @@ Emit the validation report as a structured checklist. Pass it to Phase 5b.
 Dispatch a single review agent (`model: "opus"`) with:
 - The full assembled markdown from Phase 4
 - The mechanical validation report from Phase 5a
-- The writing style guide from `references/writing-style-guide.md`
+- The writing style guide — inject the contents of `references/writing-style-guide.md` (resolved against this skill's directory) into the prompt's `{writing_style_guide}` placeholder, exactly as Phase 3 does for chapter writers
 - The project context block from Phase 0
 
 ### Review Agent Tasks
@@ -442,7 +442,7 @@ Write the polished markdown to `docs/handbook/handbook.md`. Create the directory
 
 ### Step 6.2: Render Portable HTML
 
-Call the renderer with the `handbook` profile. The renderer inlines all vendor CSS/JS into the template skeleton at render time, producing a single file with zero external dependencies.
+Call the renderer with the `handbook` profile. The renderer inlines all vendor CSS/JS into the template skeleton at render time, producing a single file with zero external dependencies. **Resolve `scripts/html_render.py` to its absolute path under the plugin root (two levels above this SKILL.md) before running** — the command executes in the user's project working directory, which does not contain the plugin's `scripts/` folder. Invoke it with `python3` where present, falling back to `python` on Windows — stock macOS/Linux expose only `python3`.
 
 ```bash
 python scripts/html_render.py docs/handbook/handbook.md --profile handbook

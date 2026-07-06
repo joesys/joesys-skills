@@ -46,7 +46,7 @@ If the invocation is ambiguous or unrecognizable, ask the user to clarify before
 
 ### 0.1 Load User Preferences
 
-Read `shared/skill-context.md` for the full protocol. In brief:
+Read `shared/skill-context.md` for the full protocol (resolve `shared/...` against the plugin root — two levels above this SKILL.md — never the project's working directory). In brief:
 
 1. Read `.claude/skill-context/preferences.md` — if missing, invoke `/preferences` (streamlined).
 2. Read `.claude/skill-context/interaction-review.md` (if it exists) for skill-specific preferences.
@@ -82,7 +82,7 @@ Read `shared/skill-context.md` for the full protocol. In brief:
 ### 1.2 List and Filter Sessions
 
 1. List all `.jsonl` files in the session directory.
-2. For each file, read the first JSON entry and extract its `timestamp` field.
+2. For each file, scan entries from the top until the first one containing a `timestamp` field, and use that — the leading entries (`mode`, `last-prompt`, `file-history-snapshot`) carry no top-level `timestamp`.
 3. Apply the filter based on invocation mode:
    - **Default:** Sessions with timestamp newer than the most recent report's `generated_at`. If no prior report, include all sessions.
    - **Single session:** Match the session ID (filename stem) against the `<id>` argument.
@@ -221,7 +221,7 @@ The coach may only modify a finding when judgment changes the assessment — nev
 
 1. Apply any score adjustments to the scorecard (recalculate composite).
 2. Replace revised improvement items.
-3. Insert Coach's Note as section 7.6 of the report.
+3. Insert Coach's Note as section 6 (Coach's Note), immediately before the Progress Tracker — this shifts the draft's Progress Tracker from #6 to #7, matching the Section Order in `references/output-formats.md`.
 4. Add missed patterns as findings in the appropriate lens section, tagged `[Added by Coach]`.
 
 ### Error Handling
@@ -240,7 +240,7 @@ If the coach re-review fails: fall back to the Phase 3 draft report. Header note
 
 ### 4.2 Render HTML Companion
 
-Call the HTML renderer (best-effort — markdown is always saved regardless):
+Call the HTML renderer (best-effort — markdown is always saved regardless). **Resolve `scripts/html_render.py` to its absolute path under the plugin root (two levels above this SKILL.md) before running** — the command executes in the user's project cwd, which does not contain the plugin's `scripts/` folder (invoke with `python3` where present, falling back to `python` on Windows):
 
 ```
 python scripts/html_render.py docs/interaction-review/YYYYMMDD-interaction-review.md --profile analytical

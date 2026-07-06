@@ -31,6 +31,8 @@ This skill uses progressive disclosure — read reference files only when needed
 
 All under `skills/dashboard/helpers/`. All are read-only with respect to the repo.
 
+**Path resolution (required before every invocation in Phases 1 and 3):** resolve `skills/dashboard/helpers/` to its absolute path under the plugin root (two levels above this SKILL.md) before running any command below. The commands execute in the user's project working directory, which does not contain the plugin's helpers — a bare `skills/dashboard/helpers/...` path fails when the skill is installed. Invoke every helper with `python3` where present, falling back to `python` on Windows (detect once in Phase 0: `command -v python3 || command -v python`).
+
 | Script | Role | Key flags |
 |---|---|---|
 | `collect_git.py` | Deterministic local-git collector — the source of truth. Builds the entire `dashboard.json` (lights, KPIs, three lenses). | `--repo <path> --out <file> [--now <unix_ts>]` |
@@ -54,7 +56,7 @@ Flags combine: `/dashboard --no-llm --no-host` is the fully deterministic, fully
 ### Scope Detection
 
 - No argument → whole repo. `collect_git.py` auto-detects top-level source directories as modules.
-- An argument that matches an existing directory → pass it through so module activity centres on that subtree. The lights and KPIs still reflect the whole repo's git history (they are repo-wide signals), but the Delivery lens's per-module breakdown highlights the scoped path.
+- An argument that matches an existing directory → treat it as a **focus hint for the report layer**, not a collector argument. Still run `collect_git.py --repo <repo>` against the whole repo — there is no per-subtree scope flag, and passing the subtree as `--repo` would mis-scope every metric (wrong repo name, modules, branch stats). The lights and KPIs reflect the whole repo's git history (they are repo-wide signals); in Phase 4, highlight the matching module from `lenses.delivery.modules` in the summary.
 - If the argument matches no directory → report: "Path not found: `<path>`. Check the path and try again." and stop.
 
 ---
@@ -63,7 +65,7 @@ Flags combine: `/dashboard --no-llm --no-host` is the fully deterministic, fully
 
 Establish that the skill can run and what enrichment is available. No files are written in this phase.
 
-1. **Verify git repo.** Run `collect_git.py`'s precondition by checking `gitlog.is_git_repo(repo)` (the script does this itself and exits non-zero with `error: not a git repo: <repo>` if false). If it is not a git repo, **stop** and report the error — there is no fallback; every metric derives from git.
+1. **Verify git repo.** Check with `git -C <repo> rev-parse --is-inside-work-tree` (or simply rely on `collect_git.py`'s own precondition — it exits non-zero with `error: not a git repo: <repo>` when it runs in Phase 1). Do not try to call the `gitlog.is_git_repo` function directly — it is inside a helper module the host cannot import. If it is not a git repo, **stop** and report the error — there is no fallback; every metric derives from git.
 2. **Detect host availability.** Note whether a GitHub/GitLab remote exists and whether `gh` is installed + authenticated. `collect_host.py` decides this internally and degrades gracefully; Phase 0 only needs to know so the report can say "host: skipped (reason)". GitLab is not implemented in v1 — it degrades to unavailable.
 3. **Detect audit availability.** Note whether any `docs/reports/codebase-audit/*/metrics.json` exists. If none, code quality will read "not measured."
 4. **Load config.** `collect_git.py` reads `.claude/dashboard.yaml` (via `thresholds.load_config`) if present and PyYAML is installed; otherwise built-in defaults apply. The config can override thresholds, the module list, `off_hours`, and host mode. You do not load it yourself — the collector does — but note in the report whether a config was found.
@@ -93,7 +95,7 @@ Run the collectors. **These are strictly read-only — they only read git, the f
    ```
    When no report exists it writes `{"available": false}`.
 
-> On Windows, substitute a writable temp path for `/tmp/` (e.g. `$env:TEMP`). The collectors only need a path they can write the small JSON to.
+> On Windows, substitute a writable temp path for `/tmp/` (in the Bash tool's Git Bash, `$TEMP` or an absolute path like `C:/Users/<you>/AppData/Local/Temp`). The collectors only need a path they can write the small JSON to.
 
 ---
 
@@ -125,6 +127,8 @@ Load `docs/dashboard/dashboard.json` as `data`, then:
 | `data["lenses"]["health"]["why"]` | narrative `health_why` | only if a narrative was produced |
 | `data["lenses"]["team"]["why"]` | narrative `team_why` | only if a narrative was produced |
 | `data["narrative"]` | the full narrative object (incl. `callouts` and the per-metric `analysis` map) | only if a narrative was produced |
+
+> **Note:** the three `lenses.*.why` merges above are forward-compat only. The current renderer displays each lens's **deterministic** subtitle (cadence/throughput, firefighting %, bus factor), not the narrative `*_why`. What the narrative actually surfaces in the HTML is `overall.summary` (the verdict line) and the per-metric `analysis` tooltips ("In this repo"). Merging the per-lens `why` is harmless but has no visible effect today.
 
 Do **not** touch any `light` value or any computed metric — the merge only adds the optional layers. Write the merged dict back out (e.g. to `docs/dashboard/dashboard.json` or a sibling `merged.json`), then render:
 
@@ -196,4 +200,4 @@ fi
 | `collect_host.py` / `collect_audit.py` write `{"available": false}` | Not an error — merge as-is; the renderer shows the degraded state. |
 | Corrupt/partial `/codebase-audit` report | `collect_audit.py` skips unreadable reports and never crashes; if all are unreadable, code quality is "not measured." |
 | `render_dashboard.py` fails | Report the error and the path to the still-valid `docs/dashboard/dashboard.json` (the data survives even if HTML rendering does not). |
-| Python 3 unavailable | The skill cannot run — the entire pipeline is Python helpers. Report and stop. |
+| No Python interpreter | Detect it in Phase 0 (`command -v python3 || command -v python`) and use that for every helper command — `python` alone is absent on stock macOS/Linux even when Python 3 is installed. Only if neither `python3` nor `python` exists: the skill cannot run (the entire pipeline is Python helpers) — report and stop. |

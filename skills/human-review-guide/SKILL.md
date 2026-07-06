@@ -51,7 +51,7 @@ If the invocation is ambiguous or unrecognizable, ask the user to clarify before
 
 ### 0.1 Load User Preferences
 
-Read `shared/skill-context.md` for the full protocol. In brief:
+Read `shared/skill-context.md` for the full protocol (resolve `shared/...` against the plugin root — two levels above this SKILL.md — never the project's working directory). In brief:
 
 1. Read `.claude/skill-context/preferences.md` — if missing, invoke `/preferences` (streamlined).
 2. Read `.claude/skill-context/human-review-guide.md` (if it exists) for skill-specific preferences.
@@ -270,7 +270,7 @@ Assemble the guide inline using the terminal markdown template from `references/
 
 1. Write the guide as markdown to a temporary location following the HTML report template from `references/output-formats.md`.
 2. Include YAML front-matter per `shared/html-reports.md`.
-3. Call the HTML renderer:
+3. Call the HTML renderer. **Resolve `scripts/html_render.py` to its absolute path under the plugin root (two levels above this SKILL.md) before running** — the command executes in the user's project cwd, which does not contain the plugin's `scripts/` folder (invoke with `python3` where present, falling back to `python` on Windows):
 
 ````bash
 python scripts/html_render.py <report_path> --profile analytical
@@ -293,6 +293,6 @@ python scripts/html_render.py <report_path> --profile analytical
 
 | Phase | Budget / Strategy |
 |---|---|
-| Phase 1 triage agent | Receives diff/content + calibration. For large diffs (>100 files), send only `git diff --stat` + file list and let the agent request specific file diffs as needed. |
+| Phase 1 triage agent | Receives diff/content + calibration. For large diffs (>100 files), send `git diff --stat` + file list **plus the resolved base ref** (or the `gh pr diff` command in PR mode), and instruct the agent to run `git diff <base>...HEAD -- <file>` itself in the project cwd for any file it needs to inspect — a dispatched agent cannot ask the host for more mid-run. |
 | Phase 2 deep analysis agent | Receives only DECIDE/READ chunk content + surrounding context. SKIM/SKIP chunks are excluded to save context. |
 | Phase 3 synthesis | Operates on agent outputs only — no raw content re-reading. |

@@ -52,6 +52,20 @@ def build_collection(
         )
 
     _copy_tree(source_root / "shared", output_root / "shared")
+    # Shared bodies ship to Codex verbatim otherwise, carrying Claude
+    # Code-only tool names (AskUserQuestion, WebSearch, Bash), `.claude/`
+    # paths, and repo-relative plugin references. Adapt them like SKILL.md
+    # bodies (current_skill=None — shared files are not inside any skill).
+    for md in sorted((output_root / "shared").glob("**/*.md")):
+        md.write_text(
+            _adapt_text(
+                md.read_text(encoding="utf-8"),
+                skill_names,
+                install_root,
+                current_skill=None,
+            ),
+            encoding="utf-8",
+        )
     _copy_tree(source_root / "scripts", output_root / "scripts")
 
     manifest = {
@@ -160,6 +174,22 @@ def _copy_skill(
         ),
         encoding="utf-8",
     )
+    # Reference/principle/template markdown ships to Codex too — adapt tool
+    # names, .claude paths, slash commands, and resource paths in them as
+    # well, so a dispatched Codex agent never reads a Claude Code-only
+    # instruction or a repo-relative plugin path.
+    for md in sorted(destination.glob("**/*.md")):
+        if md.name == "SKILL.md":
+            continue
+        md.write_text(
+            _adapt_text(
+                md.read_text(encoding="utf-8"),
+                skill_names,
+                install_root,
+                current_skill=destination.name,
+            ),
+            encoding="utf-8",
+        )
 
 
 def _copy_tree(source: Path, destination: Path) -> None:
@@ -232,7 +262,7 @@ def _adapt_text(
     skill_names: Iterable[str],
     install_root: str,
     *,
-    current_skill: str,
+    current_skill: str | None = None,
 ) -> str:
     adapted = text
     for skill_name in sorted(skill_names, key=len, reverse=True):
@@ -243,6 +273,7 @@ def _adapt_text(
         )
 
     adapted = adapted.replace("AskUserQuestion", "ask the user directly")
+    adapted = adapted.replace("WebSearch", "web search")
     adapted = adapted.replace("Bash tool", "shell command tool")
     adapted = adapted.replace("Bash", "shell")
     adapted = adapted.replace("Agent tool", "Codex agent workflow")
@@ -255,7 +286,9 @@ def _adapt_text(
     return adapted
 
 
-def _adapt_resource_paths(text: str, install_root: str, current_skill: str) -> str:
+def _adapt_resource_paths(
+    text: str, install_root: str, current_skill: str | None = None
+) -> str:
     adapted = text
 
     adapted = re.sub(
@@ -273,12 +306,16 @@ def _adapt_resource_paths(text: str, install_root: str, current_skill: str) -> s
         f"{install_root}/scripts/",
         adapted,
     )
-    for folder in ("principles", "references", "templates", "benchmarks", "helpers"):
-        adapted = re.sub(
-            rf"(?<![\w~/.:-]){folder}/",
-            f"{install_root}/{current_skill}/{folder}/",
-            adapted,
-        )
+    # Skill-relative folders (principles/, references/, ...) only make sense
+    # inside a skill; shared/ files are adapted with current_skill=None and
+    # must not have these rewritten against a nonexistent current skill.
+    if current_skill:
+        for folder in ("principles", "references", "templates", "benchmarks", "helpers"):
+            adapted = re.sub(
+                rf"(?<![\w~/.:-]){folder}/",
+                f"{install_root}/{current_skill}/{folder}/",
+                adapted,
+            )
     return adapted
 
 
@@ -301,6 +338,7 @@ def _ascii_normalize(text: str) -> str:
         "\u21d2": "=>",
         "\u2264": "<=",
         "\u2265": ">=",
+        "\u2260": "!=",
         "\u00d7": "x",
     }
     for original, replacement in replacements.items():

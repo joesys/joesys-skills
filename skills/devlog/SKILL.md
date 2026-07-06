@@ -60,7 +60,7 @@ If the invocation is ambiguous or unrecognizable, ask the user to clarify before
 
 ## Phase 0: Load User Preferences
 
-Read `shared/skill-context.md` for the full protocol. In brief:
+Read `shared/skill-context.md` for the full protocol (resolve `shared/...` against the plugin root — two levels above this SKILL.md — never the project's working directory). In brief:
 
 1. Read `.claude/skill-context/preferences.md` — if missing, invoke `/preferences` (streamlined).
 2. Read `.claude/skill-context/devlog.md` (if it exists) for devlog-specific preferences.
@@ -91,11 +91,11 @@ Before dispatching gathering agents, resolve the timeframe for content mining.
 
 Determine the active session by reading the session pointer file:
 
-1. Find the current shell's PID
-2. Read `~/.claude/sessions/<PID>.json` to get the `sessionId`
+1. List `~/.claude/sessions/*.json`. Each pointer file is written by Claude Code and records the Claude Code process `pid`, its `cwd`, the `sessionId`, and a start timestamp — do NOT use the Bash tool's `$$`, which is a transient subprocess PID that never matches these files.
+2. Select the pointer whose `cwd` equals the current working directory; if more than one matches, take the most recently modified file. Read its `sessionId`.
 3. The session JSONL file is at `~/.claude/projects/<project-dir>/<sessionId>.jsonl`
 
-The `<project-dir>` is derived from the current working directory with path separators replaced by `--` (e.g., `D:\joesys\Projects\joesys-skills` becomes `D--joesys-Projects-joesys-skills`).
+The `<project-dir>` is derived from the current working directory by replacing every non-alphanumeric character (the drive `:`, path separators `\` and `/`) with a single `-` (e.g., `D:\joesys\Projects\joesys-skills` becomes `D--joesys-Projects-joesys-skills` — the `--` after the drive letter is `:` and `\` each becoming one `-`; on POSIX, `/home/user/app` becomes `-home-user-app`). If unsure, list `~/.claude/projects/` and match the entry against the transformed cwd.
 
 ### 1.2 Timeframe Computation
 
@@ -207,7 +207,7 @@ Write the scrap file with this structure:
 date: <YYYY-MM-DD>
 topic: <topic slug>
 project: <working directory basename>
-session: <current session UUID>
+session: <current session UUID, or `unknown` in --from-context mode where session detection is skipped>
 status: unwritten
 ---
 

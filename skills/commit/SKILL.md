@@ -36,7 +36,7 @@ If unsure whether something counts as an express order, assume it does **NOT**. 
 
 ## User Preferences
 
-Read `shared/skill-context.md` for the full protocol. In brief:
+Read `shared/skill-context.md` for the full protocol (resolve `shared/...` against the plugin root — two levels above this SKILL.md — never the project's working directory). In brief:
 
 1. Read `.claude/skill-context/preferences.md` — if missing, proceed with defaults (don't interrupt the commit flow with an interview).
 2. Read `.claude/skill-context/commit.md` (if it exists) for commit-specific preferences.
@@ -433,7 +433,7 @@ After a successful commit (any path), evaluate whether the commit is worth captu
    - OR it's a `--no-ff` merge commit (Path B or C) — these represent a complete feature
    - `docs`, `chore`, `style`, `ci`, `build`, `test`, `perf` commits are generally NOT significant unless they represent a non-trivial decision or pivot
 
-2. **There is something genuinely worth capturing from this session.** Type-significance is necessary but not sufficient — most `feat`/`fix`/`refactor` commits are routine and produce nothing worth re-reading later. Honestly judge whether the work behind this commit yielded an insight that the user, six months from now, would want to revisit. Apply the capture bar defined in the devlog skill (see its "What's Worth Capturing" section); **MUST bias toward NO when uncertain.** Too many scraps is noisy and dilutes the value of the ones that actually matter.
+2. **There is something genuinely worth capturing from this session.** Type-significance is necessary but not sufficient — most `feat`/`fix`/`refactor` commits are routine and produce nothing worth re-reading later. Honestly judge whether the work behind this commit yielded an insight that the user, six months from now, would want to revisit. Apply the capture bar defined in the devlog skill (the "What's Worth Capturing" section of the sibling file `../devlog/SKILL.md`, at the plugin's `skills/devlog/`); **MUST bias toward NO when uncertain.** Too many scraps is noisy and dilutes the value of the ones that actually matter.
 
    **The one-sentence test:** Try to complete the sentence *"The interesting thing about this commit is ___"* with something specific and non-trivial. If you can't — or if the completion is generic ("we added a feature", "we fixed a bug") — skip the scrap.
 

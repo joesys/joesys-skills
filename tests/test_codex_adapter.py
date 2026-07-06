@@ -21,6 +21,7 @@ EXPECTED_SKILLS = {
     "codereview",
     "codex",
     "commit",
+    "dashboard",
     "devlog",
     "explain",
     "export",

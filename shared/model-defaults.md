@@ -31,7 +31,7 @@ codex exec --model gpt-5.5 -c model_reasoning_effort="xhigh" \
 | `--skip-git-repo-check` | Required for piped input |
 | `2>/dev/null` | Suppress progress/ANSI noise on stderr — but see Resume: capture to a file instead when resume matters |
 
-**Resume:**
+#### Codex Resume
 
 ```bash
 codex exec resume <SESSION_ID> --skip-git-repo-check "<PROMPT>" 2>/dev/null   # by session id (preferred)
@@ -53,6 +53,8 @@ Dispatch through the adapter, **not** `agy` directly. `<ADAPTER>` is the **absol
 ```bash
 python <ADAPTER> --sandbox
 ```
+
+Invoke the adapter with `python3` where present, falling back to `python` on Windows — stock macOS/Linux expose only `python3`, so a bare `python` fails there even when Python 3 is installed. The resume commands below take the same interpreter.
 
 | Part | Purpose |
 |---|---|
@@ -86,7 +88,7 @@ claude --model opus --effort high --permission-mode plan -p "" 2>/dev/null
 | `-p ""` | Non-interactive mode (stdin provides the prompt) |
 | `2>/dev/null` | Suppress progress/ANSI noise on stderr |
 
-**Resume:**
+#### Claude CLI Resume
 
 ```bash
 claude -c -p "<PROMPT>" 2>/dev/null                  # most recent session

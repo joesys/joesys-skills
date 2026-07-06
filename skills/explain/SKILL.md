@@ -55,7 +55,7 @@ If the invocation is ambiguous or unrecognizable, ask the user to clarify before
 
 ### 1.0 Load User Preferences
 
-Read `shared/skill-context.md` for the full protocol. In brief:
+Read `shared/skill-context.md` for the full protocol (resolve `shared/...` against the plugin root — two levels above this SKILL.md — never the project's working directory). In brief:
 
 1. Read `.claude/skill-context/preferences.md`.
    - If missing: invoke `/preferences` (streamlined mode — core questions only, then return here).
@@ -122,6 +122,7 @@ Each subagent receives a prompt containing:
 - The resolved scope (what to analyze)
 - The file list (for non-project scopes)
 - The full Guiding Principles block (see below) — prepend it to every subagent prompt before dispatch
+- The **Diagram Standards** — append the contents of `references/diagram-standards.md` (resolved against this skill's directory, not the project cwd) after the Guiding Principles, so agents that emit diagrams follow them without needing a file read
 - **User preferences** (loaded in Phase 1.0) — append the relevant subset after the Guiding Principles. Format as a `## User Preferences` section with only the fields that affect that subagent's lens. For example, Agent 1 (Structure) gets explanation style and detail level; Agent 5 (Health) gets experience level and project phase.
 
 ### Guiding Principles (included in every subagent prompt)
@@ -131,7 +132,7 @@ Each subagent receives a prompt containing:
 3. **Use LSP tools if available, fall back to Glob/Grep/Read.** Do not fail if LSP is unavailable.
 4. **Respect scope boundaries.** Focus on the requested scope. Reference external context where necessary ("this module is called from `src/api/routes.ts`") but do not produce full analysis of unrelated modules.
 5. **Don't reproduce source code.** Reference code with `file:line_number` pointers and short snippets for clarity. The user has the code — they need understanding, not a copy.
-6. **Diagrams MUST use Mermaid syntax and follow the shared Diagram Standards.** Read `references/diagram-standards.md` for the syntax patterns per diagram type, adaptive detail rules, and authoring notes — these standards are prepended to every subagent prompt that produces diagrams. ASCII box-drawing for graphs is not permitted.
+6. **Diagrams MUST use Mermaid syntax and follow the Diagram Standards included in this prompt** (the host appends them below — syntax patterns per diagram type, adaptive detail rules, and authoring notes). ASCII box-drawing for graphs is not permitted.
 7. **No value judgments in non-Health lenses.** Agents 1–4 describe and explain. Only Agent 5 (Health & Risk) assesses quality and risk.
 
 ### Subagent Roster
@@ -146,7 +147,7 @@ Each subagent receives a prompt containing:
 
 ### Subagent Prompt Templates
 
-The five full prompt templates live in `references/agent-prompts.md`. Read that file, substitute the placeholders (`<GUIDING_PRINCIPLES>`, `<SCOPE_DESCRIPTION>`, `<FILE_LIST>`), and dispatch all 5 agents in parallel with `model: "opus"`.
+The five full prompt templates live in `references/agent-prompts.md`. Read that file, substitute the placeholders (`<GUIDING_PRINCIPLES>`, `<SCOPE_DESCRIPTION>`, and `<FILE_LIST if applicable>` — replace it with the file list for scoped runs, or delete that whole line for whole-project and feature-trace scopes that have no list), and dispatch all 5 agents in parallel with `model: "opus"`.
 
 ---
 
@@ -244,7 +245,7 @@ Scope name derivation:
    profile: "analytical"
    ---
    ```
-2. **Render the HTML companion.** After the markdown is written, invoke the HTML renderer (best-effort; if it fails, log a warning and continue — the markdown is already saved):
+2. **Render the HTML companion.** After the markdown is written, invoke the HTML renderer (best-effort; if it fails, log a warning and continue — the markdown is already saved). **Resolve `scripts/html_render.py` to its absolute path under the plugin root (two levels above this SKILL.md) before running** — the command executes in the user's project cwd, which does not contain the plugin's `scripts/` folder (invoke with `python3` where present, falling back to `python` on Windows):
    ```bash
    python scripts/html_render.py <report-path>.md --profile analytical
    ```
@@ -255,7 +256,7 @@ Scope name derivation:
    /explain --save --no-html
    ```
 
-3. Print to terminal: a brief summary (TL;DR + Cheat Sheet only) followed by: `Full report saved to <path>.md and <path>.html`
+3. Print to terminal: a brief summary (TL;DR + Cheat Sheet only) followed by the saved paths — always `Full report saved to <path>.md`, and add `and <path>.html` only if the HTML renderer succeeded. If it failed (best-effort), print the markdown path plus a one-line render warning instead.
 
 ---
 
