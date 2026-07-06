@@ -119,7 +119,7 @@ Each format uses a different rendering pipeline:
 
 The script handles input detection (markdown vs code) and wraps code files in fenced blocks with syntax highlighting before passing to Pandoc.
 
-**Format notes:** PDF typography and page geometry come from the LaTeX templates (system fonts with automatic fallbacks); for PNG, `--scope 1pager` renders a single A4-equivalent page while `full`/`summary` produce a narrow auto-height image trimmed to content.
+**Format notes:** PDF typography and page geometry come from the LaTeX templates (on Windows the body uses Segoe UI and code uses Cascadia Code; on macOS/Linux it falls back to the LaTeX default, Latin Modern, which every TeX install provides — so PDF never fails on a missing font); for PNG, `--scope 1pager` renders a single A4-equivalent page while `full`/`summary` produce a narrow auto-height image trimmed to content.
 
 ### Step 4 — Report Results
 

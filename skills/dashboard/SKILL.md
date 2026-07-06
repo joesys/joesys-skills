@@ -128,6 +128,8 @@ Load `docs/dashboard/dashboard.json` as `data`, then:
 | `data["lenses"]["team"]["why"]` | narrative `team_why` | only if a narrative was produced |
 | `data["narrative"]` | the full narrative object (incl. `callouts` and the per-metric `analysis` map) | only if a narrative was produced |
 
+> **Note:** the three `lenses.*.why` merges above are forward-compat only. The current renderer displays each lens's **deterministic** subtitle (cadence/throughput, firefighting %, bus factor), not the narrative `*_why`. What the narrative actually surfaces in the HTML is `overall.summary` (the verdict line) and the per-metric `analysis` tooltips ("In this repo"). Merging the per-lens `why` is harmless but has no visible effect today.
+
 Do **not** touch any `light` value or any computed metric — the merge only adds the optional layers. Write the merged dict back out (e.g. to `docs/dashboard/dashboard.json` or a sibling `merged.json`), then render:
 
 ```bash

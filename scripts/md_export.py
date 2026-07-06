@@ -11,6 +11,8 @@ Options:
     --output    <path>             Custom output path (single format only)
 """
 
+from __future__ import annotations
+
 import argparse
 import os
 import platform
@@ -165,7 +167,7 @@ def convert_to_html(
             "-t", "html5",
             "--standalone",
             "--embed-resources",
-            f"--syntax-highlighting={highlight_style}",
+            f"--highlight-style={highlight_style}",
             f"--css={css_path}",
             f"--metadata=title:{title}",
             "-o", output_path,
@@ -224,19 +226,31 @@ def render_pdf(
     if orientation == "landscape":
         geometry += ",landscape"
 
+    # Fonts are forced only on Windows, where Segoe UI and Cascadia Code ship
+    # with the OS. On macOS/Linux those fonts do not exist, and fontspec makes
+    # a missing font a *fatal* LuaLaTeX error — so we omit them and let the
+    # template fall back to the LaTeX default (Latin Modern), which every TeX
+    # distribution provides. This keeps PDF export from failing on a missing
+    # font off-Windows.
+    font_vars = []
+    if platform.system() == "Windows":
+        font_vars = [
+            "--variable=mainfont:Segoe UI",
+            "--variable=sansfont:Segoe UI",
+            "--variable=monofont:Cascadia Code",
+            "--variable=monofontoptions:Scale=0.88",
+        ]
+
     try:
         cmd = [
             pandoc,
             "-f", "markdown+hard_line_breaks",
             "--pdf-engine=lualatex",
-            f"--syntax-highlighting={highlight_style}",
+            f"--highlight-style={highlight_style}",
             f"--include-in-header={template_path}",
             f"--variable=geometry:{geometry}",
             "--variable=documentclass:article",
-            "--variable=mainfont:Segoe UI",
-            "--variable=sansfont:Segoe UI",
-            "--variable=monofont:Cascadia Code",
-            "--variable=monofontoptions:Scale=0.88",
+            *font_vars,
             f"--metadata=title:{title}",
             "-o", output_path,
             tmp_path,
