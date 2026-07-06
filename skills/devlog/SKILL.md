@@ -207,7 +207,7 @@ Write the scrap file with this structure:
 date: <YYYY-MM-DD>
 topic: <topic slug>
 project: <working directory basename>
-session: <current session UUID>
+session: <current session UUID, or `unknown` in --from-context mode where session detection is skipped>
 status: unwritten
 ---
 

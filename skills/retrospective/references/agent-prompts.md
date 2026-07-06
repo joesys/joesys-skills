@@ -1,6 +1,6 @@
 # Retrospective — Agent Prompts
 
-Full prompt templates for the 5 channel agents (Phase 1) and the narrative agent (Phase 4). Each channel agent receives the retro time boundary, carry-forward context, and the Guiding Principles block.
+Full prompt templates for the 5 channel agents (Phase 1) and the narrative agent (Phase 4). Each channel agent receives the retro time boundary, the Guiding Principles block, and — prepended by the host to **every** channel prompt before dispatch — the carry-forward context and the project/tone preferences. Only Agent 1's template shows an explicit carry-forward slot; for Agents 2–5, prepend the same carry-forward and preferences block yourself.
 
 ## Table of Contents
 

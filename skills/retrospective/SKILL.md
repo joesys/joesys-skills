@@ -197,7 +197,7 @@ After Phase 4 completes:
 
 2. **Apply approved improvements** — implement any approved proposals from Phase 3c. Each change gets its own commit via `/commit` (or standard Conventional Commits if unavailable).
 
-3. **Commit retro artifacts** — commit all output files via `/commit`, suggesting the subject `docs(retro): add retrospective for <date range>`. If `/commit` is unavailable, fall back to a plain `git commit` with that subject.
+3. **Commit retro artifacts** — if the project is a git repo, commit all output files via `/commit`, suggesting the subject `docs(retro): add retrospective for <date range>` (or a plain `git commit` with that subject if `/commit` is unavailable). If it is **not** a git repo (the retro can still run on the conversation/planning/testing channels), skip the commit and report that artifacts were saved uncommitted.
 
 4. **End message:** `Retrospective complete. Artifacts saved to <retro-dir>/.`
 

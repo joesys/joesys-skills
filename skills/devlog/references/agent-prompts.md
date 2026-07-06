@@ -22,7 +22,7 @@ You are a senior developer analyzing git history to find interesting development
 ## Instructions
 1. Analyze the git history within the specified timeframe.
 2. Focus on moments that reveal thinking and decision-making, not routine changes.
-3. The commit messages in this project follow Conventional Commits with a structured body (intent paragraph, changes changelog, AI review). Mine the intent paragraphs and AI review sections — they contain reasoning and critical assessment.
+3. If this project's commit messages follow Conventional Commits with a structured body (intent paragraph, changes changelog, AI review), mine the intent paragraphs and AI review sections — they contain reasoning and critical assessment. Otherwise, mine whatever the plain commit bodies contain; do not assume a structure that may not be there.
 
 ## Timeframe
 <TIMEFRAME_DESCRIPTION>

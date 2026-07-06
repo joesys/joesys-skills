@@ -93,7 +93,7 @@ Dispatch a **single subagent** via the Agent tool. Readability grading is a unif
 
 ### Subagent Prompt
 
-Substitute `<PRINCIPLE_PATH>` with the **absolute path** to `shared/story-readability.md`, resolved against the plugin root (two levels above this SKILL.md) — never against the project's working directory. Subagents start in the project cwd and cannot find plugin files by relative path.
+Before dispatch, substitute **every** `<ANGLE_BRACKET>` placeholder in the template below. In particular, replace `<PRINCIPLE_PATH>` with the **absolute path** to `shared/story-readability.md`, resolved against the plugin root (two levels above this SKILL.md) — never against the project's working directory; subagents start in the project cwd and cannot find plugin files by relative path. The remaining placeholders (`<TARGET_LANGUAGE>`, `<CUSTOM_WEIGHTS_OR_...>`, `<USER_PREFERENCES_OR_"None">`, `<FILES_CONTENT>`, `<DIFF_CONTENT_OR_...>`) take their resolved values or the quoted fallback.
 
 ```
 You are a senior readability reviewer. Your job is to grade code on how well it
@@ -104,7 +104,8 @@ You are a senior readability reviewer. Your job is to grade code on how well it
 2. For each file under review, score ALL 8 dimensions on a 1-10 scale.
    Use the calibration examples in the principle file as anchors:
    - 9-10 = matches the "excellent" calibration example
-   - 5-6  = matches the "mediocre" calibration example
+   - 5-6  = matches the "mediocre" calibration example where one is given; for
+     dimensions 6-8 (only excellent/poor examples given), interpolate
    - 2-3  = matches the "poor" calibration example
    Scores between these bands are for cases that fall between the examples.
 3. Compute the weighted score per file using the weights from the principle file
@@ -120,7 +121,7 @@ You are a senior readability reviewer. Your job is to grade code on how well it
 6. If custom weights are provided, use them instead of the defaults.
 
 ## Custom Weights (if any)
-<CUSTOM_WEIGHTS_OR_"Use defaults from shared/story-readability.md">
+<CUSTOM_WEIGHTS_OR_"Use defaults from the principle file above">
 
 ## User Preferences
 <USER_PREFERENCES_OR_"None">
@@ -202,7 +203,7 @@ Present a summary scorecard as a markdown header followed by a markdown table. T
 **Strongest:** {dimension} across {scope}
 ```
 
-Dimension scores are averaged across files, weighted by lines of code when files vary significantly in size. Apply the grade mapping from `shared/story-readability.md` § Grade Mapping to both the overall score and per-dimension scores.
+Dimension scores are averaged across files, weighted by lines of code when files vary significantly in size. The Weight column above shows the **default** weights — if custom dimension weights are configured (`.claude/skill-context/readability-review.md`), fill it with the weights actually applied. Apply the grade mapping from `shared/story-readability.md` § Grade Mapping to both the overall score and per-dimension scores; that mapping is defined over 0–100, so multiply a per-dimension 1–10 score by 10 before looking it up, and round the weighted total to the nearest integer first.
 
 If `--min-score` was specified and some files were filtered out, note: "Showing {M} of {N} files (filtered by --min-score {threshold})."
 
@@ -295,7 +296,7 @@ Additional readability-review-specific guardrails:
 
 ## Error Handling
 
-Read `shared/review-common.md` § Shared Error Handling for common errors (no changed files, base branch detection, PR/commit not found, file not found, no violations, too many files).
+Read `shared/review-common.md` § Shared Error Handling for common errors (no changed files, base branch detection, PR/commit not found, file not found). The "no violations" and "too many files" rows there are written for codereview/quick-review — this skill instead emits its scorecard (high grades) for a findings-free scope, and handles large scopes via its own § Large Scope Handling (>30-file batching), not the >100-file warning.
 
 Additional readability-review-specific errors:
 

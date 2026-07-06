@@ -2,7 +2,7 @@
 
 A shared visual vocabulary for diagrams in `/explain` reports. These standards are prepended to every subagent prompt that produces diagrams.
 
-**All graphs MUST use Mermaid syntax** (per `shared/html-reports.md`). ASCII box-drawing is not permitted. The HTML renderer turns Mermaid blocks into SVG; Mermaid source is also readable in raw markdown.
+**All graphs MUST use Mermaid syntax** (per the shared HTML-reports protocol). ASCII box-drawing is not permitted. The HTML renderer turns Mermaid blocks into SVG; Mermaid source is also readable in raw markdown.
 
 ## Syntax Patterns by Diagram Type
 

@@ -57,7 +57,7 @@ Read `shared/skill-context.md` for the full protocol (resolve `shared/...` again
 | Review-specific: severity focus | Override `--min-severity` default (e.g., user always wants P0–P1 only) |
 | Review-specific: priority domains | Reorder which domains get emphasis in the synthesis |
 
-Pass relevant preferences to each domain subagent in Phase 2 — append as a `## User Preferences` section after the principle file content.
+Pass relevant preferences to each domain subagent in Phase 2 — append a `## User Preferences` section to the subagent prompt (after its `## Instructions` block). The prompt carries the principle file as a `<PRINCIPLE_PATH>` reference, not inlined content, so there is no "principle file content" to append after.
 
 ### 1.1 Base Branch Detection
 
@@ -78,9 +78,9 @@ Three tiers based on diff size. Measure LOC from `git diff --shortstat <base>...
 
 | Tier | Trigger | Strategy |
 |---|---|---|
-| Small | ≤ 30 files | Single-shot: one dispatch of 7 domain subagents + cross-model over all files (Phase 2 as-is) |
-| Medium | 31–100 files | File-batching — see § 1.4a |
-| Large | > 100 files **OR** > 5,000 LOC changed | Logical-cluster dispatch — see § 1.4b |
+| Small | ≤ 30 files **and** ≤ 5,000 LOC | Single-shot: one dispatch of 7 domain subagents + cross-model over all files (Phase 2 as-is) |
+| Medium | 31–100 files **and** ≤ 5,000 LOC | File-batching — see § 1.4a |
+| Large | > 100 files **or** > 5,000 LOC changed | Logical-cluster dispatch — see § 1.4b. The LOC trigger takes precedence: a few files carrying a huge diff (generated code, lockfiles) is Large, not Small. |
 
 Thresholds are defaults. Users can override in `.claude/skill-context/codereview.md` with any of:
 - `medium_tier_threshold_files` (default `30`)

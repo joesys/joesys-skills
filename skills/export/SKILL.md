@@ -86,13 +86,13 @@ Based on `--scope`:
 - Identify key sections, findings, and conclusions.
 - Produce a focused summary — typically 30–50% of the original length.
 - Preserve code blocks, tables, and other structured elements central to the document's message.
-- Write the condensed markdown to a temporary file.
+- Write the condensed markdown to a temporary file. Because `md_export.py` derives the output name and location from its **input** file, pass `--output <original-dir>/<original-stem>-<scope>.<ext>` at render (Step 3) so the result lands beside the original with the right name, not in the temp directory. (For `--format all`, which rejects `--output`, write the temp file as `<original-stem>.md` in a scratch dir and move the three outputs next to the original afterward.)
 
 **`1pager`:** Read the input file and condense to ~one A4 page (~500–600 words):
 - Prioritize conclusions, key findings, critical code.
 - Use tighter prose — bullet points over paragraphs where appropriate.
 - Omit secondary details, verbose explanations, supporting examples.
-- Write the condensed markdown to a temporary file.
+- Write the condensed markdown to a temporary file. Because `md_export.py` derives the output name and location from its **input** file, pass `--output <original-dir>/<original-stem>-<scope>.<ext>` at render (Step 3) so the result lands beside the original with the right name, not in the temp directory. (For `--format all`, which rejects `--output`, write the temp file as `<original-stem>.md` in a scratch dir and move the three outputs next to the original afterward.)
 
 For code files (`.py`, `.cpp`, etc.) with `summary` or `1pager` scope: extract the most important functions/classes with brief descriptions. Do not attempt to summarize every line.
 

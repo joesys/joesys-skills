@@ -69,8 +69,8 @@ Read `shared/skill-context.md` for the full protocol (resolve `shared/...` again
      - If the folder no longer exists, tell the user and re-prompt for a new path.
    - **Missing:** Go to step 2.
 
-2. Check the user's global auto-memory for a previously saved screenshot folder path.
-   - Search the memory directory for a file like `reference_screenshot_folder.md`.
+2. Check the user's auto-memory for a previously saved screenshot folder path.
+   - Search the project's auto-memory directory (`~/.claude/projects/<project-slug>/memory/`) for a file like `reference_screenshot_folder.md`.
    - **Found:** Offer it as the default:
      > "Last time you used `<path>`. Use the same folder? (Y/n)"
    - **User confirms:** Use that path → step 3.
@@ -84,7 +84,7 @@ Read `shared/skill-context.md` for the full protocol (resolve `shared/...` again
    - **Screenshot folder:** <path>
    ```
 
-5. Save the path to the user's global auto-memory as a reference memory (e.g., `reference_screenshot_folder.md`) so future projects can pre-populate. If a memory file already exists, update it.
+5. Save the path to the project's auto-memory as a reference memory (e.g., `reference_screenshot_folder.md`). Auto-memory is per-project, so this pre-populates future runs *in this project*, not other projects — the reliable per-project store is `.claude/skill-context/ss.md` from step 4. If a memory file already exists, update it.
 
 ### 1.2 Subsequent Runs
 
@@ -182,13 +182,13 @@ Combine the action string (if provided) + screenshot content + conversation cont
 
 When a sibling skill is a natural fit, **suggest it — never auto-invoke**:
 
-> "This looks like a code error. Want me to run `/systematic-debugging` on this, or just fix it directly?"
+> "This looks like a code error. Want me to fix it directly, or hand it to a debugging skill if one is available?"
 
 The user always decides whether to chain. **MUST NOT silently hand off** to another skill.
 
 Suggest whichever sibling skill in this plugin fits the user's intent — the current list lives in the plugin's skill listing; do not rely on a memorized roster. Illustrative examples:
 
-- Error screenshot → offer to fix it directly, or via `superpowers:systematic-debugging`
+- Error screenshot → offer to fix it directly (or via `superpowers:systematic-debugging`, only if that plugin appears in the available-skills list)
 - Screenshot showing this project's UI or code → suggest the relevant review skill
 - Screenshot of changes ready to commit → suggest `/commit`
 

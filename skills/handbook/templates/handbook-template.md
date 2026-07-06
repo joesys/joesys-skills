@@ -55,13 +55,13 @@ version: "1.0.0"
 ## {N}. Configuration & Environment
 {chapter_7_content}
 
-## {N}. Getting Started
-{chapter_8_content}
-
 {if_security}
 ## {N}. Security & Permissions
 {chapter_security_content}
 {/if_security}
+
+## {N}. Getting Started
+{chapter_8_content}
 
 ## {N}. Testing Guide
 {chapter_9_content}

@@ -221,7 +221,7 @@ The coach may only modify a finding when judgment changes the assessment — nev
 
 1. Apply any score adjustments to the scorecard (recalculate composite).
 2. Replace revised improvement items.
-3. Insert Coach's Note as section 7.6 of the report.
+3. Insert Coach's Note as section 6 (Coach's Note), immediately before the Progress Tracker — this shifts the draft's Progress Tracker from #6 to #7, matching the Section Order in `references/output-formats.md`.
 4. Add missed patterns as findings in the appropriate lens section, tagged `[Added by Coach]`.
 
 ### Error Handling

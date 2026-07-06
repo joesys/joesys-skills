@@ -75,6 +75,8 @@ git diff -U50 <base>...HEAD
 
 The `-U50` flag expands each hunk to include ~50 lines of surrounding context — enough for local scope, function signatures, variable declarations, and control flow, without loading entire files.
 
+For non-branch modes, adjust the command so subagents still receive ~50-line context: `--commit <hash>` → `git diff -U50 <commit>^..<commit>`; `--pr <n>` → `gh pr diff` has no context-width flag, so fetch and diff locally with `git fetch origin pull/<n>/head && git diff -U50 $(git merge-base HEAD FETCH_HEAD)...FETCH_HEAD`. Do not tell subagents the diff has 50-line context if it was produced by a command that doesn't provide it.
+
 This is the primary time savings over the full codereview.
 
 ### 1.4 Target Language Detection

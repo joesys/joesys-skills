@@ -356,7 +356,7 @@ When conditional chapters are present, all chapters must be renumbered sequentia
 | Security & Permissions | Configuration & Environment (core ch 7) |
 | Build, Deployment & Ops | Testing Guide (core ch 9) |
 
-Example with all three conditional chapters present: chapters 1-4 (core), 5 (Data Model), 6-8 (core 5-7), 9 (Security), 10 (core 8-9), 11 (Build/Deploy), 12-16 (core 10-13).
+Example with all three conditional chapters present: chapters 1-4 (core 1-4), 5 (Data Model), 6-8 (core 5-7), 9 (Security), 10-11 (core 8-9), 12 (Build/Deploy), 13-16 (core 10-13).
 
 ### Assembly Validation
 

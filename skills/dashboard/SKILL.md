@@ -65,7 +65,7 @@ Flags combine: `/dashboard --no-llm --no-host` is the fully deterministic, fully
 
 Establish that the skill can run and what enrichment is available. No files are written in this phase.
 
-1. **Verify git repo.** Run `collect_git.py`'s precondition by checking `gitlog.is_git_repo(repo)` (the script does this itself and exits non-zero with `error: not a git repo: <repo>` if false). If it is not a git repo, **stop** and report the error — there is no fallback; every metric derives from git.
+1. **Verify git repo.** Check with `git -C <repo> rev-parse --is-inside-work-tree` (or simply rely on `collect_git.py`'s own precondition — it exits non-zero with `error: not a git repo: <repo>` when it runs in Phase 1). Do not try to call the `gitlog.is_git_repo` function directly — it is inside a helper module the host cannot import. If it is not a git repo, **stop** and report the error — there is no fallback; every metric derives from git.
 2. **Detect host availability.** Note whether a GitHub/GitLab remote exists and whether `gh` is installed + authenticated. `collect_host.py` decides this internally and degrades gracefully; Phase 0 only needs to know so the report can say "host: skipped (reason)". GitLab is not implemented in v1 — it degrades to unavailable.
 3. **Detect audit availability.** Note whether any `docs/reports/codebase-audit/*/metrics.json` exists. If none, code quality will read "not measured."
 4. **Load config.** `collect_git.py` reads `.claude/dashboard.yaml` (via `thresholds.load_config`) if present and PyYAML is installed; otherwise built-in defaults apply. The config can override thresholds, the module list, `off_hours`, and host mode. You do not load it yourself — the collector does — but note in the report whether a config was found.
@@ -95,7 +95,7 @@ Run the collectors. **These are strictly read-only — they only read git, the f
    ```
    When no report exists it writes `{"available": false}`.
 
-> On Windows, substitute a writable temp path for `/tmp/` (e.g. `$env:TEMP`). The collectors only need a path they can write the small JSON to.
+> On Windows, substitute a writable temp path for `/tmp/` (in the Bash tool's Git Bash, `$TEMP` or an absolute path like `C:/Users/<you>/AppData/Local/Temp`). The collectors only need a path they can write the small JSON to.
 
 ---
 

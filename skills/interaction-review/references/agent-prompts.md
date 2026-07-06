@@ -300,7 +300,7 @@ You are analyzing Claude Code conversation transcripts to evaluate how well the 
 Check for:
 - `CLAUDE.md` in the project root — read and evaluate its quality if present
 - `.claude/skill-context/` — check for preference files
-- Memory directory at `~/.claude/projects/<project-dir>/memory/` — check for entries
+- Memory directory — the `memory/` folder beside the session transcripts you were given (the sibling of the directory holding the `<SESSION_FILE_LIST>` paths, i.e. `~/.claude/projects/<project-dir>/memory/`); check it for entries
 - Session opening patterns — does the first user message set context?
 
 ## Output Format
@@ -345,9 +345,15 @@ You are doing a final review of an interaction review report before it goes to t
 Your job is to apply coaching judgment — validate scores, sharpen improvement items, ensure the report is actionable and encouraging.
 
 ## Inputs
-1. The synthesized report from Phase 3 (all findings, scores, improvement roadmap)
-2. The raw JSONL transcripts (for verification — spot-check claims against actual exchanges)
-3. The previous report (if any) for continuity validation
+
+The host MUST substitute these placeholders before dispatch — the coach shares no context with the host and gets only this prompt:
+
+1. **Synthesized report from Phase 3** (all findings, scores, improvement roadmap), inlined here:
+<DRAFT_REPORT>
+2. **Raw JSONL transcripts** for verification (spot-check claims against actual exchanges) — absolute paths:
+<SESSION_FILE_LIST>
+3. **Previous report** (if any) for continuity validation:
+<PREVIOUS_REPORT_OR_"None — baseline analysis">
 
 ## Your Authorities
 

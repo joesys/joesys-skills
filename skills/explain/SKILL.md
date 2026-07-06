@@ -147,7 +147,7 @@ Each subagent receives a prompt containing:
 
 ### Subagent Prompt Templates
 
-The five full prompt templates live in `references/agent-prompts.md`. Read that file, substitute the placeholders (`<GUIDING_PRINCIPLES>`, `<SCOPE_DESCRIPTION>`, `<FILE_LIST>`), and dispatch all 5 agents in parallel with `model: "opus"`.
+The five full prompt templates live in `references/agent-prompts.md`. Read that file, substitute the placeholders (`<GUIDING_PRINCIPLES>`, `<SCOPE_DESCRIPTION>`, and `<FILE_LIST if applicable>` — replace it with the file list for scoped runs, or delete that whole line for whole-project and feature-trace scopes that have no list), and dispatch all 5 agents in parallel with `model: "opus"`.
 
 ---
 
@@ -256,7 +256,7 @@ Scope name derivation:
    /explain --save --no-html
    ```
 
-3. Print to terminal: a brief summary (TL;DR + Cheat Sheet only) followed by: `Full report saved to <path>.md and <path>.html`
+3. Print to terminal: a brief summary (TL;DR + Cheat Sheet only) followed by the saved paths — always `Full report saved to <path>.md`, and add `and <path>.html` only if the HTML renderer succeeded. If it failed (best-effort), print the markdown path plus a one-line render warning instead.
 
 ---
 

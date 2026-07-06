@@ -293,6 +293,6 @@ python scripts/html_render.py <report_path> --profile analytical
 
 | Phase | Budget / Strategy |
 |---|---|
-| Phase 1 triage agent | Receives diff/content + calibration. For large diffs (>100 files), send only `git diff --stat` + file list and let the agent request specific file diffs as needed. |
+| Phase 1 triage agent | Receives diff/content + calibration. For large diffs (>100 files), send `git diff --stat` + file list **plus the resolved base ref** (or the `gh pr diff` command in PR mode), and instruct the agent to run `git diff <base>...HEAD -- <file>` itself in the project cwd for any file it needs to inspect — a dispatched agent cannot ask the host for more mid-run. |
 | Phase 2 deep analysis agent | Receives only DECIDE/READ chunk content + surrounding context. SKIM/SKIP chunks are excluded to save context. |
 | Phase 3 synthesis | Operates on agent outputs only — no raw content re-reading. |

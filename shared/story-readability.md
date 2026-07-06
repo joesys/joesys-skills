@@ -83,7 +83,7 @@ Each line is a sentence. The function is a paragraph. The reader knows what happ
 
 ## Calibration Examples
 
-Each dimension is illustrated at three score bands: **9-10** (excellent), **5-6** (mediocre), and **2-3** (poor). Subagents MUST use these as anchors when scoring.
+Each dimension is illustrated at score bands: **9-10** (excellent) and **2-3** (poor), and most also show **5-6** (mediocre). Subagents MUST use the provided bands as anchors. For dimensions 6–8 (Structural Clarity, Documentation Quality, No Clever Tricks), which show only 9-10 and 2-3, interpolate a mid-band score between those two anchors.
 
 ### Dimension 1 — Narrative Flow
 
