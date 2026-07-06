@@ -51,7 +51,7 @@ Read `shared/skill-context.md` for the full protocol. Load `.claude/skill-contex
 When the user invokes `/antigravity resume`:
 
 1. If no prompt is provided, use `AskUserQuestion` to ask what they want to follow up on.
-2. Determine the resume target. `<ADAPTER>` is the **absolute path** to `scripts/agy_adapter.py` under the plugin root (two levels above this SKILL.md) — the project's working directory does not contain the adapter:
+2. Determine the resume target. `<ADAPTER>` is the **absolute path** to `scripts/agy_adapter.py` under the plugin root (two levels above this SKILL.md) — the project's working directory does not contain the adapter. Invoke it with `python3` where present, falling back to `python` on Windows (see `shared/model-defaults.md` § Antigravity):
    - `/antigravity resume <PROMPT>` — resume the latest session. Deliver the follow-up
      prompt via the same temp-file-and-stdin pattern as the initial dispatch:
      ```bash

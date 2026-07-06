@@ -98,7 +98,7 @@ For code files (`.py`, `.cpp`, etc.) with `summary` or `1pager` scope: extract t
 
 ### Step 3 — Render
 
-Invoke the rendering script. **Resolve `scripts/md_export.py` to its absolute path under the plugin root (two levels above this SKILL.md) before running** — the command executes in the user's project working directory, which does not contain the plugin's `scripts/` folder.
+Invoke the rendering script. **Resolve `scripts/md_export.py` to its absolute path under the plugin root (two levels above this SKILL.md) before running** — the command executes in the user's project working directory, which does not contain the plugin's `scripts/` folder. Invoke it with `python3` where present, falling back to `python` on Windows — stock macOS/Linux expose only `python3`.
 
 ```bash
 python scripts/md_export.py <input_or_temp_file> \

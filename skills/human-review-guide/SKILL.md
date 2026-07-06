@@ -270,7 +270,7 @@ Assemble the guide inline using the terminal markdown template from `references/
 
 1. Write the guide as markdown to a temporary location following the HTML report template from `references/output-formats.md`.
 2. Include YAML front-matter per `shared/html-reports.md`.
-3. Call the HTML renderer. **Resolve `scripts/html_render.py` to its absolute path under the plugin root (two levels above this SKILL.md) before running** — the command executes in the user's project cwd, which does not contain the plugin's `scripts/` folder:
+3. Call the HTML renderer. **Resolve `scripts/html_render.py` to its absolute path under the plugin root (two levels above this SKILL.md) before running** — the command executes in the user's project cwd, which does not contain the plugin's `scripts/` folder (invoke with `python3` where present, falling back to `python` on Windows):
 
 ````bash
 python scripts/html_render.py <report_path> --profile analytical

@@ -107,7 +107,7 @@ Skills should let the renderer derive the output path automatically. The rendere
 
 The `handbook` profile produces a **self-contained HTML file** with all CSS and JS inlined. No external assets, no `docs/.assets/report-lib/` dependency.
 
-**Invocation:**
+**Invocation** (resolve `scripts/html_render.py` to its absolute path under the plugin root, and invoke with `python3` where present, falling back to `python` on Windows — stock macOS/Linux expose only `python3`):
 ```bash
 python scripts/html_render.py <input.md> --profile handbook
 ```

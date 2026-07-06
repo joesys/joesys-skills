@@ -245,7 +245,7 @@ Scope name derivation:
    profile: "analytical"
    ---
    ```
-2. **Render the HTML companion.** After the markdown is written, invoke the HTML renderer (best-effort; if it fails, log a warning and continue — the markdown is already saved). **Resolve `scripts/html_render.py` to its absolute path under the plugin root (two levels above this SKILL.md) before running** — the command executes in the user's project cwd, which does not contain the plugin's `scripts/` folder:
+2. **Render the HTML companion.** After the markdown is written, invoke the HTML renderer (best-effort; if it fails, log a warning and continue — the markdown is already saved). **Resolve `scripts/html_render.py` to its absolute path under the plugin root (two levels above this SKILL.md) before running** — the command executes in the user's project cwd, which does not contain the plugin's `scripts/` folder (invoke with `python3` where present, falling back to `python` on Windows):
    ```bash
    python scripts/html_render.py <report-path>.md --profile analytical
    ```

@@ -31,7 +31,7 @@ This skill uses progressive disclosure — read reference files only when needed
 
 All under `skills/dashboard/helpers/`. All are read-only with respect to the repo.
 
-**Path resolution (required before every invocation in Phases 1 and 3):** resolve `skills/dashboard/helpers/` to its absolute path under the plugin root (two levels above this SKILL.md) before running any command below. The commands execute in the user's project working directory, which does not contain the plugin's helpers — a bare `skills/dashboard/helpers/...` path fails when the skill is installed.
+**Path resolution (required before every invocation in Phases 1 and 3):** resolve `skills/dashboard/helpers/` to its absolute path under the plugin root (two levels above this SKILL.md) before running any command below. The commands execute in the user's project working directory, which does not contain the plugin's helpers — a bare `skills/dashboard/helpers/...` path fails when the skill is installed. Invoke every helper with `python3` where present, falling back to `python` on Windows (detect once in Phase 0: `command -v python3 || command -v python`).
 
 | Script | Role | Key flags |
 |---|---|---|
@@ -198,4 +198,4 @@ fi
 | `collect_host.py` / `collect_audit.py` write `{"available": false}` | Not an error — merge as-is; the renderer shows the degraded state. |
 | Corrupt/partial `/codebase-audit` report | `collect_audit.py` skips unreadable reports and never crashes; if all are unreadable, code quality is "not measured." |
 | `render_dashboard.py` fails | Report the error and the path to the still-valid `docs/dashboard/dashboard.json` (the data survives even if HTML rendering does not). |
-| Python 3 unavailable | The skill cannot run — the entire pipeline is Python helpers. Report and stop. |
+| No Python interpreter | Detect it in Phase 0 (`command -v python3 || command -v python`) and use that for every helper command — `python` alone is absent on stock macOS/Linux even when Python 3 is installed. Only if neither `python3` nor `python` exists: the skill cannot run (the entire pipeline is Python helpers) — report and stop. |

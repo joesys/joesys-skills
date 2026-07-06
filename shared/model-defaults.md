@@ -54,6 +54,8 @@ Dispatch through the adapter, **not** `agy` directly. `<ADAPTER>` is the **absol
 python <ADAPTER> --sandbox
 ```
 
+Invoke the adapter with `python3` where present, falling back to `python` on Windows — stock macOS/Linux expose only `python3`, so a bare `python` fails there even when Python 3 is installed. The resume commands below take the same interpreter.
+
 | Part | Purpose |
 |---|---|
 | `<ADAPTER>` (`scripts/agy_adapter.py`) | Recovers the reply `agy` writes only to a TTY (see below) |

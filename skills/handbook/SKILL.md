@@ -442,7 +442,7 @@ Write the polished markdown to `docs/handbook/handbook.md`. Create the directory
 
 ### Step 6.2: Render Portable HTML
 
-Call the renderer with the `handbook` profile. The renderer inlines all vendor CSS/JS into the template skeleton at render time, producing a single file with zero external dependencies. **Resolve `scripts/html_render.py` to its absolute path under the plugin root (two levels above this SKILL.md) before running** — the command executes in the user's project working directory, which does not contain the plugin's `scripts/` folder.
+Call the renderer with the `handbook` profile. The renderer inlines all vendor CSS/JS into the template skeleton at render time, producing a single file with zero external dependencies. **Resolve `scripts/html_render.py` to its absolute path under the plugin root (two levels above this SKILL.md) before running** — the command executes in the user's project working directory, which does not contain the plugin's `scripts/` folder. Invoke it with `python3` where present, falling back to `python` on Windows — stock macOS/Linux expose only `python3`.
 
 ```bash
 python scripts/html_render.py docs/handbook/handbook.md --profile handbook

@@ -240,7 +240,7 @@ If the coach re-review fails: fall back to the Phase 3 draft report. Header note
 
 ### 4.2 Render HTML Companion
 
-Call the HTML renderer (best-effort — markdown is always saved regardless). **Resolve `scripts/html_render.py` to its absolute path under the plugin root (two levels above this SKILL.md) before running** — the command executes in the user's project cwd, which does not contain the plugin's `scripts/` folder:
+Call the HTML renderer (best-effort — markdown is always saved regardless). **Resolve `scripts/html_render.py` to its absolute path under the plugin root (two levels above this SKILL.md) before running** — the command executes in the user's project cwd, which does not contain the plugin's `scripts/` folder (invoke with `python3` where present, falling back to `python` on Windows):
 
 ```
 python scripts/html_render.py docs/interaction-review/YYYYMMDD-interaction-review.md --profile analytical
