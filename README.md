@@ -235,6 +235,38 @@ Dispatch 5 parallel domain-lens subagents to analyze a codebase across structure
 /explain src/api/ --save --path docs/     # Explain directory, save to custom path
 ```
 
+#### handbook
+
+Generate comprehensive project documentation as a single self-contained HTML file serving two audiences at once. Dispatches 6 parallel analysis agents, conducts a human interview between analysis and writing, then fans out 13-16 parallel chapter writers. Reads the previous handbook for continuity when regenerating.
+
+| Audience | Content |
+|---|---|
+| Reference Handbook | Architecture, module walkthroughs, design rationale, dependencies, extension points |
+| Newbie Guidebook | Setup guide, program-flow step-throughs with annotated code, common gotchas, troubleshooting |
+
+```
+/handbook                                  # Full handbook for the entire project
+/handbook src/auth                         # Scope to a directory or module
+```
+
+#### dashboard
+
+Generate a single self-contained HTML project-health dashboard aimed at PMs and EMs. Deterministic Python helpers read local git history and compute traffic-light metrics across three lenses — the same repo always produces the same dashboard, so it is runnable in CI. Optional enrichment pulls open PRs and CI status from GitHub (via `gh`) and borrows the latest `/codebase-audit` grade. An optional single-pass LLM narrative explains why each light is the colour it is — it never changes a light.
+
+| Lens | Signals |
+|---|---|
+| Delivery | Commit cadence, throughput, release recency, module activity |
+| Health | Firefighting rate, churn, borrowed `/codebase-audit` code-quality grade |
+| Team | Bus factor, contributor concentration, off-hours activity |
+
+```
+/dashboard                                 # Whole-repo health dashboard
+/dashboard src/api                         # Highlight a module in the summary
+/dashboard --no-llm                        # Deterministic/CI mode — skip the narrative
+/dashboard --no-host                       # Skip GitHub enrichment
+/dashboard --no-llm --no-host              # Fully deterministic, fully local
+```
+
 #### devlog
 
 Capture development insights and turn them into devlog posts for budding programmers. Mines git history, Claude Code conversation transcripts, and content scraps to reconstruct your thinking, then brainstorms with you to find the real insight before drafting. Supports quick content scraps for when you're in the flow.
