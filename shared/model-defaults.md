@@ -10,22 +10,23 @@ Single source of truth for default model identifiers and CLI flags used across s
 
 | Provider | Model ID | Used In |
 |---|---|---|
-| OpenAI (Codex CLI) | `gpt-5.5` | `/codex`, `/ai-council`, `/codereview`, `/quick-review` |
+| OpenAI (Codex CLI) | `gpt-5.6-sol` | `/codex`, `/ai-council`, `/codereview`, `/quick-review` |
 | Google (Antigravity CLI) | *(managed by agy)* | `/antigravity`, `/ai-council`, `/codereview` |
-| Anthropic (Claude CLI) | `opus` | `/claude`, `/ai-council`, `/codereview`, `/quick-review` |
+| Anthropic (Claude CLI) | `opus` | `/claude`, `/codereview`, `/quick-review` |
+| Anthropic (Claude CLI) | `fable` | `/ai-council` (Claude leg) |
 
 ## Default CLI Command Templates
 
 ### Codex
 
 ```bash
-codex exec --model gpt-5.5 -c model_reasoning_effort="xhigh" \
+codex exec --model gpt-5.6-sol -c model_reasoning_effort="xhigh" \
   --sandbox read-only --skip-git-repo-check 2>/dev/null
 ```
 
 | Flag | Purpose |
 |---|---|
-| `--model gpt-5.5` | Model selection |
+| `--model gpt-5.6-sol` | Model selection |
 | `-c model_reasoning_effort="xhigh"` | Maximum reasoning depth |
 | `--sandbox read-only` | Safety: no file writes |
 | `--skip-git-repo-check` | Required for piped input |
@@ -82,7 +83,7 @@ claude --model opus --effort high --permission-mode plan -p "" 2>/dev/null
 
 | Flag | Purpose |
 |---|---|
-| `--model opus` | Model selection |
+| `--model opus` | Model selection — `/ai-council`'s Claude leg substitutes `--model fable` |
 | `--effort high` | Reasoning effort level |
 | `--permission-mode plan` | Safety: read-only |
 | `-p ""` | Non-interactive mode (stdin provides the prompt) |
@@ -97,7 +98,14 @@ claude --resume "<NAME>" -p "<PROMPT>" 2>/dev/null   # named session (set at dis
 
 ## Agent Tool (Subagent) Model
 
-Skills that spawn subagents via the Agent tool pin `model: "opus"` — an alias resolving to the latest Opus, matching this plugin's expected host runtime. This section is the single source of truth for that choice: if the default subagent model ever changes, update this section and the inline literals (`grep -rn 'model: "opus"' skills/`).
+Skills that spawn subagents via the Agent tool pin an explicit model alias. Two tiers are in use:
+
+| Model | Skills |
+|---|---|
+| `fable` | `/ai-council`, `/explain`, `/readability-review`, `/codebase-audit` |
+| `opus` | all other subagent-spawning skills (`/codereview`, `/quick-review`, `/devlog`, `/retrospective`, `/interaction-review`, `/human-review-guide`, `/handbook`) |
+
+This section is the single source of truth for that choice: if a skill's default subagent model changes, update this table and the inline literals (`grep -rn 'model: "' skills/`).
 
 ## Why `2>/dev/null`
 

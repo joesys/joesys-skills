@@ -187,7 +187,7 @@ Each action includes: affected criteria, description, risk of inaction, effort e
 
 ### Audit Metadata
 
-- **Analysis model:** Claude Opus
+- **Analysis model:** Claude Fable
 - **Collection agents:** {N} dispatched, {N} succeeded
 - **Config source:** {.claude/audit.yaml or auto-detected}
 - **Benchmarks source:** {cached / cached + web-searched}

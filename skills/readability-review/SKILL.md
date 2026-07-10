@@ -89,7 +89,7 @@ Read `shared/review-common.md` § Target Language Detection.
 
 Dispatch a **single subagent** via the Agent tool. Readability grading is a unified, qualitative judgment — it is not split across multiple domain subagents. No cross-model dispatch (the scoring is calibrated to the principle file and must be internally consistent). No static analysis tooling (this is a qualitative, judgment-based review).
 
-**MUST spawn the subagent** with `model: "opus"`.
+**MUST spawn the subagent** with `model: "fable"`.
 
 ### Subagent Prompt
 
@@ -249,7 +249,7 @@ After presenting the report, ask:
 
 - **Independent files:** dispatch parallel fix agents (one per file)
 - **Same-file fixes:** apply sequentially to avoid conflicts
-- Each fix agent **MUST be spawned** with `model: "opus"` via the Agent tool
+- Each fix agent **MUST be spawned** with `model: "fable"` via the Agent tool
 - Each fix agent receives:
   - The finding details (dimension, location, before/after, explanation)
   - The full file content

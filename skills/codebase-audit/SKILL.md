@@ -111,7 +111,7 @@ If `--static-only` was passed, skip tool execution in Phase 1 but still detect a
 
 ## Phase 1 — Parallel Collection
 
-**MUST spawn 6 measurement agents in parallel** via the Agent tool — all 6 in a single response. Each uses `model: "opus"`. Sequential dispatch is a defect. Read `references/agent-prompts.md` for the full prompt template for each agent.
+**MUST spawn 6 measurement agents in parallel** via the Agent tool — all 6 in a single response. Each uses `model: "fable"`. Sequential dispatch is a defect. Read `references/agent-prompts.md` for the full prompt template for each agent.
 
 ### Agent Roster
 
@@ -350,7 +350,7 @@ If `docs/reports/codebase-audit/project-context.md` exists but `.claude/skill-co
 
 ## Phase 4 — Analysis Writing
 
-A single author agent writes the full analysis in one pass. **MUST use** `model: "opus"`. Read `references/agent-prompts.md` for the full author agent prompt.
+A single author agent writes the full analysis in one pass. **MUST use** `model: "fable"`. Read `references/agent-prompts.md` for the full author agent prompt.
 
 The author receives: assembled metrics JSON, project context, user context, risk heat map, and previous audit data (if any).
 

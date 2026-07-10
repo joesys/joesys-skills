@@ -116,7 +116,7 @@ Before dispatching agents, print a brief status message:
 
 **MUST dispatch 5 subagents simultaneously** via the Agent tool — all 5 in a single response (5 parallel Agent tool calls). Sequential dispatch is a defect.
 
-**MUST use** `model: "opus"` for every Agent tool call to ensure high-quality analysis.
+**MUST use** `model: "fable"` for every Agent tool call to ensure high-quality analysis.
 
 Each subagent receives a prompt containing:
 - The resolved scope (what to analyze)
@@ -147,7 +147,7 @@ Each subagent receives a prompt containing:
 
 ### Subagent Prompt Templates
 
-The five full prompt templates live in `references/agent-prompts.md`. Read that file, substitute the placeholders (`<GUIDING_PRINCIPLES>`, `<SCOPE_DESCRIPTION>`, and `<FILE_LIST if applicable>` — replace it with the file list for scoped runs, or delete that whole line for whole-project and feature-trace scopes that have no list), and dispatch all 5 agents in parallel with `model: "opus"`.
+The five full prompt templates live in `references/agent-prompts.md`. Read that file, substitute the placeholders (`<GUIDING_PRINCIPLES>`, `<SCOPE_DESCRIPTION>`, and `<FILE_LIST if applicable>` — replace it with the file list for scoped runs, or delete that whole line for whole-project and feature-trace scopes that have no list), and dispatch all 5 agents in parallel with `model: "fable"`.
 
 ---
 
