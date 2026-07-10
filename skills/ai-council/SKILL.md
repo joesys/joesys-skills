@@ -129,9 +129,9 @@ cat /tmp/council-antigravity.txt | <AGY_CMD>
 
 Choose the mechanism based on whether the prompt is self-contained:
 
-**Use subagent (Agent tool)** when Phase 1 fully resolved all context the question needs. The prompt is self-contained and the Claude leg won't need to read additional files or search the web during execution. Spawn with `model: "opus"` and pass the full four-part prompt. Subagent is faster — no CLI startup overhead.
+**Use subagent (Agent tool)** when Phase 1 fully resolved all context the question needs. The prompt is self-contained and the Claude leg won't need to read additional files or search the web during execution. Spawn with `model: "fable"` and pass the full four-part prompt. Subagent is faster — no CLI startup overhead.
 
-**Use CLI** when the question references specific files or codepaths that Phase 1 could not fully resolve, and the Claude leg would benefit from tool access to explore further. Substitute `<CLAUDE_CMD>` with the current invocation from `shared/model-defaults.md` § Claude CLI, and append `--name` for resumability:
+**Use CLI** when the question references specific files or codepaths that Phase 1 could not fully resolve, and the Claude leg would benefit from tool access to explore further. Substitute `<CLAUDE_CMD>` with the current invocation from `shared/model-defaults.md` § Claude CLI, replace `--model opus` with `--model fable` (the council's Claude leg runs Fable), and append `--name` for resumability:
 
 ```bash
 cat /tmp/council-claude.txt | <CLAUDE_CMD> --name "council-<topic>"
