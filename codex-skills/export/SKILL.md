@@ -1,0 +1,184 @@
+---
+name: export
+description: "Use when the user invokes $export to convert markdown, text, or code files into polished PDF, HTML, or PNG with proper typography, syntax highlighting, and responsive layout."
+---
+
+# Export Skill
+
+Convert markdown, text, and code files into polished, shareable formats. Supports three output formats (PDF, HTML, PNG), three content scopes (full, summary, 1pager), and three CSS themes (minimal, modern, dark).
+
+## Out of Scope
+
+This skill MUST NOT:
+- Modify the input file. The export pipeline is read-only - the source markdown/code is never edited.
+- Alter content under `--scope full` (the default). Full-scope exports are faithful conversions; only `--scope summary` and `--scope 1pager` may condense.
+- Write output to a path outside the user's working directory tree without warning. If `--output` resolves outside the project, confirm before writing.
+- Skip dependency checks silently. If Pandoc/LuaLaTeX/Chromium is missing, report it with install instructions - do not fail mysteriously.
+
+## Preflight
+
+Before rendering, **MUST**:
+1. Confirm the input file exists.
+2. Verify required dependencies are installed for the requested format - see  Dependencies for what each format needs. Report install instructions for any missing dependency.
+
+## Invocation
+
+Parse the user's `$export` arguments to determine input file and options:
+
+| Invocation | Behavior |
+|---|---|
+| `$export <file>` | Full file -> PDF, portrait, minimal theme |
+| `$export <file> --format html\|pdf\|png\|all` | Specify output format |
+| `$export <file> --scope full\|summary\|1pager` | Content scope |
+| `$export <file> --orientation portrait\|landscape` | Page orientation |
+| `$export <file> --theme minimal\|modern\|dark` | CSS theme |
+| `$export <file> --output <path>` | Custom output path |
+
+Arguments are combinable. Examples:
+- `$export report.md --format png --theme dark` - full PNG with dark theme
+- `$export report.md --scope summary --format all` - summary in all 3 formats
+- `$export utils.py --format html --theme dark` - syntax-highlighted code export
+
+### Defaults
+
+| Option | Default |
+|---|---|
+| `--format` | `pdf` |
+| `--scope` | `full` |
+| `--orientation` | `portrait` |
+| `--theme` | `minimal` |
+
+If the invocation is ambiguous or the file path is unrecognizable, ask the user to clarify before proceeding.
+
+## User Preferences
+
+Read `../shared/skill-context.md` for the full protocol (resolve `../shared/...` against the plugin root - two levels above this SKILL.md - never the project's working directory). In brief:
+
+1. Read `.codex/skill-context/preferences.md` - if missing, proceed with defaults (do not interrupt the export flow).
+2. Read `.codex/skill-context/export.md` (if it exists) for export-specific preferences.
+
+**How preferences shape this skill:**
+
+| Preference | Effect on Export |
+|---|---|
+| Export-specific: default format | Override the default `pdf` format |
+| Export-specific: default theme | Override the default `minimal` theme |
+| Export-specific: include TOC | Always include table of contents |
+
+Like `$commit`, `$export` is a **silent defaults** skill. **MUST NOT invoke** `$preferences` on first contact - exports are straightforward operations. If preferences exist, use them as new defaults (CLI flags still override). If not, use the built-in defaults above.
+
+## Process
+
+### Step 1 - Validate Input
+
+1. Confirm the input file exists. If not, ask for the correct path.
+2. Parse all flags from the invocation.
+3. If `--output` is used with `--format all`, warn that `--output` only works with a single format; ask the user to choose.
+
+### Step 2 - Content Preparation
+
+Based on `--scope`:
+
+**`full` (default):** No content modification. Pass the file directly to the rendering script.
+
+**`summary`:** Read the input file and generate a condensed markdown summary:
+- Extract and preserve the document title (first H1 or filename).
+- Identify key sections, findings, and conclusions.
+- Produce a focused summary - typically 30-50% of the original length.
+- Preserve code blocks, tables, and other structured elements central to the document's message.
+- Write the condensed markdown to a temporary file. Because `md_export.py` derives the output name and location from its **input** file, pass `--output <original-dir>/<original-stem>-<scope>.<ext>` at render (Step 3) so the result lands beside the original with the right name, not in the temp directory. (For `--format all`, which rejects `--output`, write the temp file as `<original-stem>.md` in a scratch dir and move the three outputs next to the original afterward.)
+
+**`1pager`:** Read the input file and condense to ~one A4 page (~500-600 words):
+- Prioritize conclusions, key findings, critical code.
+- Use tighter prose - bullet points over paragraphs where appropriate.
+- Omit secondary details, verbose explanations, supporting examples.
+- Write the condensed markdown to a temporary file. Because `md_export.py` derives the output name and location from its **input** file, pass `--output <original-dir>/<original-stem>-<scope>.<ext>` at render (Step 3) so the result lands beside the original with the right name, not in the temp directory. (For `--format all`, which rejects `--output`, write the temp file as `<original-stem>.md` in a scratch dir and move the three outputs next to the original afterward.)
+
+For code files (`.py`, `.cpp`, etc.) with `summary` or `1pager` scope: extract the most important functions/classes with brief descriptions. Do not attempt to summarize every line.
+
+### Step 3 - Render
+
+Invoke the rendering script. **Resolve `../scripts/md_export.py` to its absolute path under the plugin root (two levels above this SKILL.md) before running** - the command executes in the user's project working directory, which does not contain the plugin's `../scripts/` folder. Invoke it with `python3` where present, falling back to `python` on Windows - stock macOS/Linux expose only `python3`.
+
+```bash
+python ../scripts/md_export.py <input_or_temp_file> \
+  --format <format> \
+  --theme <theme> \
+  --orientation <orientation> \
+  --scope <scope> \
+  [--output <path>]
+```
+
+Each format uses a different rendering pipeline:
+
+| Format | Pipeline | Theme assets |
+|---|---|---|
+| **HTML** | Pandoc -> self-contained HTML | CSS (`../scripts/themes/`) |
+| **PDF** | Pandoc + LuaLaTeX -> PDF | LaTeX templates (`../scripts/templates/`) |
+| **PNG** | Pandoc -> temp HTML -> headless browser screenshot -> auto-trim | CSS (`../scripts/themes/`) |
+
+The script handles input detection (markdown vs code) and wraps code files in fenced blocks with syntax highlighting before passing to Pandoc.
+
+**Format notes:** PDF typography and page geometry come from the LaTeX templates (on Windows the body uses Segoe UI and code uses Cascadia Code; on macOS/Linux it falls back to the LaTeX default, Latin Modern, which every TeX install provides - so PDF never fails on a missing font); for PNG, `--scope 1pager` renders a single A4-equivalent page while `full`/`summary` produce a narrow auto-height image trimmed to content.
+
+### Step 4 - Report Results
+
+After successful rendering, report:
+- The output file path(s)
+- The file size(s)
+- A brief confirmation: "Exported `<file>` as `<format>` with `<theme>` theme."
+
+If `--format all` was used, list all three output files.
+
+If rendering fails, show the error from the script (it prints install instructions for missing dependencies - see  Dependencies):
+
+| Error | Likely cause |
+|---|---|
+| "Pandoc is required but not found" | Pandoc not installed |
+| "LuaLaTeX is required" | No TeX distribution |
+| "Chromium-based browser is required" | No browser for PNG |
+| "PDF rendering failed" | LaTeX compilation error - often unsupported Unicode characters or missing fonts |
+
+### Step 5 - Cleanup
+
+Remove any temporary files created during content preparation (summary/1pager temp markdown files). The rendering script handles its own temp file cleanup.
+
+## Output Naming Convention
+
+| Scope | Example output |
+|---|---|
+| `full` | `report.pdf`, `report.html`, `report.png` |
+| `summary` | `report-summary.pdf`, `report-summary.html`, `report-summary.png` |
+| `1pager` | `report-1pager.pdf`, `report-1pager.html`, `report-1pager.png` |
+
+Output is placed in the same directory as the input file by default. Use `--output` to override.
+
+## Supported Input Types
+
+| Extension | Treatment |
+|---|---|
+| `.md` | Render as markdown |
+| `.txt` | Treat as markdown |
+| Known code (`.py`, `.js`, `.ts`, `.cpp`, `.c`, `.rs`, `.go`, `.java`, `.cs`, `.sh`, `.ps1`, `.rb`, `.lua`, `.sql`, `.yaml`, `.yml`, `.json`, `.toml`, `.xml`, `.html`, `.css`) | Syntax-highlighted code with filename heading |
+| Unknown extension | Treat as plain text / markdown |
+
+## Themes
+
+Each theme has both a CSS file (for HTML and PNG) and a LaTeX template (for PDF):
+
+| Theme | CSS | LaTeX | Description |
+|---|---|---|---|
+| `minimal` (default) | `../scripts/themes/minimal.css` | `../scripts/templates/minimal.tex` | Clean white, bold black headings, no accents. Content-first typography. |
+| `modern` | `../scripts/themes/modern.css` | `../scripts/templates/modern.tex` | Muted slate accents, structured layout with subtle top border. |
+| `dark` | `../scripts/themes/dark.css` | `../scripts/templates/dark.tex` | Deep navy background, purple accents. Good for screenshots and screen sharing. |
+
+## Dependencies
+
+| Dependency | Required for | Install |
+|---|---|---|
+| **Pandoc** | All formats | `choco install pandoc` / `brew install pandoc` / `apt install pandoc` |
+| **LuaLaTeX** (TeX distribution) | PDF only | `choco install miktex` / `brew install --cask mactex-no-gui` / `apt install texlive-luatex texlive-fonts-recommended` |
+| **Chromium browser** (Edge, Chrome) | PNG only | Usually pre-installed (Edge on Windows); `brew install --cask google-chrome` on macOS |
+| **Pillow** (Python) | PNG trim (optional) | `pip install Pillow` - if missing, PNG output may have trailing blank space |
+
+The script checks for each dependency at runtime and provides install instructions if missing.

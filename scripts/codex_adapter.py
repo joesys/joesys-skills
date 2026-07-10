@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
-"""Build a Codex-ready copy of the joesys Claude Code skills."""
+"""Build the Codex plugin copy of the joesys Claude Code skills.
+
+The output directory is what `.codex-plugin/plugin.json` points at via its
+`skills` field. Inside the Codex plugin snapshot the skills live wherever
+Codex caches the plugin, so every cross-tree reference is rewritten relative
+to the skill's own directory (`../shared/`, `../scripts/`) instead of an
+absolute install path. Skill-local references (`references/`, `principles/`,
+...) are already relative to the skill directory and ship unchanged.
+"""
 
 from __future__ import annotations
 
@@ -7,16 +15,13 @@ import argparse
 import json
 import re
 import shutil
-import subprocess
 import unicodedata
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
 
 
 COLLECTION_NAME = "joesys-skills"
-ADAPTER_VERSION = "1.0.0"
-DEFAULT_INSTALL_ROOT = "~/.codex/skills/joesys-skills"
+ADAPTER_VERSION = "2.0.0"
 
 
 def discover_skill_names(source_root: Path) -> list[str]:
@@ -31,7 +36,6 @@ def build_collection(
     source_root: Path,
     output_root: Path,
     *,
-    install_root: str = DEFAULT_INSTALL_ROOT,
     force: bool = False,
 ) -> dict:
     """Write an adapted skill collection to output_root and return its manifest."""
@@ -48,64 +52,50 @@ def build_collection(
             source_root / "skills" / skill_name,
             output_root / skill_name,
             skill_names=skill_names,
-            install_root=install_root,
         )
 
     _copy_tree(source_root / "shared", output_root / "shared")
     # Shared bodies ship to Codex verbatim otherwise, carrying Claude
     # Code-only tool names (AskUserQuestion, WebSearch, Bash), `.claude/`
-    # paths, and repo-relative plugin references. Adapt them like SKILL.md
-    # bodies (current_skill=None — shared files are not inside any skill).
+    # paths, and repo-relative plugin references. Shared files sit next to
+    # the skill folders, so their own `shared/` references become siblings.
     for md in sorted((output_root / "shared").glob("**/*.md")):
-        md.write_text(
+        _write_text(
+            md,
             _adapt_text(
                 md.read_text(encoding="utf-8"),
                 skill_names,
-                install_root,
-                current_skill=None,
+                in_shared=True,
             ),
-            encoding="utf-8",
         )
     _copy_tree(source_root / "scripts", output_root / "scripts")
 
+    # The manifest must stay deterministic: the built tree is committed as
+    # codex-skills/ and a freshness test diffs it against a fresh build, so
+    # no timestamps and no commit hashes.
     manifest = {
         "name": COLLECTION_NAME,
         "source_version": _source_version(source_root),
-        "source_commit": _source_commit(source_root),
-        "installed_at": datetime.now(timezone.utc)
-        .replace(microsecond=0)
-        .isoformat()
-        .replace("+00:00", "Z"),
         "installed_skills": skill_names,
-        "slash_commands": [f"/joesys-{name}" for name in skill_names],
+        "skill_mentions": [f"${name}" for name in skill_names],
         "adapter_version": ADAPTER_VERSION,
     }
-    (output_root / "_manifest.json").write_text(
+    _write_text(
+        output_root / "_manifest.json",
         json.dumps(manifest, indent=2) + "\n",
-        encoding="utf-8",
     )
     return manifest
 
 
-def adapt_skill_markdown(text: str, skill_names: Iterable[str], install_root: str) -> str:
+def adapt_skill_markdown(text: str, skill_names: Iterable[str]) -> str:
     metadata, body = _split_frontmatter(text)
     name = _metadata_value(metadata, "name")
     description = _metadata_value(metadata, "description")
     if not name or not description:
         raise ValueError("SKILL.md frontmatter must include name and description")
 
-    adapted_description = _adapt_text(
-        description,
-        skill_names,
-        install_root,
-        current_skill=name,
-    )
-    adapted_body = _adapt_text(
-        body,
-        skill_names,
-        install_root,
-        current_skill=name,
-    )
+    adapted_description = _adapt_text(description, skill_names)
+    adapted_body = _adapt_text(body, skill_names)
 
     return _ascii_normalize("\n".join([
         "---",
@@ -119,7 +109,7 @@ def adapt_skill_markdown(text: str, skill_names: Iterable[str], install_root: st
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Build a Codex-ready joesys-skills collection.",
+        description="Build the Codex plugin copy of joesys-skills.",
     )
     parser.add_argument(
         "output",
@@ -133,11 +123,6 @@ def main(argv: list[str] | None = None) -> int:
         help="Source repository root. Defaults to this repository.",
     )
     parser.add_argument(
-        "--install-root",
-        default=DEFAULT_INSTALL_ROOT,
-        help="Path used inside generated skill instructions.",
-    )
-    parser.add_argument(
         "--force",
         action="store_true",
         help="Replace an existing non-joesys output directory.",
@@ -147,7 +132,6 @@ def main(argv: list[str] | None = None) -> int:
     manifest = build_collection(
         args.source,
         args.output,
-        install_root=args.install_root,
         force=args.force,
     )
     print(
@@ -162,17 +146,15 @@ def _copy_skill(
     destination: Path,
     *,
     skill_names: Iterable[str],
-    install_root: str,
 ) -> None:
     shutil.copytree(source, destination, ignore=_copy_ignore)
     skill_md = destination / "SKILL.md"
-    skill_md.write_text(
+    _write_text(
+        skill_md,
         adapt_skill_markdown(
             skill_md.read_text(encoding="utf-8"),
             skill_names,
-            install_root,
         ),
-        encoding="utf-8",
     )
     # Reference/principle/template markdown ships to Codex too — adapt tool
     # names, .claude paths, slash commands, and resource paths in them as
@@ -181,14 +163,12 @@ def _copy_skill(
     for md in sorted(destination.glob("**/*.md")):
         if md.name == "SKILL.md":
             continue
-        md.write_text(
+        _write_text(
+            md,
             _adapt_text(
                 md.read_text(encoding="utf-8"),
                 skill_names,
-                install_root,
-                current_skill=destination.name,
             ),
-            encoding="utf-8",
         )
 
 
@@ -203,6 +183,7 @@ def _copy_ignore(_: str, names: list[str]) -> set[str]:
         ".pytest_cache",
         "codex_adapter.py",
         "install_codex_skills.py",
+        "reinstall-plugin.ps1",
     }
     ignored.update(name for name in names if name.endswith((".pyc", ".pyo")))
     ignored.update(
@@ -239,6 +220,13 @@ def _remove_existing_output(output_root: Path, *, force: bool) -> None:
     )
 
 
+def _write_text(path: Path, text: str) -> None:
+    # LF always, so the committed codex-skills/ tree is byte-stable across
+    # regenerations regardless of platform newline defaults.
+    with path.open("w", encoding="utf-8", newline="\n") as handle:
+        handle.write(text)
+
+
 def _split_frontmatter(text: str) -> tuple[str, str]:
     match = re.match(r"^---\r?\n(?P<meta>.*?)\r?\n---\r?\n?(?P<body>.*)$", text, re.S)
     if not match:
@@ -260,15 +248,16 @@ def _metadata_value(metadata: str, key: str) -> str | None:
 def _adapt_text(
     text: str,
     skill_names: Iterable[str],
-    install_root: str,
     *,
-    current_skill: str | None = None,
+    in_shared: bool = False,
 ) -> str:
     adapted = text
+    # Codex has no slash commands for skills — explicit invocation is a
+    # `$name` mention in the composer.
     for skill_name in sorted(skill_names, key=len, reverse=True):
         adapted = re.sub(
             rf"(?<![\w/-])/{re.escape(skill_name)}(?=($|[\s`'\"\])>.,;:|]))",
-            f"/joesys-{skill_name}",
+            f"${skill_name}",
             adapted,
         )
 
@@ -282,40 +271,36 @@ def _adapt_text(
     adapted = adapted.replace(".claude/audit.yaml", ".codex/audit.yaml")
     adapted = adapted.replace(".claude/audit.yml", ".codex/audit.yml")
 
-    adapted = _adapt_resource_paths(adapted, install_root, current_skill)
+    adapted = _adapt_resource_paths(adapted, in_shared=in_shared)
     return adapted
 
 
-def _adapt_resource_paths(
-    text: str, install_root: str, current_skill: str | None = None
-) -> str:
+def _adapt_resource_paths(text: str, *, in_shared: bool) -> str:
+    """Rewrite repo-root-relative references relative to the reading file.
+
+    In the built collection every skill folder, shared/, and scripts/ are
+    siblings, so from inside a skill folder the cross-tree prefix is `../`.
+    Files in shared/ reference their own folder as `./`. Skill-local folders
+    (references/, principles/, ...) stay untouched — they are already
+    relative to the skill directory.
+    """
     adapted = text
 
     adapted = re.sub(
         r"(?<![\w~/.:-])skills/([a-z0-9-]+)/",
-        rf"{install_root}/\1/",
+        r"../\1/",
         adapted,
     )
     adapted = re.sub(
         r"(?<![\w~/.:-])shared/",
-        f"{install_root}/shared/",
+        "./" if in_shared else "../shared/",
         adapted,
     )
     adapted = re.sub(
         r"(?<![\w~/.:-])scripts/",
-        f"{install_root}/scripts/",
+        "../scripts/",
         adapted,
     )
-    # Skill-relative folders (principles/, references/, ...) only make sense
-    # inside a skill; shared/ files are adapted with current_skill=None and
-    # must not have these rewritten against a nonexistent current skill.
-    if current_skill:
-        for folder in ("principles", "references", "templates", "benchmarks", "helpers"):
-            adapted = re.sub(
-                rf"(?<![\w~/.:-]){folder}/",
-                f"{install_root}/{current_skill}/{folder}/",
-                adapted,
-            )
     return adapted
 
 
@@ -354,27 +339,6 @@ def _source_version(source_root: Path) -> str | None:
         return json.loads(plugin_json.read_text(encoding="utf-8")).get("version")
     except json.JSONDecodeError:
         return None
-
-
-def _source_commit(source_root: Path) -> str | None:
-    try:
-        result = subprocess.run(
-            [
-                "git",
-                "-c",
-                f"safe.directory={source_root.as_posix()}",
-                "-C",
-                str(source_root),
-                "rev-parse",
-                "HEAD",
-            ],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-    except (OSError, subprocess.CalledProcessError):
-        return None
-    return result.stdout.strip() or None
 
 
 if __name__ == "__main__":

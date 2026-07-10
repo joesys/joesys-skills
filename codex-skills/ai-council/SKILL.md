@@ -1,0 +1,227 @@
+---
+name: ai-council
+description: "Use when the user invokes $ai-council to consult three frontier AI models (Claude, GPT, Antigravity) in parallel and synthesize their responses into a consensus analysis"
+---
+
+# AI Council Skill
+
+Dispatch the same question to three frontier AI models (Claude, GPT via Codex, Antigravity) in parallel, then synthesize their responses into a structured analysis highlighting consensus and tensions.
+
+## Out of Scope
+
+This skill MUST NOT:
+- Answer the question itself instead of dispatching to the council. The user invoked this skill to get *all three models'* takes - substituting your own answer defeats the purpose.
+- Skip a leg silently. If a leg fails, the synthesis MUST name the missing model and offer a retry.
+- Tilt the synthesis toward the host model (Claude). Treat all 3 legs as peers; dissent from any leg gets equal weight in consensus/tension analysis.
+- Suppress the default save behavior. When `--no-save` is NOT specified, saving to `docs/ai-council/YYYYMMDD-<topic>/` is mandatory, not optional.
+- Modify the user's project files outside the council output directory. The synthesis is the only artifact written.
+
+## Terminology
+
+- **Leg** - a dispatch+response unit (Claude leg, Codex leg, Antigravity leg)
+- **Council** - the collective of all three legs
+
+## Invocation
+
+Parse the user's `$ai-council` arguments:
+
+- `--no-save` - opts out of writing output files (saving is **on** by default)
+- `--path <dir>` - overrides the default save location (default: `docs/ai-council/`). Relative paths resolve from the current working directory.
+- Remaining text is the question/prompt
+
+If the question is empty or unintelligible, use `ask the user directly` to ask the user to clarify.
+
+## Phase 0: Load User Preferences
+
+Read `../shared/skill-context.md` for the full protocol (resolve `../shared/...` against the plugin root - two levels above this SKILL.md - never the project's working directory). In brief:
+
+1. Read `.codex/skill-context/preferences.md` - if missing, invoke `$preferences` (streamlined).
+2. No skill-specific preferences file for ai-council - shared preferences are sufficient.
+
+**How preferences shape this skill:**
+
+| Preference | Effect on AI Council |
+|---|---|
+| Detail level | Controls how verbose the synthesis is |
+| Assumed knowledge | Shapes the synthesis voice - beginner gets more explanation of model disagreements |
+| Tone | Formal synthesis vs. conversational comparison |
+
+Pass the user's communication style preferences to the synthesis phase (Phase 4). The individual model legs receive the user's raw question, not preferences - each model should respond naturally.
+
+---
+
+## Phase 1: Context Gathering
+
+Automatically gather relevant context before dispatching. No user approval needed.
+
+1. **Analyze the question** - determine what context would be useful:
+   - Project-related question -> read relevant files, git state
+   - General technology question -> web search for recent info, benchmarks, comparisons (skip if web search is unavailable)
+   - Design decision -> read existing architecture, dependencies, constraints
+2. **Gather context** - run appropriate tools (Read, Grep, Glob, web search where available)
+3. **Assemble context bundle** - a single block that all three legs receive identically. If context is large, summarize rather than passing raw content.
+
+If context gathering partially fails (e.g., a file is unreadable or web search is unavailable), proceed with whatever context was successfully gathered.
+
+## Phase 2: Prompt Construction
+
+Construct the prompt in four parts:
+
+### Part 1: Role Preamble (leg-specific)
+
+> "You are the [Claude/GPT/Antigravity] representative on a multi-model AI council. Give your independent analysis. Be explicit about your confidence level and reasoning. State your position clearly."
+
+### Part 2: Context Bundle (identical across all three)
+
+The gathered context from Phase 1.
+
+### Part 3: Refined Question (identical across all three)
+
+Reword the user's question into a clear, logical form with explicit framing (constraints, goals, scope). The refinement should clarify, not alter. Add explicit constraints and scope that are implied by context, but **MUST NOT change** the user's intent. When in doubt, use the original wording.
+
+### Part 4: Original Prompt (identical, for reference)
+
+> "Original question from the user: [verbatim user input]"
+
+### Prompt Size Safety
+
+Read `../shared/delegation-common.md`  Prompt Delivery and `../shared/model-defaults.md` for the standard prompt delivery pattern and current CLI command templates.
+
+**MUST always** write the three prompt files using that temp-file-and-heredoc pattern, with leg-specific names - each file gets the four-part prompt with its leg-specific preamble:
+
+Use **fixed, deterministic paths**, not `mktemp`. The shell command tool starts a fresh shell on every call, so a shell variable holding a randomized name would be gone before the Phase 3 dispatch and the cleanup call - the *files* persist on disk across calls, but the *variables* do not. On Windows (Git shell), swap `/tmp` for `$TEMP`.
+
+```bash
+cat > /tmp/council-codex.txt << 'PROMPT_EOF'
+<four-part prompt with the Codex-leg preamble>
+PROMPT_EOF
+cat > /tmp/council-antigravity.txt << 'PROMPT_EOF'
+<four-part prompt with the Antigravity-leg preamble>
+PROMPT_EOF
+cat > /tmp/council-claude.txt << 'PROMPT_EOF'
+<four-part prompt with the Claude-leg preamble>
+PROMPT_EOF
+```
+
+Dispatch happens in Phase 3, referencing these fixed paths. Clean up after all legs complete: `rm -f /tmp/council-codex.txt /tmp/council-antigravity.txt /tmp/council-claude.txt /tmp/council-codex.log`
+
+## Phase 3: Parallel Dispatch
+
+**MUST launch all three legs simultaneously in a single response** (three parallel tool invocations). Sequential dispatch defeats the speedup and is a defect.
+
+### Codex Leg (shell, 600000ms timeout)
+
+**MUST deliver via stdin pipe** (see Prompt Size Safety). Substitute `<CODEX_CMD>` with the current invocation from `../shared/model-defaults.md`  Codex. For resumability, replace the template's trailing `2>/dev/null` with `2>/tmp/council-codex.log` and grep the `session id:` line from that log after the run (see  Codex Resume) - that ID is what makes the Post-Synthesis resume offer reliable.
+
+```bash
+cat /tmp/council-codex.txt | <CODEX_CMD>
+```
+
+### Antigravity Leg (shell, 600000ms timeout)
+
+The adapter runs `agy` non-interactively and appends `-p` itself - do **not** add `-p`. **MUST deliver the prompt via stdin pipe** (shell metacharacters break direct arguments). Substitute `<AGY_CMD>` with the current invocation from `../shared/model-defaults.md`  Antigravity.
+
+```bash
+cat /tmp/council-antigravity.txt | <AGY_CMD>
+```
+
+### Claude Leg (Heuristic)
+
+Choose the mechanism based on whether the prompt is self-contained:
+
+**Use subagent (Codex agent workflow)** when Phase 1 fully resolved all context the question needs. The prompt is self-contained and the Claude leg won't need to read additional files or search the web during execution. Spawn with `model: "fable"` and pass the full four-part prompt. Subagent is faster - no CLI startup overhead.
+
+**Use CLI** when the question references specific files or codepaths that Phase 1 could not fully resolve, and the Claude leg would benefit from tool access to explore further. Substitute `<CLAUDE_CMD>` with the current invocation from `../shared/model-defaults.md`  Claude CLI, replace `--model opus` with `--model fable` (the council's Claude leg runs Fable), and append `--name` for resumability:
+
+```bash
+cat /tmp/council-claude.txt | <CLAUDE_CMD> --name "council-<topic>"
+```
+
+### Fallback Behavior
+
+| Condition | Action |
+|---|---|
+| 1 leg fails | Proceed with 2/3 responses, name the unavailable leg in the synthesis, offer retry after presenting |
+| 2 legs fail | Proceed with 1/3, warn user the council is degraded, offer retry |
+| All 3 legs fail | Report failures, suggest checking CLI installations and auth setup |
+
+When the user accepts a retry and it succeeds, update the synthesis and output files to incorporate the new response.
+
+## Phase 4: Synthesis
+
+Produce a structured synthesis with five fixed sections.
+
+### 1. Summary
+
+2-3 sentence overview of what the council was asked and the overall direction of responses.
+
+### 2. Confidence Matrix
+
+A table showing each leg's confidence level per topic/dimension.
+
+| Topic | Claude | GPT | Antigravity |
+|---|---|---|---|
+| Dimension A | High | High | High |
+| Dimension B | Medium | High | Not addressed |
+
+- **Dimensions** are extracted from the responses - the common themes and aspects the legs addressed
+- **Confidence** is inferred from hedging language and stated certainty on a 3-level scale: **High**, **Medium**, **Low**
+- If a leg does not address a dimension, the cell reads **Not addressed**
+
+### 3. Consensus Points
+
+Where all responding legs agree - stated clearly with supporting reasoning.
+
+### 4. Tensions & Disagreements
+
+Where legs diverge - each leg's position stated fairly, with the nature of the disagreement explained (e.g., "Claude and GPT favor X for reason A, while Antigravity argues Y due to reason B").
+
+### 5. Synthesized Recommendation
+
+The parent's own recommendation, informed by all three but not just majority-rules. Weigh the **quality of reasoning**, not just the count.
+
+## Post-Synthesis Options
+
+After presenting the synthesis, always offer:
+
+1. **Resume individual sessions** - "Would you like to continue the conversation with any of the models? Use `$codex resume`, `$antigravity resume`, or `$claude resume` to explore their reasoning further."
+   - Resume is only available for legs that used CLI (not subagent). If the Claude leg used a subagent, note that `$claude resume` is not available for this council run.
+   - For Codex, a `--last` resume is only reliable immediately after the council run; `codex exec resume <SESSION_ID>` works at any time if the `session id:` line was captured from the dispatch banner (stderr - see the `$codex` skill).
+   - If the user resumes and gets new insight, they can invoke `$ai-council` again with a refined question. The skill does not auto-update from individual resume sessions.
+2. **Retry failed legs** (if applicable) - "Would you like to retry [failed leg]? I can rerun it and update the synthesis."
+3. **Devlog suggestion** (if noteworthy) - If the synthesis revealed something genuinely interesting - a surprising disagreement between models, a non-obvious consensus, a tension that changed the developer's thinking, or a recommendation that contradicts conventional wisdom - suggest capturing it as a devlog scrap:
+   > "This council session surfaced [brief description of the noteworthy finding]. That might make a good devlog post. Want me to run `$devlog scrap --from-context` to capture it?"
+   - Only suggest when the findings are genuinely insightful - not for routine confirmations or questions with obvious answers
+   - **MUST wait** for the user's response. Do not auto-run.
+
+## Phase 5: File Output
+
+Saving is **on** by default. Files are written to `docs/ai-council/YYYYMMDD-<topic>/`:
+
+```
+docs/ai-council/20260325-postgresql-vs-mongodb/
+ claude.md
+ codex.md
+ antigravity.md
+ synthesis.md
+```
+
+- `<topic>` is derived from the question (kebab-case, 3-5 words)
+- Each individual file contains the leg's raw response with a header noting the model name, timestamp, and the prompt it received
+- `synthesis.md` contains the full synthesis (all 5 sections from Phase 4)
+- If a leg was unavailable, its file is not created
+- If the user retries a failed leg and it succeeds, the new response file is written and `synthesis.md` is updated
+- If the output directory already exists (same-day re-run on same topic), append a numeric suffix: `YYYYMMDD-<topic>-2/`, `YYYYMMDD-<topic>-3/`, etc.
+- `--no-save` skips all file writing
+- `--path <dir>` overrides `docs/ai-council/` (the `YYYYMMDD-<topic>/` subdirectory is still created inside)
+
+## Error Handling
+
+| Phase | Condition | Action |
+|---|---|---|
+| Phase 1 | web search unavailable | Skip web context, proceed with file/project context only |
+| Phase 1 | File read/glob fails | Proceed with whatever context was gathered |
+| Phase 2 | Empty or unintelligible question | Use `ask the user directly` to ask the user to clarify |
+| Phase 3 | Leg failure/timeout | See Fallback Behavior above |
+| Phase 5 | Directory already exists | Append numeric suffix |
+| Phase 5 | Disk write error | Warn user, present synthesis in terminal only |

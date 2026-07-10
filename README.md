@@ -13,33 +13,47 @@ Custom Claude Code skills and Codex-installable skills.
 
 ### Codex
 
-Install the skills globally for Codex on this computer:
+Install as a Codex plugin (the repo doubles as a Codex plugin marketplace via
+`.agents/plugins/marketplace.json` and `.codex-plugin/plugin.json`):
+
+```
+codex plugin marketplace add joesys/joesys-skills
+codex plugin add joesys-skills@joesys-skills
+```
+
+To pick up new releases:
+
+```
+codex plugin marketplace upgrade
+```
+
+Codex has no slash commands for skills — invoke them with `$name` mentions
+(`$commit`, `$codereview`, ...) or let Codex match the task against each
+skill's description.
+
+The plugin serves the Codex-adapted copies committed under `codex-skills/`.
+That directory is generated — never edit it by hand. After changing source
+skills, regenerate it:
+
+```powershell
+python scripts\codex_adapter.py codex-skills --force
+```
+
+A pytest guard (`test_committed_codex_skills_match_fresh_build`) fails when
+`codex-skills/` is stale.
+
+Alternatively, for a plugin-less install into `%USERPROFILE%\.codex\skills`
+(or `%CODEX_HOME%\skills`):
 
 ```powershell
 python scripts\install_codex_skills.py
 ```
 
-The installer adapts the Claude Code source skills into Codex-compatible copies
-and writes them to:
-
-```text
-%USERPROFILE%\.codex\skills\joesys-skills
-```
-
-If `CODEX_HOME` is set, the installer writes to:
-
-```text
-%CODEX_HOME%\skills\joesys-skills
-```
-
-Restart Codex after installing so it reloads the skill list.
-
-The generated Codex package is not checked in; `codex/` is intentionally
-gitignored. To update an existing Codex install after changing source skills,
-rerun:
+To reinstall both hosts from a clean state:
 
 ```powershell
-python scripts\install_codex_skills.py
+.\scripts\reinstall-plugin.ps1            # Claude Code + Codex
+.\scripts\reinstall-plugin.ps1 -Target codex
 ```
 
 To validate the adapter without installing:
