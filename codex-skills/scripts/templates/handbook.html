@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>$title$</title>
+  $if(generated_by)$<meta name="generator" content="$generated_by$">$endif$
+
+  <script>
+    (function () {
+      try {
+        var s = localStorage.getItem('joesys-skills-report-theme');
+        if (s === 'light' || s === 'dark') {
+          document.documentElement.setAttribute('data-theme', s);
+        }
+      } catch (e) {}
+    })();
+  </script>
+
+  <style>
+    /* INLINE_CSS */
+  </style>
+
+  <style>
+    /* handbook-specific additions */
+    details { margin: 12px 0; }
+    details summary {
+      cursor: pointer;
+      font-family: var(--font-ui);
+      font-size: 13px;
+      color: var(--text-muted);
+      padding: 6px 0;
+    }
+    details summary:hover { color: var(--accent); }
+    details[open] summary { margin-bottom: 8px; }
+
+    /* Danger zone callouts */
+    blockquote:has(strong:first-child) {
+      border-left-color: #dc2626;
+    }
+    [data-theme="dark"] blockquote:has(strong:first-child) {
+      border-left-color: #f87171;
+    }
+
+    /* TL;DR hero */
+    .main > blockquote:first-child {
+      background: var(--bg-elevated);
+      border-left: 4px solid var(--accent);
+      padding: 16px 20px;
+      margin-bottom: 32px;
+      font-size: 15px;
+    }
+
+    /* Print styles */
+    @media print {
+      .sidebar { display: none; }
+      body { grid-template-columns: 1fr; }
+      .main { padding: 20px; max-width: 100%; }
+      .toolbar { display: none; }
+      details { open: true; }
+      details[open] summary { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <h1>Contents</h1>
+    $toc$
+  </aside>
+
+  <main class="main">
+    <div class="toolbar">
+      <span>$if(generated_by)$$generated_by$$if(scope)$ — <code>$scope$</code>$endif$$endif$</span>
+      <button id="theme-toggle" aria-label="Switch theme">☾</button>
+    </div>
+
+$body$
+
+    $if(generated_at)$
+    <footer class="report-footer">
+      Generated $generated_at$$if(generated_by)$ by $generated_by$$endif$
+    </footer>
+    $endif$
+  </main>
+
+  <script>
+    /* INLINE_JS */
+  </script>
+</body>
+</html>

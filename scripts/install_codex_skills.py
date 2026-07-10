@@ -45,7 +45,6 @@ def main(argv: list[str] | None = None) -> int:
     manifest = codex_adapter.build_collection(
         args.source,
         args.dest,
-        install_root="~/.codex/skills/joesys-skills",
         force=args.force,
     )
 

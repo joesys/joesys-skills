@@ -1,0 +1,16 @@
+{
+  "name": "joesys-skills",
+  "interface": {
+    "displayName": "joesys skills"
+  },
+  "plugins": [
+    {
+      "name": "joesys-skills",
+      "source": {
+        "source": "local",
+        "path": "./"
+      },
+      "category": "development"
+    }
+  ]
+}

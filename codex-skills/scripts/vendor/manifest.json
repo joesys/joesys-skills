@@ -1,0 +1,28 @@
+{
+  "version": "1.0.0",
+  "phase": 1,
+  "libraries": {
+    "prism": {
+      "version": "1.29.0",
+      "files": ["prism.min.js", "prism-light.css", "prism-dark.css"]
+    },
+    "mermaid": {
+      "version": "10.6.1",
+      "files": ["mermaid.min.js"]
+    }
+  },
+  "fonts": {
+    "source-serif-4": {
+      "version": "4.005R",
+      "weights": ["regular", "italic", "bold"]
+    },
+    "inter": {
+      "version": "4.0",
+      "weights": ["regular", "semibold"]
+    },
+    "jetbrains-mono": {
+      "version": "2.304",
+      "weights": ["regular"]
+    }
+  }
+}
