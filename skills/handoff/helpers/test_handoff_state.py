@@ -28,12 +28,21 @@ def make_repo(tmp_path: Path, *, remote: str | None = None) -> Path:
     git(tmp_path, "init")
     git(tmp_path, "config", "user.email", "test@example.com")
     git(tmp_path, "config", "user.name", "Test User")
+    git(tmp_path, "config", "commit.gpgsign", "false")
     (tmp_path / "app.py").write_text("VALUE = 1\n", encoding="utf-8")
     git(tmp_path, "add", "app.py")
     git(tmp_path, "commit", "-m", "initial")
     if remote:
         git(tmp_path, "remote", "add", "origin", remote)
     return tmp_path
+
+
+def test_make_repo_disables_inherited_commit_signing(tmp_path: Path) -> None:
+    repo = make_repo(tmp_path)
+
+    result = git(repo, "config", "--get", "commit.gpgsign")
+
+    assert result.stdout.strip() == "false"
 
 
 def test_capture_clean_git_snapshot(tmp_path: Path) -> None:

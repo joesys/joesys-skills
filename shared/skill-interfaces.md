@@ -134,6 +134,41 @@ interfaces, update all callers listed below.
 
 ---
 
+## Handoff Skill Interface
+
+**Invocation:** `/handoff [--full | --compact] [--interactive] [--for self|agent|human] [--target auto|claude|codex|gemini|generic] [--include-diff] [--output <path>]`
+
+**Resume:** `/handoff resume [<file>]`
+
+**Behavior contract:**
+- Creates a schema-version-1 Markdown checkpoint under `.handoffs/` by default.
+- Stores deterministic repository state as compact JSON in the
+  `repository_snapshot` frontmatter field.
+- Uses one canonical artifact schema for `self`, `agent`, and `human`
+  audiences; target differences are confined to Target Bootstrap.
+- Without a resume path, selects the newest valid handoff matching the current
+  project identity.
+- Continues the recorded next action automatically for `exact` and safely
+  `advanced` repository states.
+- MUST stop before mutation for `drifted` state.
+- Treats `unverifiable` state as a warning that requires relevant-file
+  inspection before continuation.
+- Never overwrites an existing handoff and never edits `.gitignore`
+  automatically.
+- Does not auto-invoke sibling skills or commit, push, publish, or share the
+  artifact.
+
+**Stable enum values:**
+- Audience: `self`, `agent`, `human`
+- Target: `auto`, `claude`, `codex`, `gemini`, `generic`
+- Detail: `operational`, `full`, `compact`
+- Drift: `exact`, `advanced`, `drifted`, `unverifiable`
+
+**Callers:**
+- None currently — this skill is user-invoked only
+
+---
+
 **Rules:**
 - Before changing any interface listed above, check all callers.
 - If a caller uses "skip silently if skill unavailable," the interface
