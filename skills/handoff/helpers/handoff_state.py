@@ -8,6 +8,7 @@ import hashlib
 import json
 import re
 import subprocess
+import sys
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -203,21 +204,140 @@ def capture_snapshot(
     }
 
 
+def extract_snapshot(handoff: Path) -> dict[str, object]:
+    text = handoff.read_text(encoding="utf-8")
+    if not text.startswith("---\n"):
+        raise ValueError("handoff must start with YAML frontmatter")
+    terminator = text.find("\n---\n", 4)
+    if terminator == -1:
+        raise ValueError("handoff frontmatter is not terminated")
+    frontmatter = text[4:terminator]
+    for line in frontmatter.splitlines():
+        if not line.startswith("repository_snapshot:"):
+            continue
+        value = line.split(":", 1)[1].strip()
+        snapshot = json.loads(value)
+        if snapshot.get("snapshot_version") != SNAPSHOT_VERSION:
+            raise ValueError(
+                "unsupported repository snapshot version: "
+                f"{snapshot.get('snapshot_version')}"
+            )
+        return snapshot
+    raise ValueError("handoff has no repository_snapshot field")
+
+
+def is_ancestor(repo: Path, older: str, newer: str) -> bool:
+    result = run_git(
+        repo,
+        "merge-base",
+        "--is-ancestor",
+        older,
+        newer,
+        check=False,
+    )
+    return result.returncode == 0
+
+
+def relevant_file_changes(
+    recorded: dict[str, object],
+    current: dict[str, object],
+) -> list[str]:
+    reasons: list[str] = []
+    recorded_files = recorded.get("relevant_files", {})
+    current_files = current.get("relevant_files", {})
+    if not isinstance(recorded_files, dict) or not isinstance(current_files, dict):
+        return ["relevant-file metadata is malformed"]
+    for path, old_record in recorded_files.items():
+        new_record = current_files.get(path)
+        if not isinstance(old_record, dict):
+            reasons.append(f"recorded metadata is malformed: {path}")
+        elif not isinstance(new_record, dict):
+            reasons.append(f"relevant path is no longer recorded: {path}")
+        elif old_record.get("exists") and not new_record.get("exists"):
+            reasons.append(f"relevant file disappeared: {path}")
+        elif old_record.get("sha256") != new_record.get("sha256"):
+            reasons.append(f"relevant file changed: {path}")
+    return reasons
+
+
+def compare_snapshot(
+    repo: Path,
+    recorded: dict[str, object],
+) -> dict[str, object]:
+    recorded_files = recorded.get("relevant_files", {})
+    relevant = list(recorded_files.keys()) if isinstance(recorded_files, dict) else []
+    current = capture_snapshot(repo, relevant)
+    reasons: list[str] = []
+
+    if recorded.get("kind") != "git" or current.get("kind") != "git":
+        reasons.extend(relevant_file_changes(recorded, current))
+        return {
+            "classification": "unverifiable",
+            "reasons": reasons or ["Git metadata is unavailable"],
+            "recorded": recorded,
+            "current": current,
+        }
+
+    if recorded.get("project_identity") != current.get("project_identity"):
+        reasons.append("project identity differs")
+    if recorded.get("branch") != current.get("branch"):
+        reasons.append(
+            f"branch differs: {recorded.get('branch')} -> {current.get('branch')}"
+        )
+    reasons.extend(relevant_file_changes(recorded, current))
+    if recorded.get("dirty_patch_sha256") != current.get("dirty_patch_sha256"):
+        reasons.append("working-tree patch fingerprint differs")
+
+    recorded_head = recorded.get("head")
+    current_head = current.get("head")
+    if reasons:
+        classification = "drifted"
+    elif recorded_head == current_head:
+        classification = "exact"
+    elif (
+        isinstance(recorded_head, str)
+        and isinstance(current_head, str)
+        and is_ancestor(repo, recorded_head, current_head)
+    ):
+        classification = "advanced"
+    else:
+        classification = "drifted"
+        reasons.append("recorded HEAD is not an ancestor of current HEAD")
+
+    return {
+        "classification": classification,
+        "reasons": reasons,
+        "recorded": recorded,
+        "current": current,
+    }
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", required=True)
     snapshot = subparsers.add_parser("snapshot", help="Capture repository state")
     snapshot.add_argument("--repo", type=Path, default=Path("."))
     snapshot.add_argument("--relevant", action="append", default=[])
+    compare = subparsers.add_parser("compare", help="Compare a handoff with live state")
+    compare.add_argument("--repo", type=Path, default=Path("."))
+    compare.add_argument("--handoff", type=Path, required=True)
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
-    args = build_parser().parse_args(argv)
-    if args.command == "snapshot":
-        print(json.dumps(capture_snapshot(args.repo, args.relevant), sort_keys=True))
+    try:
+        args = build_parser().parse_args(argv)
+        if args.command == "snapshot":
+            payload = capture_snapshot(args.repo, args.relevant)
+        elif args.command == "compare":
+            payload = compare_snapshot(args.repo, extract_snapshot(args.handoff))
+        else:
+            return 2
+        print(json.dumps(payload, sort_keys=True))
         return 0
-    return 2
+    except (GitError, OSError, ValueError, json.JSONDecodeError) as error:
+        print(json.dumps({"error": str(error)}), file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":
