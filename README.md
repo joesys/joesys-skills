@@ -1,298 +1,244 @@
 # joesys-skills
 
-Custom Claude Code skills and Codex-installable skills.
+A collection of 21 agent skills for Claude Code and Codex: consult other AI
+models, review code and plans, understand projects, improve engineering
+workflows, and preserve or publish development work.
 
-## Installation
+The repository is both a Claude Code plugin and a Codex plugin marketplace.
+Canonical skills live under `skills/`; Codex-compatible copies are generated
+under `codex-skills/`.
+
+## Quick Start
+
+| Host | Invoke a skill | Example |
+|---|---|---|
+| Claude Code | `/skill-name` | `/codereview --file src/main.py` |
+| Codex | `$skill-name` | `$codereview --file src/main.py` |
+
+The detailed examples below use Claude Code's `/skill-name` syntax. In Codex,
+replace the leading `/` with `$`. Both hosts can also select a skill
+automatically when the request matches its description.
 
 ### Claude Code
 
-```
+```text
 /plugin marketplace add joesys/joesys-skills
 /plugin install joesys-skills
 ```
 
 ### Codex
 
-Install as a Codex plugin (the repo doubles as a Codex plugin marketplace via
-`.agents/plugins/marketplace.json` and `.codex-plugin/plugin.json`):
-
-```
+```powershell
 codex plugin marketplace add joesys/joesys-skills
 codex plugin add joesys-skills@joesys-skills
 ```
 
-To pick up new releases:
+To pick up a new Codex release:
 
-```
+```powershell
 codex plugin marketplace upgrade
 ```
 
-Codex has no slash commands for skills — invoke them with `$name` mentions
-(`$commit`, `$codereview`, ...) or let Codex match the task against each
-skill's description.
+## Choose a Skill
 
-The plugin serves the Codex-adapted copies committed under `codex-skills/`.
-That directory is generated — never edit it by hand. After changing source
-skills, regenerate it:
+| Goal | Skill | What it does |
+|---|---|---|
+| Consult models | [`ai-council`](#ai-council) | Ask Claude, Codex, and Antigravity, then synthesize their views |
+| Consult models | [`claude`](#claude) | Delegate a prompt to a separate Claude CLI session |
+| Consult models | [`codex`](#codex) | Delegate a prompt to a separate Codex CLI session |
+| Consult models | [`antigravity`](#antigravity) | Delegate a prompt to Google's Antigravity CLI |
+| Review | [`codereview`](#codereview) | Run a comprehensive multi-domain code review |
+| Review | [`quick-review`](#quick-review) | Scan quickly for P0-P2 correctness and security bugs |
+| Review | [`readability-review`](#readability-review) | Grade how well code reads as a story |
+| Review | [`human-review-guide`](#human-review-guide) | Build a decision-focused human reading order |
+| Review | [`codebase-audit`](#codebase-audit) | Grade whole-codebase quality and velocity |
+| Review | [`plan-review`](#plan-review) | Iteratively stress-test specs and implementation plans |
+| Understand | [`explain`](#explain) | Explain a project, file, symbol, or feature in layers |
+| Understand | [`handbook`](#handbook) | Generate a self-contained project handbook |
+| Improve | [`dashboard`](#dashboard) | Build a deterministic project-health dashboard |
+| Improve | [`retrospective`](#retrospective) | Facilitate an evidence-based development retrospective |
+| Improve | [`interaction-review`](#interaction-review) | Grade human-AI collaboration and coach improvements |
+| Improve | [`preferences`](#preferences) | Save shared and skill-specific personal preferences |
+| Preserve and publish | [`handoff`](#handoff) | Create or resume a drift-aware semantic checkpoint |
+| Preserve and publish | [`devlog`](#devlog) | Capture insights as scraps or development posts |
+| Preserve and publish | [`export`](#export) | Convert Markdown, text, or code to PDF, HTML, or PNG |
+| Preserve and publish | [`commit`](#commit) | Create structured Conventional Commits and OneFlow histories |
+| Preserve and publish | [`ss`](#ss) | Turn recent screenshots into actionable context |
 
-```powershell
-python scripts\codex_adapter.py codex-skills --force
-```
+## Consult Other AI Models
 
-A pytest guard (`test_committed_codex_skills_match_fresh_build`) fails when
-`codex-skills/` is stale.
+Default model identifiers and CLI flags are centralized in
+[`shared/model-defaults.md`](shared/model-defaults.md).
 
-Alternatively, for a plugin-less install into `%USERPROFILE%\.codex\skills`
-(or `%CODEX_HOME%\skills`):
+### ai-council
 
-```powershell
-python scripts\install_codex_skills.py
-```
+Consult Claude, Codex, and Antigravity in parallel on the same question, then
+synthesize consensus, disagreements, and confidence. Results are saved by
+default.
 
-To reinstall both hosts from a clean state:
-
-```powershell
-.\scripts\reinstall-plugin.ps1            # Claude Code + Codex
-.\scripts\reinstall-plugin.ps1 -Target codex
-```
-
-To validate the adapter without installing:
-
-```powershell
-pytest tests\test_codex_adapter.py -q
-```
-
-## Available Skills
-
----
-
-### Part I: AI Council
-
-Multi-model consultation — ask one model or all three in parallel. Default model identifiers and CLI flags for the delegation skills (`/claude`, `/codex`, `/antigravity`, `/ai-council`) are defined in [`shared/model-defaults.md`](shared/model-defaults.md).
-
-#### ai-council
-
-Consult three frontier AI models (Claude, GPT, Antigravity) in parallel on the same question. Automatically gathers relevant context, dispatches to all three, then synthesizes a structured analysis with consensus points, tensions, and a confidence matrix. Saves results by default.
-
-```
-/ai-council "Should we use PostgreSQL or MongoDB for our user data?"
+```text
+/ai-council "Should we use PostgreSQL or MongoDB for user data?"
 /ai-council --no-save "Quick question about caching strategies"
-/ai-council --path ./notes "Compare REST vs GraphQL for this use case"
+/ai-council --path ./notes "Compare REST and GraphQL for this use case"
 ```
 
-#### claude
+### claude
 
-Delegate prompts to Anthropic's Claude Code CLI for code analysis, refactoring, and automated editing. Critically evaluates Claude's output with special attention to shared blind spots (Claude evaluating Claude). Supports named session resume.
+Delegate code analysis, refactoring, or automated editing to Anthropic's Claude
+Code CLI. The host presents Claude's response, evaluates it critically, and
+supports latest or named-session resume.
 
-```
+```text
 /claude "explain the auth flow in this repo"
-/claude --model sonnet "quick analysis of this function"
+/claude --model sonnet "analyze this function"
 /claude --permission-mode acceptEdits "fix the lint errors"
-/claude --effort max "deep analysis of the architecture"
+/claude --effort max "analyze the architecture deeply"
 /claude --bare "analyze without plugins or hooks"
 /claude resume "follow up on that"
-/claude resume my-review "continue from that session"
+/claude resume my-review "continue that named session"
 ```
 
-#### codex
+### codex
 
-Delegate prompts to OpenAI's Codex CLI for code analysis, refactoring, and automated editing. Critically evaluates Codex's output and supports session resume.
+Delegate code analysis, refactoring, or automated editing to OpenAI's Codex
+CLI. The skill captures the session identifier when available, evaluates the
+response, and supports reliable session resume. The current default model is
+`gpt-5.6-sol`.
 
-```
+```text
 /codex "explain the auth flow in this repo"
-/codex --model gpt-5.3 "analyze this function"
+/codex --model gpt-5.6-sol "analyze this function"
 /codex --sandbox workspace-write "fix the lint errors"
-/codex resume "follow up on that"
+/codex resume "follow up on the latest session"
+/codex resume <SESSION_ID> "continue this specific session"
 ```
 
-#### antigravity
+### antigravity
 
-Delegate prompts to Google's Antigravity CLI (`agy`) for code analysis, refactoring, and automated editing. Critically evaluates Antigravity's output and supports session resume.
+Delegate prompts to Google's Antigravity CLI (`agy`) and critically evaluate
+the result. The included adapter forwards output from current `agy` releases
+and retains compatibility recovery for affected older releases.
 
-```
+```text
 /antigravity "explain the auth flow in this repo"
-/antigravity resume "follow up on that"
-/antigravity resume <ID> "continue from that session"
+/antigravity resume "follow up on the latest session"
+/antigravity resume <ID> "continue this specific session"
 ```
 
----
+## Review Code and Plans
 
-### Part II: Code Review
+### codereview
 
-Automated code analysis — from quick bug scans to full quality audits.
-
-#### codereview
-
-Dispatch 7 parallel domain-expert subagents to analyze code for violations across correctness, clean code, architecture, reliability, security, performance, and story readability. Produces a severity-grouped report (P0-P4) with concrete before/after fixes in the target language. Supports branch diffs, directory scans, single files, PR reviews, and commit reviews.
+Run parallel domain reviews across correctness, clean code, architecture,
+reliability, security, performance, and story readability. Findings are grouped
+from P0 to P4 and include concrete before-and-after fixes in the target
+language.
 
 | Domain | Focus |
 |---|---|
-| Correctness | Actual bugs — wrong logic, off-by-one, null dereferences, race conditions |
-| Clean Code | Naming, DRY (Rule of Three), nesting depth, function length, KISS/YAGNI |
-| Architecture | Coupling, cohesion, layering violations, dependency direction, god classes |
-| Reliability | Error handling, silent failures, resource leaks, missing validation |
-| Security | Injection, hardcoded secrets, auth gaps, input sanitization, data exposure |
-| Performance | Algorithmic complexity, N+1 queries, missing caching, unnecessary allocations |
-| Story Readability | 8-dimension story-readability scoring (rolled into P2-P4 findings) |
+| Correctness | Wrong logic, edge cases, null handling, races |
+| Clean Code | Naming, duplication, nesting, focus, KISS/YAGNI |
+| Architecture | Coupling, cohesion, layering, dependency direction |
+| Reliability | Error handling, validation, resource safety |
+| Security | Injection, secrets, authorization, data exposure |
+| Performance | Complexity, N+1 queries, caching, allocation |
+| Story Readability | Narrative flow and maintainable intent |
 
-```
-/codereview                          # Review current branch diff vs. base
-/codereview src/                     # Scan all files in a directory
-/codereview --file src/main.py       # Review a single file
-/codereview --pr 123                 # Review files changed in a GitHub PR
-/codereview --commit abc123          # Review files changed in a specific commit
-/codereview --min-severity P1        # Only show P1+ findings (combinable with any mode)
-```
-
-#### quick-review
-
-Fast, bug-focused code review that dispatches correctness and security subagents in parallel with streamlined static analysis. Reports only P0-P2 findings — no style nits, no architecture suggestions. Uses `git diff -U50` for context rather than loading full files, making it significantly faster than `/codereview`. No cross-model dispatch — uses the host model only for speed.
-
-```
-/quick-review                              # Review current branch diff vs. base
-/quick-review src/utils/                   # Scan all files in a directory
-/quick-review --file src/main.py           # Review a single file
-/quick-review --pr 123                     # Review files changed in a GitHub PR
-/quick-review --commit abc123              # Review files changed in a specific commit
+```text
+/codereview                          # Current branch diff against its base
+/codereview src/                     # Directory scan
+/codereview --file src/main.py       # Single file
+/codereview --pr 123                 # GitHub pull request
+/codereview --commit abc123          # Specific commit
+/codereview --min-severity P1        # Only P0-P1 findings
 ```
 
-#### readability-review
+### quick-review
 
-Grade code on how well it "reads like a story" using 8 weighted dimensions. Produces a numeric score (0-100) mapped to a letter grade, with thematic findings and file-by-file breakdown including concrete before/after refactoring suggestions.
+Run a fast correctness-and-security review using diff context and the host
+model. It reports only P0-P2 findings, with no style nits or architecture
+suggestions.
 
-| Dimension | Weight | Focus |
-|---|---|---|
-| Narrative Flow | 20% | Top-to-bottom readability, paragraph spacing, temporal ordering |
-| Naming as Intent | 15% | Names reveal what and why without reading the body |
-| Cognitive Chunking | 15% | Logical phases extracted into named steps, chapter visibility |
-| Abstraction Consistency (SLAP) | 14% | Single level of abstraction per function |
-| Function Focus | 10% | One function, one job, ~20 lines of logic |
-| Structural Clarity | 10% | Flat control flow, guard clauses, minimal nesting |
-| Documentation Quality | 10% | Comments explain why, not what; business rationale documented |
-| No Clever Tricks | 6% | No dense one-liners, bitwise hacks, or ternary chains |
-
-```
-/readability-review                          # Review current branch diff vs. base
-/readability-review src/                     # Scan all files in a directory
-/readability-review --file src/main.py       # Review a single file
-/readability-review --pr 123                 # Review files changed in a GitHub PR
-/readability-review --commit abc123          # Review files changed in a specific commit
-/readability-review --min-score 70           # Only show files scoring below threshold
+```text
+/quick-review
+/quick-review src/utils/
+/quick-review --file src/main.py
+/quick-review --pr 123
+/quick-review --commit abc123
 ```
 
-#### human-review-guide
+### readability-review
 
-Generate a personalized reading guide for human review. Triages changes into attention tiers (DECIDE/READ/SKIM/SKIP), runs deep analysis on decision-heavy sections, and produces a guided reading order so reviewers know where to spend time and what to skip. Works on code diffs, PRs, specs, configs, and any AI-generated artifact.
+Grade code from 0 to 100 across eight weighted story-readability dimensions,
+then provide thematic findings and concrete refactoring suggestions.
 
-| Tier | Meaning | Reviewer Action |
-|---|---|---|
-| DECIDE | Contains a decision requiring human judgment | Read carefully, form an opinion |
-| READ | Non-trivial logic worth understanding | Read to build mental model |
-| SKIM | Straightforward, follows from decisions elsewhere | Glance for context |
-| SKIP | Mechanical/boilerplate | Safe to ignore |
+| Dimension | Weight |
+|---|---:|
+| Narrative Flow | 20% |
+| Naming as Intent | 15% |
+| Cognitive Chunking | 15% |
+| Abstraction Consistency | 14% |
+| Function Focus | 10% |
+| Structural Clarity | 10% |
+| Documentation Quality | 10% |
+| No Clever Tricks | 6% |
 
+```text
+/readability-review
+/readability-review src/
+/readability-review --file src/main.py
+/readability-review --pr 123
+/readability-review --commit abc123
+/readability-review --min-score 70
 ```
-/human-review-guide                        # Guide for current branch diff
-/human-review-guide PR#123                 # Guide for a specific PR
-/human-review-guide docs/spec.md           # Guide for reviewing an artifact
-/human-review-guide --with-review          # Enrich with /codereview findings
-/human-review-guide --calibrate            # Re-run calibration questions
+
+### human-review-guide
+
+Turn a diff, PR, spec, configuration, or other artifact into a guided human
+reading order. Content is classified as `DECIDE`, `READ`, `SKIM`, or `SKIP` so
+the reviewer can spend judgment where it matters.
+
+```text
+/human-review-guide
+/human-review-guide PR#123
+/human-review-guide docs/spec.md
+/human-review-guide --with-review     # Consume existing codereview findings
+/human-review-guide --calibrate       # Re-run calibration questions
 ```
 
-#### codebase-audit
+`--with-review` uses findings already present in the session; it does not
+automatically invoke `codereview`.
 
-Comprehensive, language-agnostic codebase quality audit measuring up to 12 core quality criteria plus development velocity. Spawns 6 parallel collection agents, displays graded metrics (A+ through F) in a console summary table, and optionally writes a full analysis report with industry benchmarks and actionable recommendations.
+### codebase-audit
+
+Run a language-agnostic audit covering up to 12 quality criteria plus
+development velocity. It combines parallel measurement agents, deterministic
+metrics, industry benchmarks, letter grades, and actionable recommendations.
 
 | Category | Criteria |
 |---|---|
-| Code Quality | Maintainability, Readability, Consistency |
-| Architecture | Modularity, Evolvability, Reliability |
-| Engineering | Correctness, Testability, Performance |
-| Operations | Operability, Security |
-| Readability | Story Readability |
-| Velocity | Development velocity (commits, churn, throughput) |
+| Code quality | Maintainability, readability, consistency |
+| Architecture | Modularity, evolvability, reliability |
+| Engineering | Correctness, testability, performance |
+| Operations | Operability, security |
+| Readability | Story readability |
+| Velocity | Commits, churn, throughput |
 
-```
-/codebase-audit                            # Full pipeline (all 12 criteria + velocity)
-/codebase-audit metrics                    # Collect and display only
-/codebase-audit analysis                   # Re-analyze from most recent metrics
-/codebase-audit delta                      # Compare two most recent audits
-/codebase-audit maintainability performance # Only specified criteria
-/codebase-audit --static-only             # No live commands (no test run, no dep audit)
-```
-
----
-
-### Part III: Workflow & Utilities
-
-Development workflow tools — writing, reviewing, exporting, and committing.
-
-#### explain
-
-Dispatch 5 parallel domain-lens subagents to analyze a codebase across structure, behavior, domain & data, external dependencies, and health & risk. Produces a layered report from TL;DR to deep understanding with an orientation cheat sheet and fastest-path-to-competence recommendations. Supports whole projects, directories, single files, symbols, and natural language feature traces.
-
-| Lens | Focus |
-|---|---|
-| Structure & Entry Points | Module boundaries, organization pattern, entry points, dependency graph |
-| Behavior — Key Workflows | End-to-end traces of the 3 most important workflows |
-| Domain & Data | Data models, state transitions, domain glossary, storage mapping |
-| External Dependencies | External services, infrastructure config, integration patterns |
-| Health & Risk | Hotspots, churn, debt, test signals, git archaeology, onboarding path |
-
-```
-/explain                                  # Explain the whole project (default)
-/explain src/auth/                        # Explain a directory/module
-/explain src/auth/oauth.ts                # Explain a single file
-/explain MyClassName                      # Explain a class/symbol
-/explain "how does payment work?"         # Trace a feature across the codebase
-/explain --save                           # Save report to docs/explain/
-/explain src/api/ --save --path docs/     # Explain directory, save to custom path
+```text
+/codebase-audit
+/codebase-audit metrics
+/codebase-audit analysis
+/codebase-audit delta
+/codebase-audit maintainability performance
+/codebase-audit --static-only
 ```
 
-#### handbook
+### plan-review
 
-Generate comprehensive project documentation as a single self-contained HTML file serving two audiences at once. Dispatches 6 parallel analysis agents, conducts a human interview between analysis and writing, then fans out 13-16 parallel chapter writers. Reads the previous handbook for continuity when regenerating.
-
-| Audience | Content |
-|---|---|
-| Reference Handbook | Architecture, module walkthroughs, design rationale, dependencies, extension points |
-| Newbie Guidebook | Setup guide, program-flow step-throughs with annotated code, common gotchas, troubleshooting |
-
-```
-/handbook                                  # Full handbook for the entire project
-/handbook src/auth                         # Scope to a directory or module
-```
-
-#### dashboard
-
-Generate a single self-contained HTML project-health dashboard aimed at PMs and EMs. Deterministic Python helpers read local git history and compute traffic-light metrics across three lenses — the same repo always produces the same dashboard, so it is runnable in CI. Optional enrichment pulls open PRs and CI status from GitHub (via `gh`) and borrows the latest `/codebase-audit` grade. An optional single-pass LLM narrative explains why each light is the colour it is — it never changes a light.
-
-| Lens | Signals |
-|---|---|
-| Delivery | Commit cadence, throughput, release recency, module activity |
-| Health | Firefighting rate, churn, borrowed `/codebase-audit` code-quality grade |
-| Team | Bus factor, contributor concentration, off-hours activity |
-
-```
-/dashboard                                 # Whole-repo health dashboard
-/dashboard src/api                         # Highlight a module in the summary
-/dashboard --no-llm                        # Deterministic/CI mode — skip the narrative
-/dashboard --no-host                       # Skip GitHub enrichment
-/dashboard --no-llm --no-host              # Fully deterministic, fully local
-```
-
-#### plan-review
-
-Review and iteratively converge a specification, implementation plan, or both
-before execution. Each iteration sends the current documents to a completely
-fresh read-only reviewer selected by model, has a repository-specific arbiter
-accept or reject the findings, applies accepted document fixes through the host
-agent, and repeats until no P0/P1 findings remain or a bounded pause condition
-is reached.
-
-Unlike `/codereview`, plan-review challenges decisions, completeness,
-feasibility, traceability, and execution readiness rather than ordinary code
-defects.
+Review a specification, implementation plan, or paired documents before
+implementation. Each iteration uses a fresh read-only external reviewer, a
+repository-aware arbiter, host-applied document fixes, and deterministic loop
+state until the documents converge or a bounded pause condition is reached.
 
 ```text
 /plan-review docs/feature-spec.md docs/feature-plan.md
@@ -302,150 +248,258 @@ defects.
 /plan-review docs/spec.md docs/plan.md --max-iterations 10
 ```
 
-#### handoff
-
-Create a durable semantic checkpoint for continuing work in a fresh AI session, transferring it to an independent agent, or orienting another human. Handoffs use one host-neutral Markdown schema, capture deterministic repository state, and classify resume safety as `exact`, `advanced`, `drifted`, or `unverifiable` before continuing.
-
-| Audience | Emphasis |
+| Option | Behavior |
 |---|---|
-| Self | Concise operational continuity and the exact next action |
-| Agent | Explicit authority, constraints, deliverable, completion criteria, and report-back |
-| Human | Rationale, ownership, review points, and judgment calls |
+| `--model <MODEL>` | Select a registered or provider-qualified review model |
+| `--arbiter <NAME\|auto\|host>` | Select the arbiter or its discovery mode |
+| `--review-only` | Run one non-mutating review and arbitration pass |
+| `--max-iterations <1-20>` | Lower the bounded iteration ceiling |
+
+Plan review edits only the supplied Markdown documents. It does not implement
+the plan or commit, push, stash, reset, or clean repository state.
+
+## Understand and Document Projects
+
+### explain
+
+Analyze a project through five lenses: structure, behavior, domain and data,
+external dependencies, and health and risk. The report progresses from a
+30-second overview to deep traces and a fastest path to competence.
 
 ```text
-/handoff                                  # Save an operational checkpoint
-/handoff --full                           # Include deeper reasoning and alternatives
-/handoff --interactive                    # Interview before saving
-/handoff --target codex                   # Prepare for a fresh Codex session
-/handoff --for agent --target gemini      # Transfer to an independent Gemini agent
-/handoff --for human                      # Prepare a human-readable transfer
-/handoff resume                           # Validate and resume the newest checkpoint
-/handoff resume .handoffs/<file>.md       # Resume a specific checkpoint
+/explain
+/explain src/auth/
+/explain src/auth/oauth.ts
+/explain MyClassName
+/explain "how does payment work?"
+/explain --save
+/explain src/api/ --save --path docs/
 ```
 
-#### devlog
+### handbook
 
-Capture development insights and turn them into devlog posts for budding programmers. Mines git history, Claude Code conversation transcripts, and content scraps to reconstruct your thinking, then brainstorms with you to find the real insight before drafting. Supports quick content scraps for when you're in the flow.
+Generate a self-contained project handbook for two audiences: an intermediate
+programmer who needs a reference and a beginner who needs a guided walkthrough.
+The workflow analyzes the project, interviews the user, writes the chapters,
+and produces Markdown plus HTML under `docs/handbook/`.
 
-| Mode | Description |
+```text
+/handbook
+/handbook src/auth
+```
+
+## Track Health and Improve Workflows
+
+### dashboard
+
+Build a self-contained HTML project-health dashboard for PMs and engineering
+managers. Deterministic local-git metrics drive traffic lights across delivery,
+health, and team lenses. Optional GitHub enrichment uses `gh`; GitLab remotes
+degrade gracefully because GitLab enrichment is not implemented in v1. An
+optional LLM narrative explains the lights but never changes them.
+
+```text
+/dashboard
+/dashboard src/api
+/dashboard --no-llm
+/dashboard --no-host
+/dashboard --no-llm --no-host
+```
+
+### retrospective
+
+Facilitate an evidence-based retrospective with human check-ins. The workflow
+mines git history, available conversation records, code quality, planning
+documents, and tests, then produces discussion topics, actions, and a narrative.
+
+```text
+/retrospective
+/retrospective --since 2026-03-15
+/retrospective --since v1.0
+/retrospective --since v1.0..v1.1
+/retrospective --output docs/sprints/3/
+/retrospective continue
+```
+
+### interaction-review
+
+Analyze Claude Code JSONL conversation transcripts across prompt craft,
+workflow efficiency, agentic leverage, error recovery, and context management.
+The skill produces Markdown and HTML report cards with a prioritized coaching
+roadmap and trend history.
+
+```text
+/interaction-review
+/interaction-review session <uuid>
+/interaction-review since 2026-05-01
+/interaction-review trend
+```
+
+This skill specifically depends on Claude Code transcript storage even when the
+collection itself is installed for both hosts.
+
+### preferences
+
+Capture shared communication, explanation, experience, and project preferences
+plus skill-specific settings. Other skills can request first-contact setup when
+preferences are absent; transactional workflows such as `commit` and `handoff`
+use silent defaults instead of interrupting work.
+
+```text
+/preferences
+/preferences show
+/preferences reset
+/preferences codereview
+/preferences plan-review
+```
+
+## Capture, Transfer, and Publish Work
+
+### handoff
+
+Create a durable, host-neutral Markdown checkpoint for a fresh session, an
+independent agent, or another human. Handoffs capture live repository state,
+decisions, constraints, verification evidence, and one explicit next action
+without copying raw conversation transcripts.
+
+```text
+/handoff
+/handoff --full
+/handoff --compact
+/handoff --interactive
+/handoff --for self --target codex
+/handoff --for agent --target gemini
+/handoff --for human --include-diff
+/handoff --output notes/my-handoff.md
+/handoff resume
+/handoff resume .handoffs/<file>.md
+```
+
+| Setting | Values and behavior |
 |---|---|
-| Write | Brainstorm and draft a full devlog post |
-| Scrap | Auto-capture a rich content scrap (no questions asked) |
-| List | Show scrap backlog and published posts |
+| Audience | `self`, `agent`, or `human`; default `self` |
+| Target | `auto`, `claude`, `codex`, `gemini`, or `generic`; default `auto` |
+| Detail | Operational by default, or `--full` / `--compact` |
+| Drift | Resume classifies state as `exact`, `advanced`, `drifted`, or `unverifiable` |
+| Output | `.handoffs/YYYYMMDD-HHMMSS-<slug>.md` unless overridden |
 
-```
-/devlog "the recursive clone bug"            # Write a post about a topic
-/devlog --since yesterday                    # Mine recent sessions for a post
-/devlog --from-scrap recursive-fix           # Write from an existing scrap
-/devlog scrap "signing workaround"           # Quick-capture a scrap
-/devlog scrap                                # Auto-detect and capture a scrap
-/devlog list                                 # Show scraps and published posts
-```
+`--full` and `--compact` cannot be combined. The skill never commits, pushes,
+publishes, or shares a checkpoint automatically, and it stops before mutation
+when repository state has drifted.
 
-#### retrospective
+### devlog
 
-Structured retrospective facilitated by AI, interleaved with human check-ins at every phase. Dispatches 5 parallel channel agents — each mining a different data source (git history, conversations, code quality, planning docs, tests) — to build a comprehensive digest. Derives discussion topics from the data, walks through them with the human, and produces action items, process improvements, and a readable narrative.
+Capture development insights for budding programmers. Write mode reconstructs
+the reasoning behind a topic, scrap mode records an insight quickly, and list
+mode shows the backlog and published posts.
 
-| Channel | Data Source |
-|---|---|
-| Git History | Commits, diffs, merge patterns, contributor activity |
-| Conversations | Claude Code conversation transcripts and decisions |
-| Code Quality | Quality deltas, complexity trends, debt movement |
-| Planning vs. Reality | Plan documents compared against actual implementation |
-| Testing & Reliability | Test coverage changes, failure patterns, flaky tests |
-
-```
-/retrospective                             # Chain mode (default), from last retro to now
-/retrospective --since 2026-03-15          # From a specific date
-/retrospective --since v1.0                # From a git tag
-/retrospective --since v1.0..v1.1          # Between two tags
-/retrospective --output docs/sprints/3/    # Custom output directory
-/retrospective continue                    # Resume an interrupted retro
+```text
+/devlog "the recursive clone bug"
+/devlog --since yesterday
+/devlog --from-scrap recursive-fix
+/devlog scrap "signing workaround"
+/devlog scrap
+/devlog scrap --from-context "adapter lesson"
+/devlog list
 ```
 
-#### interaction-review
+### export
 
-Analyze Claude Code conversation transcripts to grade how effectively you collaborate with the AI agent. Dispatches 5 parallel analysis subagents — each evaluating a dimension of interaction quality — followed by a coach re-review for quality and actionability. Produces a scored report card with a prioritized improvement roadmap tracking progress over time.
+Convert Markdown, text, or code into PDF, HTML, PNG, or all three. Choose a
+content scope (`full`, `summary`, or `1pager`) and a theme (`minimal`, `modern`,
+or `dark`). PDF generation uses Pandoc and LuaLaTeX; PNG uses headless Chromium.
 
-| Lens | Weight | Focus |
-|---|---|---|
-| Prompt Craft | 30% | Clarity, specificity, context-setting, constraint usage |
-| Workflow Efficiency | 25% | Turn economy, correction loops, goal directness |
-| Agentic Leverage | 20% | Skill/tool usage, autonomy, parallelism, delegation |
-| Error Recovery | 15% | Detection speed, correction clarity, pivot decisiveness |
-| Context & Instruction | 10% | CLAUDE.md, memory, session setup, reference management |
-
-```
-/interaction-review                        # Analyze sessions since last report
-/interaction-review session <uuid>         # Deep-dive on one session
-/interaction-review since 2026-05-01       # Analyze from a specific date
-/interaction-review trend                  # Score progression across all reports
+```text
+/export report.md
+/export report.md --format png --theme dark
+/export report.md --scope summary --format all
+/export utils.py --format html --theme dark
+/export report.md --scope 1pager
+/export report.md --orientation landscape
+/export report.md --output ./out/
 ```
 
-#### export
+### commit
 
-Convert markdown, text, and code files into polished, shareable formats. Supports PDF, HTML, and PNG output with three content scopes (full, summary, 1pager) and three CSS themes (minimal, modern, dark). Uses Pandoc with LuaLaTeX for PDF and headless Chromium for PNG.
+Create a Conventional Commit with an intent paragraph, per-file or per-category
+change summary, and candid AI review. The workflow can decompose multi-unit
+changes into a OneFlow Option 3 branch, group related recent commits with user
+approval, and recover from an unresponsive 1Password signing agent by creating
+an explicitly reported unsigned commit.
 
-```
-/export report.md                          # Full file to PDF (default)
-/export report.md --format png --theme dark   # Full PNG with dark theme
-/export report.md --scope summary --format all # Summary in all 3 formats
-/export utils.py --format html --theme dark   # Syntax-highlighted code export
-/export report.md --scope 1pager           # Condensed ~500-600 word version
-/export report.md --orientation landscape  # Landscape layout
-/export report.md --output ./out/          # Custom output path
-```
-
-#### preferences
-
-Capture and manage per-user preferences that shape how every skill in the collection behaves. Can be invoked directly or automatically by other skills on first contact. Covers communication style, explanation depth, experience level, and project context.
-
-```
-/preferences                               # Interactive setup
-/preferences show                          # Display current preferences
-/preferences reset                         # Clear all and start fresh
-/preferences codereview                   # Set preferences for a specific skill
-/preferences plan-review                  # Set model, arbiter, and loop defaults
-```
-
-#### commit
-
-Structured git commits following Conventional Commits with a three-part body (intent, changes, AI review). Supports OneFlow Option 3 branching for multi-commit changesets. Auto-recovers from 1Password signing failures.
-
-```
+```text
 /commit
 ```
 
-#### ss
+The skill never pushes without express push-specific authorization.
 
-Visual communication bridge — grab recent screenshots, analyze them, and act. Supports natural language actions: explain (`huh`), fix errors (`fix`), learn and adapt (`do this`), or any freeform request. Intelligently suggests sibling skills when they fit. Configures the screenshot folder on first run and remembers it across projects.
+### ss
 
-| Action | Behavior |
-|---|---|
-| *(none)* | Analyze and guess intent from conversation context |
-| `huh` | Explain what's in the screenshot |
-| `fix` | Identify and fix the error shown |
-| `do this` | Learn from the screenshot and adapt |
-| *(freeform)* | Natural language — "make infographic", "review this", etc. |
+Grab recent screenshots from a configured folder, infer intent, explain what is
+shown, fix visible errors, adapt a project to a reference, or route the request
+to a better-matched sibling skill.
 
-```
-/ss                                        # Grab latest screenshot, analyze + guess intent
-/ss huh                                    # Explain what's in the latest screenshot
-/ss fix                                    # Identify error in screenshot, fix the code
-/ss 3                                      # Grab 3 latest, analyze all
-/ss 2 fix                                  # Grab 2 latest, cross-reference errors, fix
-/ss do this                                # Learn from screenshot, adapt for your project
-/ss 3 make infographic plz                 # Grab 3 latest, create unified infographic
+```text
+/ss
+/ss huh
+/ss fix
+/ss 3
+/ss 2 fix
+/ss do this
+/ss 3 make infographic plz
 ```
 
-## Adding More Skills
+## Installation and Maintenance
 
-Add new skills under `skills/<skill-name>/` following the same structure:
+### Standalone Codex Installation
 
+To install the generated skills without the plugin marketplace into
+`%USERPROFILE%\.codex\skills` or `%CODEX_HOME%\skills`:
+
+```powershell
+python scripts\install_codex_skills.py
 ```
+
+### Clean Reinstall
+
+```powershell
+.\scripts\reinstall-plugin.ps1                 # Claude Code and Codex
+.\scripts\reinstall-plugin.ps1 -Target codex   # Codex only
+```
+
+## Contributing Skills
+
+Add or edit canonical skills under `skills/<skill-name>/`. Shared contracts and
+resources belong under `shared/`.
+
+```text
 skills/
 └── <skill-name>/
-    └── SKILL.md
+    ├── SKILL.md
+    ├── references/     # Optional
+    ├── helpers/        # Optional
+    └── templates/      # Optional
+```
+
+Do not edit `codex-skills/` by hand. It is committed generated output served by
+`.codex-plugin/plugin.json`. After changing canonical skills or shared files,
+regenerate it:
+
+```powershell
+python scripts\codex_adapter.py codex-skills --force
+```
+
+Validate the adapter and committed generated tree:
+
+```powershell
+python -m pytest tests\test_codex_adapter.py -q
+```
+
+The `test_committed_codex_skills_match_fresh_build` guard fails when generated
+output is stale. To run the complete collection checks:
+
+```powershell
+python -m pytest tests skills -q
 ```
 
 ## License
