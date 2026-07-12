@@ -281,6 +281,27 @@ Generate a single self-contained HTML project-health dashboard aimed at PMs and 
 /dashboard --no-llm --no-host              # Fully deterministic, fully local
 ```
 
+#### handoff
+
+Create a durable semantic checkpoint for continuing work in a fresh AI session, transferring it to an independent agent, or orienting another human. Handoffs use one host-neutral Markdown schema, capture deterministic repository state, and classify resume safety as `exact`, `advanced`, `drifted`, or `unverifiable` before continuing.
+
+| Audience | Emphasis |
+|---|---|
+| Self | Concise operational continuity and the exact next action |
+| Agent | Explicit authority, constraints, deliverable, completion criteria, and report-back |
+| Human | Rationale, ownership, review points, and judgment calls |
+
+```text
+/handoff                                  # Save an operational checkpoint
+/handoff --full                           # Include deeper reasoning and alternatives
+/handoff --interactive                    # Interview before saving
+/handoff --target codex                   # Prepare for a fresh Codex session
+/handoff --for agent --target gemini      # Transfer to an independent Gemini agent
+/handoff --for human                      # Prepare a human-readable transfer
+/handoff resume                           # Validate and resume the newest checkpoint
+/handoff resume .handoffs/<file>.md       # Resume a specific checkpoint
+```
+
 #### devlog
 
 Capture development insights and turn them into devlog posts for budding programmers. Mines git history, Claude Code conversation transcripts, and content scraps to reconstruct your thinking, then brainstorms with you to find the real insight before drafting. Supports quick content scraps for when you're in the flow.

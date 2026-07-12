@@ -25,6 +25,7 @@ EXPECTED_SKILLS = {
     "devlog",
     "explain",
     "export",
+    "handoff",
     "handbook",
     "human-review-guide",
     "interaction-review",
@@ -194,6 +195,41 @@ def test_codex_plugin_manifest_is_tracked_and_version_synced():
     assert any(
         plugin["name"] == "joesys-skills" for plugin in marketplace["plugins"]
     )
+
+
+def test_plugin_versions_are_synchronized():
+    claude_plugin = json.loads(
+        (REPO_ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8")
+    )
+    claude_marketplace = json.loads(
+        (REPO_ROOT / ".claude-plugin" / "marketplace.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    codex_plugin = json.loads(
+        (REPO_ROOT / ".codex-plugin" / "plugin.json").read_text(encoding="utf-8")
+    )
+    marketplace_version = next(
+        plugin["version"]
+        for plugin in claude_marketplace["plugins"]
+        if plugin["name"] == "joesys-skills"
+    )
+
+    assert claude_plugin["version"] == "16.6.0"
+    assert codex_plugin["version"] == claude_plugin["version"]
+    assert marketplace_version == claude_plugin["version"]
+
+
+def test_generated_handoff_uses_codex_invocation_and_keeps_helper(tmp_path):
+    output = tmp_path / "joesys-skills"
+    codex_adapter.build_collection(REPO_ROOT, output)
+
+    skill = (output / "handoff" / "SKILL.md").read_text(encoding="utf-8")
+    assert "$handoff resume" in skill
+    assert "/handoff resume" not in skill
+    assert (output / "handoff" / "helpers" / "handoff_state.py").is_file()
+    assert not (output / "handoff" / "helpers" / "test_handoff_state.py").exists()
+    assert "~/.claude/projects" not in skill
 
 
 def test_committed_codex_skills_match_fresh_build(tmp_path):
