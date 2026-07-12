@@ -17,7 +17,8 @@ All preference files live under `.codex/skill-context/` in the project root. Thi
 ├── preferences.md          # Shared preferences (every skill reads this)
 ├── codebase-audit.md       # Skill-specific preferences
 ├── explain.md              # Skill-specific preferences
-├── codereview.md          # Skill-specific preferences (also used by quick-review)
+├── codereview.md           # Skill-specific preferences (also used by quick-review)
+├── plan-review.md          # Review model, arbiter, and iteration preferences
 ├── ss.md                   # Skill-specific preferences
 └── ...                     # One file per skill that needs customization
 ```
@@ -80,6 +81,7 @@ Examples of skill-specific preferences:
 | `commit` | "Keep messages under 72 chars", "Always include scope" |
 | `devlog` | "Write for a technical blog audience", "Include code snippets" |
 | `export` | "Default to dark theme", "Prefer PDF over HTML" |
+| `plan-review` | "Use fable", "Prefer Petra then Aris", "Stop after 12 iterations" |
 
 ---
 
@@ -89,7 +91,7 @@ Every skill MUST follow this protocol in its earliest phase. Skills fall into th
 
 | Category | Skills | First-contact behavior |
 |---|---|---|
-| **Full interview** | `$explain`, `$codereview`, `$quick-review`, `$codebase-audit`, `$devlog`, `$retrospective`, `$ai-council` | Invoke `$preferences` (streamlined) if no shared preferences exist. |
+| **Full interview** | `$explain`, `$codereview`, `$quick-review`, `$codebase-audit`, `$devlog`, `$retrospective`, `$ai-council`, `$plan-review` | Invoke `$preferences` (streamlined) if no shared preferences exist. |
 | **Silent defaults** | `$commit`, `$export`, `$ss`, `$readability-review` | Load preferences if present; use sensible defaults otherwise. **MUST NOT interrupt** the workflow with an interview — these are fast, transactional operations. |
 | **Minimal load** | `$claude`, `$codex`, `$antigravity` | Load preferences if present to shape critical-evaluation output. **MUST NOT interview** — delegation is a pass-through. |
 
@@ -107,6 +109,10 @@ Read `.codex/skill-context/<your-skill-name>.md`.
 
 - **Found:** Load and apply alongside shared preferences.
 - **Not found:** Either ask 1–2 skill-specific questions inline (only if your skill genuinely benefits from customization), or proceed with sensible defaults. If you ask, save the answers to `.codex/skill-context/<your-skill-name>.md`.
+
+For `$plan-review`, skill-specific settings are optional. Apply its built-in
+defaults when `.codex/skill-context/plan-review.md` is absent; do not invent a
+separate reviewer setting.
 
 ### Step 3: Proceed with Your Workflow
 

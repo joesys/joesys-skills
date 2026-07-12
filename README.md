@@ -281,6 +281,27 @@ Generate a single self-contained HTML project-health dashboard aimed at PMs and 
 /dashboard --no-llm --no-host              # Fully deterministic, fully local
 ```
 
+#### plan-review
+
+Review and iteratively converge a specification, implementation plan, or both
+before execution. Each iteration sends the current documents to a completely
+fresh read-only reviewer selected by model, has a repository-specific arbiter
+accept or reject the findings, applies accepted document fixes through the host
+agent, and repeats until no P0/P1 findings remain or a bounded pause condition
+is reached.
+
+Unlike `/codereview`, plan-review challenges decisions, completeness,
+feasibility, traceability, and execution readiness rather than ordinary code
+defects.
+
+```text
+/plan-review docs/feature-spec.md docs/feature-plan.md
+/plan-review docs/feature-plan.md --model fable
+/plan-review docs/feature-spec.md --arbiter petra
+/plan-review docs/feature-plan.md --review-only
+/plan-review docs/spec.md docs/plan.md --max-iterations 10
+```
+
 #### handoff
 
 Create a durable semantic checkpoint for continuing work in a fresh AI session, transferring it to an independent agent, or orienting another human. Handoffs use one host-neutral Markdown schema, capture deterministic repository state, and classify resume safety as `exact`, `advanced`, `drifted`, or `unverifiable` before continuing.
@@ -384,6 +405,7 @@ Capture and manage per-user preferences that shape how every skill in the collec
 /preferences show                          # Display current preferences
 /preferences reset                         # Clear all and start fresh
 /preferences codereview                   # Set preferences for a specific skill
+/preferences plan-review                  # Set model, arbiter, and loop defaults
 ```
 
 #### commit

@@ -2,7 +2,7 @@
 
 Single source of truth for default model identifiers and CLI flags used across skills. When a model version changes, update this file — all skills that reference it will pick up the new defaults.
 
-**Consumers:** codex, antigravity, claude, ai-council, codereview, quick-review
+**Consumers:** codex, antigravity, claude, ai-council, codereview, quick-review, plan-review
 
 ---
 
@@ -10,10 +10,26 @@ Single source of truth for default model identifiers and CLI flags used across s
 
 | Provider | Model ID | Used In |
 |---|---|---|
-| OpenAI (Codex CLI) | `gpt-5.6-sol` | `$codex`, `$ai-council`, `$codereview`, `$quick-review` |
+| OpenAI (Codex CLI) | `gpt-5.6-sol` | `$codex`, `$ai-council`, `$codereview`, `$quick-review`, `$plan-review` |
 | Google (Antigravity CLI) | *(managed by agy)* | `$antigravity`, `$ai-council`, `$codereview` |
 | Anthropic (Claude CLI) | `opus` | `$claude`, `$codereview`, `$quick-review` |
-| Anthropic (Claude CLI) | `fable` | `$ai-council` (Claude leg) |
+| Anthropic (Claude CLI) | `fable` | `$ai-council` (Claude leg), `$plan-review` |
+
+## Review Model Routing
+
+Skills that let the user select one review model resolve the provider through
+this registry:
+
+| Model identifier | Provider | Command source |
+|---|---|---|
+| `gpt-5.6-sol` | Codex CLI | Codex template below |
+| `fable` | Claude CLI | Claude template below with `--model fable` |
+
+A known unique bare identifier routes to its registered provider. Custom or
+ambiguous identifiers must be provider-qualified, such as
+`codex:custom-model` or `claude:custom-model`. Never infer a provider from a
+name pattern and never fail over silently when a configured model is
+unavailable.
 
 ## Default CLI Command Templates
 
