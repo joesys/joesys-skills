@@ -17,6 +17,8 @@ from typing import Any, Iterable, Mapping
 
 SCHEMA_VERSION = 1
 MAX_ITERATIONS = 20
+SEVERITIES = {"P0", "P1", "P2", "P3", "P4"}
+VERDICTS = {"accepted", "rejected", "needs-user-decision"}
 
 
 class StateError(ValueError):
@@ -185,6 +187,226 @@ def load_ledger(path: Path) -> dict[str, Any]:
     return payload
 
 
+def save_ledger(path: Path, ledger: Mapping[str, Any]) -> None:
+    _atomic_write(path, ledger)
+
+
+def _normalized_text(value: str) -> str:
+    return " ".join(value.casefold().split())
+
+
+def finding_fingerprint(finding: Mapping[str, Any]) -> str:
+    concern_key = str(finding.get("concern_key", "")).strip()
+    document = str(finding.get("document", "")).strip()
+    location = str(finding.get("location", "")).strip()
+    evidence = finding.get("repository_evidence", [])
+    if not concern_key or not document or not location:
+        raise StateError(
+            "finding requires concern_key, document, and location"
+        )
+    if not isinstance(evidence, list) or not all(
+        isinstance(item, str) for item in evidence
+    ):
+        raise StateError("repository_evidence must be a list of strings")
+    identity = {
+        "concern_key": _normalized_text(concern_key),
+        "document": Path(document).as_posix().casefold(),
+        "location": _normalized_text(location),
+        "repository_evidence": sorted(
+            _normalized_text(item) for item in evidence
+        ),
+    }
+    return sha256_bytes(
+        json.dumps(
+            identity,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    )
+
+
+def _validate_iteration(
+    iteration: Mapping[str, Any],
+) -> tuple[list[dict], dict[str, dict]]:
+    review = iteration.get("review")
+    if not isinstance(review, Mapping) or review.get("schema_version") != 1:
+        raise StateError("review must use schema_version 1")
+    findings = review.get("findings")
+    if not isinstance(findings, list):
+        raise StateError("review findings must be a list")
+    finding_ids: set[str] = set()
+    for finding in findings:
+        if not isinstance(finding, dict):
+            raise StateError("each finding must be an object")
+        finding_id = str(finding.get("id", ""))
+        if not finding_id or finding_id in finding_ids:
+            raise StateError("finding ids must be non-empty and unique")
+        if finding.get("severity") not in SEVERITIES:
+            raise StateError(f"invalid severity for {finding_id}")
+        finding_fingerprint(finding)
+        finding_ids.add(finding_id)
+
+    verdict_list = iteration.get("verdicts")
+    if not isinstance(verdict_list, list):
+        raise StateError("verdicts must be a list")
+    verdicts: dict[str, dict] = {}
+    for verdict in verdict_list:
+        if not isinstance(verdict, dict):
+            raise StateError("each verdict must be an object")
+        finding_id = str(verdict.get("finding_id", ""))
+        if finding_id not in finding_ids or finding_id in verdicts:
+            raise StateError("verdicts must match findings one-to-one")
+        if verdict.get("verdict") not in VERDICTS:
+            raise StateError(f"invalid verdict for {finding_id}")
+        if not str(verdict.get("rationale", "")).strip():
+            raise StateError(f"verdict rationale is required for {finding_id}")
+        if verdict["verdict"] != "rejected" and not str(
+            verdict.get("required_change", "")
+        ).strip():
+            raise StateError(
+                f"required_change is required for {finding_id}"
+            )
+        verdicts[finding_id] = verdict
+    if set(verdicts) != finding_ids:
+        raise StateError("every finding requires exactly one verdict")
+    return findings, verdicts
+
+
+def _document_hashes(ledger: Mapping[str, Any]) -> dict[str, str]:
+    repo = Path(str(ledger["repo_root"]))
+    return {
+        relative: sha256_file(repo / relative)
+        for relative in ledger["documents"]
+    }
+
+
+def _surviving_fingerprints(entry: Mapping[str, Any]) -> set[str]:
+    return {
+        item["fingerprint"]
+        for item in entry["findings"]
+        if item["severity"] in {"P0", "P1"}
+        or item["verdict"] != "rejected"
+    }
+
+
+def _is_stagnated(iterations: list[dict]) -> bool:
+    if len(iterations) < 3:
+        return False
+    recent = [_surviving_fingerprints(item) for item in iterations[-3:]]
+    return bool(set.intersection(*recent))
+
+
+def _is_oscillating(iterations: list[dict]) -> bool:
+    if len(iterations) < 3:
+        return False
+    first, middle, latest = iterations[-3:]
+    return (
+        latest["document_hashes"] == first["document_hashes"]
+        and latest["document_hashes"] != middle["document_hashes"]
+        and any(
+            item["verdict"] == "accepted"
+            for item in latest["findings"]
+        )
+    )
+
+
+def record_iteration(
+    ledger_path: Path,
+    iteration: Mapping[str, Any],
+) -> dict[str, Any]:
+    ledger = load_ledger(ledger_path)
+    findings, verdicts = _validate_iteration(iteration)
+    applied = set(iteration.get("applied_finding_ids", []))
+    accepted = {
+        finding_id
+        for finding_id, verdict in verdicts.items()
+        if verdict["verdict"] == "accepted"
+    }
+    decisions = {
+        finding_id
+        for finding_id, verdict in verdicts.items()
+        if verdict["verdict"] == "needs-user-decision"
+    }
+    validation = iteration.get("validation")
+    if not isinstance(validation, Mapping):
+        raise StateError("validation must be an object")
+
+    repo = Path(str(ledger["repo_root"]))
+    non_target = capture_non_target_state(repo, ledger["documents"])
+    entry = {
+        "number": len(ledger["iterations"]) + 1,
+        "findings": [
+            {
+                "id": finding["id"],
+                "concern_key": finding["concern_key"],
+                "severity": finding["severity"],
+                "document": finding["document"],
+                "location": finding["location"],
+                "fingerprint": finding_fingerprint(finding),
+                "verdict": verdicts[finding["id"]]["verdict"],
+                "rationale": verdicts[finding["id"]]["rationale"],
+                "required_change": verdicts[finding["id"]].get(
+                    "required_change"
+                ),
+            }
+            for finding in findings
+        ],
+        "applied_finding_ids": sorted(applied),
+        "validation": dict(validation),
+        "document_hashes": _document_hashes(ledger),
+        "non_target_fingerprint": non_target["fingerprint"],
+    }
+    ledger["iterations"].append(entry)
+    save_ledger(ledger_path, ledger)
+
+    if non_target["fingerprint"] != ledger["baseline"][
+        "non_target_fingerprint"
+    ]:
+        baseline_files = ledger["baseline"]["non_target_files"]
+        current_files = non_target["path_fingerprints"]
+        changed_paths = sorted(
+            path
+            for path in set(baseline_files) | set(current_files)
+            if baseline_files.get(path) != current_files.get(path)
+        )
+        return {
+            "state": "paused",
+            "reason": "non-target repository state changed",
+            "paths": changed_paths,
+        }
+    if not validation.get("passed"):
+        return {"state": "paused", "reason": "validation failed"}
+    if accepted - applied:
+        return {
+            "state": "paused",
+            "reason": "accepted findings remain unapplied",
+        }
+    if decisions:
+        return {"state": "paused", "reason": "user decision required"}
+    if _is_stagnated(ledger["iterations"]):
+        return {
+            "state": "paused",
+            "reason": "same material finding survived three iterations",
+        }
+    if _is_oscillating(ledger["iterations"]):
+        return {"state": "paused", "reason": "document state oscillated"}
+
+    blocking = any(item["severity"] in {"P0", "P1"} for item in findings)
+    if not blocking and not accepted:
+        return {"state": "converged", "reason": "clean fresh review"}
+    if entry["number"] >= ledger["max_iterations"]:
+        return {"state": "paused", "reason": "maximum iterations reached"}
+    if blocking:
+        return {
+            "state": "continue",
+            "reason": "fresh reviewer reported P0 or P1",
+        }
+    return {
+        "state": "continue",
+        "reason": "accepted findings require a fresh review",
+    }
+
+
 def finish_ledger(path: Path) -> None:
     path.unlink(missing_ok=True)
     path.with_suffix(path.suffix + ".tmp").unlink(missing_ok=True)
@@ -231,6 +453,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     diff = commands.add_parser("diff")
     diff.add_argument("--ledger", type=Path, required=True)
+
+    record = commands.add_parser("record")
+    record.add_argument("--ledger", type=Path, required=True)
+    record.add_argument("--iteration", type=Path, required=True)
     return parser
 
 
@@ -260,9 +486,25 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "diff":
             print(document_diff(args.ledger), end="")
             return 0
+        if args.command == "record":
+            iteration_payload = json.loads(
+                args.iteration.read_text(encoding="utf-8")
+            )
+            print(
+                json.dumps(
+                    record_iteration(args.ledger, iteration_payload),
+                    sort_keys=True,
+                )
+            )
+            return 0
         finish_ledger(args.ledger)
         return 0
-    except (StateError, OSError, subprocess.CalledProcessError) as error:
+    except (
+        StateError,
+        OSError,
+        json.JSONDecodeError,
+        subprocess.CalledProcessError,
+    ) as error:
         print(f"plan-review state error: {error}", file=sys.stderr)
         return 2
 

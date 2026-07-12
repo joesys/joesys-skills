@@ -177,3 +177,379 @@ def test_start_and_finish_cli(
 
     assert plan_review_state.main(["finish", "--ledger", str(ledger_path)]) == 0
     assert not ledger_path.exists()
+
+
+def finding(
+    finding_id: str,
+    *,
+    severity: str = "P1",
+    concern_key: str = "missing-rollback",
+    title: str = "Rollback is missing",
+) -> dict:
+    return {
+        "id": finding_id,
+        "concern_key": concern_key,
+        "severity": severity,
+        "title": title,
+        "document": "plan.md",
+        "location": "Migration / Step 4",
+        "repository_evidence": ["migrations/0042_add_index.py"],
+        "consequence": "The migration cannot be reversed safely.",
+        "recommended_resolution": "Add an explicit rollback procedure.",
+        "requires_user_decision": False,
+    }
+
+
+def iteration(
+    findings: list[dict],
+    verdicts: list[dict],
+    *,
+    applied: list[str] | None = None,
+    validation_passed: bool = True,
+) -> dict:
+    return {
+        "review": {"schema_version": 1, "findings": findings},
+        "verdicts": verdicts,
+        "applied_finding_ids": applied or [],
+        "validation": {
+            "passed": validation_passed,
+            "checks": ["documents-readable", "traceability"],
+        },
+    }
+
+
+def verdict(finding_id: str, value: str) -> dict:
+    if value == "accepted":
+        required_change = "Add rollback steps."
+    elif value == "needs-user-decision":
+        required_change = "Choose a rollback ownership model."
+    else:
+        required_change = None
+    return {
+        "finding_id": finding_id,
+        "verdict": value,
+        "rationale": "Grounded adjudication.",
+        "required_change": required_change,
+    }
+
+
+def test_fingerprint_ignores_title_and_severity_wording() -> None:
+    first = finding("R1")
+    second = finding(
+        "R9",
+        severity="P2",
+        title="No safe reverse migration exists",
+    )
+
+    assert plan_review_state.finding_fingerprint(first) == (
+        plan_review_state.finding_fingerprint(second)
+    )
+
+
+def test_fingerprint_preserves_distinct_concerns() -> None:
+    first = finding("R1")
+    second = finding("R2", concern_key="missing-observability")
+
+    assert plan_review_state.finding_fingerprint(first) != (
+        plan_review_state.finding_fingerprint(second)
+    )
+
+
+def test_clean_rejected_lower_severity_round_converges(tmp_path: Path) -> None:
+    repo, spec, plan = make_repo(tmp_path)
+    ledger_path, _ = plan_review_state.create_ledger(repo, [spec, plan])
+    low = finding("R1", severity="P3")
+
+    result = plan_review_state.record_iteration(
+        ledger_path,
+        iteration([low], [verdict("R1", "rejected")]),
+    )
+
+    assert result == {"state": "converged", "reason": "clean fresh review"}
+
+
+def test_accepted_lower_severity_fix_requires_fresh_iteration(
+    tmp_path: Path,
+) -> None:
+    repo, spec, plan = make_repo(tmp_path)
+    ledger_path, _ = plan_review_state.create_ledger(repo, [spec, plan])
+    low = finding("R1", severity="P3")
+
+    result = plan_review_state.record_iteration(
+        ledger_path,
+        iteration([low], [verdict("R1", "accepted")], applied=["R1"]),
+    )
+
+    assert result["state"] == "continue"
+    assert result["reason"] == "accepted findings require a fresh review"
+    recorded = plan_review_state.load_ledger(ledger_path)["iterations"][0]
+    assert recorded["findings"][0]["document"] == "plan.md"
+    assert recorded["findings"][0]["location"] == "Migration / Step 4"
+    assert recorded["findings"][0]["rationale"] == "Grounded adjudication."
+    assert recorded["findings"][0]["required_change"] == "Add rollback steps."
+
+
+def test_blocking_finding_requires_fresh_iteration(tmp_path: Path) -> None:
+    repo, spec, plan = make_repo(tmp_path)
+    ledger_path, _ = plan_review_state.create_ledger(repo, [spec, plan])
+
+    result = plan_review_state.record_iteration(
+        ledger_path,
+        iteration(
+            [finding("R1")],
+            [verdict("R1", "accepted")],
+            applied=["R1"],
+        ),
+    )
+
+    assert result == {
+        "state": "continue",
+        "reason": "fresh reviewer reported P0 or P1",
+    }
+
+
+def test_user_decision_pauses_after_other_fixes(tmp_path: Path) -> None:
+    repo, spec, plan = make_repo(tmp_path)
+    ledger_path, _ = plan_review_state.create_ledger(repo, [spec, plan])
+    decision = finding("R1", severity="P2")
+    decision["requires_user_decision"] = True
+
+    result = plan_review_state.record_iteration(
+        ledger_path,
+        iteration(
+            [decision],
+            [verdict("R1", "needs-user-decision")],
+        ),
+    )
+
+    assert result == {
+        "state": "paused",
+        "reason": "user decision required",
+    }
+
+
+def test_unapplied_accepted_finding_pauses(tmp_path: Path) -> None:
+    repo, spec, plan = make_repo(tmp_path)
+    ledger_path, _ = plan_review_state.create_ledger(repo, [spec, plan])
+
+    result = plan_review_state.record_iteration(
+        ledger_path,
+        iteration(
+            [finding("R1")],
+            [verdict("R1", "accepted")],
+        ),
+    )
+
+    assert result == {
+        "state": "paused",
+        "reason": "accepted findings remain unapplied",
+    }
+
+
+def test_validation_failure_pauses(tmp_path: Path) -> None:
+    repo, spec, plan = make_repo(tmp_path)
+    ledger_path, _ = plan_review_state.create_ledger(repo, [spec, plan])
+
+    result = plan_review_state.record_iteration(
+        ledger_path,
+        iteration([], [], validation_passed=False),
+    )
+
+    assert result == {"state": "paused", "reason": "validation failed"}
+
+
+def test_non_target_change_pauses(tmp_path: Path) -> None:
+    repo, spec, plan = make_repo(tmp_path)
+    ledger_path, _ = plan_review_state.create_ledger(repo, [spec, plan])
+    (repo / "app.py").write_text("VALUE = 2\n", encoding="utf-8")
+
+    result = plan_review_state.record_iteration(
+        ledger_path,
+        iteration([], []),
+    )
+
+    assert result["state"] == "paused"
+    assert result["reason"] == "non-target repository state changed"
+    assert result["paths"] == ["app.py"]
+
+
+def test_same_material_finding_three_times_pauses_for_stagnation(
+    tmp_path: Path,
+) -> None:
+    repo, spec, plan = make_repo(tmp_path)
+    ledger_path, _ = plan_review_state.create_ledger(repo, [spec, plan])
+
+    for review_id in ["R1", "R8"]:
+        result = plan_review_state.record_iteration(
+            ledger_path,
+            iteration(
+                [finding(review_id)],
+                [verdict(review_id, "accepted")],
+                applied=[review_id],
+            ),
+        )
+        assert result["state"] == "continue"
+
+    result = plan_review_state.record_iteration(
+        ledger_path,
+        iteration(
+            [finding("R20", title="Rollback still absent")],
+            [verdict("R20", "accepted")],
+            applied=["R20"],
+        ),
+    )
+
+    assert result == {
+        "state": "paused",
+        "reason": "same material finding survived three iterations",
+    }
+
+
+def test_document_state_a_b_a_pauses_for_oscillation(tmp_path: Path) -> None:
+    repo, spec, plan = make_repo(tmp_path)
+    ledger_path, _ = plan_review_state.create_ledger(repo, [spec, plan])
+    state_a = plan.read_text(encoding="utf-8")
+
+    plan_review_state.record_iteration(
+        ledger_path,
+        iteration(
+            [finding("R1", severity="P3")],
+            [verdict("R1", "accepted")],
+            applied=["R1"],
+        ),
+    )
+    plan.write_text("# Plan\n\nAlternative B\n", encoding="utf-8")
+    plan_review_state.record_iteration(
+        ledger_path,
+        iteration(
+            [finding("R2", severity="P3", concern_key="sequence-choice")],
+            [verdict("R2", "accepted")],
+            applied=["R2"],
+        ),
+    )
+    plan.write_text(state_a, encoding="utf-8")
+
+    result = plan_review_state.record_iteration(
+        ledger_path,
+        iteration(
+            [finding("R3", severity="P3", concern_key="sequence-choice")],
+            [verdict("R3", "accepted")],
+            applied=["R3"],
+        ),
+    )
+
+    assert result == {
+        "state": "paused",
+        "reason": "document state oscillated",
+    }
+
+
+def test_iteration_ceiling_allows_convergence_but_not_continuation(
+    tmp_path: Path,
+) -> None:
+    repo, spec, plan = make_repo(tmp_path)
+    ledger_path, ledger = plan_review_state.create_ledger(
+        repo,
+        [spec, plan],
+        max_iterations=2,
+    )
+    ledger["iterations"].append({"number": 1, "findings": []})
+    plan_review_state.save_ledger(ledger_path, ledger)
+
+    clean = plan_review_state.record_iteration(ledger_path, iteration([], []))
+    assert clean["state"] == "converged"
+
+    ledger_path, ledger = plan_review_state.create_ledger(
+        repo,
+        [spec, plan],
+        max_iterations=2,
+    )
+    ledger["iterations"].append({"number": 1, "findings": []})
+    plan_review_state.save_ledger(ledger_path, ledger)
+    blocking = plan_review_state.record_iteration(
+        ledger_path,
+        iteration(
+            [finding("R1")],
+            [verdict("R1", "rejected")],
+        ),
+    )
+    assert blocking == {
+        "state": "paused",
+        "reason": "maximum iterations reached",
+    }
+
+
+@pytest.mark.parametrize(
+    "case",
+    [
+        "invalid-severity",
+        "duplicate-id",
+        "missing-verdict",
+        "unknown-verdict",
+        "bad-evidence",
+        "future-schema",
+        "blank-rationale",
+        "blank-required-change",
+    ],
+)
+def test_malformed_iteration_does_not_append(
+    tmp_path: Path,
+    case: str,
+) -> None:
+    repo, spec, plan = make_repo(tmp_path)
+    ledger_path, _ = plan_review_state.create_ledger(repo, [spec, plan])
+    item = finding("R1")
+    payload = iteration(
+        [item],
+        [verdict("R1", "accepted")],
+        applied=["R1"],
+    )
+
+    if case == "invalid-severity":
+        item["severity"] = "P9"
+    elif case == "duplicate-id":
+        payload["review"]["findings"].append(dict(item))
+    elif case == "missing-verdict":
+        payload["verdicts"] = []
+    elif case == "unknown-verdict":
+        payload["verdicts"][0]["verdict"] = "maybe"
+    elif case == "bad-evidence":
+        item["repository_evidence"] = "app.py"
+    elif case == "future-schema":
+        payload["review"]["schema_version"] = 2
+    elif case == "blank-rationale":
+        payload["verdicts"][0]["rationale"] = ""
+    elif case == "blank-required-change":
+        payload["verdicts"][0]["required_change"] = ""
+
+    with pytest.raises(plan_review_state.StateError):
+        plan_review_state.record_iteration(ledger_path, payload)
+
+    assert plan_review_state.load_ledger(ledger_path)["iterations"] == []
+
+
+def test_record_cli_rejects_malformed_payload(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    repo, spec, plan = make_repo(tmp_path / "repo")
+    ledger_path, _ = plan_review_state.create_ledger(repo, [spec, plan])
+    iteration_path = tmp_path / "iteration.json"
+    iteration_path.write_text(
+        json.dumps({"schema_version": 99}),
+        encoding="utf-8",
+    )
+
+    exit_code = plan_review_state.main(
+        [
+            "record",
+            "--ledger",
+            str(ledger_path),
+            "--iteration",
+            str(iteration_path),
+        ]
+    )
+
+    assert exit_code == 2
+    assert capsys.readouterr().err.startswith("plan-review state error:")
+    assert plan_review_state.load_ledger(ledger_path)["iterations"] == []
