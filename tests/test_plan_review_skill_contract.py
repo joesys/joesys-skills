@@ -203,3 +203,53 @@ def test_skill_does_not_commit_push_or_expose_sensitive_values() -> None:
     assert "must not stash" in skill
     assert "credentials" in skill
     assert "private keys" in skill
+
+
+def test_shared_model_defaults_register_plan_review_routing() -> None:
+    defaults = (REPO_ROOT / "shared" / "model-defaults.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert "plan-review" in defaults
+    assert "## Review Model Routing" in defaults
+    assert "| `gpt-5.6-sol` | Codex CLI |" in defaults
+    assert "| `fable` | Claude CLI |" in defaults
+    assert "provider-qualified" in defaults
+    assert "never fail over silently" in defaults.lower()
+
+
+def test_shared_skill_context_registers_plan_review_preferences() -> None:
+    context = (REPO_ROOT / "shared" / "skill-context.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert "plan-review.md" in context
+    assert "`/plan-review`" in context
+    assert "Full interview" in context
+
+
+def test_preferences_question_bank_covers_plan_review_defaults() -> None:
+    bank = (
+        REPO_ROOT / "skills" / "preferences" / "question-bank.md"
+    ).read_text(encoding="utf-8")
+    section = bank.split("## plan-review", 1)[1].split("\n## ", 1)[0]
+
+    assert "review model" in section.lower()
+    assert "arbiter" in section.lower()
+    assert "maximum iterations" in section.lower()
+    assert "save" in section.lower()
+
+
+def test_shared_interface_publishes_plan_review_contract() -> None:
+    interfaces = (REPO_ROOT / "shared" / "skill-interfaces.md").read_text(
+        encoding="utf-8"
+    )
+    section = interfaces.split("## Plan Review Skill Interface", 1)[1]
+
+    assert "/plan-review <document>" in section
+    assert "--model" in section
+    assert "--arbiter" in section
+    assert "--review-only" in section
+    assert "accepted" in section
+    assert "needs-user-decision" in section
+    assert "20" in section
