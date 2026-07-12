@@ -9,6 +9,10 @@ def read(relative: str) -> str:
     return (SKILL_ROOT / relative).read_text(encoding="utf-8")
 
 
+def compact(value: str) -> str:
+    return " ".join(value.replace("\n>", "\n").split())
+
+
 def test_review_contract_defines_structured_reviewer_output() -> None:
     contract = read("references/review-contract.md")
 
@@ -94,3 +98,108 @@ def test_preference_schema_defines_ranked_arbiter_ambiguity() -> None:
     assert "recommended" in preferences
     assert "ask" in preferences
     assert "host/base" in preferences
+
+
+def test_skill_frontmatter_and_invocation_are_specific() -> None:
+    skill = read("SKILL.md")
+    frontmatter = skill.split("---", 2)[1]
+
+    assert "name: plan-review" in frontmatter
+    assert "specification" in frontmatter
+    assert "implementation plan" in frontmatter
+    assert "/plan-review <document> [other-document] [options]" in skill
+    assert "--model <MODEL>" in skill
+    assert "--arbiter <NAME|auto|host>" in skill
+    assert "--review-only" in skill
+    assert "--max-iterations <N>" in skill
+    assert "--reviewer" not in skill
+
+
+def test_skill_accepts_one_document_with_explicit_warning() -> None:
+    skill = compact(read("SKILL.md"))
+
+    assert "Reviewing one document only" in skill
+    assert "provide both the specification and implementation plan" in skill
+    assert "cross-document contradictions" in skill
+
+
+def test_skill_gives_fresh_reviewer_full_read_only_repository_access() -> None:
+    skill = read("SKILL.md").lower()
+
+    assert "repository root" in skill
+    assert "inspect any file" in skill
+    assert "read-only" in skill
+    assert "never resume" in skill
+    assert "prior findings" in skill
+    assert "ledger" in skill
+    assert "must not" in skill
+
+
+def test_skill_discovers_and_ranks_repository_arbiters() -> None:
+    skill = compact(read("SKILL.md"))
+
+    for path in [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "GEMINI.md",
+        ".agents/",
+        ".claude/agents/",
+        ".codex/agents/",
+    ]:
+        assert path in skill
+    assert "Recommended" in skill
+    assert "host/base" in skill
+    assert "wait for the user's selection" in skill
+
+
+def test_skill_separates_arbitration_from_fixing() -> None:
+    skill = compact(read("SKILL.md"))
+
+    assert "The arbiter MUST NOT edit files" in skill
+    assert "The host applies" in skill
+    assert "accepted" in skill
+    assert "rejected" in skill
+    assert "needs-user-decision" in skill
+    assert "only the supplied documents" in skill
+
+
+def test_skill_defines_convergence_and_pause_guards() -> None:
+    skill = compact(read("SKILL.md"))
+
+    assert "no P0 or P1" in skill
+    assert "accepted findings remain" in skill
+    assert "user decision" in skill
+    assert "validation" in skill
+    assert "three consecutive iterations" in skill
+    assert "oscillat" in skill.lower()
+    assert "20" in skill
+
+
+def test_review_only_is_single_pass_and_non_mutating() -> None:
+    skill = compact(read("SKILL.md"))
+    review_only = skill.split("## Review-Only Mode", 1)[1]
+
+    assert "one fresh external review" in review_only
+    assert "one arbiter pass" in review_only
+    assert "MUST NOT edit" in review_only
+    assert "MUST NOT claim convergence" in review_only
+
+
+def test_skill_uses_deterministic_helper_lifecycle() -> None:
+    skill = read("SKILL.md")
+
+    assert "helpers/plan_review_state.py start" in skill
+    assert "helpers/plan_review_state.py record" in skill
+    assert "helpers/plan_review_state.py diff" in skill
+    assert "helpers/plan_review_state.py finish" in skill
+    assert "operating-system temporary directory" in skill
+
+
+def test_skill_does_not_commit_push_or_expose_sensitive_values() -> None:
+    skill = compact(read("SKILL.md")).lower()
+
+    assert "must not commit" in skill
+    assert "must not push" in skill
+    assert "must not stash" in skill
+    assert "credentials" in skill
+    assert "private keys" in skill
