@@ -102,6 +102,23 @@ This skill runs its own first-run calibration — read and update `.codex/skill-
 > The dashboard is configured via `.claude/dashboard.yaml`, not skill-context preferences —
 > want help creating or updating it? (thresholds, module list, off-hours window, host mode)
 
+## plan-review
+
+> Which review model should plan-review use by default?
+> (`gpt-5.6-sol` / `fable` / provider-qualified custom model)
+>
+> How should arbitration work?
+> - `auto` discovers repository agents and asks when several are plausible
+> - A specific repository agent name
+> - `host` always uses the base model
+> - Optional preferred-arbiter ranking, such as Petra then Aris
+>
+> What maximum iterations should the convergence loop use?
+> (1-20, default 20)
+>
+> Save the answers to `.codex/skill-context/plan-review.md` and show the
+> resulting settings.
+
 ## ai-council, claude, codex, antigravity
 
 > These delegation skills use shared communication preferences.

@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "joesys-skills",
-  "description": "Custom Claude Code skills and plugins by joesys",
+  "description": "Custom Claude Code skills and plugins for delegation, plan review, code review, and engineering workflows by joesys",
   "owner": {
     "name": "joesys",
     "url": "https://github.com/joesys"
@@ -10,8 +10,8 @@
     {
       "name": "joesys-skills",
       "source": "./",
-      "description": "Custom Claude Code skills — multi-model AI delegation, structured git commits, cross-session handoffs, code review, quick review, readability review, human review guide, codebase explanation, project handbook generation, codebase quality audit, devlog writing, retrospectives, interaction review, markdown export, and screenshot analysis",
-      "version": "16.6.0",
+      "description": "Custom Claude Code skills — multi-model AI delegation, structured git commits, cross-session handoffs, iterative spec and plan review, code review, quick review, readability review, human review guide, codebase explanation, project handbook generation, codebase quality audit, devlog writing, retrospectives, interaction review, markdown export, and screenshot analysis",
+      "version": "17.0.0",
       "category": "development",
       "homepage": "https://github.com/joesys/joesys-skills",
       "tags": [
@@ -32,6 +32,10 @@
         "documentation",
         "orientation",
         "quick-review",
+        "plan-review",
+        "spec-review",
+        "implementation-plan",
+        "convergence",
         "readability-review",
         "story-readability",
         "cross-model",

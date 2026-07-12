@@ -29,6 +29,7 @@ EXPECTED_SKILLS = {
     "handbook",
     "human-review-guide",
     "interaction-review",
+    "plan-review",
     "preferences",
     "quick-review",
     "readability-review",
@@ -215,7 +216,7 @@ def test_plugin_versions_are_synchronized():
         if plugin["name"] == "joesys-skills"
     )
 
-    assert claude_plugin["version"] == "16.6.0"
+    assert claude_plugin["version"] == "17.0.0"
     assert codex_plugin["version"] == claude_plugin["version"]
     assert marketplace_version == claude_plugin["version"]
 
@@ -230,6 +231,41 @@ def test_generated_handoff_uses_codex_invocation_and_keeps_helper(tmp_path):
     assert (output / "handoff" / "helpers" / "handoff_state.py").is_file()
     assert not (output / "handoff" / "helpers" / "test_handoff_state.py").exists()
     assert "~/.claude/projects" not in skill
+
+
+def test_generated_plan_review_is_behaviorally_adapted(tmp_path):
+    output = tmp_path / "joesys-skills"
+    codex_adapter.build_collection(REPO_ROOT, output)
+
+    skill = (output / "plan-review" / "SKILL.md").read_text(
+        encoding="utf-8"
+    )
+    preferences = (
+        output / "plan-review" / "references" / "preference-schema.md"
+    ).read_text(encoding="utf-8")
+
+    assert "$plan-review" in skill
+    assert "/plan-review" not in skill
+    assert ".codex/skill-context/plan-review.md" in preferences
+    assert ".claude/skill-context/plan-review.md" not in preferences
+    assert (
+        output / "plan-review" / "helpers" / "plan_review_state.py"
+    ).is_file()
+    assert not (
+        output / "plan-review" / "helpers" / "test_plan_review_state.py"
+    ).exists()
+    assert (
+        output / "plan-review" / "references" / "review-contract.md"
+    ).is_file()
+
+
+def test_generated_manifest_publishes_release_17_with_21_skills(tmp_path):
+    output = tmp_path / "joesys-skills"
+    manifest = codex_adapter.build_collection(REPO_ROOT, output)
+
+    assert manifest["source_version"] == "17.0.0"
+    assert len(manifest["installed_skills"]) == 21
+    assert "plan-review" in manifest["installed_skills"]
 
 
 def test_committed_codex_skills_match_fresh_build(tmp_path):

@@ -169,6 +169,33 @@ interfaces, update all callers listed below.
 
 ---
 
+## Plan Review Skill Interface
+
+**Invocation:** `$plan-review <document> [other-document] [--model <model>] [--arbiter <name|auto|host>] [--review-only] [--max-iterations <1-20>]`
+
+**Behavior contract:**
+- Accepts one specification or plan, or reviews both as a coupled unit.
+- Routes the selected model to an explicitly registered provider.
+- Starts a new read-only external reviewer session for every iteration.
+- Discovers repository arbiters and asks with a ranked recommendation when
+  several candidates are plausible.
+- Uses `accepted`, `rejected`, and `needs-user-decision` arbiter verdicts.
+- Lets only the host edit supplied documents and never mutates other files.
+- Converges only after a fresh review has no P0/P1, no accepted finding remains,
+  no user decision is pending, and validation passes.
+- Stops after at most 20 iterations and pauses on stagnation or oscillation.
+- `--review-only` is a single non-mutating review and arbitration pass.
+- Never commits, pushes, stashes, resets, or implements the reviewed plan.
+
+**Preference contract:**
+- Claude: `.codex/skill-context/plan-review.md`
+- Codex: `.codex/skill-context/plan-review.md`
+
+**Callers:**
+- None currently; this skill is user-invoked only.
+
+---
+
 **Rules:**
 - Before changing any interface listed above, check all callers.
 - If a caller uses "skip silently if skill unavailable," the interface
