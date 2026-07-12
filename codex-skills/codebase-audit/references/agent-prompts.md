@@ -8,7 +8,7 @@ These templates contain **plugin-relative** paths — `../codebase-audit/...` (p
 
 **Before dispatching each prompt, the host MUST rewrite every such path to an absolute path:**
 - Resolve `../codebase-audit/...` against this skill's own directory (the parent of this `references/` folder).
-- Resolve `../shared/...` against the plugin root (two levels above the skill directory).
+- Resolve `../shared/...` against the collection root (one level above the skill directory).
 
 This applies to both the file references (`Read ...`) and the helper-script invocations (`python ../codebase-audit/helpers/...` — invoke with `python3` where present, falling back to `python` on Windows; stock macOS/Linux expose only `python3`). Leave no `../codebase-audit/...` or `../shared/...` path in a dispatched prompt. Project-relative paths (e.g. `docs/reports/...`) resolve in the user's project and must **not** be rewritten.
 

@@ -41,7 +41,7 @@ If the invocation is ambiguous or unrecognizable, ask the user to clarify before
 
 ### 1.0 Load User Preferences
 
-Read `../shared/skill-context.md` for the full protocol (resolve `../shared/...` against the plugin root - two levels above this SKILL.md - never the project's working directory). In brief:
+Read `../shared/skill-context.md` for the full protocol (resolve `../shared/...` against the collection root (one level above this SKILL.md) - never the project's working directory). In brief:
 
 1. Read `.codex/skill-context/preferences.md` - if missing, invoke `$preferences` (streamlined).
 2. Read `.codex/skill-context/codereview.md` (if it exists) for review-specific preferences.
@@ -61,11 +61,11 @@ Pass relevant preferences to each domain subagent in Phase 2 - append a `## User
 
 ### 1.1 Base Branch Detection
 
-Read `../shared/review-common.md`  Base Branch Detection.
+Read `../shared/review-common.md` Section Base Branch Detection.
 
 ### 1.2 File Gathering
 
-Read `../shared/review-common.md`  File Gathering.
+Read `../shared/review-common.md` Section File Gathering.
 
 ### 1.3 Content Loading
 
@@ -79,8 +79,8 @@ Three tiers based on diff size. Measure LOC from `git diff --shortstat <base>...
 | Tier | Trigger | Strategy |
 |---|---|---|
 | Small | <= 30 files **and** <= 5,000 LOC | Single-shot: one dispatch of 7 domain subagents + cross-model over all files (Phase 2 as-is) |
-| Medium | 31-100 files **and** <= 5,000 LOC | File-batching - see  1.4a |
-| Large | > 100 files **or** > 5,000 LOC changed | Logical-cluster dispatch - see  1.4b. The LOC trigger takes precedence: a few files carrying a huge diff (generated code, lockfiles) is Large, not Small. |
+| Medium | 31-100 files **and** <= 5,000 LOC | File-batching - see Section 1.4a |
+| Large | > 100 files **or** > 5,000 LOC changed | Logical-cluster dispatch - see Section 1.4b. The LOC trigger takes precedence: a few files carrying a huge diff (generated code, lockfiles) is Large, not Small. |
 
 Thresholds are defaults. Users can override in `.codex/skill-context/codereview.md` with any of:
 - `medium_tier_threshold_files` (default `30`)
@@ -137,15 +137,15 @@ Every changed file MUST appear in exactly one cluster. If a file is missing, rer
 
 Each cluster dispatch receives only its cluster's files (per Phase 1.3 content loading) plus the diff slice for those files.
 
-**Step 3 - Continue to Phase 3.** Cross-cluster synthesis runs there - see  3.1a. Phase 3.7 (Tech Lead re-review) runs **after** the cross-cluster synthesis completes, on the fully-merged findings.
+**Step 3 - Continue to Phase 3.** Cross-cluster synthesis runs there - see Section 3.1a. Phase 3.7 (Tech Lead re-review) runs **after** the cross-cluster synthesis completes, on the fully-merged findings.
 
 ### 1.5 Target Language Detection
 
-Read `../shared/review-common.md`  Target Language Detection.
+Read `../shared/review-common.md` Section Target Language Detection.
 
 ### 1.6 Static Analysis Tooling
 
-Read `../shared/review-common.md`  Static Analysis Tooling - Detection Protocol (steps 1-3: detect, check availability, classify).
+Read `../shared/review-common.md` Section Static Analysis Tooling - Detection Protocol (steps 1-3: detect, check availability, classify).
 
 Then continue with codereview-specific steps:
 
@@ -174,7 +174,7 @@ Then continue with codereview-specific steps:
 
 ### Subagent Prompt Template
 
-Each subagent receives a prompt structured as follows. Adjust `<DOMAIN>` and `<PRINCIPLE_PATH>` per agent. Substitute `<PRINCIPLE_PATH>` with the **absolute path** to the roster file: resolve `principles/...` entries against this skill's own directory and `../shared/...` entries against the plugin root (two levels above this SKILL.md) - never against the project's working directory. Subagents start in the project cwd and cannot find plugin files by relative path.
+Each subagent receives a prompt structured as follows. Adjust `<DOMAIN>` and `<PRINCIPLE_PATH>` per agent. Substitute `<PRINCIPLE_PATH>` with the **absolute path** to the roster file: resolve `principles/...` entries against this skill's own directory and `../shared/...` entries against the collection root (one level above this SKILL.md) - never against the project's working directory. Subagents start in the project cwd and cannot find plugin files by relative path.
 
 ```
 You are a senior <DOMAIN> reviewer.
@@ -218,7 +218,7 @@ For each violation:
 **Why**: Explanation of why this matters and what could go wrong.
 ```
 
-Severity levels are defined in `../shared/review-common.md`  Severity Scale (P0 critical through P4 optional).
+Severity levels are defined in `../shared/review-common.md` Section Severity Scale (P0 critical through P4 optional).
 
 **MUST spawn subagents** with `model: "opus"` to ensure high-quality analysis.
 
@@ -272,7 +272,7 @@ If you find no issues, output: "No issues found."
 PROMPT_EOF
 ```
 
-Substitute `<FINDING_FORMAT>` with the finding structure from the  Subagent Prompt Template's Output Format (`### [Principle Name] - [Specific Issue]` through `**Why**`), using `[Category]` in place of `[Principle Name]`.
+Substitute `<FINDING_FORMAT>` with the finding structure from the Section Subagent Prompt Template's Output Format (`### [Principle Name] - [Specific Issue]` through `**Why**`), using `[Category]` in place of `[Principle Name]`.
 
 Write the prompt to **two** separate temp files (one per cross-model CLI) using `mktemp`. Dispatch both in parallel using the CLI command templates from `../shared/cross-model-dispatch.md`. Use 600000ms timeout. Clean up both temp files after completion.
 
@@ -280,7 +280,7 @@ Both cross-model reviewers receive the **same full file content and diff** that 
 
 #### Failure Handling
 
-Cross-model dispatch failures are handled per  Error Handling - continue with whatever sources returned and note unavailable models in the report header.
+Cross-model dispatch failures are handled per Section Error Handling - continue with whatever sources returned and note unavailable models in the report header.
 
 ---
 
@@ -292,11 +292,11 @@ Gather all findings from the 7 domain subagents and the cross-model dispatch. If
 
 ### 3.1a Cross-Cluster Synthesis (Large Tier Only)
 
-**Only runs when large-tier dispatch was used ( 1.4b).** Skip for small and medium tier.
+**Only runs when large-tier dispatch was used (Section 1.4b).** Skip for small and medium tier.
 
 After all cluster dispatches return, spawn one additional synthesis agent with `model: "opus"`. It receives:
 
-- The cluster manifest from the scoping pass ( 1.4b Step 1)
+- The cluster manifest from the scoping pass (Section 1.4b Step 1)
 - All findings from every cluster's dispatch (pre-dedup)
 - The full diff (`git diff <base>...HEAD`)
 
@@ -308,13 +308,13 @@ Its job is to find issues that span two or more clusters - things no single-clus
 - Security invariants spread across clusters no longer compose (e.g., cluster A adds input, cluster C trusts it)
 - Refactor cluster removes a guard that feature cluster's new code needs
 
-Output findings in the same format as domain subagents (the Output Format in  Subagent Prompt Template), with one addition - after `**Location**`:
+Output findings in the same format as domain subagents (the Output Format in Section Subagent Prompt Template), with one addition - after `**Location**`:
 
 ```
 **Spans clusters:** Cluster 2 (auth refactor), Cluster 4 (new login flow)
 ```
 
-Cross-cluster findings then flow into  3.2 Deduplicate alongside per-cluster findings.
+Cross-cluster findings then flow into Section 3.2 Deduplicate alongside per-cluster findings.
 
 ### 3.2 Deduplicate
 
@@ -344,7 +344,7 @@ When static analysis tools produced findings (from TOOLING_CONTEXT):
 
 **Tool-only findings** (tool found something no AI agent flagged):
 - Include as its own finding with "[{tool_name}]" prefix in the principle name
-- Map tool severity per `../shared/review-common.md`  Tool Severity Mapping
+- Map tool severity per `../shared/review-common.md` Section Tool Severity Mapping
 - The `--min-severity` filter applies to tool findings too
 
 **AI-only findings** (AI found something no tool flagged):
@@ -371,7 +371,7 @@ When cross-model dispatch produced findings:
 
 If `--min-severity` was specified, filter findings (not during analysis - subagents always perform full analysis). Remove any finding below the threshold. Severity order: P0 > P1 > P2 > P3 > P4.
 
-**Timing - this is deferred when re-review runs.** Phase 3.7 (tech-lead re-review) is on by default; it receives ALL findings so it can upgrade a misclassified finding across the threshold, and the filter applies to its verdict afterward ( 3.7.5). So apply this filter **now only under `--no-re-review`**; otherwise defer it until after Phase 3.7.
+**Timing - this is deferred when re-review runs.** Phase 3.7 (tech-lead re-review) is on by default; it receives ALL findings so it can upgrade a misclassified finding across the threshold, and the filter applies to its verdict afterward (Section 3.7.5). So apply this filter **now only under `--no-re-review`**; otherwise defer it until after Phase 3.7.
 
 ### 3.4 Prioritize Correctness
 
@@ -404,7 +404,7 @@ When Phase 3.7 failed:
 
 ### P0: Critical
 #### file.py
-- [findings in the canonical format from  Subagent Prompt Template]
+- [findings in the canonical format from Section Subagent Prompt Template]
 
 ### P1: High
 #### file.py
@@ -434,19 +434,19 @@ This is the **mechanical** synthesis output. Phase 3.7 below takes it as input a
 
 ## Phase 3.7: Senior Tech Lead Re-review
 
-After 3.6 produces the mechanical synthesis, dispatch **one** Agent (model: `"opus"`) acting as a senior tech lead. This is the final judgment pass before the report reaches the user. **Always on by default**; suppressed only with `--no-re-review`.
+After Section3.6 produces the mechanical synthesis, dispatch **one** Agent (model: `"opus"`) acting as a senior tech lead. This is the final judgment pass before the report reaches the user. **Always on by default**; suppressed only with `--no-re-review`.
 
-The tech lead's output **IS** the final report - it replaces 3.6's output. The mechanical synthesis is now the tech lead's input, not the user-facing deliverable.
+The tech lead's output **IS** the final report - it replaces Section3.6's output. The mechanical synthesis is now the tech lead's input, not the user-facing deliverable.
 
 ### 3.7.1 Inputs
 
 The tech lead subagent receives:
 
-- The mechanically-synthesized findings from 3.1-3.6 (post-dedup, post-severity-filter, post-correctness-prioritization)
+- The mechanically-synthesized findings from Section3.1-Section3.6 (post-dedup, post-severity-filter, post-correctness-prioritization)
 - The full diff (`git diff <base>...HEAD` or equivalent for the mode)
 - Full file contents (the same context the domain agents received)
 - Static analysis findings (TOOLING_CONTEXT)
-- Cluster manifest if large-tier (1.4b)
+- Cluster manifest if large-tier (Section1.4b)
 - Whether `--min-severity` was applied (so the tech lead knows what's been filtered out)
 
 ### 3.7.2 Persona Prompt
@@ -491,7 +491,7 @@ Guardrails:
 
 ## Output Format
 
-Produce the final markdown report, structured identically to 3.6 (Summary, severity-grouped findings, Recommendations), with these additions:
+Produce the final markdown report, structured identically to Section3.6 (Summary, severity-grouped findings, Recommendations), with these additions:
 
 1. **Header line** gains a `Tech Lead` segment and a Re-review change-count summary:
    `Models: [host] + Codex + Antigravity + Tech Lead | Domains: 7 | Static: [tools] | Re-review: X rejected, Y severity changes, Z fixes rewritten, A added, B notes`
@@ -512,7 +512,7 @@ Produce the final markdown report, structured identically to 3.6 (Summary, sever
 |---|---|
 | Tool | `Agent` |
 | Model | `"opus"` |
-| Parallelism | Sequential - runs AFTER 3.6 completes; cannot parallelize with the domain agents because it operates on their output |
+| Parallelism | Sequential - runs AFTER Section3.6 completes; cannot parallelize with the domain agents because it operates on their output |
 | Timeout | Standard agent timeout |
 
 The mechanical synthesis output is passed as plain text in the prompt body. The diff, full files, and TOOLING_CONTEXT are passed the same way the domain agents received them.
@@ -521,9 +521,9 @@ The mechanical synthesis output is passed as plain text in the prompt body. The 
 
 | Tier | Re-review timing |
 |---|---|
-| Small (<=30 files) | Runs once after 3.6, on the full synthesized findings |
+| Small (<=30 files) | Runs once after Section3.6, on the full synthesized findings |
 | Medium (file batching, 31-100 files) | Runs **once** after all batches are merged and synthesized - not per batch |
-| Large (logical-cluster, >100 files or >5,000 LOC) | Runs **after** 3.1a cross-cluster synthesis completes |
+| Large (logical-cluster, >100 files or >5,000 LOC) | Runs **after** Section3.1a cross-cluster synthesis completes |
 
 The tech lead is always the **last** judgment pass before presentation.
 
@@ -531,15 +531,15 @@ The tech lead is always the **last** judgment pass before presentation.
 
 - **`--min-severity`** - tech lead receives ALL findings regardless of the filter so it can upgrade a misclassified P3 -> P0. The filter is applied **after** the tech lead, so the tech lead's verdict determines what the user actually sees. If the tech lead downgrades something below the threshold, it drops out silently.
 - **Dual cross-model (Codex + Antigravity)** - both sets of findings flow through the same dedup -> tech lead path.
-- **`--no-re-review`** - Phase 3.7 is skipped entirely; the mechanical 3.6 output is presented directly to the user. Header line keeps the pre-enhancement format (no Tech Lead segment).
+- **`--no-re-review`** - Phase 3.7 is skipped entirely; the mechanical Section3.6 output is presented directly to the user. Header line keeps the pre-enhancement format (no Tech Lead segment).
 
 ### 3.7.6 Failure Handling
 
-If the tech lead subagent fails or times out, handle per  Error Handling - fall back to the mechanical 3.6 output unchanged and offer a retry.
+If the tech lead subagent fails or times out, handle per Section Error Handling - fall back to the mechanical Section3.6 output unchanged and offer a retry.
 
 ### 3.7.7 Phase 4 (Fix Dispatch) Interaction
 
-How tech-lead verdicts govern fixes - rewrites win, added findings are eligible, rejected findings are not - is defined in Phase 4  Parallel Fix Strategy.
+How tech-lead verdicts govern fixes - rewrites win, added findings are eligible, rejected findings are not - is defined in Phase 4 Section Parallel Fix Strategy.
 
 ---
 
@@ -579,13 +579,13 @@ After fixes are applied, present:
 
 ## Priority Matrix
 
-See `../shared/review-common.md`  Severity Scale for the full P0-P4 definitions and fix-when guidance.
+See `../shared/review-common.md` Section Severity Scale for the full P0-P4 definitions and fix-when guidance.
 
 ---
 
 ## Guardrails
 
-Read `../shared/review-common.md`  Cross-Skill Discipline for the base constraints (evidence, language-adaptive, specificity, no over-engineering, test-code DAMP, profile-first).
+Read `../shared/review-common.md` Section Cross-Skill Discipline for the base constraints (evidence, language-adaptive, specificity, no over-engineering, test-code DAMP, profile-first).
 
 Additional codereview-specific guardrails:
 
@@ -597,7 +597,7 @@ Additional codereview-specific guardrails:
 
 ## Error Handling
 
-Read `../shared/review-common.md`  Shared Error Handling for common errors (no changed files, base branch detection, PR/commit not found, file not found, no violations, too many files, tool errors).
+Read `../shared/review-common.md` Section Shared Error Handling for common errors (no changed files, base branch detection, PR/commit not found, file not found, no violations, too many files, tool errors).
 
 Additional codereview-specific errors:
 
@@ -608,4 +608,4 @@ Additional codereview-specific errors:
 | All tools declined in gate | Review proceeds without tool findings - AI analysis only |
 | One cross-model dispatch fails | Continue with remaining cross-model + 7 domain subagents; note unavailable model in report header. |
 | Both cross-model dispatches fail | Continue with 7 domain subagents only; note "Cross-model unavailable" in report header. |
-| Phase 3.7 tech lead subagent fails or times out | Fall back to the mechanical 3.6 output. Header line shows `Tech Lead re-review: unavailable ([reason])`. Offer retry: "Tech Lead re-review failed. Want to retry it? Or proceed with the synthesized findings as-is?" |
+| Phase 3.7 tech lead subagent fails or times out | Fall back to the mechanical Section3.6 output. Header line shows `Tech Lead re-review: unavailable ([reason])`. Offer retry: "Tech Lead re-review failed. Want to retry it? Or proceed with the synthesized findings as-is?" |

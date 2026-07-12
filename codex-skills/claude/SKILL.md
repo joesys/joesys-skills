@@ -19,7 +19,7 @@ This skill MUST NOT:
 ## Preflight
 
 Before dispatching, **MUST**:
-1. Read `../shared/model-defaults.md`  Claude CLI for the current model identifier, effort level, permission mode, and required flags - resolve `../shared/...` against the plugin root (two levels above this SKILL.md), never the project's working directory. Never hardcode values.
+1. Read `../shared/model-defaults.md` Section Claude CLI for the current model identifier, effort level, permission mode, and required flags - resolve `../shared/...` against the collection root (one level above this SKILL.md), never the project's working directory. Never hardcode values.
 2. Confirm the user's prompt is non-empty. For `$claude resume` with no prompt, use `ask the user directly` to ask what they want to follow up on.
 
 ## User Preferences
@@ -37,9 +37,9 @@ Read `../shared/skill-context.md` for the full protocol. Load `.codex/skill-cont
 2. Derive a short session name from the prompt topic (kebab-case, 2-4 words).
 3. Assemble and dispatch the command (use 600000ms timeout on the shell command tool).
 
-   Use the temp-file-and-pipe pattern from `../shared/delegation-common.md`  Prompt Delivery. (Direct `-p "<text>"` is reserved for short, simple *resume* prompts - see that file's  Direct `-p` exception.)
+   Use the temp-file-and-pipe pattern from `../shared/delegation-common.md` Section Prompt Delivery. (Direct `-p "<text>"` is reserved for short, simple *resume* prompts - see that file's Section Direct `-p` exception.)
 
-   Substitute `<CLAUDE_CMD>` with the current invocation from `../shared/model-defaults.md`  Claude CLI, layering any user overrides on top. Append `--name "<derived-name>"` for resumability.
+   Substitute `<CLAUDE_CMD>` with the current invocation from `../shared/model-defaults.md` Section Claude CLI, layering any user overrides on top. Append `--name "<derived-name>"` for resumability.
 
    ```bash
    PROMPT_FILE=$(mktemp /tmp/claude-prompt-XXXXXX.txt)
@@ -59,7 +59,7 @@ Read `../shared/skill-context.md` for the full protocol. Load `.codex/skill-cont
 When the user invokes `$claude resume`:
 
 1. If no prompt is provided, use `ask the user directly` to ask what they want to follow up on.
-2. Determine the resume target - commands per `../shared/model-defaults.md`  Claude CLI Resume:
+2. Determine the resume target - commands per `../shared/model-defaults.md` Section Claude CLI Resume:
    - `$claude resume <PROMPT>` - continue the most recent session (`claude -c`).
    - `$claude resume <NAME> <PROMPT>` - resume a specific named session (`claude --resume "<NAME>"`).
 3. **Resume rules:**
@@ -74,4 +74,4 @@ Read `../shared/delegation-common.md` and apply to Claude.
 
 ### Self-Evaluation Vigilance
 
-Unlike `$codex` and `$antigravity`, this is Claude evaluating Claude - apply `../shared/delegation-common.md`  Self-Evaluation Vigilance, and remember that if both instances agree, that is *not* automatically stronger evidence.
+Unlike `$codex` and `$antigravity`, this is Claude evaluating Claude - apply `../shared/delegation-common.md` Section Self-Evaluation Vigilance, and remember that if both instances agree, that is *not* automatically stronger evidence.

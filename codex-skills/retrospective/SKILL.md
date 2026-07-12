@@ -54,7 +54,7 @@ Default: `docs/retros/YYYY-MM-DD/` (retro execution date). Override with `--outp
 
 ## Phase 0a: Load User Preferences
 
-Read `../shared/skill-context.md` for the full protocol (resolve `../shared/...` against the plugin root - two levels above this SKILL.md - never the project's working directory). In brief:
+Read `../shared/skill-context.md` for the full protocol (resolve `../shared/...` against the collection root (one level above this SKILL.md) - never the project's working directory). In brief:
 
 1. Read `.codex/skill-context/preferences.md` - if missing, invoke `$preferences` (streamlined).
 2. Read `.codex/skill-context/retrospective.md` (if it exists) for retro-specific preferences.

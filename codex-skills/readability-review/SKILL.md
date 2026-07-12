@@ -45,7 +45,7 @@ If the invocation is ambiguous or unrecognizable, ask the user to clarify before
 
 ### 0.1 Load User Preferences
 
-Read `../shared/skill-context.md` for the full protocol (resolve `../shared/...` against the plugin root - two levels above this SKILL.md - never the project's working directory). In brief:
+Read `../shared/skill-context.md` for the full protocol (resolve `../shared/...` against the collection root (one level above this SKILL.md) - never the project's working directory). In brief:
 
 1. Read `.codex/skill-context/preferences.md` - if missing, proceed with defaults (do not interrupt the workflow with an interview).
 2. Read `.codex/skill-context/readability-review.md` (if it exists) for readability-specific preferences.
@@ -67,11 +67,11 @@ Pass relevant preferences to the analysis subagent in Phase 1.
 
 ### 0.2 Base Branch Detection
 
-Read `../shared/review-common.md`  Base Branch Detection.
+Read `../shared/review-common.md` Section Base Branch Detection.
 
 ### 0.3 File Gathering
 
-Read `../shared/review-common.md`  File Gathering.
+Read `../shared/review-common.md` Section File Gathering.
 
 ### 0.4 Content Loading
 
@@ -81,7 +81,7 @@ Also capture the **diff itself** (`git diff <base>...HEAD` or equivalent) if in 
 
 ### 0.5 Target Language Detection
 
-Read `../shared/review-common.md`  Target Language Detection.
+Read `../shared/review-common.md` Section Target Language Detection.
 
 ---
 
@@ -93,7 +93,7 @@ Dispatch a **single subagent** via the Codex agent workflow. Readability grading
 
 ### Subagent Prompt
 
-Before dispatch, substitute **every** `<ANGLE_BRACKET>` placeholder in the template below. In particular, replace `<PRINCIPLE_PATH>` with the **absolute path** to `../shared/story-readability.md`, resolved against the plugin root (two levels above this SKILL.md) - never against the project's working directory; subagents start in the project cwd and cannot find plugin files by relative path. The remaining placeholders (`<TARGET_LANGUAGE>`, `<CUSTOM_WEIGHTS_OR_...>`, `<USER_PREFERENCES_OR_"None">`, `<FILES_CONTENT>`, `<DIFF_CONTENT_OR_...>`) take their resolved values or the quoted fallback.
+Before dispatch, substitute **every** `<ANGLE_BRACKET>` placeholder in the template below. In particular, replace `<PRINCIPLE_PATH>` with the **absolute path** to `../shared/story-readability.md`, resolved against the collection root (one level above this SKILL.md) - never against the project's working directory; subagents start in the project cwd and cannot find plugin files by relative path. The remaining placeholders (`<TARGET_LANGUAGE>`, `<CUSTOM_WEIGHTS_OR_...>`, `<USER_PREFERENCES_OR_"None">`, `<FILES_CONTENT>`, `<DIFF_CONTENT_OR_...>`) take their resolved values or the quoted fallback.
 
 ```
 You are a senior readability reviewer. Your job is to grade code on how well it
@@ -184,7 +184,7 @@ Present a summary scorecard as a markdown header followed by a markdown table. T
 
 ```markdown
 **READABILITY REVIEW - {scope}**
-{Language}  {N} files  {Date}
+{Language} * {N} files * {Date}
 
 **Story Score: {score}/100 ({grade})**
 
@@ -203,7 +203,7 @@ Present a summary scorecard as a markdown header followed by a markdown table. T
 **Strongest:** {dimension} across {scope}
 ```
 
-Dimension scores are averaged across files, weighted by lines of code when files vary significantly in size. The Weight column above shows the **default** weights - if custom dimension weights are configured (`.codex/skill-context/readability-review.md`), fill it with the weights actually applied. Apply the grade mapping from `../shared/story-readability.md`  Grade Mapping to both the overall score and per-dimension scores; that mapping is defined over 0-100, so multiply a per-dimension 1-10 score by 10 before looking it up, and round the weighted total to the nearest integer first.
+Dimension scores are averaged across files, weighted by lines of code when files vary significantly in size. The Weight column above shows the **default** weights - if custom dimension weights are configured (`.codex/skill-context/readability-review.md`), fill it with the weights actually applied. Apply the grade mapping from `../shared/story-readability.md` Section Grade Mapping to both the overall score and per-dimension scores; that mapping is defined over 0-100, so multiply a per-dimension 1-10 score by 10 before looking it up, and round the weighted total to the nearest integer first.
 
 If `--min-score` was specified and some files were filtered out, note: "Showing {M} of {N} files (filtered by --min-score {threshold})."
 
@@ -282,7 +282,7 @@ If no `.codex/skill-context/readability-review.md` exists:
 
 ## Guardrails
 
-Read `../shared/review-common.md`  Cross-Skill Discipline for the base constraints (evidence, language-adaptive, specificity, no over-engineering, test-code DAMP, profile-first).
+Read `../shared/review-common.md` Section Cross-Skill Discipline for the base constraints (evidence, language-adaptive, specificity, no over-engineering, test-code DAMP, profile-first).
 
 Additional readability-review-specific guardrails:
 
@@ -296,7 +296,7 @@ Additional readability-review-specific guardrails:
 
 ## Error Handling
 
-Read `../shared/review-common.md`  Shared Error Handling for common errors (no changed files, base branch detection, PR/commit not found, file not found). The "no violations" and "too many files" rows there are written for codereview/quick-review - this skill instead emits its scorecard (high grades) for a findings-free scope, and handles large scopes via its own  Large Scope Handling (>30-file batching), not the >100-file warning.
+Read `../shared/review-common.md` Section Shared Error Handling for common errors (no changed files, base branch detection, PR/commit not found, file not found). The "no violations" and "too many files" rows there are written for codereview/quick-review - this skill instead emits its scorecard (high grades) for a findings-free scope, and handles large scopes via its own Section Large Scope Handling (>30-file batching), not the >100-file warning.
 
 Additional readability-review-specific errors:
 

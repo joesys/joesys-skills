@@ -19,7 +19,7 @@ This skill MUST NOT:
 ## Preflight
 
 Before dispatching, **MUST**:
-1. Read `../shared/model-defaults.md`  Codex for the current model identifier, reasoning effort, sandbox, and required flags - resolve `../shared/...` against the plugin root (two levels above this SKILL.md), never the project's working directory. Never hardcode values.
+1. Read `../shared/model-defaults.md` Section Codex for the current model identifier, reasoning effort, sandbox, and required flags - resolve `../shared/...` against the collection root (one level above this SKILL.md), never the project's working directory. Never hardcode values.
 2. Confirm the user's prompt is non-empty. For `$codex resume` with no prompt, use `ask the user directly` to ask what they want to follow up on.
 
 ## User Preferences
@@ -34,9 +34,9 @@ Read `../shared/skill-context.md` for the full protocol. Load `.codex/skill-cont
    - Any remaining text is the prompt
 2. Assemble and dispatch the command (use 600000ms timeout on the shell command tool).
 
-   Use the temp-file-and-pipe pattern from `../shared/delegation-common.md`  Prompt Delivery. (Direct positional prompts are reserved for short, simple *resume* prompts - see that file's  Direct `-p` exception.)
+   Use the temp-file-and-pipe pattern from `../shared/delegation-common.md` Section Prompt Delivery. (Direct positional prompts are reserved for short, simple *resume* prompts - see that file's Section Direct `-p` exception.)
 
-   Substitute `<CODEX_CMD>` with the current invocation from `../shared/model-defaults.md`  Codex, layering any user `--model` or `--sandbox` overrides on top - but replace the template's trailing `2>/dev/null` with `2>"$CODEX_LOG"`: Codex prints its `session id:` banner on stderr, and capturing it is what makes resume reliable.
+   Substitute `<CODEX_CMD>` with the current invocation from `../shared/model-defaults.md` Section Codex, layering any user `--model` or `--sandbox` overrides on top - but replace the template's trailing `2>/dev/null` with `2>"$CODEX_LOG"`: Codex prints its `session id:` banner on stderr, and capturing it is what makes resume reliable.
 
    ```bash
    PROMPT_FILE=$(mktemp /tmp/codex-prompt-XXXXXX.txt)
@@ -58,18 +58,18 @@ Read `../shared/skill-context.md` for the full protocol. Load `.codex/skill-cont
 When the user invokes `$codex resume`:
 
 1. If no prompt is provided, use `ask the user directly` to ask what they want to follow up on.
-2. Determine the resume target - commands and flag rules per `../shared/model-defaults.md`  Codex Resume (use 600000ms timeout):
+2. Determine the resume target - commands and flag rules per `../shared/model-defaults.md` Section Codex Resume (use 600000ms timeout):
    - `$codex resume <PROMPT>` - resume this skill's last dispatched session by its captured session ID; fall back to `--last` only when no ID is known.
    - `$codex resume <SESSION_ID> <PROMPT>` - resume a specific session by ID (UUID from the dispatch banner).
 3. **Resume rules:**
    - `--model` MAY be passed on resume only when the user explicitly requests it.
-   - Write access on resume requires the config override listed in  Codex Resume - never guess flags.
+   - Write access on resume requires the config override listed in Section Codex Resume - never guess flags.
    - **MUST NOT use** `--ephemeral` on the initial run, or resume will have no session to continue.
 4. After resume, follow the same output flow: present full response -> evaluate -> summarize -> offer resume.
 
 ## Known Limitations
 
-- **Uncaptured session ID:** if a dispatch discarded stderr (where the `session id:` banner lives - see `../shared/model-defaults.md`  Codex Resume), only `--last` resume is possible, and `--last` resumes the *newest* session: **MUST warn** the user if they attempt a `--last` resume after other Codex commands have run.
+- **Uncaptured session ID:** if a dispatch discarded stderr (where the `session id:` banner lives - see `../shared/model-defaults.md` Section Codex Resume), only `--last` resume is possible, and `--last` resumes the *newest* session: **MUST warn** the user if they attempt a `--last` resume after other Codex commands have run.
 
 ## Critical Evaluation & Error Handling
 

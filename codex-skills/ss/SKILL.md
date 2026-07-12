@@ -44,7 +44,7 @@ $ss [count] [action...]
 
 ## User Preferences
 
-Read `../shared/skill-context.md` for the full protocol (resolve `../shared/...` against the plugin root - two levels above this SKILL.md - never the project's working directory). In brief:
+Read `../shared/skill-context.md` for the full protocol (resolve `../shared/...` against the collection root (one level above this SKILL.md) - never the project's working directory). In brief:
 
 1. Read `.codex/skill-context/preferences.md` - if missing, proceed with defaults (do not interrupt the workflow).
 2. Read `.codex/skill-context/ss.md` for the screenshot folder path (see Configuration Bootstrap below).
@@ -203,8 +203,8 @@ Scale the output to the complexity of the request.
 
 | # | File | Age | Type |
 |---|------|-----|------|
-| 1 | screenshot_2026-04-10_14-23.png | 2 min ago | Image  |
-| 2 | recording_2026-04-10_14-20.mp4 | 5 min ago | Video  |
+| 1 | screenshot_2026-04-10_14-23.png | 2 min ago | Image yes |
+| 2 | recording_2026-04-10_14-20.mp4 | 5 min ago | Video paused |
 
 [Time-outlier warning, if applicable]
 

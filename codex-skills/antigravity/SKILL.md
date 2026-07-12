@@ -19,7 +19,7 @@ This skill MUST NOT:
 ## Preflight
 
 Before dispatching, **MUST**:
-1. Read `../shared/model-defaults.md`  Antigravity for the current required flags - resolve `../shared/...` against the plugin root (two levels above this SKILL.md), never the project's working directory. Never hardcode values.
+1. Read `../shared/model-defaults.md` Section Antigravity for the current required flags - resolve `../shared/...` against the collection root (one level above this SKILL.md), never the project's working directory. Never hardcode values.
 2. Confirm the user's prompt is non-empty. For `$antigravity resume` with no prompt, use `ask the user directly` to ask what they want to follow up on.
 
 ## User Preferences
@@ -30,7 +30,7 @@ Read `../shared/skill-context.md` for the full protocol. Load `.codex/skill-cont
 
 1. Parse `$antigravity` arguments for overrides:
    - Any remaining text is the prompt
-2. Use the temp-file-and-pipe pattern from `../shared/delegation-common.md`  Prompt Delivery (use 600000ms timeout on the shell command tool). Substitute `<AGY_CMD>` with the current invocation from `../shared/model-defaults.md`  Antigravity.
+2. Use the temp-file-and-pipe pattern from `../shared/delegation-common.md` Section Prompt Delivery (use 600000ms timeout on the shell command tool). Substitute `<AGY_CMD>` with the current invocation from `../shared/model-defaults.md` Section Antigravity.
    ```bash
    PROMPT_FILE=$(mktemp /tmp/antigravity-prompt-XXXXXX.txt)
    cat > "$PROMPT_FILE" << 'PROMPT_EOF'
@@ -51,7 +51,7 @@ Read `../shared/skill-context.md` for the full protocol. Load `.codex/skill-cont
 When the user invokes `$antigravity resume`:
 
 1. If no prompt is provided, use `ask the user directly` to ask what they want to follow up on.
-2. Determine the resume target. `<ADAPTER>` is the **absolute path** to `../scripts/agy_adapter.py` under the plugin root (two levels above this SKILL.md) - the project's working directory does not contain the adapter. Invoke it with `python3` where present, falling back to `python` on Windows (see `../shared/model-defaults.md`  Antigravity):
+2. Determine the resume target. `<ADAPTER>` is the **absolute path** to `../scripts/agy_adapter.py` under the collection root (one level above this SKILL.md) - the project's working directory does not contain the adapter. Invoke it with `python3` where present, falling back to `python` on Windows (see `../shared/model-defaults.md` Section Antigravity):
    - `$antigravity resume <PROMPT>` - resume the latest session. Deliver the follow-up
      prompt via the same temp-file-and-stdin pattern as the initial dispatch:
      ```bash
@@ -68,4 +68,4 @@ When the user invokes `$antigravity resume`:
 ## Critical Evaluation & Error Handling
 
 Read `../shared/delegation-common.md` and apply to Antigravity.
-**Timeout suggestion:** raise `AGY_ADAPTER_TIMEOUT` (see `../shared/model-defaults.md`  Antigravity) or simplify the prompt.
+**Timeout suggestion:** raise `AGY_ADAPTER_TIMEOUT` (see `../shared/model-defaults.md` Section Antigravity) or simplify the prompt.

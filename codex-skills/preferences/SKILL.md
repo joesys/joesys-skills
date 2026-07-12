@@ -7,7 +7,7 @@ description: "Use when the user invokes $preferences to set, view, or update the
 
 Capture and manage user preferences that shape how every skill in this collection behaves. Preferences are personal (per-user, per-project) and stored in `.codex/skill-context/`.
 
-Read `../shared/skill-context.md` for the full file format specification and how other skills consume these preferences (resolve `../shared/...` against the plugin root - two levels above this SKILL.md - never the project's working directory).
+Read `../shared/skill-context.md` for the full file format specification and how other skills consume these preferences (resolve `../shared/...` against the collection root (one level above this SKILL.md) - never the project's working directory).
 
 ## Out of Scope
 
@@ -128,7 +128,7 @@ If confirmed, delete all files in `.codex/skill-context/`.
 
 ### Step 1: Validate the Skill Name
 
-Check if `skills/<skill-name>/SKILL.md` exists under the plugin root (two levels above this SKILL.md - not the project's working directory). If not:
+Check if `../<skill-name>/SKILL.md` exists under the collection root (one level above this SKILL.md - not the project's working directory). If not:
 
 > Skill "{skill-name}" not found. Available skills: {list}.
 
@@ -167,7 +167,7 @@ This keeps the interruption brief while still capturing the essentials.
 
 | Situation | Behavior |
 |---|---|
-| `.claude/` directory doesn't exist | Create `.codex/skill-context/` |
+| Skill-context directory doesn't exist | Create the host-specific directory defined in `../shared/skill-context.md` |
 | Write permission denied | Report error, suggest checking permissions |
 | File system read-only | Hold preferences in memory for the session, warn that they won't persist |
 | User cancels mid-interview | Save whatever was captured so far |

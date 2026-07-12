@@ -3,17 +3,15 @@
 
 WHY THIS EXISTS
 ---------------
-`agy` (Antigravity CLI) is a bubbletea terminal-UI app. In print mode (`-p`),
-v1.0.9 renders the model's reply ONLY to an interactive terminal. When stdout is
-a pipe or file (e.g. captured by an agent's shell tool), `agy` writes 0 bytes -
-even though the model answered and the process exits 0. The reply is, however,
-persisted to a local SQLite conversation store. This adapter runs `agy`, then
-recovers the reply from that store and prints it to stdout, restoring the
-"pipe the prompt in, capture the answer on stdout" contract the skills rely on.
+Current `agy` versions write print-mode replies to stdout. Older releases,
+including v1.0.9 on Windows, could exit successfully with empty non-TTY stdout
+after persisting the reply to a local SQLite conversation store. This wrapper
+forwards current stdout directly and retains SQLite recovery as a compatibility
+fallback for those older releases.
 
-It also guards a second `agy` quirk: print mode hangs forever if its stdin never
-reaches EOF. The adapter always feeds the prompt via stdin (closing it) and wraps
-the run in a timeout that kills the whole process tree, so no `agy` strays linger.
+The wrapper also feeds the prompt via stdin, closes it deterministically, and
+bounds the run with a timeout that kills the whole process tree, so no `agy`
+process strays linger.
 
 CONVERSATION STORE SCHEMA (reverse-engineered, verified against agy v1.0.9)
 --------------------------------------------------------------------------
@@ -36,7 +34,7 @@ the reply to a non-TTY stdout directly.
 
 USAGE
 -----
-The prompt is read from stdin; all CLI args are forwarded to `agy`, then `-p ""`
+The prompt is read from stdin; all CLI args are forwarded to `agy`, then `-p`
 is appended (so callers must NOT pass `-p` themselves):
 
     cat prompt.txt | python scripts/agy_adapter.py --sandbox          # fresh
@@ -305,7 +303,7 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     before = snapshot_steps(conv_dir)
-    cmd = [agy_bin, *argv, "-p", ""]
+    cmd = [agy_bin, *argv, "-p"]
     try:
         out, err, timed_out = run_agy(cmd, prompt.encode("utf-8"), timeout)
     except FileNotFoundError:
@@ -337,7 +335,8 @@ def main(argv: list[str] | None = None) -> int:
     if not reply:
         print(
             f"agy_adapter: could not extract a reply from {db} "
-            "(agy store schema may have changed; verified against v1.0.9)",
+            "(legacy agy store schema may have changed; fallback verified "
+            "against v1.0.9)",
             file=sys.stderr,
         )
         return 5

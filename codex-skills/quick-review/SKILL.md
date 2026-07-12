@@ -42,7 +42,7 @@ If the invocation is ambiguous or unrecognizable, ask the user to clarify before
 
 ### 1.0 Load User Preferences
 
-Read `../shared/skill-context.md` for the full protocol (resolve `../shared/...` against the plugin root - two levels above this SKILL.md - never the project's working directory). In brief:
+Read `../shared/skill-context.md` for the full protocol (resolve `../shared/...` against the collection root (one level above this SKILL.md) - never the project's working directory). In brief:
 
 1. Read `.codex/skill-context/preferences.md` - if missing, invoke `$preferences` (streamlined).
 2. Read `.codex/skill-context/codereview.md` (if it exists) - quick-review shares review preferences with codereview.
@@ -59,11 +59,11 @@ Pass relevant preferences to subagents in Phase 2.
 
 ### 1.1 Base Branch Detection
 
-Read `../shared/review-common.md`  Base Branch Detection.
+Read `../shared/review-common.md` Section Base Branch Detection.
 
 ### 1.2 File Gathering
 
-Read `../shared/review-common.md`  File Gathering.
+Read `../shared/review-common.md` Section File Gathering.
 
 ### 1.3 Context Loading
 
@@ -81,16 +81,16 @@ This is the primary time savings over the full codereview.
 
 ### 1.4 Target Language Detection
 
-Read `../shared/review-common.md`  Target Language Detection.
+Read `../shared/review-common.md` Section Target Language Detection.
 
 ### 1.5 Static Analysis (Streamlined)
 
-Read `../shared/review-common.md`  Static Analysis Tooling - Detection Protocol (steps 1-3: detect, check availability, classify).
+Read `../shared/review-common.md` Section Static Analysis Tooling - Detection Protocol (steps 1-3: detect, check availability, classify).
 
 Then continue with quick-review-specific steps:
 
 4. **Build scoped commands** - for `available` tools, construct report-only commands targeting only the changed files.
-5. **Auto-run read-only tools** - linters, type checkers, and SAST tools are read-only - execute them without a safety gate. Tools marked with ` DANGER: auto-modifies` in per-language profiles are **MUST be skipped** (quick-review never runs auto-modifying tools).
+5. **Auto-run read-only tools** - linters, type checkers, and SAST tools are read-only - execute them without a safety gate. Tools marked with `WARNING DANGER: auto-modifies` in per-language profiles are **MUST be skipped** (quick-review never runs auto-modifying tools).
 6. **30-second timeout per tool** - hard cap. If a tool exceeds 30 seconds, kill it and continue.
 7. **Build TOOLING_CONTEXT** - assemble the slim version (findings only - no gap analysis, no build-integrated detection). Same format as codereview's slim TOOLING_CONTEXT.
 
@@ -115,7 +115,7 @@ Static analysis ran in Phase 1.5 before this phase. Include TOOLING_CONTEXT in b
 
 #### Subagent Prompt Template
 
-Each subagent receives a prompt structured as follows. Adjust `<DOMAIN>` and `<PRINCIPLE_PATH>` per agent. Substitute `<PRINCIPLE_PATH>` with the **absolute path** to the roster file, resolved against the plugin root (two levels above this SKILL.md - the roster paths point into the sibling `codereview` skill) - never against the project's working directory. Subagents start in the project cwd and cannot find plugin files by relative path.
+Each subagent receives a prompt structured as follows. Adjust `<DOMAIN>` and `<PRINCIPLE_PATH>` per agent. Substitute `<PRINCIPLE_PATH>` with the **absolute path** to the roster file, resolved against the collection root (one level above this SKILL.md - the roster paths point into the sibling `codereview` skill) - never against the project's working directory. Subagents start in the project cwd and cannot find plugin files by relative path.
 
 ```
 You are a senior <DOMAIN> reviewer performing a quick, bug-focused review.
@@ -169,9 +169,9 @@ If any source failed, note which was unavailable and proceed with remaining resu
 
 ### 3.2 Deduplicate and Classify
 
-When multiple sources flag the **same location** (same file, line range within 5 lines, same category of issue), merge them into a single finding.
+When multiple sources flag the **same location** (same file, line range within +/-5 lines, same category of issue), merge them into a single finding.
 
-The 5 line tolerance applies to all deduplication in quick-review, including tool-AI merges (overriding the 3 default in `../shared/tooling-registry.md`). "Same category" means both findings describe the same type of problem (e.g., both null-safety issues, both SQL injection, both unchecked error returns) - **MUST NOT merge** a correctness finding with an unrelated security finding that happens to be on nearby lines.
+The +/-5 line tolerance applies to all deduplication in quick-review, including tool-AI merges (overriding the +/-3 default in `../shared/tooling-registry.md`). "Same category" means both findings describe the same type of problem (e.g., both null-safety issues, both SQL injection, both unchecked error returns) - **MUST NOT merge** a correctness finding with an unrelated security finding that happens to be on nearby lines.
 
 | Bucket | Criteria | Display |
 |---|---|---|
@@ -188,7 +188,7 @@ Merge rules:
 
 When a static analysis tool finds something no AI flagged:
 - Include as its own finding with `[tool_name]` prefix
-- Map tool severity per `../shared/review-common.md`  Tool Severity Mapping
+- Map tool severity per `../shared/review-common.md` Section Tool Severity Mapping
 - Discard tool findings below P2 (quick-review skips P3/P4)
 
 ### 3.3 Prioritize Correctness
@@ -236,7 +236,7 @@ Omit empty severity sections. If there are zero findings across all severities, 
 
 ## Guardrails
 
-Read `../shared/review-common.md`  Cross-Skill Discipline for the base constraints (evidence, language-adaptive, specificity, no over-engineering, test-code DAMP, profile-first).
+Read `../shared/review-common.md` Section Cross-Skill Discipline for the base constraints (evidence, language-adaptive, specificity, no over-engineering, test-code DAMP, profile-first).
 
 Additional quick-review-specific guardrails:
 
@@ -246,7 +246,7 @@ Additional quick-review-specific guardrails:
 
 ## Error Handling
 
-Read `../shared/review-common.md`  Shared Error Handling for common errors (no changed files, base branch detection, PR/commit not found, file not found, no violations, too many files, tool errors).
+Read `../shared/review-common.md` Section Shared Error Handling for common errors (no changed files, base branch detection, PR/commit not found, file not found, no violations, too many files, tool errors).
 
 Additional quick-review-specific errors:
 

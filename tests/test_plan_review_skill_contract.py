@@ -188,11 +188,21 @@ def test_review_only_is_single_pass_and_non_mutating() -> None:
 def test_skill_uses_deterministic_helper_lifecycle() -> None:
     skill = read("SKILL.md")
 
-    assert "helpers/plan_review_state.py start" in skill
-    assert "helpers/plan_review_state.py record" in skill
-    assert "helpers/plan_review_state.py diff" in skill
-    assert "helpers/plan_review_state.py finish" in skill
+    assert "helpers/plan_review_state.py" in skill
+    assert "absolute path" in skill
+    assert "skill directory" in skill
+    for command in ["start", "record", "diff", "finish"]:
+        assert f"python <STATE_HELPER> {command}" in skill
     assert "operating-system temporary directory" in skill
+
+
+def test_skill_resolves_shared_resources_from_plugin_root() -> None:
+    skill = read("SKILL.md")
+
+    assert "`shared/model-defaults.md`" in skill
+    assert "`shared/delegation-common.md`" in skill
+    assert "`shared/skill-context.md`" in skill
+    assert "`../shared/" not in skill
 
 
 def test_skill_does_not_commit_push_or_expose_sensitive_values() -> None:

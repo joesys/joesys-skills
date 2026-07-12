@@ -60,7 +60,7 @@ If the invocation is ambiguous or unrecognizable, ask the user to clarify before
 
 ## Phase 0: Load User Preferences
 
-Read `../shared/skill-context.md` for the full protocol (resolve `../shared/...` against the plugin root - two levels above this SKILL.md - never the project's working directory). In brief:
+Read `../shared/skill-context.md` for the full protocol (resolve `../shared/...` against the collection root (one level above this SKILL.md) - never the project's working directory). In brief:
 
 1. Read `.codex/skill-context/preferences.md` - if missing, invoke `$preferences` (streamlined).
 2. Read `.codex/skill-context/devlog.md` (if it exists) for devlog-specific preferences.
@@ -384,14 +384,14 @@ These principles are baked into the skill's behavior for both scrap inference an
 
 ```
 docs/devlog/
- .scraps/
-    20260326-recursive-clone-bug.md
-    20260324-ssh-signing-recovery.md
- 20260325-oneflow-branching/
-    20260325-oneflow-branching.md
- 20260318-prompt-as-architecture/
-     20260318-prompt-as-architecture.md
-     before-after-diff.png
++-- .scraps/
+|   +-- 20260326-recursive-clone-bug.md
+|   +-- 20260324-ssh-signing-recovery.md
++-- 20260325-oneflow-branching/
+|   +-- 20260325-oneflow-branching.md
++-- 20260318-prompt-as-architecture/
+    +-- 20260318-prompt-as-architecture.md
+    +-- before-after-diff.png
 ```
 
 - **Posts** in `docs/devlog/YYYYMMDD-<topic>/YYYYMMDD-<topic>.md` - directory per post for co-located assets (images, videos, supplementary files)

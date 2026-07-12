@@ -188,8 +188,8 @@ interfaces, update all callers listed below.
 - Never commits, pushes, stashes, resets, or implements the reviewed plan.
 
 **Preference contract:**
-- Claude: `.codex/skill-context/plan-review.md`
-- Codex: `.codex/skill-context/plan-review.md`
+- Store `plan-review.md` in the current host's skill-context directory defined
+  by `./skill-context.md`.
 
 **Callers:**
 - None currently; this skill is user-invoked only.

@@ -50,8 +50,9 @@ Before dispatch:
 
 1. Read `references/review-contract.md` completely.
 2. Read `references/preference-schema.md` completely.
-3. Read `../shared/model-defaults.md`, `../shared/delegation-common.md`, and
-   `../shared/skill-context.md` completely.
+3. Read `shared/model-defaults.md`, `shared/delegation-common.md`, and
+   `shared/skill-context.md` completely, resolving each path from the plugin
+   root.
 4. Load shared and plan-review-specific preferences using the skill-context
    protocol. Invocation arguments override every saved setting.
 5. Resolve the repository root and document paths; reject missing, duplicate,
@@ -60,11 +61,14 @@ Before dispatch:
    identifier when a bare model is unknown or ambiguous.
 7. Verify the configured CLI is available. If it is not, stop and ask whether
    the user wants another model; never fail over automatically.
-8. Run the deterministic helper's `start` command and retain its ledger path
+8. Resolve `helpers/plan_review_state.py` from this skill directory to an
+   absolute path and retain it as `<STATE_HELPER>`. The user's project working
+   directory does not contain this helper.
+9. Run the deterministic helper's `start` command and retain its ledger path
    only in host context:
 
 ```text
-python helpers/plan_review_state.py start --repo <repository-root> --document <first-document> [--document <second-document>] --max-iterations <N>
+python <STATE_HELPER> start --repo <repository-root> --document <first-document> [--document <second-document>] --max-iterations <N>
 ```
 
 The helper stores the ledger in the operating-system temporary directory,
@@ -75,7 +79,7 @@ prompt.
 
 The model is the reviewer selector. There is no separate reviewer setting.
 Resolve known models and provider-qualified custom models exactly as defined in
-`references/preference-schema.md` and `../shared/model-defaults.md`.
+`references/preference-schema.md` and `shared/model-defaults.md`.
 
 Layer the chosen model onto the provider's read-only command template:
 
@@ -193,7 +197,7 @@ a temporary JSON file in the operating-system temporary directory outside the
 repository. Record it through:
 
 ```text
-python helpers/plan_review_state.py record --ledger <ledger-path> --iteration <iteration-json>
+python <STATE_HELPER> record --ledger <ledger-path> --iteration <iteration-json>
 ```
 
 Follow the helper classification exactly:
@@ -224,14 +228,14 @@ remaining risks; final diff relative to the baseline; and the exact next action.
 Generate the final document diff before deleting the ledger:
 
 ```text
-python helpers/plan_review_state.py diff --ledger <ledger-path>
+python <STATE_HELPER> diff --ledger <ledger-path>
 ```
 
 In a `finally`-equivalent cleanup step, delete reviewer prompt/response files,
 iteration JSON, and the ledger:
 
 ```text
-python helpers/plan_review_state.py finish --ledger <ledger-path>
+python <STATE_HELPER> finish --ledger <ledger-path>
 ```
 
 If cleanup fails, warn without printing ledger content. Never include sensitive

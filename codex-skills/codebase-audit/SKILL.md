@@ -78,7 +78,7 @@ Read `references/detection-defaults.md` for language marker files, language defa
 ### Detection Steps
 
 1. **Parse arguments** - determine invocation mode: `full`, `metrics`, `analysis`, `delta`, or `scoped`
-2. **Load user preferences** - read `../shared/skill-context.md` for the full protocol (resolve `../shared/...` against the plugin root - two levels above this SKILL.md - never the project's working directory). Load `.codex/skill-context/preferences.md` (shared) and `.codex/skill-context/codebase-audit.md` (skill-specific). If no shared preferences exist, invoke `$preferences` (streamlined mode). Shared preferences supply project phase, team size, and business priority - Phase 3 will skip questions already answered here.
+2. **Load user preferences** - read `../shared/skill-context.md` for the full protocol (resolve `../shared/...` against the collection root (one level above this SKILL.md) - never the project's working directory). Load `.codex/skill-context/preferences.md` (shared) and `.codex/skill-context/codebase-audit.md` (skill-specific). If no shared preferences exist, invoke `$preferences` (streamlined mode). Shared preferences supply project phase, team size, and business priority - Phase 3 will skip questions already answered here.
 3. **Load config** - read `.codex/audit.yaml` if it exists (all fields optional)
 4. **Auto-detect language** - check marker files in priority order (see reference)
 5. **Apply language defaults** - function patterns, test runner, extension (see reference)
@@ -88,7 +88,7 @@ Read `references/detection-defaults.md` for language marker files, language defa
 9. **Auto-detect test runner** - check framework configs, package.json scripts, language default
 10. **Domain inference** - read README, package manifests, scan key imports, check directory names. Use web search for comparable projects if available.
 11. **Prerequisites check** - verify Python 3 is available for helper scripts. If not, warn and offer qualitative-only mode.
-12. **Scope size check & tier selection** - count source files and classify. Default threshold: `large` tier at **>1000 source files**. Override via `.codex/skill-context/codebase-audit.md` key `large_tier_threshold_files`. Large tier activates Phase 1 module decomposition ( Large Repo Decomposition) and Phase 2 heat-map-driven deep dive ( Heat-Map-Driven Deep Dive). Below threshold: current whole-repo behavior.
+12. **Scope size check & tier selection** - count source files and classify. Default threshold: `large` tier at **>1000 source files**. Override via `.codex/skill-context/codebase-audit.md` key `large_tier_threshold_files`. Large tier activates Phase 1 module decomposition (Section Large Repo Decomposition) and Phase 2 heat-map-driven deep dive (Section Heat-Map-Driven Deep Dive). Below threshold: current whole-repo behavior.
 13. **Merge config** - auto-detected defaults <- config overrides (config always wins)
 
 ### Output of Phase 0
@@ -174,11 +174,11 @@ Each qualitative agent receives only its module's files plus the shared project 
 
 **Step 3 - Roll-up.** Per-module findings carry a `module` tag so the heat map and console display can reference them. The Phase 2 grade for Architecture/Performance/Security is the weighted average across modules (weighted by source file count).
 
-This is the "structural breadth" half of large-tier analysis. The "risk depth" half runs in Phase 2 (see  Heat-Map-Driven Deep Dive).
+This is the "structural breadth" half of large-tier analysis. The "risk depth" half runs in Phase 2 (see Section Heat-Map-Driven Deep Dive).
 
 ### Failure Handling
 
-Agent timeout is 60s by default. All failure conditions and fallbacks are in the  Graceful Degradation table.
+Agent timeout is 60s by default. All failure conditions and fallbacks are in the Section Graceful Degradation table.
 
 ---
 
@@ -206,14 +206,14 @@ Cross-reference complexity (Quality agent) with churn (Git/Velocity agent):
 
 ```
               High Churn
-                  
-   
-     Refactor      Danger Zone 
-     candidates    (act now)   
- High Complexity
-     Stable        Monitor     
-     (leave it)    (watch)     
-   
+                  |
+   +--------------+--------------+
+   |  Refactor    |  Danger Zone |
+   |  candidates  |  (act now)   |
+---+--------------+--------------+--- High Complexity
+   |  Stable      |  Monitor     |
+   |  (leave it)  |  (watch)     |
+   +--------------+--------------+
               Low Churn
 ```
 
@@ -259,7 +259,7 @@ Grading is relative to resolved benchmarks (language-specific -> general fallbac
 Print a summary table directly in the conversation:
 
 **CODEBASE AUDIT - {Project Name}**
-{Domain Summary}  {Language}  {Date}
+{Domain Summary} * {Language} * {Date}
 **Overall Grade: {GRADE}** (confidence: {CONFIDENCE})
 
 | # | Criterion | Grade | Key Metric | Benchmark |
@@ -425,7 +425,7 @@ Sourcing, grading, and no-issues-found discipline is defined in Out of Scope. In
 | Helper script fails | Agent falls back to qualitative-only. Metrics marked "Not measured." |
 | No internet (web search unavailable) | Use cached benchmarks. Note "cached benchmarks only" in methodology. |
 | Unknown language | Use general benchmarks. Extension-count fallback. |
-| Massive repo (large tier) | Phase 1 module decomposition (per top-level dir) + Phase 2 heat-map-driven deep dive fire automatically. See  Large Repo Decomposition and  Heat-Map-Driven Deep Dive. |
+| Massive repo (large tier) | Phase 1 module decomposition (per top-level dir) + Phase 2 heat-map-driven deep dive fire automatically. See Section Large Repo Decomposition and Section Heat-Map-Driven Deep Dive. |
 | No `.codex/audit.yaml` | Fully auto-detected. Note in methodology. |
 | Python not available | Qualitative-only for helper-dependent metrics. |
 | No previous audit for delta | "Need at least 2 audits for delta comparison." |

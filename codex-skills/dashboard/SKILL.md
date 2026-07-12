@@ -31,7 +31,7 @@ This skill uses progressive disclosure - read reference files only when needed:
 
 All under `../dashboard/helpers/`. All are read-only with respect to the repo.
 
-**Path resolution (required before every invocation in Phases 1 and 3):** resolve `../dashboard/helpers/` to its absolute path under the plugin root (two levels above this SKILL.md) before running any command below. The commands execute in the user's project working directory, which does not contain the plugin's helpers - a bare `../dashboard/helpers/...` path fails when the skill is installed. Invoke every helper with `python3` where present, falling back to `python` on Windows (detect once in Phase 0: `command -v python3 || command -v python`).
+**Path resolution (required before every invocation in Phases 1 and 3):** resolve `../dashboard/helpers/` to its absolute path under the collection root (one level above this SKILL.md) before running any command below. The commands execute in the user's project working directory, which does not contain the plugin's helpers - a bare `../dashboard/helpers/...` path fails when the skill is installed. Invoke every helper with `python3` where present, falling back to `python` on Windows (detect once in Phase 0: `command -v python3 || command -v python`).
 
 | Script | Role | Key flags |
 |---|---|---|
@@ -185,7 +185,7 @@ fi
 | `--no-host`, no remote, or `gh` missing/unauthenticated | Host enrichment skipped. KPI strip shows WIP branches instead of open PRs; no Delivery host column. |
 | GitLab remote | Not implemented in v1 -> host unavailable, reason recorded. |
 | No `$codebase-audit` report | Code quality reads **"not measured - run $codebase-audit"** (never a fabricated grade). |
-| `$codebase-audit` report is stale (`code_quality.stale`) | Grade still shown, prefixed with a  and "N commits behind HEAD." The narrative flags it rather than treating it as current. |
+| `$codebase-audit` report is stale (`code_quality.stale`) | Grade still shown, prefixed with a WARNING and "N commits behind HEAD." The narrative flags it rather than treating it as current. |
 | `--no-llm` (or LLM unavailable) | Narrate phase skipped. Renderer uses its templated fallback summary; per-lens `why` lines stay deterministic. Dashboard is fully usable. |
 | No `.claude/dashboard.yaml` (or PyYAML absent) | Built-in defaults from `thresholds.py` apply. |
 

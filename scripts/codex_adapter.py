@@ -286,6 +286,14 @@ def _adapt_resource_paths(text: str, *, in_shared: bool) -> str:
     """
     adapted = text
 
+    # Dynamic skill-name validation is not matched by the concrete-name regex
+    # below. Generated skills are siblings in the collection, not children of
+    # a canonical `skills/` directory.
+    adapted = adapted.replace(
+        "skills/<skill-name>/SKILL.md",
+        "../<skill-name>/SKILL.md",
+    )
+
     adapted = re.sub(
         r"(?<![\w~/.:-])skills/([a-z0-9-]+)/",
         r"../\1/",
@@ -300,6 +308,23 @@ def _adapt_resource_paths(text: str, *, in_shared: bool) -> str:
         r"(?<![\w~/.:-])scripts/",
         "../scripts/",
         adapted,
+    )
+
+    # Canonical skills sit under plugin-root/skills/<name>; generated skills
+    # sit directly under collection-root/<name>. Keep the explanatory prose in
+    # sync with the rewritten ../ paths, especially for standalone installs
+    # that do not contain the canonical repository tree.
+    adapted = adapted.replace(
+        "plugin root (two levels above this SKILL.md",
+        "collection root (one level above this SKILL.md",
+    )
+    adapted = adapted.replace(
+        "plugin root — two levels above this SKILL.md —",
+        "collection root (one level above this SKILL.md) —",
+    )
+    adapted = adapted.replace(
+        "plugin root (two levels above the skill directory)",
+        "collection root (one level above the skill directory)",
     )
     return adapted
 
@@ -325,6 +350,24 @@ def _ascii_normalize(text: str) -> str:
         "\u2265": ">=",
         "\u2260": "!=",
         "\u00d7": "x",
+        "\u00a7": "Section",
+        "\u00b1": "+/-",
+        "\u00b7": "*",
+        "\u2500": "-",
+        "\u2502": "|",
+        "\u250c": "+",
+        "\u2510": "+",
+        "\u2514": "+",
+        "\u2518": "+",
+        "\u251c": "+",
+        "\u2524": "+",
+        "\u252c": "+",
+        "\u2534": "+",
+        "\u253c": "+",
+        "\u26a0": "WARNING",
+        "\u2713": "yes",
+        "\u23f8": "paused",
+        "\ufe0f": "",
     }
     for original, replacement in replacements.items():
         text = text.replace(original, replacement)

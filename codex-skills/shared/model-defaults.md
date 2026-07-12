@@ -75,19 +75,19 @@ Invoke the adapter with `python3` where present, falling back to `python` on Win
 
 | Part | Purpose |
 |---|---|
-| `<ADAPTER>` (`../scripts/agy_adapter.py`) | Recovers the reply `agy` writes only to a TTY (see below) |
+| `<ADAPTER>` (`../scripts/agy_adapter.py`) | Forwards current stdout and recovers replies from affected older releases |
 | `--sandbox` | Safety: read-only (forwarded to `agy`) |
 
 The prompt is delivered on **stdin** — the adapter forwards its own args to `agy`
-and appends `-p ""`, so callers must **not** pass `-p`. For session resume, replace
+and appends `-p`, so callers must **not** pass `-p`. For session resume, replace
 `--sandbox` with `-c` (latest session) or `--conversation <ID>`.
 
-**Why the adapter?** `agy` v1.0.9 is a terminal-UI app whose print mode renders the
-model's reply only to an interactive terminal; piped/captured stdout receives
-**0 bytes**. The adapter runs `agy`, recovers the reply from agy's local conversation
-store, and prints it to stdout — restoring stdout capture. It also bounds the run with
-a timeout (killing any stray `agy` process) and exits non-zero with a clear message if
-no reply can be recovered. Env overrides (`AGY_BIN`, `AGY_CONV_DIR`,
+**Why the adapter?** Current `agy` versions return print-mode output directly, and
+the adapter forwards it unchanged. Older Windows releases could return empty
+non-TTY stdout after saving the reply locally, so the adapter retains SQLite
+recovery as a compatibility fallback. It also bounds the run with a timeout
+(killing any stray `agy` process) and exits non-zero with a clear message if no
+reply can be recovered. Env overrides (`AGY_BIN`, `AGY_CONV_DIR`,
 `AGY_ADAPTER_TIMEOUT`) and the recovery mechanism are documented in
 `../scripts/agy_adapter.py`.
 

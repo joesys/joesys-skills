@@ -206,6 +206,26 @@ def test_main_passes_through_direct_stdout(tmp_path, monkeypatch, capsys):
     assert capsys.readouterr().out.strip() == "direct reply"
 
 
+def test_main_enables_print_mode_without_empty_positional_prompt(
+    tmp_path, monkeypatch
+):
+    conv = tmp_path / "conversations"
+    conv.mkdir()
+    monkeypatch.setenv("AGY_CONV_DIR", str(conv))
+    captured = {}
+
+    def fake_run_agy(cmd, prompt, timeout):
+        captured["cmd"] = cmd
+        return b"direct reply\n", b"", False
+
+    monkeypatch.setattr(agy_adapter, "run_agy", fake_run_agy)
+    monkeypatch.setattr(sys, "stdin", io.StringIO("hello"))
+
+    assert agy_adapter.main(["--sandbox"]) == 0
+    assert captured["cmd"][-1] == "-p"
+    assert "" not in captured["cmd"]
+
+
 def test_main_empty_prompt_returns_2(monkeypatch):
     monkeypatch.setattr(sys, "stdin", io.StringIO("   \n"))
     assert agy_adapter.main([]) == 2

@@ -36,8 +36,8 @@ Resolve settings in this order:
 - Fresh context each iteration: yes
 ```
 
-Claude reads `.claude/skill-context/plan-review.md`. The generated Codex skill
-reads `.codex/skill-context/plan-review.md`.
+Store these settings in the current host's `plan-review.md` skill-context file,
+using the host-specific directory defined by `shared/skill-context.md`.
 
 ## Model Routing
 

@@ -51,7 +51,7 @@ If the invocation is ambiguous or unrecognizable, ask the user to clarify before
 
 ### 0.1 Load User Preferences
 
-Read `../shared/skill-context.md` for the full protocol (resolve `../shared/...` against the plugin root - two levels above this SKILL.md - never the project's working directory). In brief:
+Read `../shared/skill-context.md` for the full protocol (resolve `../shared/...` against the collection root (one level above this SKILL.md) - never the project's working directory). In brief:
 
 1. Read `.codex/skill-context/preferences.md` - if missing, invoke `$preferences` (streamlined).
 2. Read `.codex/skill-context/human-review-guide.md` (if it exists) for skill-specific preferences.
@@ -125,8 +125,8 @@ Gather the content to analyze based on the resolved mode:
 
 **For `code-diff` mode:**
 
-1. Detect base branch - read `../shared/review-common.md`  Base Branch Detection.
-2. Gather changed files - read `../shared/review-common.md`  File Gathering.
+1. Detect base branch - read `../shared/review-common.md` Section Base Branch Detection.
+2. Gather changed files - read `../shared/review-common.md` Section File Gathering.
 3. Capture the diff: `git diff <base>...HEAD` (or `gh pr diff <number>` for PR mode).
 4. Capture file list with stats: `git diff --stat <base>...HEAD`.
 5. Count files and lines changed for output format decision (Phase 3).
@@ -144,7 +144,7 @@ Gather the content to analyze based on the resolved mode:
 
 ### 1.2 Triage - Classification Pass
 
-Dispatch a **single subagent** (`model: "opus"`) to classify every chunk. Read `references/agent-prompts.md`  Triage Agent for the full prompt template.
+Dispatch a **single subagent** (`model: "opus"`) to classify every chunk. Read `references/agent-prompts.md` Section Triage Agent for the full prompt template.
 
 **Agent receives:**
 1. The mode (`code-diff`, `artifact`, or `mixed`)
@@ -152,7 +152,7 @@ Dispatch a **single subagent** (`model: "opus"`) to classify every chunk. Read `
 3. The user's calibration profile (role, review focus, skip tolerance)
 4. File stats summary (number of files, lines changed)
 
-**Agent returns structured JSON-like markdown for each chunk** (tier, one-line reason, `Related to` links) - output format in `references/agent-prompts.md`  Triage Agent.
+**Agent returns structured JSON-like markdown for each chunk** (tier, one-line reason, `Related to` links) - output format in `references/agent-prompts.md` Section Triage Agent.
 
 **Classification tiers:**
 
@@ -181,7 +181,7 @@ Dispatch a **single subagent** (`model: "opus"`) to classify every chunk. Read `
 
 Fires only on chunks classified as `DECIDE` or `READ`. All other chunks pass through to Phase 3 with just their triage label.
 
-Dispatch a **single subagent** (`model: "opus"`) that processes all DECIDE and READ chunks **sequentially** - not parallel, because chunks often relate to each other and the analysis benefits from accumulated context. Read `references/agent-prompts.md`  Deep Analysis Agent for the full prompt template.
+Dispatch a **single subagent** (`model: "opus"`) that processes all DECIDE and READ chunks **sequentially** - not parallel, because chunks often relate to each other and the analysis benefits from accumulated context. Read `references/agent-prompts.md` Section Deep Analysis Agent for the full prompt template.
 
 ### Agent Receives
 
@@ -194,11 +194,11 @@ Dispatch a **single subagent** (`model: "opus"`) that processes all DECIDE and R
 
 ### DECIDE Chunk Analysis
 
-For each `DECIDE` chunk, the agent produces the decision analysis block (decision, alternatives not taken, consequences, ask-yourself questions, reversibility) - template in `references/agent-prompts.md`  Deep Analysis Agent.
+For each `DECIDE` chunk, the agent produces the decision analysis block (decision, alternatives not taken, consequences, ask-yourself questions, reversibility) - template in `references/agent-prompts.md` Section Deep Analysis Agent.
 
 ### READ Chunk Analysis
 
-For each `READ` chunk, the agent produces the comprehension block (what this does, why this way, why it matters, gotchas) - template in `references/agent-prompts.md`  Deep Analysis Agent.
+For each `READ` chunk, the agent produces the comprehension block (what this does, why this way, why it matters, gotchas) - template in `references/agent-prompts.md` Section Deep Analysis Agent.
 
 ### `--with-review` Enrichment
 
@@ -258,7 +258,7 @@ If none: omit this section.
 
 ### 3.6 Determine Output Format
 
-Choose terminal markdown (small changes) or an HTML report file (large changes) - size thresholds in `references/output-formats.md`  Output Size Thresholds.
+Choose terminal markdown (small changes) or an HTML report file (large changes) - size thresholds in `references/output-formats.md` Section Output Size Thresholds.
 
 ### 3.7 Render Output
 
@@ -270,7 +270,7 @@ Assemble the guide inline using the terminal markdown template from `references/
 
 1. Write the guide as markdown to a temporary location following the HTML report template from `references/output-formats.md`.
 2. Include YAML front-matter per `../shared/html-reports.md`.
-3. Call the HTML renderer. **Resolve `../scripts/html_render.py` to its absolute path under the plugin root (two levels above this SKILL.md) before running** - the command executes in the user's project cwd, which does not contain the plugin's `../scripts/` folder (invoke with `python3` where present, falling back to `python` on Windows):
+3. Call the HTML renderer. **Resolve `../scripts/html_render.py` to its absolute path under the collection root (one level above this SKILL.md) before running** - the command executes in the user's project cwd, which does not contain the plugin's `../scripts/` folder (invoke with `python3` where present, falling back to `python` on Windows):
 
 ````bash
 python ../scripts/html_render.py <report_path> --profile analytical

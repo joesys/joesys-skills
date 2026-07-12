@@ -167,7 +167,7 @@ This keeps the interruption brief while still capturing the essentials.
 
 | Situation | Behavior |
 |---|---|
-| `.claude/` directory doesn't exist | Create `.claude/skill-context/` |
+| Skill-context directory doesn't exist | Create the host-specific directory defined in `shared/skill-context.md` |
 | Write permission denied | Report error, suggest checking permissions |
 | File system read-only | Hold preferences in memory for the session, warn that they won't persist |
 | User cancels mid-interview | Save whatever was captured so far |

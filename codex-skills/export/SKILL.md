@@ -19,7 +19,7 @@ This skill MUST NOT:
 
 Before rendering, **MUST**:
 1. Confirm the input file exists.
-2. Verify required dependencies are installed for the requested format - see  Dependencies for what each format needs. Report install instructions for any missing dependency.
+2. Verify required dependencies are installed for the requested format - see Section Dependencies for what each format needs. Report install instructions for any missing dependency.
 
 ## Invocation
 
@@ -52,7 +52,7 @@ If the invocation is ambiguous or the file path is unrecognizable, ask the user 
 
 ## User Preferences
 
-Read `../shared/skill-context.md` for the full protocol (resolve `../shared/...` against the plugin root - two levels above this SKILL.md - never the project's working directory). In brief:
+Read `../shared/skill-context.md` for the full protocol (resolve `../shared/...` against the collection root (one level above this SKILL.md) - never the project's working directory). In brief:
 
 1. Read `.codex/skill-context/preferences.md` - if missing, proceed with defaults (do not interrupt the export flow).
 2. Read `.codex/skill-context/export.md` (if it exists) for export-specific preferences.
@@ -98,7 +98,7 @@ For code files (`.py`, `.cpp`, etc.) with `summary` or `1pager` scope: extract t
 
 ### Step 3 - Render
 
-Invoke the rendering script. **Resolve `../scripts/md_export.py` to its absolute path under the plugin root (two levels above this SKILL.md) before running** - the command executes in the user's project working directory, which does not contain the plugin's `../scripts/` folder. Invoke it with `python3` where present, falling back to `python` on Windows - stock macOS/Linux expose only `python3`.
+Invoke the rendering script. **Resolve `../scripts/md_export.py` to its absolute path under the collection root (one level above this SKILL.md) before running** - the command executes in the user's project working directory, which does not contain the plugin's `../scripts/` folder. Invoke it with `python3` where present, falling back to `python` on Windows - stock macOS/Linux expose only `python3`.
 
 ```bash
 python ../scripts/md_export.py <input_or_temp_file> \
@@ -130,7 +130,7 @@ After successful rendering, report:
 
 If `--format all` was used, list all three output files.
 
-If rendering fails, show the error from the script (it prints install instructions for missing dependencies - see  Dependencies):
+If rendering fails, show the error from the script (it prints install instructions for missing dependencies - see Section Dependencies):
 
 | Error | Likely cause |
 |---|---|

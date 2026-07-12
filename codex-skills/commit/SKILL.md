@@ -36,7 +36,7 @@ If unsure whether something counts as an express order, assume it does **NOT**. 
 
 ## User Preferences
 
-Read `../shared/skill-context.md` for the full protocol (resolve `../shared/...` against the plugin root - two levels above this SKILL.md - never the project's working directory). In brief:
+Read `../shared/skill-context.md` for the full protocol (resolve `../shared/...` against the collection root (one level above this SKILL.md) - never the project's working directory). In brief:
 
 1. Read `.codex/skill-context/preferences.md` - if missing, proceed with defaults (don't interrupt the commit flow with an interview).
 2. Read `.codex/skill-context/commit.md` (if it exists) for commit-specific preferences.
@@ -195,16 +195,16 @@ Analyze whether the current changeset (the uncommitted work) contains multiple l
 
 ```
 Step 2: retroactive group detected?
- YES -> user accepts?
-   YES -> Path C (retroactive grouping)
-   NO  -> proceed to Step 3
- NO  -> proceed to Step 3
++- YES -> user accepts?
+|  +- YES -> Path C (retroactive grouping)
+|  +- NO  -> proceed to Step 3
++- NO  -> proceed to Step 3
 
 Step 3: changeset decomposable?
- YES -> user accepts decomposition?
-   YES -> Path B (decomposed multi-commit)
-   NO  -> Path A (single commit)
- NO  -> Path A (single commit)
++- YES -> user accepts decomposition?
+|  +- YES -> Path B (decomposed multi-commit)
+|  +- NO  -> Path A (single commit)
++- NO  -> Path A (single commit)
 ```
 
 ---

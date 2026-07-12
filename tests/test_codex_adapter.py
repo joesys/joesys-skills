@@ -110,6 +110,24 @@ def test_generated_skills_reference_resources_relative_to_skill_dir(tmp_path):
     assert (output / "scripts" / "md_export.py").is_file()
 
 
+def test_generated_guidance_matches_standalone_layout(tmp_path):
+    output = tmp_path / "joesys-skills"
+    codex_adapter.build_collection(REPO_ROOT, output)
+
+    export = (output / "export" / "SKILL.md").read_text(encoding="utf-8")
+    preferences = (output / "preferences" / "SKILL.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert "collection root (one level above this SKILL.md)" in export
+    assert "two levels above this SKILL.md" not in export
+    assert "../<skill-name>/SKILL.md" in preferences
+    assert "skills/<skill-name>/SKILL.md" not in preferences
+    for skill_md in output.glob("*/SKILL.md"):
+        skill = skill_md.read_text(encoding="utf-8")
+        assert "two levels above this SKILL.md" not in skill, skill_md
+
+
 def test_shared_files_reference_siblings_in_place(tmp_path):
     output = tmp_path / "joesys-skills"
     codex_adapter.build_collection(REPO_ROOT, output)
@@ -127,6 +145,26 @@ def test_generated_skill_markdown_is_ascii_for_windows_validator(tmp_path):
 
     for skill_md in output.glob("*/SKILL.md"):
         skill_md.read_text(encoding="ascii")
+
+
+def test_ascii_normalization_preserves_semantic_markers():
+    source = """---
+name: sample
+description: Use when testing adaptation
+---
+See § Prompt Delivery. Use ±5 and a · b. ┌─┬─┐ │ ✓ ⚠ ⏸
+"""
+
+    adapted = codex_adapter.adapt_skill_markdown(source, ["sample"])
+
+    adapted.encode("ascii")
+    assert "Section Prompt Delivery" in adapted
+    assert "+/-5" in adapted
+    assert "a * b" in adapted
+    assert "+-+-+" in adapted
+    assert "WARNING" in adapted
+    assert "yes" in adapted
+    assert "paused" in adapted
 
 
 def test_generated_package_does_not_bundle_installer_tools(tmp_path):
@@ -246,7 +284,8 @@ def test_generated_plan_review_is_behaviorally_adapted(tmp_path):
 
     assert "$plan-review" in skill
     assert "/plan-review" not in skill
-    assert ".codex/skill-context/plan-review.md" in preferences
+    assert "current host's `plan-review.md` skill-context file" in preferences
+    assert "../shared/skill-context.md" in preferences
     assert ".claude/skill-context/plan-review.md" not in preferences
     assert (
         output / "plan-review" / "helpers" / "plan_review_state.py"
@@ -257,6 +296,19 @@ def test_generated_plan_review_is_behaviorally_adapted(tmp_path):
     assert (
         output / "plan-review" / "references" / "review-contract.md"
     ).is_file()
+
+
+def test_generated_docs_have_no_cross_host_path_contradictions(tmp_path):
+    output = tmp_path / "joesys-skills"
+    codex_adapter.build_collection(REPO_ROOT, output)
+    combined = "\n".join(
+        path.read_text(encoding="utf-8")
+        for path in sorted(output.rglob("*.md"))
+    )
+
+    assert "Claude reads `.codex/" not in combined
+    assert "Claude: `.codex/" not in combined
+    assert "`.claude/` directory doesn't exist" not in combined
 
 
 def test_generated_manifest_publishes_release_17_with_21_skills(tmp_path):

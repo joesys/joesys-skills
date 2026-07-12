@@ -33,7 +33,7 @@ If the question is empty or unintelligible, use `ask the user directly` to ask t
 
 ## Phase 0: Load User Preferences
 
-Read `../shared/skill-context.md` for the full protocol (resolve `../shared/...` against the plugin root - two levels above this SKILL.md - never the project's working directory). In brief:
+Read `../shared/skill-context.md` for the full protocol (resolve `../shared/...` against the collection root (one level above this SKILL.md) - never the project's working directory). In brief:
 
 1. Read `.codex/skill-context/preferences.md` - if missing, invoke `$preferences` (streamlined).
 2. No skill-specific preferences file for ai-council - shared preferences are sufficient.
@@ -85,7 +85,7 @@ Reword the user's question into a clear, logical form with explicit framing (con
 
 ### Prompt Size Safety
 
-Read `../shared/delegation-common.md`  Prompt Delivery and `../shared/model-defaults.md` for the standard prompt delivery pattern and current CLI command templates.
+Read `../shared/delegation-common.md` Section Prompt Delivery and `../shared/model-defaults.md` for the standard prompt delivery pattern and current CLI command templates.
 
 **MUST always** write the three prompt files using that temp-file-and-heredoc pattern, with leg-specific names - each file gets the four-part prompt with its leg-specific preamble:
 
@@ -111,7 +111,7 @@ Dispatch happens in Phase 3, referencing these fixed paths. Clean up after all l
 
 ### Codex Leg (shell, 600000ms timeout)
 
-**MUST deliver via stdin pipe** (see Prompt Size Safety). Substitute `<CODEX_CMD>` with the current invocation from `../shared/model-defaults.md`  Codex. For resumability, replace the template's trailing `2>/dev/null` with `2>/tmp/council-codex.log` and grep the `session id:` line from that log after the run (see  Codex Resume) - that ID is what makes the Post-Synthesis resume offer reliable.
+**MUST deliver via stdin pipe** (see Prompt Size Safety). Substitute `<CODEX_CMD>` with the current invocation from `../shared/model-defaults.md` Section Codex. For resumability, replace the template's trailing `2>/dev/null` with `2>/tmp/council-codex.log` and grep the `session id:` line from that log after the run (see Section Codex Resume) - that ID is what makes the Post-Synthesis resume offer reliable.
 
 ```bash
 cat /tmp/council-codex.txt | <CODEX_CMD>
@@ -119,7 +119,7 @@ cat /tmp/council-codex.txt | <CODEX_CMD>
 
 ### Antigravity Leg (shell, 600000ms timeout)
 
-The adapter runs `agy` non-interactively and appends `-p` itself - do **not** add `-p`. **MUST deliver the prompt via stdin pipe** (shell metacharacters break direct arguments). Substitute `<AGY_CMD>` with the current invocation from `../shared/model-defaults.md`  Antigravity.
+The adapter runs `agy` non-interactively and appends `-p` itself - do **not** add `-p`. **MUST deliver the prompt via stdin pipe** (shell metacharacters break direct arguments). Substitute `<AGY_CMD>` with the current invocation from `../shared/model-defaults.md` Section Antigravity.
 
 ```bash
 cat /tmp/council-antigravity.txt | <AGY_CMD>
@@ -131,7 +131,7 @@ Choose the mechanism based on whether the prompt is self-contained:
 
 **Use subagent (Codex agent workflow)** when Phase 1 fully resolved all context the question needs. The prompt is self-contained and the Claude leg won't need to read additional files or search the web during execution. Spawn with `model: "fable"` and pass the full four-part prompt. Subagent is faster - no CLI startup overhead.
 
-**Use CLI** when the question references specific files or codepaths that Phase 1 could not fully resolve, and the Claude leg would benefit from tool access to explore further. Substitute `<CLAUDE_CMD>` with the current invocation from `../shared/model-defaults.md`  Claude CLI, replace `--model opus` with `--model fable` (the council's Claude leg runs Fable), and append `--name` for resumability:
+**Use CLI** when the question references specific files or codepaths that Phase 1 could not fully resolve, and the Claude leg would benefit from tool access to explore further. Substitute `<CLAUDE_CMD>` with the current invocation from `../shared/model-defaults.md` Section Claude CLI, replace `--model opus` with `--model fable` (the council's Claude leg runs Fable), and append `--name` for resumability:
 
 ```bash
 cat /tmp/council-claude.txt | <CLAUDE_CMD> --name "council-<topic>"
@@ -200,10 +200,10 @@ Saving is **on** by default. Files are written to `docs/ai-council/YYYYMMDD-<top
 
 ```
 docs/ai-council/20260325-postgresql-vs-mongodb/
- claude.md
- codex.md
- antigravity.md
- synthesis.md
++-- claude.md
++-- codex.md
++-- antigravity.md
++-- synthesis.md
 ```
 
 - `<topic>` is derived from the question (kebab-case, 3-5 words)
