@@ -63,7 +63,8 @@ type(scope): description
 ```
 
 - **Common types:** `docs`, `fix`, `feat`, `refactor`, `build`, `test`, `chore`, `ci`, `style`, `perf`
-- Use an em dash (—) in the description to separate the action from brief elaboration when needed
+- Make the description name the concrete outcome in plain language. Do not lead with an internal process label, evidence identifier, metaphor, or ceremony.
+- Use an em dash (—) only when a short elaboration makes the outcome clearer.
 - Pick the most specific scope that fits. If changes span multiple areas, use the primary one.
 - Derive scopes from the project's own directory structure and domain concepts.
 
@@ -77,18 +78,60 @@ chore(config): make paths portable — relative refs from project root
 build(deps): add zod v3.22 — runtime schema validation for API inputs
 ```
 
+## Plain-Language Standard
+
+Write every commit message for a durable reader: either a teammate who
+understands the project in general but does not know today's task, internal
+shorthand, or recent session history, or the author returning years later.
+
+- Prefer ordinary words, short sentences, and active voice.
+- State the concrete outcome before supporting evidence or implementation detail.
+- When an acronym, gate name, code name, identifier, statistic, or specialized term is necessary, explain it on first use and say why it matters.
+- Include hashes, counts, paths, and symbols only when they provide useful evidence or traceability. Do not make the reader decode raw inventory.
+- Metaphors, slogans, ceremonial language, and dramatic descriptions MUST NOT replace concrete actions and outcomes.
+
+Plain language does not mean removing technical accuracy. Keep the technical
+details that help a future reader understand the decision, verify important
+evidence, or recognize a risk; translate or omit details that only make sense
+inside the current session.
+
+### Before and after
+
+```text
+Before: feat(research): the Gate-6 development-vintage mint — fingerprint 14d908e0
+After:  feat(research): record the July 13 development data snapshot
+```
+
+The body should preserve the important incident and remaining risk without
+requiring the reader to know the project's shorthand:
+
+```text
+The snapshot-generation script still uses a manually updated output date. It
+initially overwrote the July 12 snapshot, which was restored exactly before the
+new snapshot was saved under July 13. The date handling should be fixed before
+this becomes a routine process.
+```
+
 ## Body
 
 After the subject line, the body has three parts:
 
 **1. Intent paragraph (2–3 sentences, no header)**
-Why this change was made — motivation and context. Starts immediately after the blank line following the subject.
+Explain the problem or need, the outcome, and why it matters. Give enough context for a reader who was not part of the current task. Start immediately after the blank line following the subject.
 
 **2. `[--- Changes ---]`**
-Per-file or per-category changelog. Group by file, include line numbers when relevant, describe what was added/removed/rewritten. This doesn't have to be exhaustive, but a reader should understand every substantive change without reading the diff.
+Summarize observable outcomes and important technical decisions. Organize by file or category when that helps, but do not inventory every edited line or repeat the diff. Include counts, paths, symbols, and hashes only when they provide useful evidence or traceability, and explain their significance.
 
 **3. `[--- AI Review (<model name>) ---]`**
-Your honest critical assessment of the commit. Use your current model name in the header (e.g., `[--- AI Review (Claude Opus 4.7) ---]`). Identify the strongest change, raise real concerns, flag what could be better. This section is evaluative, not promotional — say what you actually think.
+Give an honest assessment in direct, ordinary language. Use your current model name in the header (e.g., `[--- AI Review (Claude Opus 4.7) ---]`). State meaningful strengths, risks, trade-offs, and follow-up work without promotional, theatrical, or self-congratulatory prose.
+
+### Durable-reader check
+
+Before creating the commit, reread the complete message and ask:
+
+> Could a teammate unfamiliar with this task, or the author returning years later, understand why this commit exists, what changed, and what still needs attention without the issue tracker or session history?
+
+If the answer is no, rewrite the message before creating the commit.
 
 ## Signing Failure Recovery
 

@@ -254,7 +254,7 @@ def test_plugin_versions_are_synchronized():
         if plugin["name"] == "joesys-skills"
     )
 
-    assert claude_plugin["version"] == "17.0.0"
+    assert claude_plugin["version"] == "17.1.0"
     assert codex_plugin["version"] == claude_plugin["version"]
     assert marketplace_version == claude_plugin["version"]
 
@@ -311,11 +311,11 @@ def test_generated_docs_have_no_cross_host_path_contradictions(tmp_path):
     assert "`.claude/` directory doesn't exist" not in combined
 
 
-def test_generated_manifest_publishes_release_17_with_21_skills(tmp_path):
+def test_generated_manifest_publishes_release_17_1_with_21_skills(tmp_path):
     output = tmp_path / "joesys-skills"
     manifest = codex_adapter.build_collection(REPO_ROOT, output)
 
-    assert manifest["source_version"] == "17.0.0"
+    assert manifest["source_version"] == "17.1.0"
     assert len(manifest["installed_skills"]) == 21
     assert "plan-review" in manifest["installed_skills"]
 

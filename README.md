@@ -421,11 +421,12 @@ or `dark`). PDF generation uses Pandoc and LuaLaTeX; PNG uses headless Chromium.
 
 ### commit
 
-Create a Conventional Commit with an intent paragraph, per-file or per-category
-change summary, and candid AI review. The workflow can decompose multi-unit
-changes into a OneFlow Option 3 branch, group related recent commits with user
-approval, and recover from an unresponsive 1Password signing agent by creating
-an explicitly reported unsigned commit.
+Create a Conventional Commit in plain language for a reader without current-task
+context. Every message retains an intent paragraph, meaningful change summary,
+and candid AI review. The workflow can decompose multi-unit changes into a
+OneFlow Option 3 branch, group related recent commits with user approval, and
+recover from an unresponsive 1Password signing agent by creating an explicitly
+reported unsigned commit.
 
 ```text
 /commit
