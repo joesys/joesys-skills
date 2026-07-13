@@ -1,8 +1,9 @@
 # joesys-skills
 
-A collection of 21 agent skills for Claude Code and Codex: consult other AI
-models, review code and plans, understand projects, improve engineering
-workflows, and preserve or publish development work.
+A collection of 22 agent skills for Claude Code and Codex: turn rough ideas
+into reusable prompts, consult other AI models, review code and plans,
+understand projects, improve engineering workflows, and preserve or publish
+development work.
 
 The repository is both a Claude Code plugin and a Codex plugin marketplace.
 Canonical skills live under `skills/`; Codex-compatible copies are generated
@@ -43,6 +44,7 @@ codex plugin marketplace upgrade
 
 | Goal | Skill | What it does |
 |---|---|---|
+| Write prompts | [`prompt`](#prompt) | Turn rough thoughts into a copy-ready prompt and explain the improvements |
 | Consult models | [`ai-council`](#ai-council) | Ask Claude, Codex, and Antigravity, then synthesize their views |
 | Consult models | [`claude`](#claude) | Delegate a prompt to a separate Claude CLI session |
 | Consult models | [`codex`](#codex) | Delegate a prompt to a separate Codex CLI session |
@@ -64,6 +66,23 @@ codex plugin marketplace upgrade
 | Preserve and publish | [`export`](#export) | Convert Markdown, text, or code to PDF, HTML, or PNG |
 | Preserve and publish | [`commit`](#commit) | Create structured Conventional Commits and OneFlow histories |
 | Preserve and publish | [`ss`](#ss) | Turn recent screenshots into actionable context |
+
+## Write Better Prompts
+
+### prompt
+
+Turn rough, fragmented, or stream-of-consciousness input into a portable,
+ready-to-copy prompt. The skill asks a focused question only when missing
+information would materially change the result. It then explains what was
+added, removed, reorganized, or assumed so the operator learns better prompting
+habits over time.
+
+```text
+/prompt i need to explain our API migration to nontechnical managers, keep it short
+/prompt login sometimes hangs, diagnose it but do not change anything
+```
+
+The skill writes the prompt and stops; it does not execute the generated task.
 
 ## Consult Other AI Models
 
