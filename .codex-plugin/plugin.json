@@ -1,13 +1,13 @@
 {
   "name": "joesys-skills",
-  "version": "17.1.0",
-  "description": "Custom agent skills — multi-model AI delegation, structured git commits, cross-session handoffs, iterative spec and plan review, code review, quick review, readability review, human review guide, codebase explanation, project handbook generation, codebase quality audit, devlog writing, retrospectives, interaction review, markdown export, and screenshot analysis",
+  "version": "18.0.0",
+  "description": "Custom agent skills — prompt writing, multi-model AI delegation, structured git commits, cross-session handoffs, iterative spec and plan review, code review, quick review, readability review, human review guide, codebase explanation, project handbook generation, codebase quality audit, devlog writing, retrospectives, interaction review, markdown export, and screenshot analysis",
   "skills": "./codex-skills/",
   "homepage": "https://github.com/joesys/joesys-skills",
   "repository": "https://github.com/joesys/joesys-skills",
   "license": "MIT",
   "interface": {
     "displayName": "joesys skills",
-    "shortDescription": "Multi-model delegation, plan review, handoffs, commits, audits, and docs skills"
+    "shortDescription": "Prompt writing, model delegation, plan review, handoffs, commits, audits, and docs skills"
   }
 }

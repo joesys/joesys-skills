@@ -31,6 +31,7 @@ EXPECTED_SKILLS = {
     "interaction-review",
     "plan-review",
     "preferences",
+    "prompt",
     "quick-review",
     "readability-review",
     "retrospective",
@@ -87,6 +88,10 @@ def test_slash_commands_become_skill_mentions(tmp_path):
     codereview = (output / "codereview" / "SKILL.md").read_text(encoding="utf-8")
     frontmatter = codereview.split("---", 2)[1]
     assert "$codereview" in frontmatter
+
+    prompt = (output / "prompt" / "SKILL.md").read_text(encoding="utf-8")
+    assert "$prompt <request>" in prompt
+    assert "/prompt <request>" not in prompt
 
     assert manifest["skill_mentions"] == sorted(
         f"${name}" for name in EXPECTED_SKILLS
@@ -254,7 +259,7 @@ def test_plugin_versions_are_synchronized():
         if plugin["name"] == "joesys-skills"
     )
 
-    assert claude_plugin["version"] == "17.1.0"
+    assert claude_plugin["version"] == "18.0.0"
     assert codex_plugin["version"] == claude_plugin["version"]
     assert marketplace_version == claude_plugin["version"]
 
@@ -311,13 +316,13 @@ def test_generated_docs_have_no_cross_host_path_contradictions(tmp_path):
     assert "`.claude/` directory doesn't exist" not in combined
 
 
-def test_generated_manifest_publishes_release_17_1_with_21_skills(tmp_path):
+def test_generated_manifest_publishes_release_18_with_22_skills(tmp_path):
     output = tmp_path / "joesys-skills"
     manifest = codex_adapter.build_collection(REPO_ROOT, output)
 
-    assert manifest["source_version"] == "17.1.0"
-    assert len(manifest["installed_skills"]) == 21
-    assert "plan-review" in manifest["installed_skills"]
+    assert manifest["source_version"] == "18.0.0"
+    assert len(manifest["installed_skills"]) == 22
+    assert "prompt" in manifest["installed_skills"]
 
 
 def test_committed_codex_skills_match_fresh_build(tmp_path):
