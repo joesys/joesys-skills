@@ -55,7 +55,7 @@ def test_existing_review_skills_keep_their_tools_and_prompt(tmp_path):
     for skill in ("codereview", "quick-review"):
         assert run_eval.allowed_tools(skill, tmp_path) == run_eval.ALLOWED_TOOLS
         assert run_eval.SKILLS[skill].target == "src/"
-        assert run_eval.SKILLS[skill].budget == 10.0
+    assert run_eval.SKILLS["quick-review"].budget == 10.0
     prompt = run_eval.build_prompt("skilleval-new", "codereview", "src/")
     assert "choose the option that runs no extra tools" in prompt
 
@@ -278,3 +278,8 @@ def test_main_interaction_run_installs_and_removes_the_session_log(tmp_path, mon
     result = json.loads((out / "summary.json").read_text())["results"][0]
     assert result["report_file"] is True
     assert result["lens_scores"] == {"prompt_craft": 50}
+
+
+def test_codereview_default_budget_covers_a_full_run():
+    # Observed codereview runs cost up to $11.09; the default cap must not cut them short.
+    assert run_eval.SKILLS["codereview"].budget >= 20

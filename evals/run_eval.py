@@ -4,7 +4,7 @@
 Usage (from the repository root):
 
     python3 evals/run_eval.py --skill quick-review --runs 2
-    python3 evals/run_eval.py --skill codereview --old-ref HEAD --runs 1 --budget 15
+    python3 evals/run_eval.py --skill codereview --old-ref HEAD --runs 2
     python3 evals/run_eval.py --skill codebase-audit --runs 1 --budget 25
     python3 evals/run_eval.py --skill interaction-review --runs 1 --budget 15
 
@@ -112,7 +112,8 @@ class SkillConfig:
 
 
 SKILLS = {
-    "codereview": SkillConfig("review-target", "src/"),
+    # codereview runs cost $6-11 in November 2026; a $10 cap would cut some short.
+    "codereview": SkillConfig("review-target", "src/", budget=20.0),
     "quick-review": SkillConfig("review-target", "src/"),
     "codebase-audit": SkillConfig(
         "review-target", "--static-only",
