@@ -1,18 +1,6 @@
 # Retrospective — Agent Prompts
 
-Full prompt templates for the 5 channel agents (Phase 1) and the narrative agent (Phase 4). Each channel agent receives the retro time boundary, the Guiding Principles block, and — prepended by the host to **every** channel prompt before dispatch — the carry-forward context and the project/tone preferences. Only Agent 1's template shows an explicit carry-forward slot; for Agents 2–5, prepend the same carry-forward and preferences block yourself. Also fill Agent 2's `<SESSION_LOG_HOST>` (Claude Code or Codex) and Agent 4's `<PLAN_FOLDERS>` (from `.codex/skill-context/retrospective.md`, or "None configured").
-
-## Table of Contents
-
-- [Guiding Principles](#guiding-principles)
-- [Agent 1: Git History](#agent-1-git-history)
-- [Agent 2: Conversation History](#agent-2-conversation-history)
-- [Agent 3: Code Quality Delta](#agent-3-code-quality-delta)
-- [Agent 4: Planning vs. Reality](#agent-4-planning-vs-reality)
-- [Agent 5: Testing & Reliability](#agent-5-testing--reliability)
-- [Phase 4: Narrative Agent](#phase-4-narrative-agent)
-
----
+Prompt templates for the 5 channel agents (Phase 1) and the narrative agent (Phase 4). Give every channel agent the retro time boundary, the Guiding Principles, the carry-forward summary (or "None — this is the first retrospective."), and the project and tone preferences. Fill Agent 2's `<SESSION_LOG_HOST>` (Claude Code or Codex) and Agent 4's `<PLAN_FOLDERS>` (from `.codex/skill-context/retrospective.md`, or "None configured").
 
 ## Guiding Principles
 
@@ -23,11 +11,8 @@ Prepend to every channel agent prompt:
 3. **Focus on friction and surprise.** The goal is to find moments where something didn't go as expected, where the developer changed direction, or where a process broke down. Routine work is not interesting for a retrospective.
 4. **Quantify when possible.** Prefer "12 commits touched auth/ in 3 days" over "lots of churn in the auth module."
 5. **Infer reasoning, but mark it.** When you infer *why* something happened, explicitly label it: "Likely because..." or "This suggests..."
-6. **Write for humans.** The reader may speak English as a second language. Use short sentences, everyday words, and explain jargon on first use. State the point first, then the detail. Simplify the language, never the facts — paths, line numbers, and claims stay exact.
-
-### Context Budgets
-
-Each agent operates within a **~4,000 line read budget** to prevent context exhaustion. Prioritize breadth within the budget rather than exhaustive depth on one area.
+6. **Write for humans.** The reader may speak English as a second language. Use short sentences and everyday words, and explain jargon on first use. Simplify the language, never the facts.
+7. **Scan broadly, read deeply only the signal-rich parts.** Stay within about 4,000 lines of reading.
 
 ---
 
@@ -38,23 +23,10 @@ Each agent operates within a **~4,000 line read budget** to prevent context exha
 
 You are analyzing git history for a retrospective. Your job is to extract the timeline, patterns, and notable events from the commit history.
 
-## Instructions
-1. Analyze the git history within the specified time boundary.
-2. If commit messages follow Conventional Commits with structured bodies (intent paragraph, changes changelog, AI review), mine the intent paragraphs and AI review sections — they contain reasoning and critical assessment.
-3. Stay within the ~4,000 line read budget.
+Use git to get the timeline, contributors, change volume, and added and deleted files within the time boundary. If commit messages have structured bodies (intent paragraph, changes list, AI review), mine the intent and AI review sections — they hold the reasoning and critical assessment.
 
 ## Time Boundary
 <START_REF> to <END_REF>
-
-## Commands to Run
-- `git log --oneline --since="<start>" --until="<end>"` for the full timeline
-- `git shortlog -sn --since="<start>" --until="<end>"` for contributor breakdown
-- `git diff --stat <start-ref>...<end-ref>` for overall change volume (if refs are available)
-- `git log --diff-filter=A --name-only --since="<start>"` for new files
-- `git log --diff-filter=D --name-only --since="<start>"` for deleted files
-
-## Carry-Forward Context (if provided)
-<CARRY_FORWARD_SUMMARY or "None — this is the first retrospective.">
 
 ## Extract and Organize
 
@@ -67,7 +39,7 @@ You are analyzing git history for a retrospective. Your job is to extract the ti
 
 ## Output Format
 
-Return structured markdown with clear section headers for each category above. Include specific commit hashes for notable items.
+Return structured markdown with a section per category above. Include commit hashes for notable items.
 ```
 
 ---
@@ -79,16 +51,13 @@ Return structured markdown with clear section headers for each category above. I
 
 You are reading AI coding-session transcripts to find moments of human correction, decision-making, and friction for a retrospective.
 
-## Instructions
-1. Find and read the session files for this project, using the section for your log host below. Each line is one JSON object.
-2. Read only the human and assistant messages. Skip tool calls, tool output, reasoning, and bookkeeping lines — they are bulk data that obscures the thinking.
-3. Stay within the ~4,000 line read budget. Scan all sessions but read deeply only the most signal-rich exchanges.
+Find and read the session files for this project, using the section for your log host below. Each line is one JSON object. Read only the human and assistant messages; tool calls, tool output, reasoning, and bookkeeping lines are bulk data that hides the thinking.
 
 ## Log Host
 <SESSION_LOG_HOST: "Claude Code" or "Codex". Read that host's logs. Read both only if the host says so, and label each finding with its source.>
 
 ## Claude Code Session Logs
-1. Location: `~/.claude/projects/<project-dir>/<sessionId>.jsonl`. `<project-dir>` is the current working directory with every non-alphanumeric character (the drive `:`, path separators `\` and `/`) replaced by a single `-` (e.g., `D:\joesys\Projects\my-project` becomes `D--joesys-Projects-my-project` — the `--` after the drive letter is `:` and `\` each becoming one `-`; on POSIX, `/home/user/app` becomes `-home-user-app`). If unsure, list `~/.claude/projects/` and match the entry against the transformed cwd.
+1. Location: `~/.claude/projects/<project-dir>/<sessionId>.jsonl`. `<project-dir>` is the current working directory with every non-alphanumeric character (the drive `:`, path separators `\` and `/`) replaced by a single `-` (`D:\joesys\Projects\my-project` → `D--joesys-Projects-my-project`; `/home/user/app` → `-home-user-app`). If unsure, list `~/.claude/projects/` and match against the transformed cwd.
 2. Session start: the first line that has a top-level `timestamp` (the leading lines often have none). Keep sessions that fall within the retro time boundary.
 3. Read lines with `type` `"user"` or `"assistant"`. The text is in `message.content`: a string, or a list of blocks (`text`, `thinking`, `tool_use`, `tool_result`). Read the `text` blocks and string content.
 4. A `user` line whose content holds only `tool_result` blocks is tool output, not the developer. Lines with `isSidechain: true` come from subagents. Skip both, and skip all other line types (`file-history-snapshot`, `progress`, `attachment`, `system`, and similar).
@@ -130,18 +99,13 @@ Return structured markdown with:
 
 You are analyzing how the codebase's structural quality changed during the retro period.
 
-## Instructions
-1. Compare the codebase structure at the start vs. end of the retro period.
-2. Focus on structural indicators, not code content.
-3. Stay within the ~4,000 line read budget.
+Compare the codebase structure at the start and end of the retro period. Focus on structural indicators, not code content.
 
 ## Time Boundary
 <START_REF> to <END_REF>
 
 ## Baseline (if available)
-<CODEBASE_AUDIT_METRICS_JSON or "No previous codebase audit available — estimate from git history.">
-
-If a `$codebase-audit` metrics.json exists from before the retro period, use it as a baseline. Otherwise, estimate the delta from git history (files added/removed, test files added/removed).
+<CODEBASE_AUDIT_METRICS_JSON from a `$codebase-audit` run before the retro period, or "None — estimate the delta from git history.">
 
 ## Analyze
 
@@ -149,7 +113,7 @@ If a `$codebase-audit` metrics.json exists from before the retro period, use it 
 - **Test-to-production ratio**: ratio of test code added vs. production code added
 - **Complexity indicators**: large files that grew larger, new files that are already large (>300 lines), deeply nested directory structures created
 - **Dependency changes**: new dependencies added to manifests/lockfiles, dependencies removed or upgraded
-- **Tech debt signals**: TODO/FIXME/HACK comments added vs. removed (use `git log -p --since="<start>" | grep -c "^\+.*TODO\|FIXME\|HACK"` and similar for removals)
+- **Tech debt signals**: TODO/FIXME/HACK comments added vs. removed in the period
 - **What got better**: tests added, large files split, dead code removed, types added
 - **What got worse**: new dependencies without justification, growing god files, test coverage gaps in high-churn areas
 
@@ -167,10 +131,7 @@ Return structured markdown with quantified deltas where possible. Use "+N" / "-N
 
 You are comparing what was planned against what was actually delivered during the retro period.
 
-## Instructions
-1. Read plan and spec documents that fall within the retro period.
-2. Cross-reference against the git history to determine what was actually implemented.
-3. Stay within the ~4,000 line read budget.
+Read the plan and spec documents from the retro period, and cross-check them against git history to see what was actually built.
 
 ## Time Boundary
 <START_DATE> to <END_DATE>
@@ -185,9 +146,7 @@ If folders are configured, search them first. Otherwise, check these common loca
 - `docs/superpowers/plans/`, `docs/superpowers/specs/` (older projects)
 - Any other folder whose name says it holds plans, specs, designs, or roadmaps
 
-If none exist, report "No plan or spec documents found" and still list significant unplanned work from the git history.
-
-Use file modification dates and git log to filter to the retro period.
+If none exist, say so and still list significant unplanned work from the git history.
 
 ## Analyze
 
@@ -212,23 +171,14 @@ Return structured markdown. For each plan found, state: title, status (complete/
 
 You are analyzing the health and trajectory of the project's test suite during the retro period.
 
-## Instructions
-1. Analyze test file changes during the retro period.
-2. If possible, run the test suite to get current pass/fail status.
-3. Stay within the ~4,000 line read budget.
+Analyze test file changes during the retro period, and get the current pass/fail status if you can.
 
 ## Time Boundary
 <START_REF> to <END_REF>
 
 ## Analyze
 
-- **Test suite status**: attempt to run the project's test suite. Common commands to try:
-  - `npm test`, `npx jest`, `npx vitest` (JavaScript/TypeScript)
-  - `pytest`, `python -m pytest` (Python)
-  - `go test ./...` (Go)
-  - `cargo test` (Rust)
-  - `dotnet test` (C#)
-  If the test command is documented in `package.json`, `Makefile`, `pyproject.toml`, or similar, use that. If tests can't be run, note why and proceed with static analysis.
+- **Test suite status**: run the project's documented test command if one exists. If tests cannot run, note why and continue with static analysis.
 - **Test file changes**: new test files created, test files modified, test files deleted during the period
 - **Test-to-production ratio**: for files changed in the period, how many had corresponding test changes
 - **Flaky test indicators**: test files with high churn (modified 3+ times), tests that were added then quickly modified
@@ -248,15 +198,7 @@ Return structured markdown with:
 
 ## Phase 4: Narrative Agent
 
-This phase always runs in a fresh context agent (`subagent_type: "general-purpose"`) that inherits the parent model and reasoning effort. The analytical phases load the context with structured data — creative writing quality degrades in that environment.
-
-### Agent Receives
-
-1. `<retro-dir>/03-retro-summary.md` — the synthesized summary
-2. `<retro-dir>/02-topic-discussions.md` — the raw discussions for detail and texture
-3. The writing rules below (include verbatim)
-
-### Narrative Prompt
+Pass this prompt with the writing rules unchanged, plus the paths to `03-retro-summary.md` and `02-topic-discussions.md`.
 
 ```
 You are writing a retrospective narrative — a readable, engaging account of a development period. You are NOT reformatting a summary into prose. You are telling the story of what happened.
@@ -271,7 +213,7 @@ Read the two files provided:
 - Write in third person or neutral voice — no fictional characters, no personas
 - Short paragraphs, punchy sentences — like a good blog post, not a report
 - Ground every point in specifics from the retro — no generic advice or platitudes
-- Write for humans: the reader may speak English as a second language. Use short sentences, everyday words, and explain jargon on first use. Simplify the language, never the facts
+- Write for humans: the reader may speak English as a second language. Use short sentences and everyday words, and explain jargon on first use. Simplify the language, never the facts
 - Highlight tension and surprise over agreement and success — friction is interesting, smooth sailing is not
 - Human corrections and judgment calls get prominent placement — these are the moments where the human's expertise was most visible
 - Open with the narrative arc — set the scene for what this period was about

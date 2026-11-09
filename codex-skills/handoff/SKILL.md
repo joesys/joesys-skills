@@ -12,7 +12,7 @@ session. The same schema also supports independent agents and humans.
 
 ## Write for Humans
 
-Everything a person reads from this skill - reports, findings, summaries, and conversation replies - MUST use plain language that a non-native English reader can follow. Before writing a report or a long reply, read `../shared/report-style.md` (resolve against the collection root (one level above this SKILL.md) - never the project's working directory) and follow it. In short: short sentences, everyday words, jargon explained on first use, the point stated first. Simplify the language, never the facts - paths, line numbers, and claims stay exact.
+Write everything a person reads in plain English for a reader who uses English as a second language. Follow `../shared/report-style.md` (resolve against the collection root (one level above this SKILL.md) - never the project's working directory).
 
 ## Out of Scope
 
@@ -25,8 +25,8 @@ This skill MUST NOT:
 - Synchronize repositories or files between machines.
 - Resolve repository drift, merge branches, reset state, or discard changes.
 - Include a full diff unless the user passes `--include-diff`.
-- Include environment variables, credentials, tokens, private keys, shell
-  history, or likely secret-bearing content.
+- Include environment variables, credentials, tokens, private keys,
+  shell history, or likely secret-bearing content.
 - Commit, push, publish, or share a handoff automatically.
 - The skill MUST NOT invoke `$commit`, `$devlog`, `$retrospective`, or any other
   sibling skill.
@@ -42,9 +42,9 @@ to this skill's directory, never the user's project working directory.
 | `references/audience-target-profiles.md` | Audience emphasis and target-specific bootstrap rules |
 | `helpers/handoff_state.py` | Deterministic read-only snapshot and drift classifier |
 
-Also load `../shared/skill-context.md` from the plugin root in the earliest phase.
-Read shared preferences if they exist, but use silent defaults when absent. A
-handoff is transactional and MUST NOT interview the user about preferences.
+Also read `../shared/skill-context.md` (resolve against the collection root (one level above this SKILL.md) - never the project's working directory) and the preference files it names, if present.
+Preferences may tune concision, tone, and assumed knowledge. They never change
+repository truth or drift classification.
 
 ## Invocation
 
@@ -89,12 +89,9 @@ than guessing what the user intended.
    repository files alone.
 4. Resolve `--target auto` to the source host. If detection is inconclusive,
    resolve it to `generic` and report the fallback.
-5. Load shared and handoff-specific preferences if present. Relevant
-   preferences affect concision, tone, and assumed knowledge, not repository
-   truth or drift classification.
-6. Resolve `helpers/handoff_state.py` to an absolute path under this skill's
+5. Resolve `helpers/handoff_state.py` to an absolute path under this skill's
    directory. The helper never lives in the user's project.
-7. Prefer `python3` when available and fall back to `python` on Windows.
+6. Prefer `python3` when available and fall back to `python` on Windows.
 
 For create mode, continue to Phase 1. For resume mode, skip to **Resume Flow**.
 
@@ -112,10 +109,10 @@ Extract:
 4. **Constraints and guardrails** - user instructions, scope, safety, platform,
    and authorization boundaries.
 5. **Working set** - repository-relative files or symbols relevant to continued
-   work and why each matters.
+   work and why each matters. Avoid machine-specific user paths.
 6. **Repository state** - branch, HEAD, staged, unstaged, and untracked paths.
-7. **Verification evidence** - commands actually executed, outcomes actually
-   observed, and timestamps when known.
+7. **Verification evidence** - only executed evidence: commands actually run,
+   outcomes actually observed, and timestamps when known.
 8. **Blockers and uncertainties** - missing authority, failures, unanswered
    questions, and unverifiable assumptions.
 9. **Next actions** - ordered steps with one explicit first action.
@@ -147,9 +144,8 @@ python <absolute-skill-path>/helpers/handoff_state.py snapshot \
   --relevant <repository-relative-path> [...]
 ```
 
-The operational command is referred to as `handoff_state.py snapshot` in this
-contract. Pass one `--relevant` option per working-set path. Do not pass files
-outside the project root.
+Pass one `--relevant` option per working-set path. Do not pass files outside
+the project root.
 
 Parse the helper's stdout as JSON. Embed the compact, sorted JSON on one
 frontmatter line under `repository_snapshot:`. Use its values for project
@@ -166,34 +162,14 @@ If the helper returns an error:
 The helper is read-only. Do not compensate for an error with commands that
 modify Git state.
 
-## Phase 3: Synthesize and Validate Artifact
+## Phase 3: Synthesize the Artifact
 
 Read `references/artifact-schema.md` completely and apply its fixed section
-order. Then read `references/audience-target-profiles.md` and apply the selected
-audience and target.
-
-### Audience
-
-- `self`: concise operational continuity for the same operator in a fresh
-  session.
-- `agent`: explicit authority, mutation scope, forbidden actions, inputs,
-  deliverable, completion criteria, required verification, and report-back
-  format.
-- `human`: rationale, ownership, review points, judgment calls, and suggested
-  actions rather than autonomous execution language.
-
-### Target
-
-Target selection may change only `source_host`, `target_host`, invocation
-examples, and Target Bootstrap. It MUST NOT fork or reorder the body schema.
-
-### Detail
-
-- Operational default: all required sections, normally one to three pages.
-- `--full`: add rejected alternatives, deeper rationale, revisit triggers,
-  important verification/decision commands, and broader relevant context.
-- `--compact`: keep every required heading but reduce nonessential sections to
-  an explicit one-line status.
+order and the selected detail mode. Then read
+`references/audience-target-profiles.md` and apply the selected audience and
+target. Target selection may change only `source_host`, `target_host`,
+invocation examples, and Target Bootstrap. It must not fork or reorder the body
+schema.
 
 ### Diff Appendix
 
@@ -210,18 +186,6 @@ With `--include-diff`:
 Without `--include-diff`, summarize changed intent with file and symbol
 references only.
 
-### Validation
-
-Before saving, verify:
-
-- Every required frontmatter field exists.
-- `schema_version` and the embedded snapshot version are supported.
-- Audience, detail, and target values are allowed.
-- Every canonical heading exists in the required order.
-- The first Next Actions item is executable or names one blocking decision.
-- Every Verification Evidence row is executed evidence, not inference.
-- Unknown information is labeled rather than guessed.
-
 ## Phase 4: Save and Report
 
 Default to `.handoffs/YYYYMMDD-HHMMSS-<slug>.md` under the project root.
@@ -231,16 +195,15 @@ automatically.
 
 Save atomically:
 
-1. Choose the final filename. If it exists, append `-2`, `-3`, and so on; never
-   overwrite an existing handoff.
+1. Choose the final filename. If it exists, append `-2`, `-3`, and so on.
+   Never overwrite an existing handoff.
 2. Write a sibling temporary file unique to this run.
-3. Read the temporary file back and perform the Phase 3 validation.
+3. Read the temporary file back and check it against the Validation Rules in
+   `references/artifact-schema.md`.
 4. Rename the validated temporary file to the final path using a host-native
    file operation.
 5. If writing or validation fails, remove only the temporary file created by
    this run and return the complete artifact in the response so it is not lost.
-
-Do not commit, push, publish, or share the saved file automatically.
 
 Report:
 
@@ -256,7 +219,9 @@ Adapt the invocation syntax to the active host without changing the artifact.
 
 ### 1. Resolve the Artifact
 
-With an explicit path, read that file. Without one:
+With an explicit path, read that file. If it is malformed or uses an
+unsupported schema version, name the invalid field or the supported version and
+stop. Without a path:
 
 1. List `.handoffs/*.md` newest first.
 2. Reject malformed or unsupported schemas.
@@ -264,7 +229,8 @@ With an explicit path, read that file. Without one:
 4. Select the newest valid handoff for the current project.
 
 If none match, list up to five recent artifacts with project and timestamp and
-stop. Never silently resume a handoff from another project.
+stop. Never silently resume a handoff from another project. A different clone
+with the same normalized remote counts as the same project.
 
 ### 2. Validate Live State
 
@@ -276,9 +242,10 @@ python <absolute-skill-path>/helpers/handoff_state.py compare \
   --handoff <absolute-handoff-path>
 ```
 
-The operational command is referred to as `handoff_state.py compare`. Parse its
-JSON and use the deterministic classification. The model may explain the result
-but MUST NOT override it with intuition.
+Parse its JSON and use the deterministic classification. The model may explain
+the result but must not override it with intuition. If the helper is
+unavailable or returns invalid JSON, treat the state as `unverifiable`, record
+the error, and make no automatic claims about drift.
 
 ### 3. Display the Resume Banner
 
@@ -320,44 +287,8 @@ The deterministic states mean:
 For drift, show recorded versus live branch/HEAD plus only the relevant changed
 paths and reasons. Do not dump the embedded snapshot or full diff by default.
 
-## Safety and Privacy
-
-- Never read or copy raw conversation transcripts for artifact creation.
-- Never include environment variables, credentials, tokens, private keys,
-  shell history, or secret-bearing file content.
-- Never invent missing facts, verification, decisions, or permissions.
-- Treat only actually run commands and observed outcomes as executed evidence.
-- Prefer repository-relative paths and avoid machine-specific user paths.
-- Never overwrite an existing artifact.
-- Never treat the checkpoint as fresh authorization for an external or
-  destructive action.
-- On drift, stop before mutation.
-
-## Error Handling
-
-| Condition | Behavior |
-|---|---|
-| No Git repository | Create the handoff with `unverifiable` state and referenced-file checks |
-| Insufficient conversation context | Record `Unknown` or `Not established`; preserve verified project facts |
-| No matching handoff | List recent candidates and stop |
-| Malformed artifact | Name the invalid field or section and stop |
-| Newer unsupported schema | State the supported version and stop |
-| Different clone, same normalized remote | Accept it as the same project and continue validation |
-| Different project identity | Stop before any recorded action |
-| Relevant file, branch, ancestry, or patch changed | Classify as `drifted` and stop |
-| Unsupported target | Fall back to `generic` and report the fallback |
-| Filename collision | Add a numeric suffix; never overwrite |
-| Write or rename failure | Return the complete artifact in the response |
-| Potential secret in requested diff | Exclude content, name the path, and continue without it |
-| Helper unavailable or invalid JSON | Mark state `unverifiable`, record the error, and avoid automatic claims |
-
 ## Context Discipline
 
-- Creation uses the current conversation and live project; it does not re-mine
-  information the session already contains.
-- Resume reads one artifact, the deterministic comparison output, applicable
-  project instructions, and only the working-set files needed for the next
-  action.
-- Do not load unrelated repository areas merely to make the handoff feel
-  comprehensive.
-- Do not auto-invoke any sibling skill before or after creation or resume.
+When creating or resuming, do not load unrelated repository areas merely to
+make the handoff feel comprehensive. On resume, read only the working-set files
+needed for the next action.

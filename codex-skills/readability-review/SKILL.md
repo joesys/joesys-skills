@@ -9,7 +9,7 @@ Grade code on how well it "reads like a story" using 8 weighted dimensions. Prod
 
 ## Write for Humans
 
-Everything a person reads from this skill - reports, findings, summaries, and conversation replies - MUST use plain language that a non-native English reader can follow. Before writing a report or a long reply, read `../shared/report-style.md` (resolve against the collection root (one level above this SKILL.md) - never the project's working directory) and follow it. In short: short sentences, everyday words, jargon explained on first use, the point stated first. Simplify the language, never the facts - paths, line numbers, and claims stay exact.
+Write everything a person reads in plain English for a reader who uses English as a second language. Follow `../shared/report-style.md` (resolve against the collection root (one level above this SKILL.md) - never the project's working directory).
 
 ## Out of Scope
 
@@ -20,12 +20,9 @@ This skill MUST NOT:
 - Use the P0-P4 severity scale. This skill uses per-dimension scores (1-10) and a weighted total (0-100) mapped to letter grades (A-F). P0-P4 belongs to `$codereview` and `$quick-review` - do not mix the two scales.
 - Downgrade severe readability findings to "polish." A function that actively misleads (named `validate` but mutates state), a god-function with 12 abstraction levels, or a name that lies about behavior - these ARE critical findings within the readability domain, even though they don't crash anything. Score them honestly: a 3/10 on a high-weight dimension is a real problem, not a P3 nit.
 - Grade outside the 8 fixed dimensions. The skill scores Narrative Flow, Naming as Intent, Cognitive Chunking, SLAP, Function Focus, Structural Clarity, Documentation Quality, No Clever Tricks - and only those.
-- Suggest extracting duplicate patterns until 3+ occurrences exist (Rule of Three).
-- Apply universal standards to test code. Tests follow DAMP, not DRY - repeated setup for clarity is acceptable and not a finding.
+- Suggest extracting code only to remove duplication before 3+ occurrences exist (Rule of Three). Extracting one block so the code reads better is fine at any count.
 
 ## Invocation
-
-Parse the user's `$readability-review` arguments to determine mode and scope:
 
 | Invocation | Mode | Scope |
 |---|---|---|
@@ -36,12 +33,7 @@ Parse the user's `$readability-review` arguments to determine mode and scope:
 | `$readability-review --commit abc123` | Commit review | Files changed in a specific commit |
 | `$readability-review --min-score 70` | Score filter | Combinable - only show files below threshold |
 
-Arguments are combinable. Examples:
-- `$readability-review --pr 42 --min-score 60` - review PR #42, only show files scoring below 60
-- `$readability-review src/api/ --min-score 80` - scan directory, only show files below 80
-- `$readability-review --file src/main.cpp --min-score 50` - single file, report only if below 50
-
-If the invocation is ambiguous or unrecognizable, ask the user to clarify before proceeding.
+If the invocation is ambiguous, ask the user to clarify.
 
 ---
 
@@ -49,55 +41,36 @@ If the invocation is ambiguous or unrecognizable, ask the user to clarify before
 
 ### 0.1 Load User Preferences
 
-Read `../shared/skill-context.md` for the full protocol (resolve `../shared/...` against the collection root (one level above this SKILL.md) - never the project's working directory). In brief:
+Read `../shared/skill-context.md` for the full protocol (resolve `../shared/...` against the collection root (one level above this SKILL.md) - never the project's working directory). Read `.codex/skill-context/preferences.md` and `.codex/skill-context/readability-review.md` if present; otherwise use defaults. Two readability settings change the scoring:
 
-1. Read `.codex/skill-context/preferences.md` - if missing, proceed with defaults (do not interrupt the workflow with an interview).
-2. Read `.codex/skill-context/readability-review.md` (if it exists) for readability-specific preferences.
-
-**How preferences shape this skill:**
-
-| Preference | Effect on Readability Review |
+| Preference | Effect |
 |---|---|
-| Detail level: concise | Shorter findings, focus on highest-impact improvements |
-| Detail level: detailed | Include full context on why each dimension scored as it did |
-| Assumed knowledge: beginner | Explain what each dimension means, not just the score |
-| Assumed knowledge: expert | Skip dimension definitions, focus on non-obvious observations |
 | Custom weights | Override default dimension weights from `../shared/story-readability.md` |
-| Min-score default | Override the `--min-score` threshold when flag is not explicitly provided |
-
-`$readability-review` uses **silent defaults**. Never interview the user about preferences.
+| Min-score default | Override the `--min-score` threshold when the flag is not given |
 
 Pass relevant preferences to the analysis subagent in Phase 1.
 
-### 0.2 Base Branch Detection
+### 0.2 Base Branch, Files, and Language
 
-Read `../shared/review-common.md` Section Base Branch Detection.
+Read `../shared/review-common.md` Section Base Branch Detection, Section File Gathering, and Section Target Language Detection.
 
-### 0.3 File Gathering
-
-Read `../shared/review-common.md` Section File Gathering.
-
-### 0.4 Content Loading
+### 0.3 Content Loading
 
 Load the **full content** of every file in scope - not just diff hunks. Story readability requires function-level context to judge narrative flow, abstraction consistency, and cognitive chunking.
 
-Also capture the **diff itself** (`git diff <base>...HEAD` or equivalent) if in branch-diff or PR mode, so the analysis can highlight what changed.
-
-### 0.5 Target Language Detection
-
-Read `../shared/review-common.md` Section Target Language Detection.
+In branch-diff or PR mode, also capture the diff so the analysis can highlight what changed.
 
 ---
 
 ## Phase 1: Analysis
 
-Dispatch a **single subagent** via the Codex agent workflow. Readability grading is a unified, qualitative judgment - it is not split across multiple domain subagents. No cross-model dispatch (the scoring is calibrated to the principle file and must be internally consistent). No static analysis tooling (this is a qualitative, judgment-based review).
+Dispatch a **single subagent** via the Codex agent workflow. Readability grading is one consistent judgment, so it is not split across domain subagents. No cross-model dispatch (the scoring is calibrated to the principle file and must be internally consistent). No static analysis tooling (this is a judgment-based review).
 
 For same-platform subagents, do not pass a model or reasoning-effort override. Let every subagent inherit the parent model and reasoning effort unless the user explicitly asks for an override.
 
 ### Subagent Prompt
 
-Before dispatch, substitute **every** `<ANGLE_BRACKET>` placeholder in the template below. In particular, replace `<PRINCIPLE_PATH>` with the **absolute path** to `../shared/story-readability.md`, resolved against the collection root (one level above this SKILL.md) - never against the project's working directory; subagents start in the project cwd and cannot find plugin files by relative path. The remaining placeholders (`<TARGET_LANGUAGE>`, `<CUSTOM_WEIGHTS_OR_...>`, `<USER_PREFERENCES_OR_"None">`, `<FILES_CONTENT>`, `<DIFF_CONTENT_OR_...>`) take their resolved values or the quoted fallback.
+Before dispatch, substitute **every** `<ANGLE_BRACKET>` placeholder in the template below. In particular, replace `<PRINCIPLE_PATH>` with the **absolute path** to `../shared/story-readability.md`, resolved against the collection root (one level above this SKILL.md) - never against the project's working directory; subagents start in the project cwd and cannot find plugin files by relative path. The remaining placeholders take their resolved values or the quoted fallback.
 
 ```
 You are a senior readability reviewer. Your job is to grade code on how well it
@@ -112,18 +85,18 @@ You are a senior readability reviewer. Your job is to grade code on how well it
      dimensions 6-8 (only excellent/poor examples given), interpolate
    - 2-3  = matches the "poor" calibration example
    Scores between these bands are for cases that fall between the examples.
-3. Compute the weighted score per file using the weights from the principle file
-   (or custom weights if provided below).
+3. Compute the weighted score per file using the weights from the principle file,
+   or the custom weights below if provided.
 4. For any dimension scoring 7 or below, provide a concrete finding with:
    - The dimension name
    - The specific location (file:line or file:function)
    - A BEFORE code block showing the current code (in <TARGET_LANGUAGE>)
-   - An AFTER code block showing the improved version (in <TARGET_LANGUAGE>)
+   - An AFTER code block showing the improved version (in <TARGET_LANGUAGE>).
+     For a large refactor, an AFTER sketch of the new shape is enough.
    - A brief explanation: "Why this improves the story"
 5. Consult the Language-Aware Notes section in the principle file for
    language-specific scoring adjustments.
-6. If custom weights are provided, use them instead of the defaults.
-7. Write for humans: the reader may speak English as a second language. Use short sentences, everyday words, and explain jargon on first use. State the point first, then the detail. Simplify the language, never the facts - paths, line numbers, and claims stay exact.
+6. Write for humans: the reader may speak English as a second language. Use short sentences, everyday words, and explain jargon on first use. State the point first, then the detail. Simplify the language, never the facts - paths, line numbers, and claims stay exact.
 
 ## Custom Weights (if any)
 <CUSTOM_WEIGHTS_OR_"Use defaults from the principle file above">
@@ -139,8 +112,7 @@ You are a senior readability reviewer. Your job is to grade code on how well it
 
 ## Output Format
 For each file, output a table with one row per dimension (all 8, in the
-principle file's order). Fill the Weight column with the weights you used -
-the principle file's defaults, or the custom weights above if provided:
+principle file's order). Fill the Weight column with the weights you used:
 
 ### <filename>
 | # | Dimension | Score | Weight | Weighted |
@@ -168,14 +140,7 @@ If all dimensions score 8+, output: "No findings - this file reads like a well-t
 
 ### Large Scope Handling
 
-If the file list exceeds **30 files**, batch them into groups of approximately 15 files. Process batches sequentially:
-
-1. Dispatch subagent for batch 1, collect results
-2. Dispatch subagent for batch 2, collect results
-3. Continue until all batches are processed
-4. Synthesize all batch results together in Phase 2
-
-Keep related files in the same batch when possible (e.g., a module and its tests, a class and its interface).
+For large scopes (more than about 30 files), split the files into batches of related files, such as a module with its tests or a class with its interface. Give every batch the same principle file and anchors so scores stay comparable. Synthesize all batch results together in Phase 2.
 
 ---
 
@@ -184,8 +149,6 @@ Keep related files in the same batch when possible (e.g., a module and its tests
 The report has three layers, presented in order.
 
 ### Layer 1: Scorecard
-
-Present a summary scorecard as a markdown header followed by a markdown table. The markdown table renders as a styled HTML table in the companion report and is more readable in raw markdown than ASCII box-drawing.
 
 ```markdown
 **READABILITY REVIEW - {scope}**
@@ -210,36 +173,21 @@ Present a summary scorecard as a markdown header followed by a markdown table. T
 
 Dimension scores are averaged across files, weighted by lines of code when files vary significantly in size. The Weight column above shows the **default** weights - if custom dimension weights are configured (`.codex/skill-context/readability-review.md`), fill it with the weights actually applied. Apply the grade mapping from `../shared/story-readability.md` Section Grade Mapping to both the overall score and per-dimension scores; that mapping is defined over 0-100, so multiply a per-dimension 1-10 score by 10 before looking it up, and round the weighted total to the nearest integer first.
 
-If `--min-score` was specified and some files were filtered out, note: "Showing {M} of {N} files (filtered by --min-score {threshold})."
+If `--min-score` filtered out some files, say how many of the total files are shown and the threshold used.
 
 ### Layer 2: Findings Summary
 
-Write 2-4 paragraphs describing:
-- **Thematic patterns** - what recurring readability issues appear across files
-- **What's working well** - which dimensions are consistently strong
-- **Recurring issues** - specific anti-patterns seen multiple times
-- **Highest-impact improvements** - the 1-3 changes that would most improve the overall score
+Summarize the recurring patterns, what is working well, and the 1-3 changes that would most improve the score.
 
 ### Layer 3: File-by-File Breakdown
 
-Present each file ordered by score **ascending** (worst first). For each file:
-
-1. **Per-dimension scores table** - same format as the subagent output
-2. **Findings** - each finding includes:
-   - Dimension name
-   - Location (file:line or file:function)
-   - Before/after code blocks in the target language
-   - "Why this improves the story" explanation
-
-If `--min-score` was specified, only include files scoring below the threshold.
+Present each file ordered by score **ascending** (worst first), with its per-dimension score table and its findings in the subagent's format. If `--min-score` was given, include only files scoring below the threshold.
 
 ---
 
 ## Phase 3: Fix Offer
 
-After presenting the report, ask:
-
-> "Want me to refactor to improve the story score? I can fix all findings, or you can pick specific files or dimensions."
+After the report, offer to refactor: all findings, or only the files or dimensions the user picks.
 
 ### Supported Responses
 
@@ -250,52 +198,40 @@ After presenting the report, ask:
 | Specific dimensions (e.g., "narrative flow, naming") | Fix findings only for named dimensions |
 | "no" or "skip" | End the review |
 
-### Fix Dispatch
+### Applying Fixes
 
-- **Independent files:** dispatch parallel fix agents (one per file)
-- **Same-file fixes:** apply sequentially to avoid conflicts
-- Each fix agent **MUST inherit the parent model and reasoning effort**; do not pass an override unless the user explicitly asks for one
-- Each fix agent receives:
-  - The finding details (dimension, location, before/after, explanation)
-  - The full file content
-  - Instruction to apply the fix using the Edit tool
-  - Instruction to verify the before-code still matches before editing
-- Fix agents **MUST NOT expand scope** - apply exactly what was flagged, nothing more
+Apply the approved fixes. Parallelize across independent files when it helps; apply fixes in the same file one after another to avoid conflicts. Before each edit, check that the before-code still matches.
 
 ### Post-Fix Summary
 
 After fixes are applied, present:
-- List of files modified with a brief description of each change
+- Files modified, with a brief description of each change
 - Number of findings addressed vs. total findings
 - Estimated score improvement (based on dimension weight of fixed findings)
 - Any findings intentionally skipped (with reason)
-- Suggest re-running `$readability-review` to verify the new scores
+- A suggestion to re-run `$readability-review` to verify the new scores
 
 ---
 
 ## Guardrails
 
-Read `../shared/review-common.md` Section Cross-Skill Discipline for the base constraints (evidence, language-adaptive, specificity, no over-engineering, test-code DAMP, profile-first).
+Read `../shared/review-common.md` Section Cross-Skill Discipline for the base constraints.
 
-Additional readability-review-specific guardrails:
-
-1. **Calibration-anchored scoring.** Always reference the calibration examples in `../shared/story-readability.md` when assigning scores. **MUST NOT score** based on vibes or general impressions - anchor every score to the concrete examples.
-
-2. **Language-aware judgment.** Consult the Language-Aware Notes section in `../shared/story-readability.md` before scoring. An idiomatic Go short variable name is not a naming violation; a Python list comprehension is not a clever trick (unless nested).
-
-3. **Before/after required for every finding.** Never report a finding without showing both the current code and the improved version. Abstract advice ("consider renaming") is not acceptable.
+1. **Calibration-anchored scoring.** Anchor every score to the calibration examples in `../shared/story-readability.md`.
+2. **Language-aware judgment.** An idiomatic Go short variable name is not a naming violation; a Python list comprehension is not a clever trick (unless nested).
+3. **Concrete findings.** Every finding shows the current code and the improved version (or an AFTER sketch for a large refactor). Abstract advice ("consider renaming") is not acceptable.
 
 ---
 
 ## Error Handling
 
-Read `../shared/review-common.md` Section Shared Error Handling for common errors (no changed files, base branch detection, PR/commit not found, file not found). The "no violations" and "too many files" rows there are written for codereview/quick-review - this skill instead emits its scorecard (high grades) for a findings-free scope, and handles large scopes via its own Section Large Scope Handling (>30-file batching), not the >100-file warning.
+Read `../shared/review-common.md` Section Shared Error Handling for common errors (no changed files, base branch detection, PR/commit not found, file not found). The "no violations" and "too many files" rows there are written for codereview/quick-review - this skill instead emits its scorecard (high grades) for a findings-free scope, and handles large scopes via its own Section Large Scope Handling, not the >100-file warning.
 
-Additional readability-review-specific errors:
+Additional readability-review decisions:
 
 | Error | Action |
 |---|---|
-| Analysis subagent fails | "Analysis failed - could not complete readability review. Please try again." |
-| No files in scope | "No files found in the specified scope. Check the path and try again." |
-| All files above `--min-score` | "All {N} files score above {threshold}. No findings to report." |
-| Fix agent fails | Report which fixes failed and which files were affected. Suggest manual application of the before/after examples from the report. |
+| Analysis subagent fails | Report that the review could not complete and suggest trying again. |
+| No files in scope | Report it and ask the user to check the path. |
+| All files above `--min-score` | Report the file count and threshold; there are no findings to show. |
+| Fix fails | Report which fixes failed and which files were affected. Point to the report's before/after examples for manual application. |

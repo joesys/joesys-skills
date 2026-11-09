@@ -5,77 +5,53 @@ description: "Use when the user invokes $codex to delegate a prompt to OpenAI Co
 
 # Codex Skill
 
-Delegate prompts to OpenAI's Codex CLI and critically evaluate the output.
+Send the user's prompt to OpenAI's Codex CLI, show its answer, and evaluate it critically.
 
 ## Write for Humans
 
-Everything a person reads from this skill - result summaries, the critical evaluation, and conversation replies - MUST use plain language that a non-native English reader can follow. This does not cover the prompt sent to the delegated AI: that prompt targets an AI reader and stays precise. Before writing a report or a long reply, read `../shared/report-style.md` (resolve against the collection root (one level above this SKILL.md) - never the project's working directory) and follow it. In short: short sentences, everyday words, jargon explained on first use, the point stated first. Simplify the language, never the facts - paths, line numbers, and claims stay exact.
+Write everything a person reads in plain English for a reader who uses English as a second language. Follow `../shared/report-style.md` (resolve against the collection root (one level above this SKILL.md) - never the project's working directory).
 
-## Out of Scope
+## Shared Flow
 
-This skill MUST NOT:
-- Answer the question itself instead of delegating. The user invoked this skill to get GPT's take - substituting your own answer defeats the purpose.
-- Skip the critical-evaluation step. Always surface your honest assessment after the delegated model responds.
-- Modify the user's project (files, git state, settings) as part of the dispatch. The CLI runs read-only by default per `../shared/model-defaults.md`; the skill itself never writes either.
-- Save the delegated response to a file. If the user wants it saved, they'll ask in a follow-up turn.
-- Combine outputs across multiple invocations into a synthesis. That's `$ai-council`'s job.
-
-## Preflight
-
-Before dispatching, **MUST**:
-1. Read `../shared/model-defaults.md` Section Codex for the current model identifier, reasoning effort, sandbox, and required flags - resolve `../shared/...` against the collection root (one level above this SKILL.md), never the project's working directory. Never hardcode values.
-2. Confirm the user's prompt is non-empty. For `$codex resume` with no prompt, use `ask the user directly` to ask what they want to follow up on.
-
-## User Preferences
-
-Read `../shared/skill-context.md` for the full protocol. Load `.codex/skill-context/preferences.md` if it exists; otherwise use defaults. Never interview the user about preferences - delegation is a pass-through. Shared communication-style preferences shape the critical-evaluation phase only.
+Read `../shared/delegation-common.md` first, and resolve every `../shared/...` path against the same plugin root. It holds the flow for every delegation skill: delegate instead of answering, never send an empty prompt, show Codex's full response verbatim, then evaluate it critically and summarize, and report failures plainly. Take the command template from `../shared/model-defaults.md` Section Codex; do not hardcode the model or flags.
 
 ## Running a Task
 
-1. Parse `$codex` arguments for overrides:
-   - `--model <MODEL>` - override default model
-   - `--sandbox <MODE>` - override default sandbox (`read-only`, `workspace-write`, `danger-full-access`)
-   - Any remaining text is the prompt
-2. Assemble and dispatch the command (use 600000ms timeout on the shell command tool).
+Arguments to `$codex`:
+- `--model <MODEL>` - override the default model
+- `--sandbox <MODE>` - override the default sandbox (`read-only`, `workspace-write`, `danger-full-access`)
+- Any remaining text is the prompt
 
-   Use the temp-file-and-pipe pattern from `../shared/delegation-common.md` Section Prompt Delivery. (Direct positional prompts are reserved for short, simple *resume* prompts - see that file's Section Direct `-p` exception.)
+Replace `<CODEX_CMD>` with the template from Section Codex plus any overrides. Replace the template's trailing `2>/dev/null` with `2>"$CODEX_LOG"`. Codex prints its `session id:` line on stderr, and that ID is what makes resume reliable. Use a 600000 ms timeout.
 
-   Substitute `<CODEX_CMD>` with the current invocation from `../shared/model-defaults.md` Section Codex, layering any user `--model` or `--sandbox` overrides on top - but replace the template's trailing `2>/dev/null` with `2>"$CODEX_LOG"`: Codex prints its `session id:` banner on stderr, and capturing it is what makes resume reliable.
+```bash
+PROMPT_FILE=$(mktemp /tmp/codex-prompt-XXXXXX.txt)
+CODEX_LOG=$(mktemp /tmp/codex-log-XXXXXX.txt)
+cat > "$PROMPT_FILE" << 'PROMPT_EOF'
+<USER_PROMPT>
+PROMPT_EOF
+cat "$PROMPT_FILE" | <CODEX_CMD>
+grep -m1 "session id:" "$CODEX_LOG"   # keep this ID for $codex resume
+rm -f "$PROMPT_FILE" "$CODEX_LOG"
+```
 
-   ```bash
-   PROMPT_FILE=$(mktemp /tmp/codex-prompt-XXXXXX.txt)
-   CODEX_LOG=$(mktemp /tmp/codex-log-XXXXXX.txt)
-   cat > "$PROMPT_FILE" << 'PROMPT_EOF'
-   <USER_PROMPT>
-   PROMPT_EOF
-   cat "$PROMPT_FILE" | <CODEX_CMD>
-   grep -m1 "session id:" "$CODEX_LOG"   # keep this ID for $codex resume
-   rm -f "$PROMPT_FILE" "$CODEX_LOG"
-   ```
-3. **MUST present Codex's full response verbatim** - clearly labeled as **Codex's response** - *before* any assessment. No truncation, no summarization, no interleaving your own commentary.
-4. Critically evaluate the output (see Critical Evaluation below).
-5. Provide a brief summary: "Here's what Codex said, here's what I think."
-6. Inform the user: "You can resume this session with `$codex resume`." Include the captured session ID so resume still works even if other Codex sessions run in between.
+Label the output as **Codex's response**. After your evaluation, tell the user they can continue with `$codex resume`, and include the session ID so resume still works if other Codex sessions run in between.
 
 ## Session Resume
 
-When the user invokes `$codex resume`:
+Commands and flag rules are in `../shared/model-defaults.md` Section Codex Resume. Use a 600000 ms timeout.
 
-1. If no prompt is provided, use `ask the user directly` to ask what they want to follow up on.
-2. Determine the resume target - commands and flag rules per `../shared/model-defaults.md` Section Codex Resume (use 600000ms timeout):
-   - `$codex resume <PROMPT>` - resume this skill's last dispatched session by its captured session ID; fall back to `--last` only when no ID is known.
-   - `$codex resume <SESSION_ID> <PROMPT>` - resume a specific session by ID (UUID from the dispatch banner).
-3. **Resume rules:**
-   - `--model` MAY be passed on resume only when the user explicitly requests it.
-   - Write access on resume requires the config override listed in Section Codex Resume - never guess flags.
-   - **MUST NOT use** `--ephemeral` on the initial run, or resume will have no session to continue.
-4. After resume, follow the same output flow: present full response -> evaluate -> summarize -> offer resume.
+- `$codex resume <PROMPT>` - resume this skill's last session by its captured session ID. Use `--last` only when no ID is known.
+- `$codex resume <SESSION_ID> <PROMPT>` - resume a specific session by ID.
 
-## Known Limitations
+Rules:
+- Resumed sessions keep the original model, reasoning effort, and sandbox. Pass `--model` only when the user asks for it.
+- Write access on resume needs the config override listed in Section Codex Resume. Do not guess flags.
+- Never use `--ephemeral` on the first run, or there will be no session to resume.
+- `--last` resumes the newest Codex session, which may not be this one. If the session ID was not captured and other Codex commands have run since, warn the user before a `--last` resume.
 
-- **Uncaptured session ID:** if a dispatch discarded stderr (where the `session id:` banner lives - see `../shared/model-defaults.md` Section Codex Resume), only `--last` resume is possible, and `--last` resumes the *newest* session: **MUST warn** the user if they attempt a `--last` resume after other Codex commands have run.
+After a resume, use the same output flow.
 
-## Critical Evaluation & Error Handling
+## Timeout Tip
 
-Read `../shared/delegation-common.md` and apply to Codex.
-**Timeout suggestion:** lower reasoning effort (`-c model_reasoning_effort="high"`).
+Lower the reasoning effort (`-c model_reasoning_effort="high"`).

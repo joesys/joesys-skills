@@ -11,7 +11,7 @@ For ordinary new commits, use `/commit`. This skill is only for changing commits
 
 ## Write for Humans
 
-Everything a person reads from this skill — commit messages and replies — MUST use plain language that a non-native English reader can follow. Read `shared/report-style.md` (resolve against the plugin root — two levels above this SKILL.md — never the project's working directory) and follow it.
+Write everything a person reads in plain English for a reader who uses English as a second language. Follow `shared/report-style.md` (resolve against the plugin root — two levels above this SKILL.md — never the project's working directory).
 
 ## Rules Shared with /commit
 
@@ -80,10 +80,9 @@ git cherry-pick <oldest-hash>^..<newest-hash>
 
 If a cherry-pick conflicts:
 1. Report the conflicting files.
-2. Resolve only trivial conflicts (whitespace, obvious merges) yourself.
-3. Otherwise ask: "Cherry-pick of `<hash>` conflicted in `<file>`. Should I resolve it, or will you?"
-4. After resolving: `git cherry-pick --continue`.
-5. If the user wants to stop: `git cherry-pick --abort`, return to the parent branch, and drop the temporary branch. The parent branch was never changed, so nothing is lost.
+2. Resolve only trivial conflicts (whitespace, obvious merges) yourself. Ask before resolving any conflict that needs judgment.
+3. After resolving: `git cherry-pick --continue`.
+4. If the user wants to stop: `git cherry-pick --abort`, return to the parent branch, and drop the temporary branch. The parent branch was never changed, so nothing is lost.
 
 If you stashed work, restore it and commit it with the `/commit` message format (split into several commits if it holds several logical units):
 
@@ -109,7 +108,7 @@ git reset --hard <base-commit>
 git rev-list --count <base-commit>..<type>/<short-description>
 ```
 
-Merge exactly as in `/commit` Path B, step B3: `--no-ff` with the merge-commit template for 2 or more commits, fast-forward for 1. In the merge commit's `[--- Changes ---]` list, mark each sub-commit `(regrouped)` or `(new)`.
+Merge exactly as in `/commit` Path B, step 3: `--no-ff` with the merge-commit template for 2 or more commits, fast-forward for 1. In the merge commit's `[--- Changes ---]` list, mark each sub-commit `(regrouped)` or `(new)`.
 
 ### Step 7 — Verify nothing was lost
 
@@ -121,15 +120,7 @@ The only differences should be the new work that was uncommitted at the start. I
 
 ### Step 8 — Push decision
 
-If any grouped commit was already pushed, the remote is now out of sync. Show the exact command and ask:
-
-> History on `<parent-branch>` was rewritten. To update the remote, a force push is needed:
->
-> ```bash
-> git push --force-with-lease
-> ```
->
-> Push to origin? (yes/no)
+If any grouped commit was already pushed, the remote is now out of sync. Explain that history on the parent branch was rewritten, show the exact command (`git push --force-with-lease`), and ask whether to push to origin.
 
 Wait for an express, push-specific answer in the current turn. If the user declines or does not answer, leave the remote as it is. Skip this step if no grouped commit was pushed.
 

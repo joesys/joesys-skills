@@ -1,23 +1,22 @@
 # Cross-Model Dispatch Protocol
 
-Shared infrastructure for dispatching review prompts to a different AI model via CLI. Used by `$codereview` to get an independent second opinion from a model outside the host.
+How to send a review prompt to a different AI model through its CLI. `$codereview` uses it to get an independent second opinion from a model outside the host.
 
-Read `./model-defaults.md` for current model identifiers and CLI flag details.
+Current model identifiers and CLI command templates are in `./model-defaults.md`.
 
 ---
 
-## Discipline
+## Rules
 
-- **MUST use read-only / plan mode** for every cross-model dispatch. Cross-model reviewers think; they never write.
-- **MUST deliver prompts via temp-file-and-stdin-pipe** to avoid shell quoting issues with code blocks, backticks, and special characters.
-- **MUST run dispatches in parallel** with the host AI subagents — all in a single response. Sequential dispatch defeats the speedup.
-- **MUST clean up temp files** after dispatch completes (`rm -f "$PROMPT_FILE"`).
+- Run every cross-model dispatch in read-only or plan mode. Cross-model reviewers think; they never write.
+- Write each prompt to a temp file and pipe it on stdin, with a 10-minute (600000 ms) shell timeout. The pattern is in `./delegation-common.md` § Prompt Delivery. Delete the temp files afterwards.
+- Run the dispatches in parallel with the host's own subagents, in a single response. Running them one after another loses the speedup.
 
 ---
 
 ## Host Detection
 
-Determine which cross-model CLI to dispatch based on who you are:
+Choose the cross-model CLI based on which host you are:
 
 | You Are | Dispatch To | Command |
 |---|---|---|
@@ -28,60 +27,21 @@ Determine which cross-model CLI to dispatch based on who you are:
 
 ---
 
-## Prompt Delivery
-
-### Platform-Adaptive Temp Files
-
-Use `mktemp` to create temp files portably (Linux, macOS, Windows Git shell):
-
-```bash
-PROMPT_FILE=$(mktemp /tmp/review-XXXXXX.txt)
-cat > "$PROMPT_FILE" << 'PROMPT_EOF'
-<prompt content here>
-PROMPT_EOF
-```
-
-After dispatch completes, clean up:
-
-```bash
-rm -f "$PROMPT_FILE"
-```
-
-If `mktemp` is unavailable, fall back to a deterministic path: `/tmp/<skill-name>-cross-prompt.txt`.
-
----
-
 ## Dispatch Commands
 
-Substitute `$PROMPT_FILE` with the temp file path. Substitute `<CODEX_CMD>`, `<CLAUDE_CMD>`, `<AGY_CMD>` with the current invocations from `./model-defaults.md` (§ Codex, § Claude CLI, § Antigravity).
-
-### To Codex
+Replace `<CODEX_CMD>`, `<CLAUDE_CMD>`, and `<AGY_CMD>` with the current templates from `./model-defaults.md` (§ Codex, § Claude CLI, § Antigravity).
 
 ```bash
 cat "$PROMPT_FILE" | <CODEX_CMD>
-```
-
-### To Claude CLI
-
-Append `--name "<review-name>"` for resumability:
-
-```bash
-cat "$PROMPT_FILE" | <CLAUDE_CMD> --name "<review-name>"
-```
-
-### To Antigravity
-
-```bash
+cat "$PROMPT_FILE" | <CLAUDE_CMD> --name "<review-name>"   # --name makes it resumable
 cat "$PROMPT_FILE" | <AGY_CMD>
 ```
-
-Use **600000ms** timeout on the shell command tool for all dispatches.
 
 ---
 
 ## Failure Handling
 
-If a cross-model dispatch fails or times out, the review continues with the remaining sources. Append a note to the report:
+If a cross-model dispatch fails or times out, the review continues with the remaining sources. Add a note to the report:
 
-- **One cross-model fails:** Continue with the other cross-model's results. Note the unavailable model: "Cross-model review from [model] unavailable ([reason])."
-- **All cross-model dispatches fail:** Proceed with host AI subagents only. Note in the report header.
+- **One cross-model fails:** continue with the other one's results and note "Cross-model review from [model] unavailable ([reason])."
+- **All cross-model dispatches fail:** continue with the host's subagents only, and note this in the report header.

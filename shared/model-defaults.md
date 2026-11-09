@@ -46,7 +46,7 @@ codex exec --model gpt-6.1-sol -c model_reasoning_effort="xhigh" \
 | `-c model_reasoning_effort="xhigh"` | Maximum reasoning depth |
 | `--sandbox read-only` | Safety: no file writes |
 | `--skip-git-repo-check` | Required for piped input |
-| `2>/dev/null` | Suppress progress/ANSI noise on stderr — but see Resume: capture to a file instead when resume matters |
+| `2>/dev/null` | Suppress progress noise on stderr — but capture stderr to a file when resume matters (see Codex Resume) |
 
 #### Codex Resume
 
@@ -65,7 +65,7 @@ codex exec resume --last --skip-git-repo-check "<PROMPT>" 2>/dev/null         # 
 
 ### Antigravity
 
-Dispatch through the adapter, **not** `agy` directly. `<ADAPTER>` is the **absolute path** to `scripts/agy_adapter.py` under the plugin root (the directory containing this file's parent, `shared/`) — resolve it before running; the project's working directory does not contain the adapter:
+Dispatch through the adapter, not `agy` directly. `<ADAPTER>` is the **absolute path** to `scripts/agy_adapter.py` under the plugin root (the directory containing this file's parent, `shared/`) — resolve it before running; the project's working directory does not contain the adapter:
 
 ```bash
 python <ADAPTER> --mode plan --sandbox
@@ -91,16 +91,9 @@ must **not** pass `-p`, `--print`, or those format flags. For session resume, ke
 The adapter rejects prompts larger than 150,000 bytes, because `agy` silently
 drops the end of very large prompts. Shorten or split such prompts.
 
-**Why the adapter?** Since `agy` 1.4.x a bare `-p` fails with `flag needs an
-argument: -p`, and a prompt passed as an argument breaks above the Linux
-per-argument limit (about 128 KB). The adapter sends the prompt on stdin as
-stream-json instead and prints the answer from the final `result` event. Older
-Windows releases could return empty non-TTY stdout after saving the reply
-locally, so the adapter retains SQLite recovery as a compatibility fallback. It
-also bounds the run with a 600-second timeout (killing any stray `agy` process)
-and exits non-zero with a clear message if no reply can be recovered. Env
-overrides (`AGY_BIN`, `AGY_CONV_DIR`, `AGY_ADAPTER_TIMEOUT`) and the recovery
-mechanism are documented in `scripts/agy_adapter.py`.
+Why the adapter exists, its own 600-second timeout, and its environment overrides
+(`AGY_BIN`, `AGY_CONV_DIR`, `AGY_ADAPTER_TIMEOUT`) are documented in
+`scripts/agy_adapter.py`.
 
 ### Claude CLI
 
@@ -125,7 +118,7 @@ claude --resume "<NAME>" -p "<PROMPT>" 2>/dev/null   # named session (set at dis
 
 ## Same-Platform Subagent Defaults
 
-Skills that spawn subagents through the current host MUST inherit the parent model and reasoning effort by default.
+Skills that spawn subagents through the current host inherit the parent model and reasoning effort by default.
 
 - **Claude Code:** omit the per-call `model` and `effort` fields. Claude Code treats an omitted model as `inherit`, so a Fable parent gets Fable subagents and an Opus parent gets Opus subagents.
 - **Codex:** omit per-call model and reasoning-effort overrides. The subagent then follows the parent Codex model and reasoning effort.
@@ -133,11 +126,3 @@ Skills that spawn subagents through the current host MUST inherit the parent mod
 - **Cross-model work:** this rule does not apply when a skill intentionally calls another model or provider for independent evaluation or delegation. Those paths keep their explicit model selection.
 
 Do not pin a same-platform subagent to `fable`, `opus`, a GPT model, or any other model alias inside a skill.
-
-## Why `2>/dev/null`
-
-CLI tools emit progress indicators, ANSI escape codes, and status messages on stderr. These are useful interactively but pollute captured output when running programmatically. Suppressing stderr keeps the response clean while stdout carries the actual model output. **Exception:** Codex prints its `session id:` banner on stderr — when resume matters, capture stderr to a temp file instead (see § Codex Resume).
-
-## Standard Timeout
-
-All CLI dispatches use **600000ms** (10 minutes) on the Bash tool. This accommodates long-running analysis tasks while preventing indefinite hangs.

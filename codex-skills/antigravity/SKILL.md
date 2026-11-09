@@ -5,71 +5,52 @@ description: "Use when the user invokes $antigravity to delegate a prompt to Goo
 
 # Antigravity Skill
 
-Delegate prompts to Google's Antigravity CLI (`agy`) and critically evaluate the output.
+Send the user's prompt to Google's Antigravity CLI (`agy`), show its answer, and evaluate it critically.
 
 ## Write for Humans
 
-Everything a person reads from this skill - result summaries, the critical evaluation, and conversation replies - MUST use plain language that a non-native English reader can follow. This does not cover the prompt sent to the delegated AI: that prompt targets an AI reader and stays precise. Before writing a report or a long reply, read `../shared/report-style.md` (resolve against the collection root (one level above this SKILL.md) - never the project's working directory) and follow it. In short: short sentences, everyday words, jargon explained on first use, the point stated first. Simplify the language, never the facts - paths, line numbers, and claims stay exact.
+Write everything a person reads in plain English for a reader who uses English as a second language. Follow `../shared/report-style.md` (resolve against the collection root (one level above this SKILL.md) - never the project's working directory).
 
-## Out of Scope
+## Shared Flow
 
-This skill MUST NOT:
-- Answer the question itself instead of delegating. The user invoked this skill to get Antigravity's take - substituting your own answer defeats the purpose.
-- Skip the critical-evaluation step. Always surface your honest assessment after the delegated model responds.
-- Modify the user's project (files, git state, settings) as part of the dispatch. The CLI runs read-only (`--mode plan`) per `../shared/model-defaults.md`; the skill itself never writes either.
-- Save the delegated response to a file. If the user wants it saved, they'll ask in a follow-up turn.
-- Combine outputs across multiple invocations into a synthesis. That's `$ai-council`'s job.
-
-## Preflight
-
-Before dispatching, **MUST**:
-1. Read `../shared/model-defaults.md` Section Antigravity for the current required flags - resolve `../shared/...` against the collection root (one level above this SKILL.md), never the project's working directory. Never hardcode values.
-2. Confirm the user's prompt is non-empty. For `$antigravity resume` with no prompt, use `ask the user directly` to ask what they want to follow up on.
-
-## User Preferences
-
-Read `../shared/skill-context.md` for the full protocol. Load `.codex/skill-context/preferences.md` if it exists; otherwise use defaults. Never interview the user about preferences - delegation is a pass-through. Shared communication-style preferences shape the critical-evaluation phase only.
+Read `../shared/delegation-common.md` first, and resolve every `../shared/...` path against the same plugin root. It holds the flow for every delegation skill: delegate instead of answering, never send an empty prompt, show Antigravity's full response verbatim, then evaluate it critically and summarize, and report failures plainly. Take the command template from `../shared/model-defaults.md` Section Antigravity; do not hardcode flags.
 
 ## Running a Task
 
-1. Parse `$antigravity` arguments for overrides:
-   - Any remaining text is the prompt
-2. Use the temp-file-and-pipe pattern from `../shared/delegation-common.md` Section Prompt Delivery (use 600000ms timeout on the shell command tool). Substitute `<AGY_CMD>` with the current invocation from `../shared/model-defaults.md` Section Antigravity.
-   ```bash
-   PROMPT_FILE=$(mktemp /tmp/antigravity-prompt-XXXXXX.txt)
-   cat > "$PROMPT_FILE" << 'PROMPT_EOF'
-   <USER_PROMPT>
-   PROMPT_EOF
-   cat "$PROMPT_FILE" | <AGY_CMD>
-   rm -f "$PROMPT_FILE"
-   ```
+The whole `$antigravity` argument is the prompt.
 
-   The adapter always reads the prompt from **stdin** and sends it to `agy` as stream-json - do **not** pass `-p`, `--print`, `--input-format`, or `--output-format`. The same stdin-pipe pattern is used for session resume. The adapter rejects prompts over 150,000 bytes, because `agy` silently drops the end of very large prompts; shorten or split such a prompt.
-3. **MUST present Antigravity's full response verbatim** - clearly labeled as **Antigravity's response** - *before* any assessment. No truncation, no summarization, no interleaving your own commentary.
-4. Critically evaluate the output (see Critical Evaluation below).
-5. Provide a brief summary: "Here's what Antigravity said, here's what I think."
-6. Inform the user: "You can resume this session with `$antigravity resume`."
+Dispatch through the adapter, not `agy` directly. `<ADAPTER>` is the absolute path to `../scripts/agy_adapter.py` under the plugin root; the project's working directory does not contain it. Run it with `python3`, or `python` on Windows. Replace `<AGY_CMD>` with the template from Section Antigravity (`python <ADAPTER> --mode plan --sandbox`). Use a 600000 ms timeout.
+
+```bash
+PROMPT_FILE=$(mktemp /tmp/antigravity-prompt-XXXXXX.txt)
+cat > "$PROMPT_FILE" << 'PROMPT_EOF'
+<USER_PROMPT>
+PROMPT_EOF
+cat "$PROMPT_FILE" | <AGY_CMD>
+rm -f "$PROMPT_FILE"
+```
+
+CLI quirks:
+- The adapter always reads the prompt from stdin. Do not pass `-p`, `--print`, `--input-format`, or `--output-format`; the adapter adds the format flags itself.
+- The adapter rejects prompts over 150,000 bytes, because `agy` silently drops the end of very large prompts. Shorten or split such a prompt.
+
+Label the output as **Antigravity's response**. After your evaluation, tell the user they can continue with `$antigravity resume`.
 
 ## Session Resume
 
-When the user invokes `$antigravity resume`:
+Deliver the follow-up prompt through the same temp file and stdin pipe.
 
-1. If no prompt is provided, use `ask the user directly` to ask what they want to follow up on.
-2. Determine the resume target. `<ADAPTER>` is the **absolute path** to `../scripts/agy_adapter.py` under the collection root (one level above this SKILL.md) - the project's working directory does not contain the adapter. Invoke it with `python3` where present, falling back to `python` on Windows (see `../shared/model-defaults.md` Section Antigravity):
-   - `$antigravity resume <PROMPT>` - resume the latest session. Deliver the follow-up
-     prompt via the same temp-file-and-stdin pattern as the initial dispatch:
-     ```bash
-     cat "$PROMPT_FILE" | python <ADAPTER> --mode plan --sandbox -c
-     ```
-   - `$antigravity resume <ID> <PROMPT>` - resume a specific session by conversation ID:
-     ```bash
-     cat "$PROMPT_FILE" | python <ADAPTER> --mode plan --sandbox --conversation <ID>
-     ```
-3. **Resume rules:**
-   - Always pass `--mode plan --sandbox` on resume. Do not rely on the resumed session to keep read-only mode.
-4. After resume, follow the same output flow: present full response -> evaluate -> summarize -> offer resume.
+- `$antigravity resume <PROMPT>` - resume the latest session:
+  ```bash
+  cat "$PROMPT_FILE" | python <ADAPTER> --mode plan --sandbox -c
+  ```
+- `$antigravity resume <ID> <PROMPT>` - resume a specific session by conversation ID:
+  ```bash
+  cat "$PROMPT_FILE" | python <ADAPTER> --mode plan --sandbox --conversation <ID>
+  ```
 
-## Critical Evaluation & Error Handling
+Always pass `--mode plan --sandbox` on resume. Do not rely on the resumed session to stay read-only. After a resume, use the same output flow.
 
-Read `../shared/delegation-common.md` and apply to Antigravity.
-**Timeout suggestion:** raise `AGY_ADAPTER_TIMEOUT` (see `../shared/model-defaults.md` Section Antigravity) or simplify the prompt.
+## Timeout Tip
+
+Raise `AGY_ADAPTER_TIMEOUT` (see `../shared/model-defaults.md` Section Antigravity) or simplify the prompt.

@@ -17,8 +17,6 @@ For artifact mode (non-code files): terminal markdown unless >200 lines.
 
 ## Terminal Markdown Format
 
-For inline display in the conversation. Compact, scannable.
-
 ~~~markdown
 ## Review Guide
 
@@ -91,28 +89,15 @@ profile: "analytical"
 ---
 ~~~
 
-### Section Order
-
-1. **Executive Summary** — What changed, decision count, estimated review time
-2. **Decision Map** — Clickable table linking to each DECIDE section
-3. **Guided Reading** — Full walkthrough:
-   - DECIDE entries with full deep analysis (expanded by default)
-   - READ entries with full deep analysis (expanded by default)
-   - SKIM entries in a collapsible section (collapsed by default)
-   - SKIP entries as a single summary line (collapsed by default)
-4. **Open Questions** — Unresolved items (omit section if none)
-5. **Review Checklist** — Copy-pasteable checkboxes
-
 ### HTML-Specific Enhancements
 
-- **Tier badges:** use the plain-text markers `[DECIDE]`, `[READ]`, `[SKIM]`, `[SKIP]` at the start of each entry heading. The report stylesheet has no tier badge styles, so do not emit custom `<span>` classes.
-- **Collapsible sections:** SKIM and SKIP groups wrapped in `<details>` tags, collapsed by default
-- **Code snippets:** Syntax-highlighted via Prism.js (loaded from `docs/.assets/report-lib/`)
+- **Tier badges:** each entry starts with its tier as plain text — `[DECIDE]`, `[READ]`, `[SKIM]`, `[SKIP]` in terminal output, or the tier word in the heading (`### DECIDE 1: …`) in the HTML report. The report stylesheet has no tier badge styles, so do not emit custom `<span>` classes.
+- **Collapsible sections:** SKIM and SKIP groups wrapped in `<details>` tags, collapsed by default; DECIDE and READ entries stay expanded
 - **Decision map links:** Each row in the decision map table links to the corresponding DECIDE section via anchor
 
 ### Markdown Structure for Renderer
 
-The markdown fed to the renderer should use this structure (the renderer handles HTML styling):
+The renderer handles styling. Feed it markdown in this structure:
 
 ~~~markdown
 # Human Review Guide

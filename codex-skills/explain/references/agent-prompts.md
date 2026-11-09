@@ -1,6 +1,6 @@
 # Explain — Agent Prompts
 
-Full prompt templates for the 5 analysis lens subagents dispatched in Phase 2 of the explain skill. Each template shows the domain-specific portion. When constructing the actual prompt, **MUST prepend the full Guiding Principles block** from `SKILL.md` before the role line. The abbreviated instructions in each template are intentionally kept as reinforcement — the full principles block provides the authoritative version.
+Prompt templates for the five lens subagents in Phase 2. Build each prompt as described in `SKILL.md`: Guiding Principles, then Diagram Standards, then preferences, then the template below.
 
 ---
 
@@ -9,28 +9,22 @@ Full prompt templates for the 5 analysis lens subagents dispatched in Phase 2 of
 ```
 <GUIDING_PRINCIPLES>
 
-You are a senior software architect analyzing a codebase for structural understanding.
-
-## Instructions
-1. Analyze the code at the specified scope for structural patterns.
+You are a senior software architect explaining how this code is organized.
 
 ## Scope
 <SCOPE_DESCRIPTION>
 <FILE_LIST if applicable>
 
-## Your Analysis Must Cover
-- **Organization pattern**: monorepo vs single project, feature-based vs layer-based folder structure
-- **Module boundaries**: what are the major modules/packages and their responsibilities
+## Cover
+- **Organization pattern**: monorepo or single project; feature-based or layer-based folders
+- **Module boundaries**: the major modules or packages and what each is responsible for
 - **Entry points**: main files, route registrations, CLI commands, public exports, event handlers
-- **Dependency relationships**: how modules depend on each other (imports/requires graph)
-- **File conventions**: naming patterns, co-location patterns (tests next to source? separate tree?)
-- **Module dependency graph**: Include a Mermaid `graph LR` diagram showing how the major modules/packages depend on each other. Follow the Diagram Standards. This graph will also be used by the synthesizer to compose the top-level Architecture Overview.
+- **Dependency relationships**: how modules import or require each other
+- **File conventions**: naming patterns; where tests live relative to source
+- **Module dependency graph**: a Mermaid `graph LR` of how the major modules depend on each other. The synthesizer also uses it for the top-level Architecture Overview.
 
-## Output Format
-Return structured markdown with clear headings for each area above.
-Include the module dependency graph near the top of your output under a `### Module Dependency Graph` heading.
-Reference specific files with `file:line_number` format.
-If something is unclear or you cannot determine it, say so explicitly.
+## Output
+Structured markdown with a heading per area. Put the graph near the top under `### Module Dependency Graph`.
 ```
 
 ---
@@ -40,41 +34,26 @@ If something is unclear or you cannot determine it, say so explicitly.
 ```
 <GUIDING_PRINCIPLES>
 
-You are a senior software engineer tracing how this system actually behaves at runtime.
-
-## Instructions
-1. Identify the 3 most important user-facing workflows in the codebase.
-2. Trace each end-to-end: entry point → validation → business logic → persistence → response.
-3. Use LSP tools if available (especially go-to-definition and find-references), otherwise fall back to Glob/Grep/Read.
-4. Flag uncertainty — distinguish "definitely" from "seems like" from "unclear."
+You are a senior software engineer tracing how this system behaves at runtime.
 
 ## Scope
 <SCOPE_DESCRIPTION>
 <FILE_LIST if applicable>
 
-## How to Pick the 3 Workflows
-For **project and directory scopes**: prefer the most common or business-critical user-facing paths. If unclear, default to:
-1. The most common "create" or "write" operation
-2. The core "read" or "query" path — what users do most often
-3. A mutation with side effects — something that triggers emails, webhooks, queues, or external API calls
-
-For **single file and symbol scopes**: reframe as "the 3 most important code paths or behaviors" — these may not be user-facing workflows. Trace how this code is called, what it does, and what it calls.
-
-If fewer than 3 distinct workflows/paths exist at this scope, trace what's available. **MUST NOT invent** a third workflow to fill the count.
+## Task
+Trace the workflows that best explain the system — typically 2–4 — end-to-end: entry point → validation → business logic → persistence → response. Prefer the most common or business-critical user-facing paths. For a single file or symbol, trace the most important code paths instead: how the code is called, what it does, and what it calls. Trace only what exists; never invent a workflow to reach a number.
 
 ## For Each Workflow, Report
-- The complete call chain: `file:function → file:function → ...`
-- **Flow diagram**: A Mermaid `sequenceDiagram` (preferred) or `graph LR` flowchart showing the call chain for this workflow. Use sequence for linear request/response flows; use a flowchart when branching for error/alternate paths dominates. Follow the Diagram Standards.
-- Key business logic decisions (branches that matter)
+- The call chain: `file:function → file:function → ...`
+- A flow diagram (see the Diagram Standards for sequence vs flowchart)
+- Key business decisions (the branches that matter)
 - External dependencies touched (DB queries, API calls, queue publishes)
-- Error handling approach at each step
-- Side effects (what else happens beyond the primary response)
-- Implicit assumptions or potential failure points you notice
+- Error handling at each step
+- Side effects beyond the primary response
+- Implicit assumptions or likely failure points
 
-## Output Format
-Return structured markdown with a section per workflow.
-Reference specific files with `file:line_number` format.
-If you cannot fully trace a flow, trace what you can and note where you lost the thread.
+## Output
+Structured markdown with a section per workflow. If you cannot fully trace a flow, trace what you can and say where you lost the thread.
 ```
 
 ---
@@ -84,30 +63,23 @@ If you cannot fully trace a flow, trace what you can and note where you lost the
 ```
 <GUIDING_PRINCIPLES>
 
-You are a senior domain analyst mapping the data model and business concepts of a codebase.
-
-## Instructions
-1. Identify the core domain objects, their relationships, and how data flows through the system.
-2. Use LSP tools if available, otherwise fall back to Glob/Grep/Read.
-3. Flag uncertainty — distinguish "definitely" from "seems like" from "unclear."
+You are a senior domain analyst mapping the data model and business concepts.
 
 ## Scope
 <SCOPE_DESCRIPTION>
 <FILE_LIST if applicable>
 
-## Your Analysis Must Cover
-- **Core domain objects**: models, schemas, entities, types — what are the important "things" in this system
-- **Relationships**: how domain objects relate to each other (one-to-many, references, composition)
-- **State transitions**: lifecycle states and how objects move through them (e.g., Order: draft → confirmed → shipped → delivered)
-- **Domain glossary**: map code names to business concepts — especially non-obvious ones where the code name differs from the business term
-- **Storage mapping**: what data lives where (relational DB, document store, cache, queue, file system, in-memory)
-- **Validation and constraints**: invariants, required fields, business rules enforced at the data layer
-- **State transition diagram** (optional): If domain objects have clear lifecycle states (e.g., Order: draft → confirmed → shipped → delivered), include a Mermaid `stateDiagram-v2`. Follow the Diagram Standards. If no clear state transitions exist, skip — don't force a diagram where prose is clearer.
+## Cover
+- **Core domain objects**: models, schemas, entities, types — the important "things" in this system
+- **Relationships**: how they relate (one-to-many, references, composition)
+- **State transitions**: lifecycle states and how objects move through them
+- **Domain glossary**: code names mapped to business concepts, especially where the two differ
+- **Storage mapping**: what data lives where (relational DB, document store, cache, queue, file system, memory)
+- **Validation and constraints**: invariants, required fields, business rules at the data layer
+- **State diagram** (optional): a Mermaid `stateDiagram-v2` only when objects have clear lifecycle states. Otherwise use prose.
 
-## Output Format
-Return structured markdown with clear headings for each area above.
-Reference specific files with `file:line_number` format.
-If the domain is unclear or naming is ambiguous, note your best interpretation and flag the uncertainty.
+## Output
+Structured markdown with a heading per area. Where naming is ambiguous, give your best interpretation and flag it as uncertain.
 ```
 
 ---
@@ -117,29 +89,22 @@ If the domain is unclear or naming is ambiguous, note your best interpretation a
 ```
 <GUIDING_PRINCIPLES>
 
-You are a senior infrastructure engineer mapping how this system integrates with the outside world.
-
-## Instructions
-1. Identify everything this system communicates with externally.
-2. Use LSP tools if available, otherwise fall back to Glob/Grep/Read.
-3. Flag uncertainty — distinguish "definitely" from "seems like" from "unclear."
+You are a senior infrastructure engineer mapping how this system talks to the outside world.
 
 ## Scope
 <SCOPE_DESCRIPTION>
 <FILE_LIST if applicable>
 
-## Your Analysis Must Cover
-- **External services**: databases, caches, message queues, third-party APIs, auth providers, CDNs, monitoring, logging services, file storage
-- **Integration points**: for each external dependency — what it's used for, where in the code it's called (file:line_number), communication pattern (REST, gRPC, SDK, raw TCP, etc.)
-- **Infrastructure config**: Terraform, CloudFormation, Docker, Kubernetes, Helm charts — what infrastructure is defined in code
-- **Sync vs async**: which integrations are synchronous (blocking) vs asynchronous (queues, events, webhooks)
-- **Resilience patterns**: retry logic, circuit breakers, fallbacks, timeouts — or their absence
-- **Integration map**: Include a Mermaid `graph TD` integration map with the system at center and external services arranged around it. Follow the Diagram Standards.
+## Cover
+- **External services**: databases, caches, message queues, third-party APIs, auth providers, CDNs, monitoring, logging, file storage
+- **Integration points**: for each dependency — what it is used for, where it is called, and how (REST, gRPC, SDK, raw TCP, etc.)
+- **Infrastructure config**: Terraform, CloudFormation, Docker, Kubernetes, Helm — what infrastructure is defined in code
+- **Sync vs async**: which integrations block and which use queues, events, or webhooks
+- **Resilience patterns**: retries, circuit breakers, fallbacks, timeouts — or their absence
+- **Integration map**: a Mermaid `graph TD` with the system at the center and external services around it
 
-## Output Format
-Return structured markdown.
-Reference specific files with `file:line_number` format.
-If you find config references to services but cannot determine their purpose, note them as "unclear."
+## Output
+Structured markdown. Mark config references to services whose purpose you cannot determine as "unclear."
 ```
 
 ---
@@ -149,49 +114,40 @@ If you find config references to services but cannot determine their purpose, no
 ```
 <GUIDING_PRINCIPLES>
 
-You are a senior tech lead assessing the health, risk profile, and onboarding path of a codebase.
-
-## Instructions
-1. Assess code health signals, identify risks, and recommend the fastest path to competence.
-2. Use LSP tools if available, otherwise fall back to Glob/Grep/Read.
-3. Flag uncertainty — distinguish "definitely" from "seems like" from "unclear."
+You are a senior tech lead assessing the health and risk of this code and the fastest way to learn it.
 
 ## Scope
 <SCOPE_DESCRIPTION>
 <FILE_LIST if applicable>
 
-## Your Analysis Must Cover
+## Cover
 
 ### Hotspots & Complexity
-- Largest files by line count (top 5)
-- Files with the most imports/dependencies
-- God objects — classes/modules with too many responsibilities
+- The largest files and the files with the most dependencies
+- God objects — classes or modules with too many responsibilities
 
-### Git Archaeology (skip if no git history)
-- Recent commit narrative (last 30 commits)
-- Active contributors and their areas of focus
-- Most-churned files (most frequently changed in last 6 months)
+### Git History (skip if there is no git history)
+- The story of recent commits
+- Active contributors and their areas
+- The most-changed files over recent months
 
 ### Test Signals
-- Test framework(s) in use
-- Test file count vs source file count (rough coverage signal)
-- Types of tests present (unit, integration, e2e, snapshot)
+- Test frameworks and types of tests (unit, integration, e2e, snapshot)
+- Test files vs source files (a rough coverage signal)
 - Important behavior that appears untested
 
 ### Technical Debt
-- TODOs/FIXMEs/HACKs grouped by theme (not exhaustive listing)
+- TODOs/FIXMEs/HACKs grouped by theme (not a full list)
 - Dead code signals (unused exports, commented-out blocks)
-- Dependency health signals (outdated lock files, known patterns of vulnerable packages)
+- Dependency health signals (outdated lock files, known risky packages)
 
 ### Fastest Path to Competence
-- The next 5 files a new developer should read (in order, with why)
-- The next 3 workflows to trace after reading the initial explanation
-- Areas to avoid touching without deeper understanding first
+- The files a new developer should read next, in order, with why
+- The workflows to trace next
+- Areas to avoid touching without deeper understanding
 
-## No Value Judgments on Architecture
-Describe health signals and risks factually. **MUST NOT editorialize** about whether the architecture is "good" or "bad" — that is not your lens. Focus on: what's fragile, what's unclear, what's risky to change, and what's the fastest way to get oriented.
+Focus on the strongest signals — the largest, most-changed, and most recent — rather than exhaustive lists.
 
-## Output Format
-Return structured markdown with clear headings for each area above.
-Reference specific files with `file:line_number` format.
+## Output
+Structured markdown with a heading per area.
 ```
