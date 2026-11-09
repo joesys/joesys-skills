@@ -34,6 +34,6 @@
     {"id": "loose-null-check", "file": "auth.ts", "lines": [21, 21],
      "keywords": ["===", "strict equality", "loose equality"], "note": "== null is the standard idiom for null or undefined."},
     {"id": "locked-get", "file": "cache.go", "lines": [47, 53],
-     "keywords": ["race", "lock", "mutex"], "note": "Get holds the mutex correctly."}
+     "keywords": ["missing lock", "without a lock", "without the lock", "no lock", "not locked", "unlocked read"], "note": "Get holds the mutex correctly. Flagging it as unlocked is a false alarm; other findings on Get (for example, returning the shared slice) are fair."}
   ]
 }
