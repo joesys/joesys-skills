@@ -47,32 +47,30 @@ interfaces, update all callers listed below.
 
 **Note:** Quick-review reaches into `skills/codereview/principles/` for its principle files. This is an intentional cross-skill dependency — the principles are shared content, not codereview-exclusive. If the principles directory is moved or restructured, both skills must be updated.
 
-## Preferences Skill Interface
-
-**Invocation:** `/preferences [skill-name | show | reset]`
-
-**Behavior contract:**
-- `/preferences` — runs the shared interview, saves to `.claude/skill-context/preferences.md`
-- `/preferences <skill-name>` — runs skill-specific interview, saves to `.claude/skill-context/<skill-name>.md`
-- `/preferences show` — displays all current preferences
-- `/preferences reset` — clears all preference files after confirmation
-- When invoked by another skill (first-contact case): runs streamlined core interview only, skips skill-specific deep-dives, returns control to caller
-
-**File contract:**
-- Shared preferences: `.claude/skill-context/preferences.md`
-- Skill-specific: `.claude/skill-context/<skill-name>.md`
-- Files are plain markdown, human-readable and hand-editable
-- Skills must handle missing files gracefully (first-run case)
-
-**Callers:**
-- All skills in this collection — each checks for shared preferences during their earliest phase and invokes `/preferences` if missing. See `shared/skill-context.md` for the full context-loading protocol.
-
 ## Commit Skill Interface
 
 **Invocation:** `/commit`
 
 **Callers:**
 - `skills/retrospective/SKILL.md` — Final Steps, step 2 (for committing approved improvements)
+- `skills/devlog/references/write-mode.md` — publishing a post
+- `skills/restructure-commit/SKILL.md` — reads the commit message format and the
+  OneFlow Option 3 merge rules from `skills/commit/SKILL.md`
+
+## Restructure Commit Interface
+
+**Invocation:** `/restructure-commit [<commit-range or hashes>]`
+
+**Behavior contract:**
+- Groups recent related commits, plus any new uncommitted work, into one
+  OneFlow Option 3 merge bubble.
+- Uses the message format from `skills/commit/SKILL.md`.
+- Shows the plan and waits for approval before rewriting history.
+- Never pushes. A force push after the rewrite needs its own explicit approval.
+
+**Callers:**
+- `skills/commit/SKILL.md` — suggests it in one line when recent commits look
+  related; never invokes it automatically
 
 ## Interaction Review Interfaces
 
@@ -112,28 +110,6 @@ interfaces, update all callers listed below.
 - Code-review findings: optionally consumes `/codereview` output from session context (via `--with-review`)
 - HTML render: calls `scripts/html_render.py` in Phase 3.7
 
-## Handbook Skill Interface
-
-**Invocation:** `/handbook [<path>]`
-
-**Behavior contract:**
-- Dispatches 6 analysis agents in parallel (Phase 1), then 13-16 chapter writers in parallel (Phase 3)
-- Conducts human interview between analysis and writing (Phase 2)
-- Produces `docs/handbook/handbook.md` and `docs/handbook/handbook.html`
-- Saves interview context to `.claude/skill-context/handbook.md`
-- Does NOT modify source code — read-only analysis
-- Does NOT auto-invoke other skills (no cross-skill dispatch)
-
-**Outbound interfaces (soft):**
-- Preferences: loads shared + skill-specific preferences in Phase 0 (invokes `/preferences` if missing)
-- Previous `/explain` report: reads `docs/explain/*.md` as supplementary context if present (does not invoke `/explain`)
-- HTML render: calls `scripts/html_render.py --profile handbook` in Phase 6
-
-**Callers:**
-- None currently — this skill is user-invoked only
-
----
-
 ## Handoff Skill Interface
 
 **Invocation:** `/handoff [--full | --compact] [--interactive] [--for self|agent|human] [--target auto|claude|codex|gemini|generic] [--include-diff] [--output <path>]`
@@ -166,33 +142,6 @@ interfaces, update all callers listed below.
 
 **Callers:**
 - None currently — this skill is user-invoked only
-
----
-
-## Plan Review Skill Interface
-
-**Invocation:** `/plan-review <document> [other-document] [--model <model>] [--arbiter <name|auto|host>] [--review-only] [--max-iterations <1-2>]`
-
-**Behavior contract:**
-- Accepts one specification or plan, or reviews both as a coupled unit.
-- Routes the selected model to an explicitly registered provider.
-- Starts a new read-only external reviewer session for every iteration.
-- Discovers repository arbiters and asks with a ranked recommendation when
-  several candidates are plausible.
-- Uses `accepted`, `rejected`, and `needs-user-decision` arbiter verdicts.
-- Lets only the host edit supplied documents and never mutates other files.
-- Converges only after a fresh review has no P0/P1, no accepted finding remains,
-  no user decision is pending, and validation passes.
-- Stops after at most 2 iterations and pauses on stagnation or oscillation.
-- `--review-only` is a single non-mutating review and arbitration pass.
-- Never commits, pushes, stashes, resets, or implements the reviewed plan.
-
-**Preference contract:**
-- Store `plan-review.md` in the current host's skill-context directory defined
-  by `shared/skill-context.md`.
-
-**Callers:**
-- None currently; this skill is user-invoked only.
 
 ---
 

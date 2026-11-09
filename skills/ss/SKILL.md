@@ -62,7 +62,7 @@ Read `shared/skill-context.md` for the full protocol (resolve `shared/...` again
 | Assumed knowledge: beginner | Explain error messages and technical content more thoroughly |
 | Assumed knowledge: expert | Focus on actionable content; skip obvious descriptions |
 
-`/ss` is a **silent defaults** skill. **MUST NOT invoke** `/preferences` on first contact — screenshots are fast, transactional operations.
+`/ss` uses **silent defaults**. Never interview the user about preferences — screenshots are fast, transactional operations.
 
 ## Phase 1: Configuration Bootstrap
 
@@ -192,7 +192,7 @@ The user always decides whether to chain. **MUST NOT silently hand off** to anot
 
 Suggest whichever sibling skill in this plugin fits the user's intent — the current list lives in the plugin's skill listing; do not rely on a memorized roster. Illustrative examples:
 
-- Error screenshot → offer to fix it directly (or via `superpowers:systematic-debugging`, only if that plugin appears in the available-skills list)
+- Error screenshot → offer to fix it directly (or through a debugging skill, if one appears in the available-skills list)
 - Screenshot showing this project's UI or code → suggest the relevant review skill
 - Screenshot of changes ready to commit → suggest `/commit`
 

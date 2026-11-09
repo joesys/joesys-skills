@@ -44,8 +44,7 @@ to this skill's directory, never the user's project working directory.
 
 Also load `shared/skill-context.md` from the plugin root in the earliest phase.
 Read shared preferences if they exist, but use silent defaults when absent. A
-handoff is transactional and MUST NOT interrupt first contact with the
-`/preferences` interview.
+handoff is transactional and MUST NOT interview the user about preferences.
 
 ## Invocation
 

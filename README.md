@@ -1,7 +1,7 @@
 # joesys-skills
 
-A collection of 23 agent skills for Claude Code and Codex: turn rough ideas
-into reusable prompts, consult other AI models, review code and plans,
+A collection of 19 agent skills for Claude Code and Codex: turn rough ideas
+into reusable prompts, consult other AI models, review code,
 understand projects, improve engineering workflows, and preserve or publish
 development work.
 
@@ -54,18 +54,14 @@ codex plugin marketplace upgrade
 | Review | [`readability-review`](#readability-review) | Grade how well code reads as a story |
 | Review | [`human-review-guide`](#human-review-guide) | Build a decision-focused human reading order |
 | Review | [`codebase-audit`](#codebase-audit) | Grade whole-codebase quality and velocity |
-| Review | [`plan-review`](#plan-review) | Iteratively stress-test specs and implementation plans |
 | Understand | [`explain`](#explain) | Explain a project, file, symbol, or feature in layers |
-| Understand | [`handbook`](#handbook) | Generate a self-contained project handbook |
 | Understand | [`huh`](#huh) | Re-explain the last answer in plain language with options, confidence, and unasked questions |
-| Improve | [`dashboard`](#dashboard) | Build a deterministic project-health dashboard |
 | Improve | [`retrospective`](#retrospective) | Facilitate an evidence-based development retrospective |
 | Improve | [`interaction-review`](#interaction-review) | Grade human-AI collaboration and coach improvements |
-| Improve | [`preferences`](#preferences) | Save shared and skill-specific personal preferences |
 | Preserve and publish | [`handoff`](#handoff) | Create or resume a drift-aware semantic checkpoint |
 | Preserve and publish | [`devlog`](#devlog) | Capture insights as scraps or development posts |
-| Preserve and publish | [`export`](#export) | Convert Markdown, text, or code to PDF, HTML, or PNG |
 | Preserve and publish | [`commit`](#commit) | Create structured Conventional Commits and OneFlow histories |
+| Preserve and publish | [`restructure-commit`](#restructure-commit) | Group related recent commits into one OneFlow merge bubble |
 | Preserve and publish | [`ss`](#ss) | Turn recent screenshots into actionable context |
 
 ## Write Better Prompts
@@ -123,11 +119,11 @@ supports latest or named-session resume.
 Delegate code analysis, refactoring, or automated editing to OpenAI's Codex
 CLI. The skill captures the session identifier when available, evaluates the
 response, and supports reliable session resume. The current default model is
-`gpt-5.6-sol`.
+`gpt-6.1-sol`.
 
 ```text
 /codex "explain the auth flow in this repo"
-/codex --model gpt-5.6-sol "analyze this function"
+/codex --model gpt-6.1-sol "analyze this function"
 /codex --sandbox workspace-write "fix the lint errors"
 /codex resume "follow up on the latest session"
 /codex resume <SESSION_ID> "continue this specific session"
@@ -145,7 +141,7 @@ and retains compatibility recovery for affected older releases.
 /antigravity resume <ID> "continue this specific session"
 ```
 
-## Review Code and Plans
+## Review Code
 
 ### codereview
 
@@ -253,32 +249,7 @@ metrics, industry benchmarks, letter grades, and actionable recommendations.
 /codebase-audit --static-only
 ```
 
-### plan-review
-
-Review a specification, implementation plan, or paired documents before
-implementation. Each iteration uses a fresh read-only external reviewer, a
-repository-aware arbiter, host-applied document fixes, and deterministic loop
-state until the documents converge or a bounded pause condition is reached.
-
-```text
-/plan-review docs/feature-spec.md docs/feature-plan.md
-/plan-review docs/feature-plan.md --model fable
-/plan-review docs/feature-spec.md --arbiter petra
-/plan-review docs/feature-plan.md --review-only
-/plan-review docs/spec.md docs/plan.md --max-iterations 10
-```
-
-| Option | Behavior |
-|---|---|
-| `--model <MODEL>` | Select a registered or provider-qualified review model |
-| `--arbiter <NAME\|auto\|host>` | Select the arbiter or its discovery mode |
-| `--review-only` | Run one non-mutating review and arbitration pass |
-| `--max-iterations <1-20>` | Lower the bounded iteration ceiling |
-
-Plan review edits only the supplied Markdown documents. It does not implement
-the plan or commit, push, stash, reset, or clean repository state.
-
-## Understand and Document Projects
+## Understand Projects
 
 ### explain
 
@@ -294,18 +265,6 @@ external dependencies, and health and risk. The report progresses from a
 /explain "how does payment work?"
 /explain --save
 /explain src/api/ --save --path docs/
-```
-
-### handbook
-
-Generate a self-contained project handbook for two audiences: an intermediate
-programmer who needs a reference and a beginner who needs a guided walkthrough.
-The workflow analyzes the project, interviews the user, writes the chapters,
-and produces Markdown plus HTML under `docs/handbook/`.
-
-```text
-/handbook
-/handbook src/auth
 ```
 
 ### huh
@@ -324,23 +283,7 @@ questions the operator has not asked yet.
 
 The skill explains and stops; it never edits files or runs commands.
 
-## Track Health and Improve Workflows
-
-### dashboard
-
-Build a self-contained HTML project-health dashboard for PMs and engineering
-managers. Deterministic local-git metrics drive traffic lights across delivery,
-health, and team lenses. Optional GitHub enrichment uses `gh`; GitLab remotes
-degrade gracefully because GitLab enrichment is not implemented in v1. An
-optional LLM narrative explains the lights but never changes them.
-
-```text
-/dashboard
-/dashboard src/api
-/dashboard --no-llm
-/dashboard --no-host
-/dashboard --no-llm --no-host
-```
+## Improve Workflows
 
 ### retrospective
 
@@ -359,7 +302,7 @@ documents, and tests, then produces discussion topics, actions, and a narrative.
 
 ### interaction-review
 
-Analyze Claude Code JSONL conversation transcripts across prompt craft,
+Analyze Claude Code or Codex conversation transcripts across prompt craft,
 workflow efficiency, agentic leverage, error recovery, and context management.
 The skill produces Markdown and HTML report cards with a prioritized coaching
 roadmap and trend history.
@@ -371,23 +314,8 @@ roadmap and trend history.
 /interaction-review trend
 ```
 
-This skill specifically depends on Claude Code transcript storage even when the
-collection itself is installed for both hosts.
-
-### preferences
-
-Capture shared communication, explanation, experience, and project preferences
-plus skill-specific settings. Other skills can request first-contact setup when
-preferences are absent; transactional workflows such as `commit` and `handoff`
-use silent defaults instead of interrupting work.
-
-```text
-/preferences
-/preferences show
-/preferences reset
-/preferences codereview
-/preferences plan-review
-```
+The skill reads the session logs of the host it runs in: Claude Code
+(`~/.claude/projects/`) or Codex (`~/.codex/sessions/`).
 
 ## Capture, Transfer, and Publish Work
 
@@ -427,48 +355,58 @@ when repository state has drifted.
 
 Capture development insights for budding programmers. Write mode reconstructs
 the reasoning behind a topic, scrap mode records an insight quickly, and list
-mode shows the backlog and published posts.
+mode shows the backlog and published posts. `/commit` captures scraps
+automatically after significant commits, so ideas pile up for later posts.
 
 ```text
 /devlog "the recursive clone bug"
 /devlog --since yesterday
 /devlog --from-scrap recursive-fix
+/devlog --from-scrap ~/Projects/moirai/docs/devlog/.scraps/<file>.md
 /devlog scrap "signing workaround"
 /devlog scrap
 /devlog scrap --from-context "adapter lesson"
 /devlog list
 ```
 
-### export
-
-Convert Markdown, text, or code into PDF, HTML, PNG, or all three. Choose a
-content scope (`full`, `summary`, or `1pager`) and a theme (`minimal`, `modern`,
-or `dark`). PDF generation uses Pandoc and LuaLaTeX; PNG uses headless Chromium.
-
-```text
-/export report.md
-/export report.md --format png --theme dark
-/export report.md --scope summary --format all
-/export utils.py --format html --theme dark
-/export report.md --scope 1pager
-/export report.md --orientation landscape
-/export report.md --output ./out/
-```
+To see scraps from several projects in one list, add a `## Devlog repos`
+section with one repo path per line to `~/.claude/skill-context/devlog.md`
+(Codex: `~/.codex/skill-context/devlog.md`). `--from-scrap` with a path in
+another repo prints the command to run from that repo, because the post and
+its commit belong there.
 
 ### commit
 
 Create a Conventional Commit in plain language for a reader without current-task
 context. Every message retains an intent paragraph, meaningful change summary,
-and candid AI review. The workflow can decompose multi-unit changes into a
-OneFlow Option 3 branch, group related recent commits with user approval, and
-recover from an unresponsive 1Password signing agent by creating an explicitly
-reported unsigned commit.
+and candid AI review. When a change splits into several logical commits, the
+skill puts them on a short-lived branch and merges it back with `--no-ff`
+(OneFlow Option 3), so the group shows as one merge bubble. A group of one
+commit is fast-forwarded instead. It also recovers from an unresponsive
+1Password signing agent by creating an explicitly reported unsigned commit.
 
 ```text
 /commit
 ```
 
-The skill never pushes without express push-specific authorization.
+`/commit` never rewrites existing history. When recent commits look related,
+it suggests `/restructure-commit` in one line and carries on.
+
+### restructure-commit
+
+Restructure recent history: group related recent commits, plus any new
+uncommitted work, into one OneFlow Option 3 merge bubble. The skill shows the
+plan and waits for approval before it rewrites history. It uses the same
+message format as `commit`.
+
+```text
+/restructure-commit
+/restructure-commit HEAD~4..HEAD
+/restructure-commit abc123 def456 789abc
+```
+
+Neither skill pushes without express push-specific authorization. A force push
+after a rewrite needs its own approval.
 
 ### ss
 

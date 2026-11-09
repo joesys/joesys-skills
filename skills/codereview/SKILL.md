@@ -47,7 +47,7 @@ If the invocation is ambiguous or unrecognizable, ask the user to clarify before
 
 Read `shared/skill-context.md` for the full protocol (resolve `shared/...` against the plugin root — two levels above this SKILL.md — never the project's working directory). In brief:
 
-1. Read `.claude/skill-context/preferences.md` — if missing, invoke `/preferences` (streamlined).
+1. Read `.claude/skill-context/preferences.md` if it exists; otherwise use defaults. Never interview the user about preferences.
 2. Read `.claude/skill-context/codereview.md` (if it exists) for review-specific preferences.
 
 **How preferences shape this skill:**

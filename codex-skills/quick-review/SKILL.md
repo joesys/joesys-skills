@@ -48,7 +48,7 @@ If the invocation is ambiguous or unrecognizable, ask the user to clarify before
 
 Read `../shared/skill-context.md` for the full protocol (resolve `../shared/...` against the collection root (one level above this SKILL.md) - never the project's working directory). In brief:
 
-1. Read `.codex/skill-context/preferences.md` - if missing, invoke `$preferences` (streamlined).
+1. Read `.codex/skill-context/preferences.md` if it exists; otherwise use defaults. Never interview the user about preferences.
 2. Read `.codex/skill-context/codereview.md` (if it exists) - quick-review shares review preferences with codereview.
 
 **How preferences shape this skill:**
