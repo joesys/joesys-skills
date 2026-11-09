@@ -1,6 +1,6 @@
 # Retrospective — Agent Prompts
 
-Full prompt templates for the 5 channel agents (Phase 1) and the narrative agent (Phase 4). Each channel agent receives the retro time boundary, the Guiding Principles block, and — prepended by the host to **every** channel prompt before dispatch — the carry-forward context and the project/tone preferences. Only Agent 1's template shows an explicit carry-forward slot; for Agents 2–5, prepend the same carry-forward and preferences block yourself.
+Full prompt templates for the 5 channel agents (Phase 1) and the narrative agent (Phase 4). Each channel agent receives the retro time boundary, the Guiding Principles block, and — prepended by the host to **every** channel prompt before dispatch — the carry-forward context and the project/tone preferences. Only Agent 1's template shows an explicit carry-forward slot; for Agents 2–5, prepend the same carry-forward and preferences block yourself. Also fill Agent 2's `<SESSION_LOG_HOST>` (Claude Code or Codex) and Agent 4's `<PLAN_FOLDERS>` (from `.claude/skill-context/retrospective.md`, or "None configured").
 
 ## Table of Contents
 
@@ -77,18 +77,28 @@ Return structured markdown with clear section headers for each category above. I
 ```
 <GUIDING_PRINCIPLES>
 
-You are reading Claude Code conversation transcripts to find moments of human correction, decision-making, and friction for a retrospective.
+You are reading AI coding-session transcripts to find moments of human correction, decision-making, and friction for a retrospective.
 
 ## Instructions
-1. Read the specified JSONL session files.
-2. Focus on user and assistant messages (type: "user" and "assistant"). Skip tool results, file-history-snapshots, and progress messages — they are bulk data that obscures the thinking.
+1. Find and read the session files for this project, using the section for your log host below. Each line is one JSON object.
+2. Read only the human and assistant messages. Skip tool calls, tool output, reasoning, and bookkeeping lines — they are bulk data that obscures the thinking.
 3. Stay within the ~4,000 line read budget. Scan all sessions but read deeply only the most signal-rich exchanges.
 
-## Session Resolution
-Determine the active project's session files:
-1. The project directory is derived from the current working directory by replacing every non-alphanumeric character (the drive `:`, path separators `\` and `/`) with a single `-` (e.g., `D:\joesys\Projects\my-project` becomes `D--joesys-Projects-my-project` — the `--` after the drive letter is `:` and `\` each becoming one `-`; on POSIX, `/home/user/app` becomes `-home-user-app`). If unsure, list `~/.claude/projects/` and match the entry against the transformed cwd.
-2. Session JSONL files are at `~/.claude/projects/<project-dir>/<sessionId>.jsonl`
-3. Filter sessions to those with timestamps within the retro time boundary. Check the first entry's `timestamp` field in each JSONL file.
+## Log Host
+<SESSION_LOG_HOST: "Claude Code" or "Codex". Read that host's logs. Read both only if the host says so, and label each finding with its source.>
+
+## Claude Code Session Logs
+1. Location: `~/.claude/projects/<project-dir>/<sessionId>.jsonl`. `<project-dir>` is the current working directory with every non-alphanumeric character (the drive `:`, path separators `\` and `/`) replaced by a single `-` (e.g., `D:\joesys\Projects\my-project` becomes `D--joesys-Projects-my-project` — the `--` after the drive letter is `:` and `\` each becoming one `-`; on POSIX, `/home/user/app` becomes `-home-user-app`). If unsure, list `~/.claude/projects/` and match the entry against the transformed cwd.
+2. Session start: the first line that has a top-level `timestamp` (the leading lines often have none). Keep sessions that fall within the retro time boundary.
+3. Read lines with `type` `"user"` or `"assistant"`. The text is in `message.content`: a string, or a list of blocks (`text`, `thinking`, `tool_use`, `tool_result`). Read the `text` blocks and string content.
+4. A `user` line whose content holds only `tool_result` blocks is tool output, not the developer. Lines with `isSidechain: true` come from subagents. Skip both, and skip all other line types (`file-history-snapshot`, `progress`, `attachment`, `system`, and similar).
+
+## Codex Session Logs
+1. Location: `~/.codex/sessions/YYYY/MM/DD/rollout-<start-time>-<session-id>.jsonl`. The date folders are the session start date, so list only the folders inside the retro time boundary. Older sessions may be compressed in `~/.codex/archived_sessions/*.jsonl.zst`; read them with `zstd -dc` only if the boundary needs them.
+2. Every line has `timestamp`, `type`, and `payload`. The first line is `type: "session_meta"`: keep the file only if `payload.cwd` equals the project's working directory. Skip files whose `payload.source` is an object with a `subagent` key.
+3. Read lines with `type: "response_item"` and `payload.type: "message"`. `payload.role` is `"user"` or `"assistant"`; the text is in `payload.content[].text`.
+4. Skip `payload.role: "developer"` messages and user messages whose text starts with `# AGENTS.md instructions` or `<environment_context>` (the host injects these). Skip `reasoning`, `function_call`, `function_call_output`, `custom_tool_call`, and `custom_tool_call_output` items, and all `event_msg`, `turn_context`, `token_usage_record`, and `compacted` lines.
+5. `~/.codex/history.jsonl` lists every user prompt across all projects (`session_id`, `ts` in Unix seconds, `text`). It has no folder field. Use it only as a quick prompt index, matched to this project's rollout files by `session_id`.
 
 ## Time Boundary
 <START_DATE> to <END_DATE>
@@ -166,10 +176,16 @@ You are comparing what was planned against what was actually delivered during th
 <START_DATE> to <END_DATE>
 
 ## Where to Find Plans
-Check these locations for plan and spec documents (date-filtered to the retro period):
-- `docs/superpowers/plans/` — implementation plans
-- `docs/superpowers/specs/` — design specs
-- Any other planning directories discovered in the project
+Configured plan folders (from the user's retrospective preferences):
+<PLAN_FOLDERS or "None configured">
+
+If folders are configured, search them first. Otherwise, check these common locations, and use the ones that exist:
+- `docs/plans/`, `docs/specs/`, `plans/`, `specs/`
+- `docs/design/`, `docs/rfcs/`, `docs/adr/`, `docs/decisions/`
+- `docs/superpowers/plans/`, `docs/superpowers/specs/` (older projects)
+- Any other folder whose name says it holds plans, specs, designs, or roadmaps
+
+If none exist, report "No plan or spec documents found" and still list significant unplanned work from the git history.
 
 Use file modification dates and git log to filter to the retro period.
 

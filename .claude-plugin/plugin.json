@@ -1,7 +1,7 @@
 {
   "name": "joesys-skills",
-  "description": "Custom Claude Code skills — prompt writing, plain-language answer re-explanation, multi-model AI delegation, structured git commits, cross-session handoffs, iterative spec and plan review, code review, quick review, readability review, human review guide, codebase explanation, project handbook generation, codebase quality audit, devlog writing, retrospectives, interaction review, markdown export, and screenshot analysis",
-  "version": "18.5.0",
+  "description": "Custom Claude Code skills — prompt writing, plain-language answer re-explanation, multi-model AI delegation, structured git commits, cross-session handoffs, code review, quick review, readability review, human review guide, codebase explanation, codebase quality audit, devlog writing, retrospectives, interaction review, and screenshot analysis",
+  "version": "19.0.0",
   "author": {
     "name": "joesys",
     "url": "https://github.com/joesys"
@@ -33,10 +33,6 @@
     "esl",
     "codereview",
     "quick-review",
-    "plan-review",
-    "spec-review",
-    "implementation-plan",
-    "convergence",
     "readability-review",
     "story-readability",
     "cross-model",
@@ -69,25 +65,14 @@
     "retro",
     "sprint",
     "process-improvement",
-    "export",
-    "pdf",
     "html",
-    "png",
     "markdown",
-    "share",
     "screenshot",
     "visual",
     "human-review-guide",
     "review-guide",
     "reading-guide",
     "triage",
-    "attention-tier",
-    "handbook",
-    "documentation",
-    "onboarding-guide",
-    "project-docs",
-    "dashboard",
-    "project-health",
-    "pm"
+    "attention-tier"
   ]
 }

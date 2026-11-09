@@ -22,20 +22,16 @@ EXPECTED_SKILLS = {
     "codereview",
     "codex",
     "commit",
-    "dashboard",
     "devlog",
     "explain",
-    "export",
     "handoff",
-    "handbook",
     "huh",
     "human-review-guide",
     "interaction-review",
-    "plan-review",
-    "preferences",
     "prompt",
     "quick-review",
     "readability-review",
+    "restructure-commit",
     "retrospective",
     "ss",
 }
@@ -45,7 +41,6 @@ SAME_PLATFORM_SUBAGENT_SKILLS = {
     "codereview",
     "devlog",
     "explain",
-    "handbook",
     "human-review-guide",
     "interaction-review",
     "quick-review",
@@ -61,7 +56,6 @@ PINNED_SUBAGENT_MODEL = re.compile(
 
 ALLOWED_EXPLICIT_MODEL_DOCS = {
     Path("ai-council/SKILL.md"),
-    Path("plan-review/references/preference-schema.md"),
 }
 
 
@@ -107,8 +101,9 @@ def test_slash_commands_become_skill_mentions(tmp_path):
     manifest = codex_adapter.build_collection(REPO_ROOT, output)
 
     commit = (output / "commit" / "SKILL.md").read_text(encoding="utf-8")
-    assert "$preferences" in commit
     assert "$devlog" in commit
+    assert "$restructure-commit" in commit
+    assert "/restructure-commit" not in commit
     assert "/joesys-" not in commit
 
     codereview = (output / "codereview" / "SKILL.md").read_text(encoding="utf-8")
@@ -130,33 +125,42 @@ def test_generated_skills_reference_resources_relative_to_skill_dir(tmp_path):
     codex_adapter.build_collection(REPO_ROOT, output)
 
     code_review = (output / "codereview" / "SKILL.md").read_text(encoding="utf-8")
-    export = (output / "export" / "SKILL.md").read_text(encoding="utf-8")
+    restructure = (output / "restructure-commit" / "SKILL.md").read_text(encoding="utf-8")
 
     assert "../shared/review-common.md" in code_review
     assert "`principles/clean-code.md`" in code_review
-    assert "../scripts/md_export.py" in export
+    assert "../commit/SKILL.md" in restructure
     assert "~/.codex/skills" not in code_review
-    assert "~/.codex/skills" not in export
     assert (output / "shared" / "review-common.md").is_file()
-    assert (output / "scripts" / "md_export.py").is_file()
+    assert (output / "scripts" / "html_render.py").is_file()
+    assert not (output / "scripts" / "md_export.py").exists()
 
 
 def test_generated_guidance_matches_standalone_layout(tmp_path):
     output = tmp_path / "joesys-skills"
     codex_adapter.build_collection(REPO_ROOT, output)
 
-    export = (output / "export" / "SKILL.md").read_text(encoding="utf-8")
-    preferences = (output / "preferences" / "SKILL.md").read_text(
-        encoding="utf-8"
-    )
+    commit = (output / "commit" / "SKILL.md").read_text(encoding="utf-8")
 
-    assert "collection root (one level above this SKILL.md)" in export
-    assert "two levels above this SKILL.md" not in export
-    assert "../<skill-name>/SKILL.md" in preferences
-    assert "skills/<skill-name>/SKILL.md" not in preferences
+    assert "collection root (one level above this SKILL.md)" in commit
     for skill_md in output.glob("*/SKILL.md"):
         skill = skill_md.read_text(encoding="utf-8")
         assert "two levels above this SKILL.md" not in skill, skill_md
+
+
+def test_no_skill_mentions_a_removed_skill(tmp_path):
+    output = tmp_path / "joesys-skills"
+    codex_adapter.build_collection(REPO_ROOT, output)
+    removed = ["preferences", "handbook", "dashboard", "plan-review", "export"]
+    mention = re.compile(
+        r"(?<![\w/.~-])[/$](" + "|".join(map(re.escape, removed)) + r")(?![\w-])"
+    )
+
+    for collection in (REPO_ROOT / "skills", REPO_ROOT / "shared", output):
+        for markdown in collection.rglob("*.md"):
+            text = markdown.read_text(encoding="utf-8")
+            found = mention.search(text)
+            assert not found, (markdown, found and found.group(0))
 
 
 def test_shared_files_reference_siblings_in_place(tmp_path):
@@ -330,7 +334,7 @@ def test_plugin_versions_are_synchronized():
         if plugin["name"] == "joesys-skills"
     )
 
-    assert claude_plugin["version"] == "18.5.0"
+    assert claude_plugin["version"] == "19.0.0"
     assert codex_plugin["version"] == claude_plugin["version"]
     assert marketplace_version == claude_plugin["version"]
 
@@ -347,37 +351,6 @@ def test_generated_handoff_uses_codex_invocation_and_keeps_helper(tmp_path):
     assert "~/.claude/projects" not in skill
 
 
-def test_generated_plan_review_is_behaviorally_adapted(tmp_path):
-    output = tmp_path / "joesys-skills"
-    codex_adapter.build_collection(REPO_ROOT, output)
-
-    skill = (output / "plan-review" / "SKILL.md").read_text(
-        encoding="utf-8"
-    )
-    preferences = (
-        output / "plan-review" / "references" / "preference-schema.md"
-    ).read_text(encoding="utf-8")
-    frontmatter = skill.split("---", 2)[1]
-
-    assert "only when the user explicitly invokes $plan-review" in frontmatter
-    assert "Do not trigger automatically" in frontmatter
-    assert "disable-model-invocation" not in frontmatter
-    assert "$plan-review" in skill
-    assert "/plan-review" not in skill
-    assert "current host's `plan-review.md` skill-context file" in preferences
-    assert "../shared/skill-context.md" in preferences
-    assert ".claude/skill-context/plan-review.md" not in preferences
-    assert (
-        output / "plan-review" / "helpers" / "plan_review_state.py"
-    ).is_file()
-    assert not (
-        output / "plan-review" / "helpers" / "test_plan_review_state.py"
-    ).exists()
-    assert (
-        output / "plan-review" / "references" / "review-contract.md"
-    ).is_file()
-
-
 def test_generated_docs_have_no_cross_host_path_contradictions(tmp_path):
     output = tmp_path / "joesys-skills"
     codex_adapter.build_collection(REPO_ROOT, output)
@@ -391,12 +364,12 @@ def test_generated_docs_have_no_cross_host_path_contradictions(tmp_path):
     assert "`.claude/` directory doesn't exist" not in combined
 
 
-def test_generated_manifest_publishes_release_18_5_with_23_skills(tmp_path):
+def test_generated_manifest_publishes_release_19_0_with_19_skills(tmp_path):
     output = tmp_path / "joesys-skills"
     manifest = codex_adapter.build_collection(REPO_ROOT, output)
 
-    assert manifest["source_version"] == "18.5.0"
-    assert len(manifest["installed_skills"]) == 23
+    assert manifest["source_version"] == "19.0.0"
+    assert len(manifest["installed_skills"]) == 19
     assert "prompt" in manifest["installed_skills"]
 
 

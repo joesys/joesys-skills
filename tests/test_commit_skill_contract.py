@@ -74,3 +74,46 @@ def test_readme_promises_plain_language_commit_messages() -> None:
     readme = compact(read(README)).lower()
     assert "plain language" in readme
     assert "without current-task context" in readme
+
+
+RESTRUCTURE_SKILL = REPO_ROOT / "skills" / "restructure-commit" / "SKILL.md"
+CODEX_RESTRUCTURE_SKILL = REPO_ROOT / "codex-skills" / "restructure-commit" / "SKILL.md"
+
+
+def test_commit_never_rewrites_existing_history() -> None:
+    for skill in commit_skills():
+        assert "git reset --hard" not in skill
+        assert "git cherry-pick" not in skill
+        assert "A force push will be used when needed" not in skill
+
+
+def test_commit_keeps_oneflow_bubbles_without_single_commit_bubbles() -> None:
+    for skill in commit_skills():
+        normalized = compact(skill)
+        assert "OneFlow Option 3" in skill
+        assert "git merge --no-ff" in skill
+        assert "fast-forward" in normalized
+
+
+def test_commit_points_to_restructure_without_waiting() -> None:
+    canonical, codex = commit_skills()
+    assert "/restructure-commit" in canonical
+    assert "$restructure-commit" in codex
+    assert "do not wait" in compact(canonical).lower()
+
+
+def test_restructure_owns_the_history_rewrite_safely() -> None:
+    for skill, commit_ref in (
+        (read(RESTRUCTURE_SKILL), "skills/commit/SKILL.md"),
+        (read(CODEX_RESTRUCTURE_SKILL), "../commit/SKILL.md"),
+    ):
+        normalized = compact(skill)
+        assert commit_ref in skill
+        assert "git cherry-pick" in skill
+        assert "git reset --hard" in skill
+        # A backup branch is created before history is rewritten.
+        assert normalized.index("git branch restructure-backup") < normalized.index(
+            "git reset --hard"
+        )
+        assert "MUST wait" in skill
+        assert "git push" in skill and "express" in normalized

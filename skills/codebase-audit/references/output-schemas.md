@@ -7,7 +7,7 @@ JSON schemas, output file templates, and directory structure for audit artifacts
 - [Output Directory Structure](#output-directory-structure)
 - [metrics.json Schema](#metricsjson-schema)
 - [metrics.md Template](#metricsmd-template)
-- [Audit Preferences Template (Legacy Migration)](#audit-preferences-template-legacy-migration)
+- [Audit Preferences Template](#audit-preferences-template)
 - [Execution Flows](#execution-flows)
 
 ---
@@ -16,7 +16,6 @@ JSON schemas, output file templates, and directory structure for audit artifacts
 
 ```
 docs/reports/codebase-audit/
-├── project-context.md              # Legacy — migrated to .claude/skill-context/
 └── YYYYMMDD/
     ├── metrics.json                # Machine-readable metrics
     ├── metrics.md                  # Human-readable metrics table
@@ -195,18 +194,12 @@ Only include sections for which data was actually collected. Omit empty sections
 
 ---
 
-## Audit Preferences Template (Legacy Migration)
+## Audit Preferences Template
 
-**Note:** User context has migrated to the shared preferences system.
-Project phase, team size, and business priority are now stored in
-`.claude/skill-context/preferences.md`. Audit-specific context (known
-trade-offs, deployment cadence, audit history) is stored in
-`.claude/skill-context/codebase-audit.md`.
-
-The legacy file at `docs/reports/codebase-audit/project-context.md` is
-no longer generated. If one exists from a previous audit, Phase 3 will
-migrate its contents into the shared system. See `shared/skill-context.md`
-for the shared format.
+Audit context lives in `.claude/skill-context/codebase-audit.md`. Shared
+project facts (phase, team size, business priority) may also come from the
+user's `.claude/skill-context/preferences.md` if it exists. See
+`shared/skill-context.md` for the shared format.
 
 ### codebase-audit.md Preferences Template
 
@@ -216,6 +209,9 @@ for the shared format.
 Last updated: {DATE}
 
 ## Audit-Specific Context
+- **Project phase:** {phase}
+- **Team size:** {team_size}
+- **Business priority:** {priority}
 - **Deployment cadence:** {cadence}
 - **Domain:** {domain_summary}
 

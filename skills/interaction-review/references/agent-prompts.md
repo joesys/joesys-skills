@@ -34,10 +34,18 @@ Each agent operates within a **~4,000 line read budget** to prevent context exha
 
 ### Session Resolution
 
-Determine the active project's session files:
-1. The project directory is derived from the current working directory with every non-alphanumeric character (`:`, `\`, `/`) replaced by a single `-` (e.g., `D:\joesys\Projects\my-project` becomes `D--joesys-Projects-my-project`).
-2. Session JSONL files are at `~/.claude/projects/<project-dir>/<sessionId>.jsonl`
-3. Focus on `user` and `assistant` message types. Skip `tool_result`, `progress`, and `file-history-snapshot` entries — they are bulk data that obscures the thinking.
+The host finds the session files in Phase 1 and passes their paths as `<SESSION_FILE_LIST>`. It also states the log host in `<SESSION_LOG_HOST>` ("Claude Code" or "Codex"). Include the matching format below in every lens prompt and in the coach prompt, right after the guiding principles. Each JSONL line is one JSON object. Read only human and assistant messages; skip tool calls, tool output, reasoning, and bookkeeping lines — they are bulk data that obscures the thinking. Tool calls still count as evidence for the Agentic Leverage and Workflow Efficiency lenses: count and sample them, but do not read their full output.
+
+**Claude Code** (`~/.claude/projects/<project-dir>/<sessionId>.jsonl`)
+- Session ID: the filename stem.
+- Read lines with `type` `"user"` or `"assistant"`. The time is in `timestamp`. The text is in `message.content`: a string, or a list of blocks (`text`, `thinking`, `tool_use`, `tool_result`).
+- A `user` line whose content holds only `tool_result` blocks is tool output, not the user. Lines with `isSidechain: true` come from subagents. Skip `file-history-snapshot`, `progress`, `attachment`, `system`, and similar lines.
+
+**Codex** (`~/.codex/sessions/YYYY/MM/DD/rollout-<start-time>-<session-id>.jsonl`)
+- Session ID: `payload.id` on the first line (`type: "session_meta"`); it is also the UUID at the end of the filename.
+- Every line has `timestamp`, `type`, and `payload`. Read lines with `type: "response_item"` and `payload.type: "message"`. `payload.role` is `"user"` or `"assistant"`; the text is in `payload.content[].text`.
+- Skip `payload.role: "developer"` messages and user messages whose text starts with `# AGENTS.md instructions` or `<environment_context>` — the host injects these; the user did not type them.
+- Tool use appears as `response_item` lines with `payload.type` `function_call`, `custom_tool_call`, and their `_output` pairs. Skip `reasoning` items and all `event_msg`, `turn_context`, `token_usage_record`, and `compacted` lines.
 
 ---
 
@@ -46,7 +54,7 @@ Determine the active project's session files:
 ```
 <GUIDING_PRINCIPLES>
 
-You are analyzing Claude Code conversation transcripts to evaluate the quality of the user's prompts and communication with the AI agent.
+You are analyzing AI coding-session transcripts (Claude Code or Codex) to evaluate the quality of the user's prompts and communication with the AI agent.
 
 ## Instructions
 1. Read the specified JSONL session files.
@@ -101,7 +109,7 @@ Return structured markdown:
 ```
 <GUIDING_PRINCIPLES>
 
-You are analyzing Claude Code conversation transcripts to evaluate the efficiency of the human-AI collaboration — how directly and economically sessions reach their goals.
+You are analyzing AI coding-session transcripts (Claude Code or Codex) to evaluate the efficiency of the human-AI collaboration — how directly and economically sessions reach their goals.
 
 ## Instructions
 1. Read the specified JSONL session files.
@@ -160,7 +168,7 @@ Return structured markdown:
 ```
 <GUIDING_PRINCIPLES>
 
-You are analyzing Claude Code conversation transcripts to evaluate whether the user is leveraging the agent's autonomous capabilities — skills, tools, parallelism, and delegation — or manually steering work the agent could handle.
+You are analyzing AI coding-session transcripts (Claude Code or Codex) to evaluate whether the user is leveraging the agent's autonomous capabilities — skills, tools, parallelism, and delegation — or manually steering work the agent could handle.
 
 ## Instructions
 1. Read the specified JSONL session files.
@@ -217,7 +225,7 @@ Return structured markdown:
 ```
 <GUIDING_PRINCIPLES>
 
-You are analyzing Claude Code conversation transcripts to evaluate how both the user and agent handle mistakes, misunderstandings, and pivots during the session.
+You are analyzing AI coding-session transcripts (Claude Code or Codex) to evaluate how both the user and agent handle mistakes, misunderstandings, and pivots during the session.
 
 ## Instructions
 1. Read the specified JSONL session files.
@@ -276,12 +284,12 @@ Return structured markdown:
 ```
 <GUIDING_PRINCIPLES>
 
-You are analyzing Claude Code conversation transcripts to evaluate how well the user sets up and maintains the context environment for effective AI collaboration.
+You are analyzing AI coding-session transcripts (Claude Code or Codex) to evaluate how well the user sets up and maintains the context environment for effective AI collaboration.
 
 ## Instructions
 1. Read the specified JSONL session files.
 2. Read the principles file at `<PRINCIPLES_PATH>`.
-3. Also check for the existence and quality of CLAUDE.md files and memory entries in the current project.
+3. Also check for the existence and quality of project instruction files and memory entries for the current project.
 4. Stay within the ~4,000 line read budget.
 
 ## Sessions to Analyze
@@ -292,16 +300,16 @@ You are analyzing Claude Code conversation transcripts to evaluate how well the 
 
 ## What to Evaluate
 
-- **CLAUDE.md utilization**: Does a project CLAUDE.md exist? Is it useful and current?
+- **Instruction file utilization**: Does a project instruction file exist (`CLAUDE.md` for Claude Code, `AGENTS.md` for Codex)? Is it useful and current?
 - **Memory usage**: Are memory entries being created and referenced?
 - **Session setup quality**: Does the user establish context at the start?
 - **Reference management**: Does the user point to relevant docs, code, or prior work?
 - **Instruction coherence**: Do requirements stay consistent within a session?
 
 Check for:
-- `CLAUDE.md` in the project root — read and evaluate its quality if present
+- Project instruction file in the project root — `CLAUDE.md` for Claude Code, `AGENTS.md` for Codex. Read and evaluate its quality if present.
 - `.claude/skill-context/` — check for preference files
-- Memory directory — the `memory/` folder beside the session transcripts you were given (the sibling of the directory holding the `<SESSION_FILE_LIST>` paths, i.e. `~/.claude/projects/<project-dir>/memory/`); check it for entries
+- Memory — for Claude Code, the `memory/` folder beside the session transcripts you were given (`~/.claude/projects/<project-dir>/memory/`). For Codex, `~/.codex/memories/` (shared across all projects; look only for entries about this project). Check it for entries.
 - Session opening patterns — does the first user message set context?
 
 ## Output Format
@@ -315,8 +323,8 @@ Return structured markdown:
 ### Infrastructure Inventory
 | Component | Status | Quality |
 |---|---|---|
-| Project CLAUDE.md | Present/Missing | [Brief assessment] |
-| Global CLAUDE.md | Present/Missing | [Brief assessment] |
+| Project instruction file (`CLAUDE.md` / `AGENTS.md`) | Present/Missing | [Brief assessment] |
+| Global instruction file (`~/.claude/CLAUDE.md` / `~/.codex/AGENTS.md`) | Present/Missing | [Brief assessment] |
 | Preferences | Present/Missing | [Brief assessment] |
 | Memory entries | N entries | [Brief assessment] |
 
@@ -351,7 +359,8 @@ The host MUST substitute these placeholders before dispatch — the coach shares
 
 1. **Synthesized report from Phase 3** (all findings, scores, improvement roadmap), inlined here:
 <DRAFT_REPORT>
-2. **Raw JSONL transcripts** for verification (spot-check claims against actual exchanges) — absolute paths:
+2. **Raw JSONL transcripts** for verification (spot-check claims against actual exchanges) — absolute paths. Read them with the log format for their host, included with this prompt:
+<SESSION_LOG_HOST>
 <SESSION_FILE_LIST>
 3. **Previous report** (if any) for continuity validation:
 <PREVIOUS_REPORT_OR_"None — baseline analysis">

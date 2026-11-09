@@ -57,7 +57,7 @@ If the invocation is ambiguous or unrecognizable, ask the user to clarify before
 
 Read `shared/skill-context.md` for the full protocol (resolve `shared/...` against the plugin root — two levels above this SKILL.md — never the project's working directory). In brief:
 
-1. Read `.claude/skill-context/preferences.md` — if missing, invoke `/preferences` (streamlined).
+1. Read `.claude/skill-context/preferences.md` if it exists; otherwise use defaults. Never interview the user about preferences.
 2. Read `.claude/skill-context/human-review-guide.md` (if it exists) for skill-specific preferences.
 
 **How preferences shape this skill:**
@@ -282,9 +282,8 @@ Assemble the guide inline using the terminal markdown template from `references/
 python scripts/html_render.py <report_path> --profile analytical
 ````
 
-4. If the renderer succeeds: deliver the HTML file via `SendUserFile`.
-5. If the renderer fails: deliver the markdown file via `SendUserFile` with a warning.
-6. If `SendUserFile` is unavailable in this harness, print the absolute report path instead.
+4. If the renderer succeeds: give the user the absolute path of the HTML file.
+5. If the renderer fails (for example, pandoc is not installed): give the absolute path of the markdown file and a one-line warning that HTML was skipped.
 
 **In both formats:**
 - File references use `file:line` format

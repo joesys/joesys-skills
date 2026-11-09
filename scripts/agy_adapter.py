@@ -3,15 +3,19 @@
 
 WHY THIS EXISTS
 ---------------
-Current `agy` versions write print-mode replies to stdout. Older releases,
-including v1.0.9 on Windows, could exit successfully with empty non-TTY stdout
-after persisting the reply to a local SQLite conversation store. This wrapper
-forwards current stdout directly and retains SQLite recovery as a compatibility
-fallback for those older releases.
+Current `agy` versions (verified against v1.5.3) print the reply to stdout.
+Since v1.4.x a bare `-p` fails with "flag needs an argument: -p", and passing
+the prompt as an argument (`--print=<prompt>`) breaks for prompts above the
+Linux per-argument limit (about 128 KB). So this wrapper sends the prompt on
+stdin as one stream-json message (`--input-format stream-json`) and reads the
+final `result` event from the stream-json output.
 
-The wrapper also feeds the prompt via stdin, closes it deterministically, and
-bounds the run with a timeout that kills the whole process tree, so no `agy`
-process strays linger.
+Older releases, including v1.0.9 on Windows, could exit successfully with empty
+non-TTY stdout after persisting the reply to a local SQLite conversation store.
+The wrapper retains SQLite recovery as a compatibility fallback for that case.
+
+The wrapper also closes stdin deterministically and bounds the run with a
+timeout that kills the whole process tree, so no `agy` process strays linger.
 
 CONVERSATION STORE SCHEMA (reverse-engineered, verified against agy v1.0.9)
 --------------------------------------------------------------------------
@@ -34,21 +38,28 @@ the reply to a non-TTY stdout directly.
 
 USAGE
 -----
-The prompt is read from stdin; all CLI args are forwarded to `agy`, then `-p`
-is appended (so callers must NOT pass `-p` themselves):
+The prompt is read from stdin. All CLI args are forwarded to `agy`, then the
+adapter appends `--input-format stream-json --output-format stream-json`.
+Callers must NOT pass `-p`, `--print`, or the format flags themselves.
+`--mode plan` is what keeps the run read-only; `--sandbox` only restricts
+terminal commands, so pass both:
 
-    cat prompt.txt | python scripts/agy_adapter.py --sandbox          # fresh
-    cat prompt.txt | python scripts/agy_adapter.py -c                 # resume latest
-    cat prompt.txt | python scripts/agy_adapter.py --conversation ID  # resume by id
+    cat prompt.txt | python scripts/agy_adapter.py --mode plan --sandbox                   # fresh
+    cat prompt.txt | python scripts/agy_adapter.py --mode plan --sandbox -c                # resume latest
+    cat prompt.txt | python scripts/agy_adapter.py --mode plan --sandbox --conversation ID # resume by id
+
+Prompts larger than MAX_PROMPT_BYTES are rejected, because agy silently drops
+the end of a very large prompt.
 
 Environment overrides:
     AGY_BIN             agy executable (default "agy")
     AGY_CONV_DIR        conversation store dir (default ~/.gemini/antigravity-cli/conversations)
-    AGY_ADAPTER_TIMEOUT seconds before the agy run is killed (default 240)
+    AGY_ADAPTER_TIMEOUT seconds before the agy run is killed (default 600)
 """
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import signal
@@ -58,7 +69,16 @@ import sys
 from pathlib import Path
 
 DEFAULT_CONV_DIR = "~/.gemini/antigravity-cli/conversations"
-DEFAULT_TIMEOUT = 240.0
+DEFAULT_TIMEOUT = 600.0  # 10 minutes, the same limit the skills give the Bash tool
+
+# agy 1.5.3 kept only the first 187,648 bytes of a 208 KB prompt and dropped
+# the rest without an error. Stay well below that so the end of a prompt (often
+# the actual question) is never lost.
+MAX_PROMPT_BYTES = 150_000
+
+# Exit code when agy runs but reports an error instead of an answer.
+# (2 = bad prompt, 3 = agy missing, 4 = no output, 5 = legacy store unreadable.)
+EXIT_AGY_ERROR = 6
 
 # Field numbers inside a step_type=15 assistant message (top-level field 20).
 _MSG_FIELD = 20
@@ -288,6 +308,25 @@ def _clean_stdout(raw: bytes) -> str:
     return _ANSI_RE.sub("", raw.decode("utf-8", "replace")).strip()
 
 
+def build_stream_json_input(prompt: str) -> bytes:
+    """Encode the prompt as the single NDJSON `user` message agy reads on stdin."""
+    message = {"event": "user", "message": {"role": "user", "content": prompt}}
+    return (json.dumps(message) + "\n").encode("utf-8")
+
+
+def find_result_event(raw_stdout: bytes) -> dict | None:
+    """Return the payload of the last `result` event in agy's stream-json output."""
+    result = None
+    for line in _clean_stdout(raw_stdout).splitlines():
+        try:
+            event = json.loads(line)
+        except ValueError:
+            continue  # not a JSON line; ignore it
+        if isinstance(event, dict) and event.get("event") == "result":
+            result = event.get("result") or {}
+    return result
+
+
 def main(argv: list[str] | None = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
     conv_dir = os.path.expanduser(os.environ.get("AGY_CONV_DIR", DEFAULT_CONV_DIR))
@@ -301,11 +340,22 @@ def main(argv: list[str] | None = None) -> int:
     if not prompt.strip():
         print("agy_adapter: empty prompt on stdin", file=sys.stderr)
         return 2
+    prompt_bytes = len(prompt.encode("utf-8"))
+    if prompt_bytes > MAX_PROMPT_BYTES:
+        print(
+            f"agy_adapter: prompt is too large ({prompt_bytes:,} bytes; the limit is "
+            f"{MAX_PROMPT_BYTES:,}). agy silently drops the end of very large prompts. "
+            "Shorten the prompt or split it into smaller parts.",
+            file=sys.stderr,
+        )
+        return 2
 
+    # Send the prompt on stdin as stream-json, so its size is not limited by
+    # the operating system's command-line limits.
     before = snapshot_steps(conv_dir)
-    cmd = [agy_bin, *argv, "-p"]
+    cmd = [agy_bin, *argv, "--input-format", "stream-json", "--output-format", "stream-json"]
     try:
-        out, err, timed_out = run_agy(cmd, prompt.encode("utf-8"), timeout)
+        out, err, timed_out = run_agy(cmd, build_stream_json_input(prompt), timeout)
     except FileNotFoundError:
         print(
             f"agy_adapter: `{agy_bin}` not found. Install Antigravity CLI or set AGY_BIN.",
@@ -313,18 +363,30 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 3
 
-    # Forward-compatible: if agy itself wrote the reply to stdout, trust it.
-    direct = _clean_stdout(out)
-    if direct:
-        print(direct)
-        return 0
+    # Normal path: agy reports the final answer in a `result` event.
+    result = find_result_event(out)
+    if result is not None:
+        response = (result.get("response") or "").strip()
+        if result.get("status") == "SUCCESS" and response:
+            print(response)
+            return 0
+        reason = result.get("error") or result.get("finished_reason") or "empty response"
+        print(
+            f"agy_adapter: agy did not return an answer "
+            f"(status {result.get('status')}): {reason}",
+            file=sys.stderr,
+        )
+        return EXIT_AGY_ERROR
 
-    # Recover the reply from the conversation store.
-    db = select_changed_db(before, conv_dir)
+    # No result event: try to recover the reply from the conversation store.
+    # Not after a timeout: the store may then hold only the new question, and
+    # its last answer would be the previous turn's, printed as if it were new.
+    db = None if timed_out else select_changed_db(before, conv_dir)
     if db is None:
-        msg = "agy_adapter: agy produced no output and no conversation was updated"
         if timed_out:
-            msg += f" (agy timed out after {timeout:.0f}s)"
+            msg = f"agy_adapter: agy timed out after {timeout:.0f}s before answering"
+        else:
+            msg = "agy_adapter: agy produced no output and no conversation was updated"
         stderr_tail = err.decode("utf-8", "replace").strip()
         if stderr_tail:
             msg += "\n" + stderr_tail[:500]

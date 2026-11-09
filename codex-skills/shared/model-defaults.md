@@ -2,7 +2,7 @@
 
 Single source of truth for default model identifiers and CLI flags used across skills. When a model version changes, update this file — all skills that reference it will pick up the new defaults.
 
-**Consumers:** all skills that spawn same-platform subagents, plus codex, antigravity, claude, ai-council, codereview, quick-review, and plan-review
+**Consumers:** all skills that spawn same-platform subagents, plus codex, antigravity, claude, ai-council, codereview, and quick-review
 
 ---
 
@@ -10,10 +10,10 @@ Single source of truth for default model identifiers and CLI flags used across s
 
 | Provider | Model ID | Used In |
 |---|---|---|
-| OpenAI (Codex CLI) | `gpt-5.6-sol` | `$codex`, `$ai-council`, `$codereview`, `$plan-review` |
+| OpenAI (Codex CLI) | `gpt-6.1-sol` | `$codex`, `$ai-council`, `$codereview` |
 | Google (Antigravity CLI) | *(managed by agy)* | `$antigravity`, `$ai-council`, `$codereview` |
 | Anthropic (Claude CLI) | `opus` | `$claude` |
-| Anthropic (Claude CLI) | `fable` | `$ai-council` (Claude leg), `$plan-review` |
+| Anthropic (Claude CLI) | `fable` | `$ai-council` (Claude leg) |
 
 ## Review Model Routing
 
@@ -22,7 +22,7 @@ this registry:
 
 | Model identifier | Provider | Command source |
 |---|---|---|
-| `gpt-5.6-sol` | Codex CLI | Codex template below |
+| `gpt-6.1-sol` | Codex CLI | Codex template below |
 | `fable` | Claude CLI | Claude template below with `--model fable` |
 
 A known unique bare identifier routes to its registered provider. Custom or
@@ -36,13 +36,13 @@ unavailable.
 ### Codex
 
 ```bash
-codex exec --model gpt-5.6-sol -c model_reasoning_effort="xhigh" \
+codex exec --model gpt-6.1-sol -c model_reasoning_effort="xhigh" \
   --sandbox read-only --skip-git-repo-check 2>/dev/null
 ```
 
 | Flag | Purpose |
 |---|---|
-| `--model gpt-5.6-sol` | Model selection |
+| `--model gpt-6.1-sol` | Model selection |
 | `-c model_reasoning_effort="xhigh"` | Maximum reasoning depth |
 | `--sandbox read-only` | Safety: no file writes |
 | `--skip-git-repo-check` | Required for piped input |
@@ -68,28 +68,39 @@ codex exec resume --last --skip-git-repo-check "<PROMPT>" 2>/dev/null         # 
 Dispatch through the adapter, **not** `agy` directly. `<ADAPTER>` is the **absolute path** to `../scripts/agy_adapter.py` under the plugin root (the directory containing this file's parent, `./`) — resolve it before running; the project's working directory does not contain the adapter:
 
 ```bash
-python <ADAPTER> --sandbox
+python <ADAPTER> --mode plan --sandbox
 ```
 
 Invoke the adapter with `python3` where present, falling back to `python` on Windows — stock macOS/Linux expose only `python3`, so a bare `python` fails there even when Python 3 is installed. The resume commands below take the same interpreter.
 
 | Part | Purpose |
 |---|---|
-| `<ADAPTER>` (`../scripts/agy_adapter.py`) | Forwards current stdout and recovers replies from affected older releases |
-| `--sandbox` | Safety: read-only (forwarded to `agy`) |
+| `<ADAPTER>` (`../scripts/agy_adapter.py`) | Sends the prompt to `agy`, prints the final answer, and recovers replies from affected older releases |
+| `--mode plan` | Safety: read-only. Plan mode blocks edits to the project (forwarded to `agy`) |
+| `--sandbox` | Safety: restricts terminal commands only. It does **not** block file edits on its own (forwarded to `agy`) |
+
+Plan mode may save an `implementation_plan.md` under
+`~/.gemini/antigravity-cli/brain/<conversation-id>/`. That is `agy`'s own data
+folder, not the project.
 
 The prompt is delivered on **stdin** — the adapter forwards its own args to `agy`
-and appends `-p`, so callers must **not** pass `-p`. For session resume, replace
-`--sandbox` with `-c` (latest session) or `--conversation <ID>`.
+and appends `--input-format stream-json --output-format stream-json`, so callers
+must **not** pass `-p`, `--print`, or those format flags. For session resume, keep
+`--mode plan --sandbox` and add `-c` (latest session) or `--conversation <ID>`.
 
-**Why the adapter?** Current `agy` versions return print-mode output directly, and
-the adapter forwards it unchanged. Older Windows releases could return empty
-non-TTY stdout after saving the reply locally, so the adapter retains SQLite
-recovery as a compatibility fallback. It also bounds the run with a timeout
-(killing any stray `agy` process) and exits non-zero with a clear message if no
-reply can be recovered. Env overrides (`AGY_BIN`, `AGY_CONV_DIR`,
-`AGY_ADAPTER_TIMEOUT`) and the recovery mechanism are documented in
-`../scripts/agy_adapter.py`.
+The adapter rejects prompts larger than 150,000 bytes, because `agy` silently
+drops the end of very large prompts. Shorten or split such prompts.
+
+**Why the adapter?** Since `agy` 1.4.x a bare `-p` fails with `flag needs an
+argument: -p`, and a prompt passed as an argument breaks above the Linux
+per-argument limit (about 128 KB). The adapter sends the prompt on stdin as
+stream-json instead and prints the answer from the final `result` event. Older
+Windows releases could return empty non-TTY stdout after saving the reply
+locally, so the adapter retains SQLite recovery as a compatibility fallback. It
+also bounds the run with a 600-second timeout (killing any stray `agy` process)
+and exits non-zero with a clear message if no reply can be recovered. Env
+overrides (`AGY_BIN`, `AGY_CONV_DIR`, `AGY_ADAPTER_TIMEOUT`) and the recovery
+mechanism are documented in `../scripts/agy_adapter.py`.
 
 ### Claude CLI
 

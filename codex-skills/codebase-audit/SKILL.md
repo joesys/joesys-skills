@@ -82,7 +82,7 @@ Read `references/detection-defaults.md` for language marker files, language defa
 ### Detection Steps
 
 1. **Parse arguments** - determine invocation mode: `full`, `metrics`, `analysis`, `delta`, or `scoped`
-2. **Load user preferences** - read `../shared/skill-context.md` for the full protocol (resolve `../shared/...` against the collection root (one level above this SKILL.md) - never the project's working directory). Load `.codex/skill-context/preferences.md` (shared) and `.codex/skill-context/codebase-audit.md` (skill-specific). If no shared preferences exist, invoke `$preferences` (streamlined mode). Shared preferences supply project phase, team size, and business priority - Phase 3 will skip questions already answered here.
+2. **Load user preferences** - read `../shared/skill-context.md` for the full protocol (resolve `../shared/...` against the collection root (one level above this SKILL.md) - never the project's working directory). Load `.codex/skill-context/preferences.md` (shared) and `.codex/skill-context/codebase-audit.md` (skill-specific). Either file may be missing; never run a preferences interview. Shared preferences may supply project phase, team size, and business priority - Phase 3 skips questions already answered there.
 3. **Load config** - read `.codex/audit.yaml` if it exists (all fields optional)
 4. **Auto-detect language** - check marker files in priority order (see reference)
 5. **Apply language defaults** - function patterns, test runner, extension (see reference)
@@ -308,7 +308,6 @@ Gathers context the code alone can't reveal. Uses the shared preferences system 
 
 1. **Shared preferences** (`.codex/skill-context/preferences.md`) - loaded in Phase 0 step 2. Contains project phase, team size, business priority.
 2. **Audit-specific preferences** (`.codex/skill-context/codebase-audit.md`) - deployment cadence, known trade-offs.
-3. **Legacy profile** (`docs/reports/codebase-audit/project-context.md`) - if this exists but no shared preferences file does, migrate its contents into the shared system.
 
 ### First Audit - Build the Profile
 
@@ -324,24 +323,13 @@ Check what's already known from shared preferences. **MUST only ask** questions 
 
 If shared preferences exist and cover project phase, team size, and business priority, the only new questions are **deployment cadence** (if missing), **known trade-offs**, and **informed questions** based on Phase 1 findings (e.g., "I noticed zero tests - intentional for now?").
 
-If no shared preferences exist at all, `$preferences` was already invoked in Phase 0 step 2 - those answers are now available. Ask only the audit-specific questions: deployment cadence, known trade-offs, and informed questions.
+If no shared preferences exist, ask the project questions above in the same short round as the audit-specific ones. These answers change the grading, so they are worth one question round.
 
-Save audit-specific answers to `.codex/skill-context/codebase-audit.md`.
+Save all answers to `.codex/skill-context/codebase-audit.md`. Do not write `.codex/skill-context/preferences.md` - that file belongs to the user.
 
 ### Returning Audits - Confirm the Profile
 
 Check for existing audit-specific preferences at `.codex/skill-context/codebase-audit.md`. If found, present the combined profile (shared + audit-specific) and ask if anything has changed. Quick on repeat audits.
-
-### Legacy Migration
-
-If `docs/reports/codebase-audit/project-context.md` exists but `.codex/skill-context/preferences.md` does not:
-
-1. Read the legacy file
-2. Extract project phase, team size, deployment cadence, business priority
-3. Write shared fields to `.codex/skill-context/preferences.md`
-4. Write audit-specific fields (known trade-offs, audit history) to `.codex/skill-context/codebase-audit.md`
-5. Inform the user: "Migrated your audit profile to the shared preferences system."
-6. The legacy file remains in place (existing reports may reference it) but is no longer the source of truth.
 
 ### How User Context Shapes the Analysis
 

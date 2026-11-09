@@ -65,7 +65,7 @@ Read `../shared/skill-context.md` for the full protocol (resolve `../shared/...`
 | Custom weights | Override default dimension weights from `../shared/story-readability.md` |
 | Min-score default | Override the `--min-score` threshold when flag is not explicitly provided |
 
-`$readability-review` is a **silent defaults** skill. **MUST NOT invoke** `$preferences` on first contact - readability reviews should not be interrupted by interviews.
+`$readability-review` uses **silent defaults**. Never interview the user about preferences.
 
 Pass relevant preferences to the analysis subagent in Phase 1.
 

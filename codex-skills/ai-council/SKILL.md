@@ -39,7 +39,7 @@ If the question is empty or unintelligible, use `ask the user directly` to ask t
 
 Read `../shared/skill-context.md` for the full protocol (resolve `../shared/...` against the collection root (one level above this SKILL.md) - never the project's working directory). In brief:
 
-1. Read `.codex/skill-context/preferences.md` - if missing, invoke `$preferences` (streamlined).
+1. Read `.codex/skill-context/preferences.md` if it exists; otherwise use defaults. Never interview the user about preferences.
 2. No skill-specific preferences file for ai-council - shared preferences are sufficient.
 
 **How preferences shape this skill:**

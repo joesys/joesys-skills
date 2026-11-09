@@ -28,7 +28,7 @@ Before dispatching, **MUST**:
 
 ## User Preferences
 
-Read `../shared/skill-context.md` for the full protocol. Load `.codex/skill-context/preferences.md` if it exists. **MUST NOT invoke** `$preferences` on first contact - delegation is a pass-through and should not be interrupted by interviews. Shared communication-style preferences shape the critical-evaluation phase only.
+Read `../shared/skill-context.md` for the full protocol. Load `.codex/skill-context/preferences.md` if it exists; otherwise use defaults. Never interview the user about preferences - delegation is a pass-through. Shared communication-style preferences shape the critical-evaluation phase only.
 
 ## Running a Task
 
