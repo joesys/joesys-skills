@@ -229,10 +229,9 @@ For same-platform subagents, do not pass a model or reasoning-effort override. L
 
 #### Story Readability Subagent Adjustments
 
-The Story Readability subagent (domain 7) uses the same prompt template as the other 6, with two adjustments:
+The Story Readability subagent (domain 7) uses the same prompt template as the other 6, with one adjustment:
 
-1. **Additional output:** In addition to the standard violation format, the Story Readability subagent outputs per-dimension scores (1–10) for each file reviewed. These scores follow the scoring protocol defined in `shared/story-readability.md`.
-2. **Severity calibration:** Story readability findings naturally cluster at P2–P4. The subagent does not artificially inflate severity — narrative concerns are maintainability issues, not critical bugs. Typical mapping:
+1. **Severity calibration:** Story readability findings naturally cluster at P2–P4. The subagent does not artificially inflate severity — narrative concerns are maintainability issues, not critical bugs. Typical mapping:
    - P2: Functions that actively mislead (e.g., a function named `validate` that also mutates state)
    - P3: Functions that don't read as stories but aren't misleading (e.g., missing cognitive chunking, mixed abstraction levels)
    - P4: Minor narrative polish (e.g., paragraph spacing, slight naming improvements)
@@ -336,7 +335,7 @@ Deduplication heuristics:
 - Different files + same pattern = not duplicates (each gets its own finding)
 
 **Clean Code / Story Readability overlap:**
-When the Clean Code subagent and Story Readability subagent flag the same location (e.g., both flag a SLAP violation or naming issue), merge them into a single finding. Keep the Story Readability framing (richer narrative context) and credit both domains: "Flagged by: Clean Code, Story Readability."
+When the Clean Code subagent and Story Readability subagent flag the same location (e.g., both flag a SLAP violation or naming issue), merge them into a single finding. Keep the Story Readability framing (richer narrative context) and credit both domains: "Flagged by: Clean Code, Story Readability." If they disagree on whether to split out a function, either condition is enough: the function is reused, or it makes the code read better.
 
 ### Tool-AI Finding Merge
 
@@ -381,7 +380,7 @@ If `--min-severity` was specified, filter findings (not during analysis — suba
 
 ### 3.4 Prioritize Correctness
 
-Correctness findings (actual bugs — wrong logic, off-by-one errors, null dereferences, race conditions) MUST be surfaced prominently. These are almost always P0 or P1. If a correctness agent returns a finding rated lower, consider bumping it.
+Correctness findings (actual bugs — wrong logic, off-by-one errors, null dereferences, race conditions) MUST be surfaced prominently. Severity follows impact, not the reviewer that found it. Real bugs usually have high impact, so they are usually P0 or P1. Do not raise a finding's severity only because the correctness agent reported it.
 
 ### 3.5 Effort Modifiers
 
@@ -596,7 +595,7 @@ Read `shared/review-common.md` § Cross-Skill Discipline for the base constraint
 
 Additional codereview-specific guardrails:
 
-1. **Rule of Three.** **MUST NOT flag** duplication or suggest extraction until the pattern has been proven with **3 or more occurrences**. Two similar blocks are not enough.
+1. **Rule of Three.** **MUST NOT flag** duplication or suggest extraction *to remove duplication* until the pattern has been proven with **3 or more occurrences**. Two similar blocks are not enough. This rule does not block extraction for readability: a single block may be split out when a clear name makes the code read better.
 
 2. **Incidental similarity is not duplication.** Two code blocks that look alike but serve different purposes and evolve independently are not DRY violations. They are coincidentally similar.
 

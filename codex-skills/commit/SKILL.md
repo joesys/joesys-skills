@@ -120,7 +120,7 @@ Explain the problem or need, the outcome, and why it matters. Give enough contex
 Summarize observable outcomes and important technical decisions. Organize by file or category when that helps, but do not inventory every edited line or repeat the diff. Include counts, paths, symbols, and hashes only when they provide useful evidence or traceability, and explain their significance.
 
 **3. `[--- AI Review (<model name>) ---]`**
-Give an honest assessment in direct, ordinary language. Use your current model name in the header (e.g., `[--- AI Review (Claude Opus 4.7) ---]`). State meaningful strengths, risks, trade-offs, and follow-up work without promotional, theatrical, or self-congratulatory prose.
+Give an honest assessment in direct, ordinary language. Use your current model name in the header (for example, `[--- AI Review (<model name>) ---]` with the real name filled in). State meaningful strengths, risks, trade-offs, and follow-up work without promotional, theatrical, or self-congratulatory prose.
 
 ### Durable-reader check
 

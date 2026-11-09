@@ -29,8 +29,8 @@ C++ specific quality thresholds. The language's complexity makes stricter standa
 
 | Metric | Threshold | Rating | Source |
 |---|---|---|---|
-| Test framework | Google Test or Catch2 | Standard | Industry convention |
-| Test-to-source ratio | ≥0.6 | Good | Industry standard |
+| Test framework | Google Test or Catch2 | Standard | Convention — no single authoritative source |
+| Test-to-source ratio | ≥0.6 | Good | Convention — no single authoritative source |
 
 ## Story Readability
 

@@ -33,7 +33,7 @@ Each line is a sentence. The function is a paragraph. The reader knows what happ
 | 2 | Naming as Intent | 15% | Do names reveal *what* and *why* without needing to read the body? Are enums used over bools at call sites? Are call sites self-documenting? |
 | 3 | Cognitive Chunking | 15% | Are logical phases of a function extracted into named steps, even when the extraction doesn't reduce complexity or duplication? Can a reader see the story's chapters at a glance? |
 | 4 | Abstraction Consistency (SLAP) | 14% | Does each function operate at a single level of abstraction? Does the orchestrator avoid mixing high-level steps with low-level details? |
-| 5 | Function Focus | 10% | One function, one job. Short enough to hold in your head (~20 lines of logic). Extraction adds clarity, not just indirection. |
+| 5 | Function Focus | 10% | One function, one job. Short enough to hold in your head (~20 lines of logic). Split out a function when either condition holds: it is reused, or it makes the code read better. |
 | 6 | Structural Clarity | 10% | Flat control flow. Guard clauses and early returns for invalid states. Minimal nesting. No arrow anti-patterns. |
 | 7 | Documentation Quality | 10% | Comments explain *why*, not *what*. No parrot comments. Business rationale and non-obvious constraints are documented. |
 | 8 | No Clever Tricks | 6% | Absence of dense one-liners, bitwise hacks, ternary chains, negation puzzles, and obscure idioms. |

@@ -50,7 +50,7 @@ codex plugin marketplace upgrade
 | Consult models | [`codex`](#codex) | Delegate a prompt to a separate Codex CLI session |
 | Consult models | [`antigravity`](#antigravity) | Delegate a prompt to Google's Antigravity CLI |
 | Review | [`codereview`](#codereview) | Run a comprehensive multi-domain code review |
-| Review | [`quick-review`](#quick-review) | Scan quickly for P0-P2 correctness and security bugs |
+| Review | [`quick-review`](#quick-review) | Scan quickly for P0-P1 correctness and security bugs |
 | Review | [`readability-review`](#readability-review) | Grade how well code reads as a story |
 | Review | [`human-review-guide`](#human-review-guide) | Build a decision-focused human reading order |
 | Review | [`codebase-audit`](#codebase-audit) | Grade whole-codebase quality and velocity |
@@ -172,7 +172,7 @@ language.
 ### quick-review
 
 Run a fast correctness-and-security review using diff context and the host
-model. It reports only P0-P2 findings, with no style nits or architecture
+model. It reports only P0-P1 findings, with no style nits or architecture
 suggestions.
 
 ```text
@@ -219,7 +219,7 @@ the reviewer can spend judgment where it matters.
 /human-review-guide PR#123
 /human-review-guide docs/spec.md
 /human-review-guide --with-review     # Consume existing codereview findings
-/human-review-guide --calibrate       # Re-run calibration questions
+/human-review-guide --calibrate       # Set your reviewer profile (role, focus, detail)
 ```
 
 `--with-review` uses findings already present in the session; it does not

@@ -105,7 +105,7 @@ Content loading is **intentionally skill-specific** — codereview loads full fi
 
 ## Severity Scale
 
-Shared severity definitions (quick-review reports P0–P2 only; codereview reports P0–P4):
+Shared severity definitions (quick-review reports P0–P1 only; codereview reports P0–P4):
 
 | Priority | Type | Examples | Fix When |
 |---|---|---|---|
@@ -125,13 +125,13 @@ When including tool-only findings, map tool severity to the review priority scal
 | warning | **P2** |
 | style / info | **P3** |
 
-Quick-review discards tool findings below P2.
+Quick-review discards tool findings below P1.
 
 ### Severity Discipline
 
 - **MUST NOT inflate** severity to look thorough. P0 means actual bug or security hole. Style polish is P3/P4.
 - **MUST NOT downgrade** real bugs to manage report volume. If correctness or security found something genuine, it stays at its true severity.
-- **Correctness findings are almost always P0 or P1.** If a correctness agent returns a finding rated lower, consider bumping it.
+- **Severity follows impact, not the source.** Real bugs usually have high impact, so correctness findings are usually P0 or P1. Do not raise a finding's severity only because of which reviewer found it.
 
 ---
 

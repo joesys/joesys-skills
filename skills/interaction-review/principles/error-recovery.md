@@ -20,11 +20,12 @@ How quickly does the user notice when the agent is going in the wrong direction?
 
 **Signs of early detection:**
 - User checks agent's understanding before it starts work ("before you start, confirm: you're going to...")
-- Catches misalignment within 1-2 turns of it appearing
+- Catches misalignment in the next turn after it appears
 - Reads agent's plan/approach before approving execution
+- Checks the first result before asking for more work built on it
 
 **Signs of late detection:**
-- Agent produces 20+ lines of code before user realizes it's wrong
+- A wrong assumption is caught only after the agent has spent one or more full turns of work on it. One turn can now produce hundreds of lines, so each missed turn is expensive.
 - User reviews only the final output, not intermediate steps
 - Misunderstanding compounds across multiple turns before being caught
 
@@ -50,7 +51,7 @@ When an approach isn't working, does the user pivot cleanly or drag out a failin
 - Doesn't revisit abandoned approaches without reason
 
 **Signs of indecisive pivoting:**
-- Keeps tweaking a fundamentally wrong approach for 10+ turns
+- Keeps tweaking a fundamentally wrong approach for many turns after it is clearly failing
 - Oscillates between two approaches without committing
 - Partial pivots that leave the session in an inconsistent state
 
@@ -85,7 +86,7 @@ Does the interaction show adaptation — are later mistakes avoided because earl
 | Score Range | Description |
 |---|---|
 | 90-100 | Mistakes caught early, corrections are precise, recovery is fast. Both sides adapt within the session. |
-| 80-89 | Good recovery patterns. Most mistakes caught within 2-3 turns. Corrections are mostly clear. |
+| 80-89 | Good recovery patterns. Most mistakes caught in the next turn or two. Corrections are mostly clear. |
 | 70-79 | Recovery works but is slow. Some late detections, some vague corrections. Moderate turn waste on errors. |
 | 60-69 | Regular late detection. Corrections often require 2-3 rounds. Some compounding drift. |
 | 50-59 | Frequent compounding errors. Corrections are vague or ineffective. Significant turn waste. |

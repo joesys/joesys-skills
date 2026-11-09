@@ -5,7 +5,7 @@ description: "Use when the user invokes $retrospective to run a structured, disc
 
 # Retrospective Skill
 
-Run a structured retrospective facilitated by AI, interleaved with human check-ins at every phase. Dispatch 5 parallel channel agents - each mining a different data source (git history, conversations, code quality, planning docs, tests) - to build a comprehensive digest. Derive discussion topics from the data, walk through them with the human, and produce three output layers: action items, process improvements, and skill improvements. Finish with a readable narrative written by a fresh-context agent.
+Run a structured retrospective facilitated by AI, interleaved with human check-ins from Phase 1 onward. Dispatch 5 parallel channel agents - each mining a different data source (git history, conversations, code quality, planning docs, tests) - to build a comprehensive digest. Derive discussion topics from the data, walk through them with the human, and produce three output layers: action items, process improvements, and skill improvements. Finish with a readable narrative written by a fresh-context agent.
 
 ## Write for Humans
 
@@ -14,7 +14,7 @@ Everything a person reads from this skill - reports, findings, summaries, and co
 ## Out of Scope
 
 This skill MUST NOT:
-- Skip a human check-in at any phase. Every phase has one, including Phase 4 narrative review.
+- Skip a human check-in. They happen after Phase 1 topic derivation, at every Phase 2 topic, at the Phase 3c review gate (which covers 3a-3c), and at the Phase 4 narrative review. Phase 0 runs without a pause.
 - Apply approved improvements before the user has explicitly approved them in the Phase 3c review gate. "Proceed" earlier in the session does not authorize improvement application.
 - Manufacture consensus across the 5 channels. If channels disagree, surface the tension - do not paper over it.
 - Use a templated topic list. Topics emerge from channel findings; if the data doesn't support a topic, drop it instead of padding.

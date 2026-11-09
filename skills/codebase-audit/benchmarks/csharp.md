@@ -22,7 +22,7 @@ C#-specific quality thresholds aligned with .NET ecosystem standards.
 | Metric | Threshold | Rating | Source |
 |---|---|---|---|
 | Test framework | xUnit, NUnit, or MSTest | Standard | .NET ecosystem [^4] |
-| Test-to-source ratio | ≥0.8 | Good | Industry standard |
+| Test-to-source ratio | ≥0.8 | Good | Convention — no single authoritative source |
 
 ## Dependencies
 

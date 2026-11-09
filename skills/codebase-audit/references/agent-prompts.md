@@ -515,7 +515,7 @@ Read: `skills/codebase-audit/templates/analysis-template.md` — follow this str
 
 3. **Benchmark integration** — for every metric, resolve benchmarks in priority order:
    Language + domain specific → Language specific → Domain specific → General.
-   Every benchmark must have a source citation.
+   Every benchmark must have a source citation. If the source is a convention, label it as a convention — never as an industry standard.
 
 4. **Risk heat map** — include the complexity × churn cross-reference with Danger Zone files named.
 
@@ -531,7 +531,7 @@ Read: `skills/codebase-audit/templates/analysis-template.md` — follow this str
 ### Transparency Requirements
 
 - Show criteria priority rationale at the top of the report
-- Every benchmark has a source citation in footnotes
+- Every benchmark has a source citation in footnotes; convention-based numbers are labeled as conventions
 - Every grade references at least one measured metric
 - Effort estimates reference codebase size and team context
 - User context trade-offs acknowledged in relevant sections

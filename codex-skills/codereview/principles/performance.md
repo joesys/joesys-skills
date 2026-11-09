@@ -123,8 +123,9 @@ def get_order_summaries() -> list[dict]:
     ]
 ```
 
-**When to care:** Always. N+1 queries are never acceptable in production code. Even for small N,
-they establish a pattern that scales catastrophically. Catch them in code review, not in production.
+**When to care:** N+1 queries on a real data path (a request handler, a job, any loop over
+data that can grow) are a P1 issue. Even for small N today, the pattern scales badly as data grows.
+Catch them in code review, not in production. A one-time script over a small, fixed list is not a finding.
 
 **Key points:**
 - Use `joinedload` / `subqueryload` (SQLAlchemy), `select_related` / `prefetch_related` (Django).
@@ -180,7 +181,6 @@ allocation shows up in profiling. For building a string from 5 items, `+=` is pe
 **Key points:**
 - Use `"".join()` instead of `+=` in loops for string building.
 - Use generators (`yield`) instead of lists when the consumer processes items one at a time.
-- Pre-allocate lists with a known size when appropriate: `[None] * n` beats repeated `.append()`.
 - Avoid creating temporary objects (dicts, dataclasses) inside tight loops when a tuple suffices.
 
 ---

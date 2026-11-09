@@ -19,7 +19,7 @@
 
 | Tension | Guidance |
 |---|---|
-| **KISS vs. Small Functions** | Extracting functions adds indirection. Extract only when the extracted piece has a clear name and is called from multiple places, or when the original function mixes abstraction levels. Do not create trivial one-liner wrappers. |
+| **KISS vs. Small Functions** | Extracting functions adds indirection. Extract a function when either condition holds: it is reused, or it makes the code read better (a clear name that tells the story, for example when the original function mixes abstraction levels). Either one is enough. Do not create trivial one-liner wrappers. |
 | **YAGNI vs. Extensibility** | Build only what is needed today. If a second concrete case appears, refactor then. Premature abstraction is more costly than a later refactor. |
 | **Self-Documenting Code vs. Documentation Discipline** | Good names reduce the need for comments, but they cannot explain *why* a business rule exists or *why* a non-obvious approach was chosen. Use comments for rationale, not narration. |
 | **Small Functions vs. Cognitive Load** | Too many tiny functions force the reader to jump around. If the extraction does not reduce cognitive load, it increases it. Inline trivial helpers. |

@@ -2,11 +2,13 @@
 
 Evaluate how efficiently the human-AI collaboration reaches its goal. Measures turn economy, correction overhead, and directness of the path from request to resolution.
 
+How fast the session recovers after a mistake is scored only in the Error Recovery lens. Do not score it again here.
+
 ## Quick Diagnostic Guide
 
 | Symptom | Likely Category |
 |---|---|
-| Session has 40+ turns for a task achievable in 10-15 | Turn Bloat |
+| Session takes many turns for a task the agent could finish in one or two | Turn Bloat |
 | Same correction given 3+ times in one session | Correction Loops |
 | Agent builds something, user rejects it entirely, agent starts over | Wasted Cycles |
 | User and agent circle around the requirement without converging | Goal Drift |
@@ -16,15 +18,15 @@ Evaluate how efficiently the human-AI collaboration reaches its goal. Measures t
 ## Evaluation Criteria
 
 ### 1. Turn Economy
-How many turns does it take relative to the task complexity?
+How many turns does it take relative to the task difficulty?
 
-**Benchmarks (approximate):**
-- Simple question/answer: 1-3 turns
-- Bug fix with known location: 3-8 turns
-- Feature with clear requirements: 8-20 turns
-- Complex multi-file refactor: 15-40 turns
+A turn is one user message plus the agent's full response, including all of its tool calls and edits. Current agents do a lot in one turn. One well-specified turn can finish a whole bug fix, a small feature, or a multi-file change, including running the tests. So do not use fixed turn counts. Instead, ask: how many turns did this task need, compared with what it should have needed, given its difficulty and the information the user had?
 
-Turns significantly above these ranges for equivalent complexity indicate inefficiency.
+**How to judge:**
+- A clear, well-scoped task should usually finish in one or two turns. Extra turns need a reason.
+- Good reasons for extra turns: real ambiguity that only the user can resolve, a deliberate review checkpoint, new information found during the work, or a task too large to do safely at once.
+- Weak reasons: the agent asking for facts the user could have given at the start, or the user releasing requirements one at a time.
+- Long sessions are fine when they cover several separate tasks. Judge each task, not the session length.
 
 **What to count as a "wasted" turn:**
 - Clarification that could have been avoided with a better initial prompt
@@ -57,13 +59,7 @@ Does the conversation move in a straight line toward the goal, or meander?
 - Multiple false starts before the actual work begins
 - Long discussions about approach before any code is written (when the approach is straightforward)
 
-### 4. Recovery Speed
-When something goes wrong, how quickly does the session get back on track?
-
-**Fast recovery:** User identifies the problem, gives clear redirect, agent adjusts in 1-2 turns
-**Slow recovery:** Problem compounds for 5+ turns before course correction
-
-### 5. Batching Efficiency
+### 4. Batching Efficiency
 Does the user group related tasks effectively, or issue them one at a time when batching would be more efficient?
 
 **Signs of good batching:**

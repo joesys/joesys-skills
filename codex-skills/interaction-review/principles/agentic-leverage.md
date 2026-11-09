@@ -2,6 +2,8 @@
 
 Evaluate whether the user is taking full advantage of the agent's autonomous capabilities — skills, tools, parallelism, planning, and delegation — or manually steering work the agent could handle independently.
 
+This lens applies to Claude Code and Codex. Judge each tool or feature by its purpose, not by its name in one host. Persistent context (instruction files, memory) is scored only in the Context & Instruction lens.
+
 ## Quick Diagnostic Guide
 
 | Symptom | Likely Category |
@@ -16,7 +18,7 @@ Evaluate whether the user is taking full advantage of the agent's autonomous cap
 ## Evaluation Criteria
 
 ### 1. Skill Utilization
-Does the user invoke available skills when they would be more effective than manual orchestration?
+Does the user invoke available skills when they would be more effective than manual orchestration? Claude Code invokes a skill as `/name`; Codex invokes it as `$name`.
 
 **Signs of strong utilization:**
 - Uses `$codereview` instead of asking "look at this code for issues"
@@ -34,7 +36,7 @@ Does the user leverage the agent's built-in tools effectively?
 
 **Signs of strong awareness:**
 - Asks agent to search the codebase instead of specifying exact files
-- Lets the agent use Glob/Grep to find relevant code
+- Lets the agent use its own search tools to find relevant code (for example, `Glob`/`Grep` in Claude Code, `rg` in Codex)
 - Trusts the agent to navigate the filesystem
 - Uses agent for git operations, PR creation, etc.
 
@@ -70,22 +72,7 @@ Does the user structure work to take advantage of parallel execution?
 **Signs of missed parallelism:**
 - Sequential individual requests for independent tasks
 - Waiting for one task to complete before starting an unrelated one
-- Not using plan mode or task tracking for complex work
-
-### 5. Context Management
-Does the user help the agent maintain effective context?
-
-**Signs of strong management:**
-- Uses CLAUDE.md for persistent project context
-- References memory for recurring patterns
-- Provides links to relevant docs, issues, or PRs
-- Uses plan mode for complex multi-step tasks
-
-**Signs of weak management:**
-- Re-explains the same project setup every session
-- Expects the agent to remember previous sessions without memory
-- Provides no CLAUDE.md or project instructions
-- Doesn't use worktrees or branches for isolation
+- Not asking for a plan or task list before complex work (for example, plan mode or a task-tracking tool, where the host offers one)
 
 ## Scoring Rubric
 

@@ -32,7 +32,7 @@ Cross-language industry benchmarks used as fallback when no language-specific da
 
 | Metric | Threshold | Rating | Source |
 |---|---|---|---|
-| Test pass rate | 100% | Required | Industry standard |
+| Test pass rate | 100% | Required | Convention — no single authoritative source |
 | Test-to-source file ratio | ≥0.8 | Good | Google Engineering Practices [^7] |
 | Test-to-source file ratio | ≥0.5 | Acceptable | Industry median [^4] |
 
@@ -49,7 +49,7 @@ Cross-language industry benchmarks used as fallback when no language-specific da
 | Metric | Context | Source |
 |---|---|---|
 | Commit frequency | ≥1/day (active project) | DORA metrics [^9] |
-| Bus factor | ≥2 per module | Best practice [^10] |
+| Bus factor | ≥2 per module | Convention — no single authoritative source; bus factor concept [^10] |
 
 ## Story Readability
 
@@ -71,4 +71,4 @@ Cross-language industry benchmarks used as fallback when no language-specific da
 [^7]: Google Engineering Practices, google.github.io/eng-practices/
 [^8]: MyPy adoption trends, Python Developer Survey, JetBrains 2024
 [^9]: DORA, "Accelerate: State of DevOps," dora.dev
-[^10]: "Assessing the Bus Factor of Git Repositories," Avelino et al., SANER 2016
+[^10]: "Assessing the Bus Factor of Git Repositories," Cosentino, Cánovas Izquierdo & Cabot, SANER 2015, doi:10.1109/SANER.2015.7081864

@@ -40,7 +40,7 @@ Parse the user's `/interaction-review` arguments:
 | `/interaction-review` | Default | Analyze sessions since the last report. If no prior report, analyze all. |
 | `/interaction-review session <id>` | Single session | Deep-dive on one session. `<id>` is the session ID (see 1.1). |
 | `/interaction-review since YYYY-MM-DD` | Date range | Analyze sessions from a specific date forward (ISO8601 date). |
-| `/interaction-review trend` | Trend | Multi-session aggregate with score progression across all prior reports. |
+| `/interaction-review trend` | Trend | Multi-session aggregate with score progression across all prior reports. Marks every rubric version change (see 3.3). |
 
 If the invocation is ambiguous or unrecognizable, ask the user to clarify before proceeding.
 
@@ -73,7 +73,7 @@ Defaults: balanced detail, intermediate knowledge, weights 30/25/20/15/10, stand
 
 1. Check for `docs/interaction-review/` directory.
 2. If it exists, list all `*-interaction-review.md` files, sorted by date (newest first).
-3. Read the most recent report for continuity: extract per-lens scores, "Your Next Steps" items, and recurring pattern flags.
+3. Read the most recent report for continuity: extract the rubric version (`rubric_version` in the front-matter; a report without it is v1), per-lens scores, "Your Next Steps" items, and recurring pattern flags. In trend mode, read the rubric version of every prior report.
 4. If no previous reports exist, note this is the baseline report.
 
 ---
@@ -177,7 +177,7 @@ Scan all findings across lenses for overlaps:
 ### 3.3 Compare to Previous Report
 
 If a previous report exists:
-1. Compute per-lens score deltas (current - previous).
+1. Compute per-lens score deltas (current - previous). The current rubric is v2 (see `references/output-formats.md` § Rubric Version). If the previous report uses another rubric version, do not show the delta as a gain or loss. Mark it as a rubric change, as that section describes, so a v1→v2 jump is not read as real improvement or decline. In trend mode, mark the point where the version changes in the Progress Tracker.
 2. Check each previous "Your Next Steps" item:
    - Look for evidence in the new transcripts that the user acted on it
    - Mark as: addressed (with evidence), partially addressed, or not addressed

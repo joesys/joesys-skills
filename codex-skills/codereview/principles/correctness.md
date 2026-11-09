@@ -231,6 +231,7 @@ def parse_path(filepath: str) -> str:
 ### ✅ Correct
 
 ```python
+import os
 from typing import Optional
 
 def average(values: list[float]) -> Optional[float]:
@@ -255,13 +256,13 @@ def calculate_discount(price: float, quantity: int) -> float:
     return total
 
 def parse_path(filepath: str) -> str:
-    """Extract filename from a path string safely."""
+    """Extract directory from path."""
     if not filepath:
         raise ValueError("File path must not be empty")
-    return os.path.basename(filepath)  # Handles edge cases: no separator, trailing slash
+    return os.path.dirname(filepath)  # "" for "file.txt" (no separator) instead of IndexError
 ```
 
-**Key points:** Handle boundary values at function entry with guard clauses. Test with: empty collection, single element, zero, negative, empty string, `None`. Prefer library functions (`os.path.basename`) over manual parsing — they handle edge cases you will forget.
+**Key points:** Handle boundary values at function entry with guard clauses. Test with: empty collection, single element, zero, negative, empty string, `None`. Prefer library functions (`os.path.dirname`) over manual parsing — they handle edge cases you will forget.
 
 ---
 

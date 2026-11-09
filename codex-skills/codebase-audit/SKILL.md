@@ -16,7 +16,7 @@ Everything a person reads from this skill - reports, findings, summaries, and co
 This skill MUST NOT:
 - Modify the audited code. Both observation and tool runs are read-only - even if a typo or obvious bug is noticed, do not edit.
 - Run write-mode tools (formatter `--fix`, linter `--fix`, code generators) as part of measurement. Read-only invocations only. If a tool only runs in fix mode, skip it.
-- Cite benchmarks, comparisons, or "industry standards" without naming the source. Unsourced numbers read as fabrication.
+- Cite a benchmark number without its source. Copy the source from `benchmarks/*.md`. When that source says "Convention - no single authoritative source", call the number a convention. Never present a convention as an "industry standard" or as the rule of a named authority. Unsourced numbers read as fabrication.
 - Continue past the safety gate when live commands were declined. Static-only fallback is mandatory in that case.
 - Grade a criterion without at least one measured metric backing it. If a helper script failed and no metric is available, the grade is "Not measured" - never "Good" or "-" by default.
 - Inflate grades to be encouraging or deflate them to be alarming. The grade reflects measured evidence, not the reaction it should produce.
@@ -167,24 +167,26 @@ Read-only commands (helper scripts, `git log`, Glob/Grep/Read, tool detection) d
 
 **Activates when Phase 0 step 12 classified the repo as large tier.**
 
-When the repo exceeds the large-tier threshold, the three **qualitative agents** (Architecture, Performance, Security) switch from whole-repo to per-module dispatch. Statistical agents (Structural, Quality, Git/Velocity, Tests) continue to run whole-repo - their helper scripts aggregate without reading files, so repo size doesn't degrade them.
+When the repo exceeds the large-tier threshold, the two **qualitative agents** (Architecture, Performance) switch from whole-repo to per-module dispatch. The four statistical agents (Structural, Quality, Git/Velocity, Tests) continue to run whole-repo - their helper scripts aggregate without reading files, so repo size doesn't degrade them.
+
+Security has no agent of its own. The Architecture agent covers it (it reads `principles/security.md` and checks dependency vulnerabilities and security scanners). The Quality agent adds the hardcoded-secrets scan. See Section Scoped Invocations.
 
 **Step 1 - Module detection.** Treat each top-level directory under the detected source paths as a module. Example: `src/api/`, `src/payment/`, `src/ui/`, `src/worker/` -> four modules.
 
 - If a top-level dir contains fewer than 20 source files, merge small dirs into a sibling `misc` module to avoid agent spam.
 - If one module holds >50% of source files, subdivide it one level deeper (e.g., `src/core/` -> `src/core/auth/`, `src/core/data/`).
 
-**Step 2 - Per-module dispatch.** For each module, dispatch one Architecture + one Performance + one Security agent in parallel. **MUST fire all modules x 3 agents in the same parallel batch**, alongside the 3 statistical agents that run whole-repo.
+**Step 2 - Per-module dispatch.** For each module, dispatch one Architecture + one Performance agent in parallel. **MUST fire all modules x 2 agents in the same parallel batch**, alongside the 4 statistical agents that run whole-repo.
 
 Each qualitative agent receives only its module's files plus the shared project context block.
 
-**Step 3 - Roll-up.** Per-module findings carry a `module` tag so the heat map and console display can reference them. The Phase 2 grade for Architecture/Performance/Security is the weighted average across modules (weighted by source file count).
+**Step 3 - Roll-up.** Per-module findings carry a `module` tag so the heat map and console display can reference them. Architecture and Performance results roll up as the weighted average across modules (weighted by source file count). Phase 2 grades every criterion that uses these agents (including Security) from the rolled-up results.
 
 This is the "structural breadth" half of large-tier analysis. The "risk depth" half runs in Phase 2 (see Section Heat-Map-Driven Deep Dive).
 
 ### Failure Handling
 
-Agent timeout is 60s by default. All failure conditions and fallbacks are in the Section Graceful Degradation table.
+The skill does not set an agent timeout. The only configured timeout is `testing.timeout` in `.codex/audit.yaml`, which limits the test run (in milliseconds; the example config uses 60000, which is 60 s). All failure conditions and fallbacks are in the Section Graceful Degradation table.
 
 ---
 
@@ -237,7 +239,7 @@ Runs *after* the heat map is computed, *in addition to* the Phase 1 per-module d
 2. Any module whose Phase 1 qualitative grade was C or below
 3. Cross-module concerns surfaced by Phase 1 (e.g., coupling or shared-type issues that span modules)
 
-**Dispatch.** For each risk cluster, dispatch one Architecture + one Performance + one Security agent in parallel. Each agent receives:
+**Dispatch.** For each risk cluster, dispatch one Architecture + one Performance agent in parallel. Each agent receives:
 
 - The specific files in the cluster
 - The heat map context (complexity + churn for each file)
@@ -245,7 +247,7 @@ Runs *after* the heat map is computed, *in addition to* the Phase 1 per-module d
 
 Deep-dive findings merge into their criteria grades. Mark each deep-dive finding with `source: heat-map-deep-dive` so the methodology section can cite the two-pass structure.
 
-**Skip condition:** if the heat map is clean (no Danger Zone files) and every module graded B+ or above in Phase 1, skip this step - no risk to dive into.
+**Skip condition:** if the heat map is clean (no Danger Zone files) and every module graded B or above in Phase 1, skip this step - no risk to dive into.
 
 ### Grading Scale
 
@@ -260,6 +262,8 @@ Deep-dive findings merge into their criteria grades. Mark each deep-dive finding
 
 Grading is relative to resolved benchmarks (language-specific -> general fallback).
 
+The scale has no plus or minus grades. Use only the grades in this table (with `~` for low confidence).
+
 ### Console Display
 
 Print a summary table directly in the conversation:
@@ -271,9 +275,9 @@ Print a summary table directly in the conversation:
 | # | Criterion | Grade | Key Metric | Benchmark |
 |---|---|---|---|---|
 | 1 | Maintainability | B | CC avg: 8.2 | <= 10 |
-| 2 | Evolvability | B+ | Fan-out avg: 3.1 | <= 5 |
+| 2 | Evolvability | B | Fan-out avg: 3.1 | <= 5 |
 | ... | | | | |
-| 12 | Story Readability | B+ | Narr: 8, Chunk: 6 | >= 7 avg |
+| 12 | Story Readability | B | Narr: 8, Chunk: 6 | >= 7 avg |
 | 13 | Velocity | - | +2.1k lines/30d | - |
 
 **Top Risk:** {criterion} ({grade}) - {reason}

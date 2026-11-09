@@ -1,11 +1,11 @@
 ---
 name: quick-review
-description: "Use when the user invokes $quick-review for a fast bug-focused code review using parallel analysis (correctness + security, P0-P2 only). SKIP if the user wants a comprehensive review with style and architecture findings \u2014 that's $codereview."
+description: "Use when the user invokes $quick-review for a fast bug-focused code review using parallel analysis (correctness + security, P0-P1 only). SKIP if the user wants a comprehensive review with style and architecture findings \u2014 that's $codereview."
 ---
 
 # Quick Review Skill
 
-Fast, bug-focused code review. Dispatches correctness and security subagents in parallel, with streamlined static analysis. Reports only P0-P2 findings - no style nits, no architecture suggestions. No cross-model dispatch - uses only the host model for speed.
+Fast, bug-focused code review. Dispatches correctness and security subagents in parallel, with streamlined static analysis. Reports only P0-P1 findings - no maintainability, style, or architecture findings. No cross-model dispatch - uses only the host model for speed.
 
 For comprehensive 7-domain reviews, use `$codereview`.
 
@@ -16,11 +16,11 @@ Everything a person reads from this skill - reports, findings, summaries, and co
 ## Out of Scope
 
 This skill MUST NOT:
-- Modify source code or apply fixes, even when the user asks for them inline. Quick-review is **report-only** - there is no fix-dispatch phase; hand the findings to `$codereview`, which owns fix dispatch.
+- Modify source code unless the user explicitly asks for fixes. Quick-review is **report-only** by default. When the user explicitly asks for fixes, fix only the flagged findings they asked for. Follow the fix rules in `../codereview/SKILL.md` Phase 4 Section Parallel Fix Strategy (resolve against the plugin root, not the project). In short: check that the before-code still matches, and apply exactly what was flagged, nothing more. Then show what changed in each file.
 - Report on code outside the resolved scope. If the diff/file/PR doesn't include a file, do not flag findings in it - even if you notice them while gathering context.
 - Inflate severity to look thorough. P0 means actual bug or security hole. Style polish is P3/P4.
 - Downgrade real bugs to manage report volume. If correctness or security found something genuine, it stays at its true severity.
-- Include P3 (polish) or P4 (style) findings. The skill reports P0-P2 only, even if subagents return lower-severity findings.
+- Include P2 (maintainability), P3 (polish), or P4 (style) findings. The skill reports P0-P1 only, even if subagents return lower-severity findings.
 - Load full files in diff-based modes. Branch, PR, and commit modes use `git diff -U50` exclusively for context - full-file loading is reserved for `$codereview`. (Directory-scan and single-file modes have no diff: read the specified files directly. This is the one exception to diff-only.)
 
 ## Invocation
@@ -128,7 +128,7 @@ You are a senior <DOMAIN> reviewer performing a quick, bug-focused review.
 1. Read the principle file at: <PRINCIPLE_PATH>
 2. Analyze the diff and surrounding context below against every principle in that file.
 3. For each violation found, output it in the structured format below.
-4. **Only report P0, P1, or P2 severity findings.** Skip P3 (polish) and P4 (style) entirely.
+4. **Only report P0 or P1 severity findings.** Skip P2 (maintainability), P3 (polish), and P4 (style) entirely.
 5. All code examples MUST be in <TARGET_LANGUAGE>.
 6. If you find no violations in your domain, output: "No <DOMAIN> violations found."
 7. Write for humans: the reader may speak English as a second language. Use short sentences, everyday words, and explain jargon on first use. State the point first, then the detail. Simplify the language, never the facts - paths, line numbers, and claims stay exact.
@@ -143,13 +143,13 @@ The diff above was produced with `git diff -U50` and already includes ~50 lines 
 
 Use tool findings to corroborate or supplement your analysis. If a tool flagged
 the same issue you found, note it in your finding. If a tool found something you missed
-at P0-P2 severity, include it with "[{tool_name}]" prefix.
+at P0-P1 severity, include it with "[{tool_name}]" prefix.
 
 ## Output Format
 For each violation:
 
 ### [Principle Name] - [Specific Issue]
-**Severity**: P0 | P1 | P2
+**Severity**: P0 | P1
 **Location**: `file.ext:line_number`
 **Problem**: Description of what is wrong and why it is a bug or vulnerability.
 **Suggested Fix**: Brief description or short code snippet showing the fix.
@@ -194,11 +194,11 @@ Merge rules:
 When a static analysis tool finds something no AI flagged:
 - Include as its own finding with `[tool_name]` prefix
 - Map tool severity per `../shared/review-common.md` Section Tool Severity Mapping
-- Discard tool findings below P2 (quick-review skips P3/P4)
+- Discard tool findings below P1 (quick-review skips P2/P3/P4)
 
 ### 3.3 Prioritize Correctness
 
-Correctness findings (actual bugs - wrong logic, off-by-one errors, null dereferences, race conditions) are surfaced first within each severity level. If any finding - regardless of source (subagent or tool) - is rated P2 but describes an actual bug or security vulnerability, bump it to P1.
+Correctness findings (actual bugs - wrong logic, off-by-one errors, null dereferences, race conditions) are surfaced first within each severity level. Severity follows impact, as defined in `../shared/review-common.md` Section Severity Scale. P2 findings are out of scope and are not reported.
 
 ### 3.4 Output Format
 
@@ -226,16 +226,13 @@ Then findings grouped by severity:
 #### api/handler.go:156
 - **[Confirmed by: golangci-lint]** Unchecked error return - `db.Close()` error silently discarded
   > Suggested fix: log or return the error
-
-### P2: Medium
-...
 ```
 
 Omit empty severity sections. If there are zero findings across all severities, output:
 
 > "No bugs or security issues found. Code looks solid."
 
-**No P3/P4 sections.** No before/after code blocks (keeps output scannable - use `$codereview` for detailed treatment). Findings reference `file:line` for quick navigation.
+**No P2/P3/P4 sections.** No before/after code blocks (keeps output scannable - use `$codereview` for detailed treatment). Findings reference `file:line` for quick navigation.
 
 ---
 

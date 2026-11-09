@@ -31,6 +31,7 @@ Each of the 5 lens agents MUST return structured markdown in this exact format:
 [One of:]
 - "Baseline analysis — no prior data."
 - "Improved: [what got better and evidence]. Regressed: [what got worse]. Unchanged: [persistent patterns]."
+- "Rubric changed (vN → v2) — the score change is not comparable. Behavior notes: [what got better, worse, or stayed the same]."
 ```
 
 ---
@@ -45,6 +46,8 @@ The final markdown report uses this structure. The HTML companion is generated f
 ---
 title: "Interaction Review — YYYY-MM-DD"
 generated_by: "/interaction-review"
+rubric_version: 2
+rubric_date: "2026-11-09"
 generated_at: "2026-05-25T14:30:00Z"
 scope: "5 sessions, 2026-05-10 to 2026-05-25"
 profile: "analytical"
@@ -53,9 +56,17 @@ previous_report: "docs/interaction-review/20260510-interaction-review.md"
 ---
 ```
 
+### Rubric Version
+
+The current rubric is **v2, dated 2026-11-09**. Always write `rubric_version: 2` and `rubric_date: "2026-11-09"`.
+
+- A report without `rubric_version` is a v1 report.
+- v2 changed how scores are given: turn-count targets now match current agents, and each behavior is scored in only one lens. So a v1 score and a v2 score are not directly comparable.
+- When the previous report has a different rubric version, show the trend as `rubric vN→v2` instead of `+N`/`-N`, and say in the Header & Meta section that the rubric changed. A jump between versions is not real improvement or decline.
+
 ### Section Order
 
-1. **Header & Meta** — Report date, sessions analyzed, date range, invocation mode, previous report link
+1. **Header & Meta** — Report date, rubric version, sessions analyzed, date range, invocation mode, previous report link
 2. **Overall Scorecard** — Weighted composite table with trend deltas
 3. **Session Summary** — Per-session overview (date, turns, topic, quality signal)
 4. **Per-Lens Deep Dive** (×5) — Score, justification, findings, comparison
@@ -76,7 +87,7 @@ previous_report: "docs/interaction-review/20260510-interaction-review.md"
 | **Overall** | **66** | **C+** | **+5** |
 ```
 
-Trend values: `+N` (improvement), `-N` (regression), `new` (first report), `--` (no prior data for this lens).
+Trend values: `+N` (improvement), `-N` (regression), `new` (first report), `--` (no prior data for this lens), `rubric vN→v2` (previous report used another rubric version; the scores are not comparable).
 
 ### Improvement Item Format
 
@@ -107,7 +118,7 @@ Trend values: `+N` (improvement), `-N` (regression), `new` (first report), `--` 
 
 ### Progress Tracker Chart (Mermaid)
 
-When 3+ prior reports exist, use an xychart:
+When 3+ prior reports exist, use an xychart. If the reports use more than one rubric version, label each x-axis point with its version (for example, `"May 25 (v1)"`, `"Nov 9 (v2)"`). Add a note under the chart: "Rubric changed from v1 to v2 on 2026-11-09. Do not read the score change across this point as real improvement or decline."
 
 ````markdown
 ```mermaid
@@ -130,3 +141,5 @@ When fewer than 3 data points exist, use a simple comparison table instead:
 |---|---|---|---|
 | Prompt Craft | 64 | 72 | +8 |
 ```
+
+If the previous report used another rubric version, write `rubric vN→v2` in the Delta column instead of a number.

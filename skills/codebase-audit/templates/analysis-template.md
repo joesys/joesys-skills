@@ -1,7 +1,7 @@
 # Codebase Quality Audit — {PROJECT_NAME}
 
 **Date:** {DATE}
-**Auditor:** Senior {LANGUAGE} engineer · {DOMAIN} specialist
+**Auditor:** {MODEL} via /codebase-audit
 **Branch:** `{BRANCH}` @ commit `{COMMIT}`
 **Engine:** {ENGINE_OR_OMIT}
 **Project phase:** {PHASE} (from user context)

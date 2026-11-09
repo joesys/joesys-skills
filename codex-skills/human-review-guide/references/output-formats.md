@@ -105,11 +105,7 @@ profile: "analytical"
 
 ### HTML-Specific Enhancements
 
-- **Tier badges:** Color-coded inline badges
-  - DECIDE: red/orange background — `<span class="tier tier-decide">DECIDE</span>`
-  - READ: blue background — `<span class="tier tier-read">READ</span>`
-  - SKIM: gray background — `<span class="tier tier-skim">SKIM</span>`
-  - SKIP: light gray, muted — `<span class="tier tier-skip">SKIP</span>`
+- **Tier badges:** use the plain-text markers `[DECIDE]`, `[READ]`, `[SKIM]`, `[SKIP]` at the start of each entry heading. The report stylesheet has no tier badge styles, so do not emit custom `<span>` classes.
 - **Collapsible sections:** SKIM and SKIP groups wrapped in `<details>` tags, collapsed by default
 - **Code snippets:** Syntax-highlighted via Prism.js (loaded from `docs/.assets/report-lib/`)
 - **Decision map links:** Each row in the decision map table links to the corresponding DECIDE section via anchor

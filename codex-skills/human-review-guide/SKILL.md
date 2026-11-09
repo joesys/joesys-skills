@@ -40,7 +40,7 @@ Parse the user's `$human-review-guide` arguments:
 | `$human-review-guide PR#<number>` | PR review | Guide for a specific GitHub PR |
 | `$human-review-guide <path>` | Artifact review | Guide for reviewing a file or directory |
 | `$human-review-guide --with-review` | Enriched | Incorporate existing `$codereview` findings from this session |
-| `$human-review-guide --calibrate` | Recalibrate | Re-run first-run calibration questions |
+| `$human-review-guide --calibrate` | Calibrate | Ask the four reviewer-profile questions and save the answers |
 
 Arguments are combinable. Examples:
 - `$human-review-guide --with-review` - branch diff guide enriched with `$codereview` findings
@@ -72,16 +72,16 @@ Read `../shared/skill-context.md` for the full protocol (resolve `../shared/...`
 | Skill-specific: review focus | Weight triage toward specific concerns (security, architecture, etc.) |
 | Skill-specific: verbosity | Concise pointers / moderate explanation / detailed rationale |
 
-### 0.2 First-Run Calibration
+### 0.2 Reviewer Profile
 
-If no skill-specific context exists at `.codex/skill-context/human-review-guide.md`, ask calibration questions using `ask the user directly`:
+Read the reviewer profile from `.codex/skill-context/human-review-guide.md` if it exists. If it does not, use defaults and do not ask: role inferred from shared preferences (otherwise "developer"), review focus balanced, verbosity moderate, skip tolerance balanced.
 
-1. **Role/expertise** - "What's your background?" with options: Backend developer, Frontend developer, Full-stack developer, DevOps/Infra, PM/Non-technical reviewer, Other
-2. **Review focus** - "What do you care most about when reviewing?" with options: Correctness & edge cases, Architecture & design decisions, Security implications, Maintainability & tech debt
-3. **Verbosity preference** - "How detailed should the guide be?" with options: Concise (just pointers), Moderate (brief explanations), Detailed (full rationale)
-4. **Skip tolerance** - "How aggressively should I mark things as skippable?" with options: Conservative (surface more, miss nothing), Balanced, Aggressive (only flag critical decisions)
+Only when the user passes `--calibrate`, ask these four questions (one `ask the user directly` call) and save the answers to `.codex/skill-context/human-review-guide.md`:
 
-Save answers to `.codex/skill-context/human-review-guide.md`:
+1. **Role/expertise** - Backend, Frontend, Full-stack, DevOps/Infra, PM/Non-technical reviewer, Other
+2. **Review focus** - Correctness & edge cases, Architecture & design decisions, Security implications, Maintainability & tech debt
+3. **Verbosity** - Concise (just pointers), Moderate (brief explanations), Detailed (full rationale)
+4. **Skip tolerance** - Conservative (surface more), Balanced, Aggressive (only critical decisions)
 
 ```markdown
 # Human Review Guide Preferences
@@ -94,8 +94,6 @@ Last updated: {DATE}
 - **Verbosity:** {concise | moderate | detailed}
 - **Skip tolerance:** {conservative | balanced | aggressive}
 ```
-
-If `--calibrate` flag is set, re-run calibration even if the file exists.
 
 ### 0.3 Resolve `--with-review`
 
@@ -274,7 +272,7 @@ Assemble the guide inline using the terminal markdown template from `references/
 
 **HTML report (large):**
 
-1. Write the guide as markdown to a temporary location following the HTML report template from `references/output-formats.md`.
+1. Write the guide as markdown to `docs/review-guides/YYYYMMDD-HHMMSS-<slug>.md` (create the folder if needed), following the HTML report template from `references/output-formats.md`. The renderer writes the `.html` next to it.
 2. Include YAML front-matter per `../shared/html-reports.md`.
 3. Call the HTML renderer. **Resolve `../scripts/html_render.py` to its absolute path under the collection root (one level above this SKILL.md) before running** - the command executes in the user's project cwd, which does not contain the plugin's `../scripts/` folder (invoke with `python3` where present, falling back to `python` on Windows):
 

@@ -1,13 +1,17 @@
 # Context & Instruction Quality Principles
 
-Evaluate how well the user sets up and maintains the environment for effective agent collaboration — CLAUDE.md files, memory utilization, session setup, and reference management. This is the foundational lens: strong context prevents issues flagged by every other lens.
+Evaluate how well the user sets up and maintains the environment for effective agent collaboration — project instruction files, memory utilization, session setup, and reference management. This is the foundational lens: strong context prevents issues flagged by every other lens.
+
+This lens is the only place that scores persistent context (instruction files, memory, cross-session continuity). Other lenses do not score it again.
+
+**Instruction files.** Claude Code reads `CLAUDE.md`. Codex reads `AGENTS.md`. Either file counts as the project instruction file. Do not mark a project down because it lacks the other host's file. The same rule applies to the global file (`~/.claude/CLAUDE.md` or `~/.codex/AGENTS.md`). Claude Code does not load `AGENTS.md` unless `CLAUDE.md` imports it (for example, with `@AGENTS.md`). If the reviewed host cannot see the file, you may report that as a finding.
 
 ## Quick Diagnostic Guide
 
 | Symptom | Likely Category |
 |---|---|
 | User re-explains project setup at the start of every session | Missing Persistent Instructions |
-| Agent doesn't know the project's conventions, test commands, or build steps | No CLAUDE.md |
+| Agent doesn't know the project's conventions, test commands, or build steps | No Project Instruction File |
 | User corrects the same agent behavior across multiple sessions | Missing Memory/Feedback |
 | Agent uses wrong language, framework, or pattern for the project | Missing Project Context |
 | Session starts with 5+ minutes of "getting the agent up to speed" | Poor Session Setup |
@@ -15,20 +19,20 @@ Evaluate how well the user sets up and maintains the environment for effective a
 
 ## Evaluation Criteria
 
-### 1. CLAUDE.md Utilization
-Does the project have a CLAUDE.md (or equivalent) with useful instructions?
+### 1. Instruction File Utilization
+Does the project have an instruction file (`CLAUDE.md` or `AGENTS.md`) with useful instructions?
 
 **Signs of strong utilization:**
-- Project CLAUDE.md exists with project-specific guidance
+- A project instruction file exists with project-specific guidance
 - Contains build/test commands, coding conventions, architecture notes
 - Instructions are current and accurate (not stale)
-- User references CLAUDE.md when the agent doesn't follow conventions
+- User points to the instruction file when the agent doesn't follow conventions
 
 **Signs of weak utilization:**
-- No project CLAUDE.md at all
-- CLAUDE.md exists but is empty, generic, or stale
-- User repeatedly tells the agent things that should be in CLAUDE.md
-- Global CLAUDE.md only, no project-specific instructions
+- No project instruction file at all
+- The instruction file exists but is empty, generic, or stale
+- User repeatedly tells the agent things that should be in the instruction file
+- Global instruction file only, no project-specific instructions
 
 ### 2. Memory System Usage
 Does the user leverage the memory system for cross-session continuity?
@@ -51,7 +55,7 @@ How effectively does the user establish context at the start of a session?
 **Signs of strong setup:**
 - Clear opening statement of what this session is about
 - References to relevant issues, PRs, or prior work
-- Provides necessary context that isn't in CLAUDE.md
+- Provides necessary context that isn't in the instruction file
 - Sets expectations for the session's scope
 
 **Signs of weak setup:**
@@ -91,9 +95,9 @@ Do the user's instructions remain consistent throughout the session?
 
 | Score Range | Description |
 |---|---|
-| 90-100 | Excellent infrastructure. CLAUDE.md, memory, session setup all actively maintained. Agent has rich context from the start. |
+| 90-100 | Excellent infrastructure. Instruction file, memory, session setup all actively maintained. Agent has rich context from the start. |
 | 80-89 | Good infrastructure. Most context is persistent. Occasional manual re-explanation. |
-| 70-79 | Partial infrastructure. Some CLAUDE.md or memory usage but gaps cause repeated setup work. |
+| 70-79 | Partial infrastructure. Some instruction file or memory usage but gaps cause repeated setup work. |
 | 60-69 | Minimal infrastructure. Agent regularly operates without project context. Frequent re-explanation. |
 | 50-59 | Almost no persistent context. Every session starts from scratch. |
-| Below 50 | No CLAUDE.md, no memory, no session setup. Agent operates blind in every session. |
+| Below 50 | No instruction file (`CLAUDE.md` or `AGENTS.md`), no memory, no session setup. Agent operates blind in every session. |

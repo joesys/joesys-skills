@@ -18,7 +18,7 @@ report_path.write_text(report_markdown, encoding="utf-8")
 # 2. New step — render HTML companion (best-effort, non-fatal).
 try:
     subprocess.run(
-        ["python", str(SCRIPTS_DIR / "html_render.py"),
+        ["python3", str(SCRIPTS_DIR / "html_render.py"),  # "python" on Windows
          str(report_path),
          "--profile", "analytical"],
         check=True,

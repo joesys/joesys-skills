@@ -14,7 +14,7 @@ Rust-specific quality thresholds. Rust's ownership model and type system shift s
 | Metric | Threshold | Rating | Source |
 |---|---|---|---|
 | Function length (median) | ≤40 lines | Good | Rust API Guidelines [^3] |
-| File length | ≤600 lines | Good | Rust community convention |
+| File length | ≤600 lines | Good | Convention — no single authoritative source |
 | Nesting depth | ≤5 | Good | Clippy defaults [^2] |
 
 ## Testing

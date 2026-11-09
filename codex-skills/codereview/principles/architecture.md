@@ -770,20 +770,25 @@ except TimeoutError:
 ### ✅ Correct
 
 ```python
-def process_payment(order_id: str, amount: float,
-                    idempotency_key: str | None = None) -> str:
-    """Idempotent: safe to retry any number of times."""
-    key = idempotency_key or str(uuid.uuid4())
-
-    existing = db.query("SELECT charge_id FROM payments WHERE idempotency_key = %s", (key,))
+def process_payment(order_id: str, amount: float, idempotency_key: str) -> str:
+    """Idempotent: safe to retry any number of times with the same key."""
+    existing = db.query("SELECT charge_id FROM payments WHERE idempotency_key = %s",
+                        (idempotency_key,))
     if existing:
         return existing["charge_id"]  # already processed
 
-    charge_id = payment_gateway.charge(amount, idempotency_key=key)
+    charge_id = payment_gateway.charge(amount, idempotency_key=idempotency_key)
     db.execute(
         "INSERT INTO payments (order_id, charge_id, amount, idempotency_key) "
-        "VALUES (%s, %s, %s, %s)", (order_id, charge_id, amount, key))
+        "VALUES (%s, %s, %s, %s)", (order_id, charge_id, amount, idempotency_key))
     return charge_id
+
+# Network timeout -> retry with the same key -> customer charged once
+key = "payment-ORD-42"  # created once, reused on every retry
+try:
+    process_payment("ORD-42", 99.99, idempotency_key=key)
+except TimeoutError:
+    process_payment("ORD-42", 99.99, idempotency_key=key)  # returns the first charge
 ```
 
-**Key points:** The idempotency key identifies the *intent*. Before executing, the function checks for prior completion. The gateway also receives the key to prevent double-charging even if the DB write fails. This pattern applies to any state-changing operation that may be retried: API handlers, queue consumers, batch jobs.
+**Key points:** The idempotency key identifies the *intent*. The caller creates the key once (for example, from the order ID) and passes the same key on every retry. A key generated inside the function would be new on each retry, so the check could never match. Before executing, the function checks for prior completion. The gateway also receives the key to prevent double-charging even if the DB write fails. This pattern applies to any state-changing operation that may be retried: API handlers, queue consumers, batch jobs.

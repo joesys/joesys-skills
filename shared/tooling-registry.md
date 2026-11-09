@@ -184,7 +184,7 @@ Tooling results influence the audit grade through two mechanisms: criteria impac
 
 ## 7. Review Merge Rules
 
-When both AI analysis and tool output identify issues in the same diff, apply these merge rules. Both codereview and quick-review use these rules, with quick-review applying a wider ±5 line tolerance for deduplication (because cross-model reviewers working from diff-only context may report slightly different line numbers) and discarding findings below P2.
+When both AI analysis and tool output identify issues in the same diff, apply these merge rules. Both codereview and quick-review use these rules, with quick-review applying a wider ±5 line tolerance for deduplication (because cross-model reviewers working from diff-only context may report slightly different line numbers) and discarding findings below P1.
 
 ### Overlapping Findings (same file, within 3 lines)
 

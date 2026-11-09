@@ -9,7 +9,6 @@ Evaluate how effectively the user communicates intent, constraints, and context 
 | Agent asks "what do you mean?" or offers multiple interpretations | Ambiguous Intent |
 | User corrects agent direction 2+ turns after initial request | Missing Constraints |
 | Agent produces output in wrong format, language, or scope | Unspecified Output Expectations |
-| User describes the same project setup across multiple sessions | Missing Persistent Context |
 | Agent explores irrelevant files or builds unnecessary features | Scope Underspecification |
 | Multi-turn back-and-forth to converge on simple requirements | Incremental Drip-Feeding |
 
@@ -52,7 +51,7 @@ Does the user provide enough background for the agent to reason well?
 **Signs of weak context:**
 - Agent operates with no project-specific knowledge
 - User expects agent to "just know" codebase conventions
-- No CLAUDE.md or memory utilization for recurring context
+- User expects the agent to know conventions that were never stated or pointed to in the prompt (persistent instruction files and memory are scored in the Context & Instruction lens)
 
 ### 4. Output Expectations
 Does the user specify what the deliverable should look like?

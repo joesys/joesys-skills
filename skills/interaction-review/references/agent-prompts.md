@@ -129,7 +129,6 @@ For each session:
 - **Turn economy**: Total turns vs. estimated minimum for task complexity
 - **Correction loop depth**: How many rounds per correction?
 - **Goal directness**: Does the session move straight toward the goal?
-- **Recovery speed**: After a mistake, how quickly does it get back on track?
 - **Batching efficiency**: Are related tasks grouped effectively?
 
 Compute per-session metrics:
@@ -188,13 +187,12 @@ You are analyzing AI coding-session transcripts (Claude Code or Codex) to evalua
 - **Tool awareness**: Does the user leverage built-in tools (search, file reads, git)?
 - **Autonomy balance**: Does the user micro-manage or give appropriate freedom?
 - **Parallelism**: Are independent tasks batched or serialized?
-- **Context management**: Does the user help the agent maintain effective context?
 
-Look for specific skill invocations (lines starting with `/`) and compare against what skills would have been useful but weren't invoked. Common missed opportunities:
+Look for specific skill invocations (`/name` in Claude Code, `$name` in Codex) and compare against what skills would have been useful but weren't invoked. Common missed opportunities:
 - `/codereview` instead of ad-hoc "check this code"
 - `/explain` instead of sequential file reads
 - `/commit` instead of manual git commit
-- Plan mode instead of step-by-step dictation
+- Asking for a plan first (plan mode, where the host offers one) instead of step-by-step dictation
 - Agent search instead of user providing file paths
 
 ## Output Format
@@ -388,7 +386,7 @@ The host MUST substitute these placeholders before dispatch — the coach shares
 
 1. **Score calibration**: Are scores fair? Flag inflation (rating B+ when there were 6 correction loops) and deflation (rating C when the user was actually effective given task complexity).
 2. **Actionability gate**: Every improvement item must pass: "Could the user do this in their next session?" If not, rewrite it or cut it.
-3. **Specificity enforcement**: Reject vague findings. Every finding needs the specific interaction, what was wrong, and the rewritten version.
+3. **Specificity enforcement**: Reject vague findings. Every finding needs the specific interaction (**Transcript Reference**), what was wrong (**What happened** and **Why it matters**), and a concrete fix (**What to do differently**).
 4. **Priority validation**: Are the top suggestions actually the highest-leverage changes?
 5. **Continuity check**: If a prior report exists, is progress acknowledged? Are recurring issues flagged with escalated emphasis?
 6. **Tone check**: Report should be encouraging. The user is investing time in self-improvement — honor that.

@@ -285,7 +285,7 @@ Scope name derivation:
 | Directory argument does not exist | Report: "Directory not found: `<path>`. Check the path and try again." |
 | Symbol argument matches zero results | Report: "No matches found for `<symbol>`. Try a different name or use `/explain <file-path>` to target a specific file." |
 | Symbol argument matches too many results (>10) | List the first 10 matches and ask user to narrow the scope. |
-| Unrecognized flags | Report: "Unrecognized flag: `<flag>`. Supported flags: `--save`, `--path <dir>`." |
+| Unrecognized flags | Report: "Unrecognized flag: `<flag>`. Supported flags: `--save`, `--path <dir>`, `--no-html`." |
 | `--path` points to a non-existent directory | Create the directory, or report if creation fails. |
 | `--path` points to a file, not a directory | Report: "`<path>` is a file, not a directory. `--path` must point to a directory." |
 | Permission error reading files | Skip unreadable files, note them in the report as "skipped (permission denied)." |

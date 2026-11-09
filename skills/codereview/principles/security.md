@@ -448,7 +448,9 @@ pip-audit -r requirements.lock --strict
 
 **Detection guidance:** Check for missing lockfiles (`requirements.lock`,
 `poetry.lock`, `package-lock.json`). Look for dependencies without upper-bound version
-constraints. Run `pip-audit`, `npm audit`, or `cargo audit` to identify known CVEs. Flag
+constraints. Use results from `pip-audit`, `npm audit`, or `cargo audit` only if the
+Safety Gate in `shared/tooling-registry.md` already approved and ran them. Otherwise, check
+lockfiles and version constraints statically. If release dates are available, flag
 dependencies that have not been updated in over a year.
 
 **Key points:** Pin dependencies with upper bounds and commit lockfiles. Run audit tools

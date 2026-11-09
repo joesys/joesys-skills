@@ -14,16 +14,16 @@ Go-specific quality thresholds. Go's error handling idiom affects complexity bas
 | Metric | Threshold | Rating | Source |
 |---|---|---|---|
 | Function length (median) | ≤40 lines | Good | Effective Go [^3] |
-| File length | ≤600 lines | Good | Go community convention |
+| File length | ≤600 lines | Good | Convention — no single authoritative source |
 | Nesting depth | ≤4 | Good | Go proverbs [^4] |
-| Line length | ≤120 chars | Good | Go community convention |
+| Line length | ≤120 chars | Good | Convention — no single authoritative source |
 
 ## Testing
 
 | Metric | Threshold | Rating | Source |
 |---|---|---|---|
 | Test runner | `go test ./...` | Standard | Built-in [^5] |
-| Test-to-source ratio | ≥0.7 | Good | Industry standard |
+| Test-to-source ratio | ≥0.7 | Good | Convention — no single authoritative source |
 | Table-driven tests | Present | Expected | Go testing convention [^5] |
 
 ## Dependencies

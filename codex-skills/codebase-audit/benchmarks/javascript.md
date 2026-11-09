@@ -23,7 +23,7 @@ JavaScript-specific quality thresholds. Shares many metrics with TypeScript but 
 | Metric | Threshold | Rating | Source |
 |---|---|---|---|
 | Test runner | Jest, Vitest, or Mocha | Standard | State of JS Survey [^5] |
-| Test-to-source ratio | ≥0.8 | Good | Industry standard |
+| Test-to-source ratio | ≥0.8 | Good | Convention — no single authoritative source |
 
 ## Dependencies
 

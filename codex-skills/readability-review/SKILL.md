@@ -273,18 +273,6 @@ After fixes are applied, present:
 
 ---
 
-## First Run Behavior
-
-If no `.codex/skill-context/readability-review.md` exists:
-
-1. Use default weights and settings from `../shared/story-readability.md`
-2. After presenting the report, ask:
-   > "Would you like to customize the dimension weights or set a default min-score threshold? I can save your preferences for future reviews."
-3. If the user says yes, collect their preferences and write `.codex/skill-context/readability-review.md`
-4. If the user says no, continue using defaults - no file is created
-
----
-
 ## Guardrails
 
 Read `../shared/review-common.md` Section Cross-Skill Discipline for the base constraints (evidence, language-adaptive, specificity, no over-engineering, test-code DAMP, profile-first).

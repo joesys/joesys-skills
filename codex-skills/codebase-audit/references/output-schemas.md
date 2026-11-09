@@ -43,7 +43,7 @@ Date-stamped directories. If today's directory exists, append suffix: `YYYYMMDD-
   "commit": "{short_hash}",
   "languages": {"primary": "{lang}", "additional": ["typescript"]},
   "domain": "{domain_summary}",
-  "overall_grade": "B+",
+  "overall_grade": "B",
   "overall_confidence": "high",
   "criteria": {
     "maintainability": {
@@ -99,7 +99,7 @@ Date-stamped directories. If today's directory exists, append suffix: `YYYYMMDD-
       "sources": ["benchmarks/python.md", "benchmarks/general.md"],
       "web_searched": true,
       "citations": [
-        {"id": 1, "text": "Carnegie Mellon SEI, 'Cyclomatic Complexity Thresholds', 2018", "url": null}
+        {"id": 1, "text": "<source name, year>", "url": null}
       ]
     },
     "python_available": true,

@@ -7,7 +7,7 @@ GDScript-specific quality thresholds for Godot Engine projects.
 | Metric | Threshold | Rating | Source |
 |---|---|---|---|
 | Cyclomatic complexity (avg) | ≤10 | Good | General benchmark adapted [^1] |
-| Cyclomatic complexity (max) | ≤20 | Acceptable | GDScript convention |
+| Cyclomatic complexity (max) | ≤20 | Acceptable | Convention — no single authoritative source |
 
 ## Size & Style
 

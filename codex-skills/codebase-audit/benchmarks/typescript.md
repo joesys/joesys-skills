@@ -31,7 +31,7 @@ TypeScript-specific quality thresholds.
 | Metric | Threshold | Rating | Source |
 |---|---|---|---|
 | Test runner | Jest or Vitest | Standard | State of JS Survey [^7] |
-| Test-to-source ratio | ≥0.8 | Good | Industry standard |
+| Test-to-source ratio | ≥0.8 | Good | Convention — no single authoritative source |
 
 ## Dependencies
 
@@ -46,7 +46,7 @@ TypeScript-specific quality thresholds.
 |---|---|---|---|
 | Weighted story score | ≥ 88 | Good (A) | Calibrated to ../shared/story-readability.md |
 | Weighted story score | ≥ 72 | Acceptable (B) | Calibrated to ../shared/story-readability.md |
-| Explicit type annotation (over `any`) | ≥ 90% | Good | TypeScript best practices |
+| Explicit type annotation (over `any`) | ≥ 90% | Good | Convention — no single authoritative source |
 
 ## References
 

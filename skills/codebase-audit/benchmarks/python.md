@@ -8,14 +8,14 @@ Python-specific quality thresholds. These override general benchmarks where they
 |---|---|---|---|
 | Cyclomatic complexity (avg) | ≤8 | Good | Radon tool defaults [^1] |
 | Cyclomatic complexity (max) | ≤15 | Acceptable | Radon tool defaults [^1] |
-| Comprehension complexity | ≤2 conditions | Good | PEP 8 consensus [^2] |
+| Comprehension complexity | ≤2 conditions | Good | Convention — no single authoritative source |
 
 ## Size & Style
 
 | Metric | Threshold | Rating | Source |
 |---|---|---|---|
 | Line length | ≤88 chars | Good | Black formatter default [^3] |
-| Function length (median) | ≤30 lines | Good | PEP 8 consensus [^2] |
+| Function length (median) | ≤30 lines | Good | Convention — no single authoritative source |
 | File length | ≤500 lines | Good | Django style guide [^4] |
 | Nesting depth | ≤4 | Good | Pylint defaults [^5] |
 
@@ -32,7 +32,7 @@ Python-specific quality thresholds. These override general benchmarks where they
 | Metric | Threshold | Rating | Source |
 |---|---|---|---|
 | Test runner | pytest | Standard | Python Developers Survey 2024 [^7] |
-| Test-to-source ratio | ≥0.8 | Good | Industry standard |
+| Test-to-source ratio | ≥0.8 | Good | Convention — no single authoritative source |
 | Coverage (line) | ≥80% | Good | Coverage.py convention [^8] |
 
 ## Dependencies
@@ -48,13 +48,12 @@ Python-specific quality thresholds. These override general benchmarks where they
 |---|---|---|---|
 | Weighted story score | ≥ 88 | Good (A) | Calibrated to shared/story-readability.md |
 | Weighted story score | ≥ 72 | Acceptable (B) | Calibrated to shared/story-readability.md |
-| Average function length | ≤ 20 lines | Good | PEP 8 consensus [^2] |
-| Nested comprehension usage | ≤ 1 level | Good | PEP 8 consensus [^2] |
+| Average function length | ≤ 20 lines | Good | Convention — no single authoritative source |
+| Nested comprehension usage | ≤ 1 level | Good | Convention — no single authoritative source |
 
 ## References
 
 [^1]: Radon, "Cyclomatic Complexity," radon.readthedocs.io
-[^2]: PEP 8, "Style Guide for Python Code," peps.python.org/pep-0008/
 [^3]: Black, "The Uncompromising Code Formatter," black.readthedocs.io
 [^4]: Django, "Coding Style," docs.djangoproject.com/en/dev/internals/contributing/writing-code/coding-style/
 [^5]: Pylint, "Messages Overview," pylint.readthedocs.io
