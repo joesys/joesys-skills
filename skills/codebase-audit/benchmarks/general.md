@@ -53,6 +53,8 @@ Cross-language industry benchmarks used as fallback when no language-specific da
 
 ## Story Readability
 
+The weighted story score rows apply to every language; language files do not repeat them.
+
 | Metric | Threshold | Rating | Source |
 |---|---|---|---|
 | Weighted story score (8 dimensions) | ≥ 88 | Good (A) | Calibrated to shared/story-readability.md |

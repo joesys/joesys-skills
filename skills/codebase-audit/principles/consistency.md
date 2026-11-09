@@ -2,25 +2,14 @@
 
 ## Definition
 
-Consistency measures the degree to which the codebase follows uniform patterns, conventions, and idioms throughout. A consistent codebase is predictable — once you understand how one module works, you can navigate any other module using the same mental model.
+Consistency measures the degree to which the codebase follows uniform patterns, conventions, and idioms throughout.
 
-## Concrete Signals
+## Signals to Look For
 
-**Positive signals:**
-- Uniform naming conventions (one casing style per language)
-- Consistent import ordering (stdlib → third-party → local)
-- Uniform error handling patterns across the codebase
-- Consistent file/directory naming and organization
-- Formatter/linter configuration enforced (Prettier, Black, gofmt, rustfmt)
-- Consistent patterns for common operations (logging, config access, DB queries)
-
-**Negative signals:**
-- Mixed naming conventions (camelCase and snake_case in the same language)
-- Inconsistent import ordering across files
-- Multiple error handling approaches (some return errors, some throw, some use callbacks)
-- Inconsistent file organization (some feature-based, some layer-based)
-- No formatter/linter configuration
-- Same operation done differently in different modules (3 ways to read config)
+- A formatter and linter configured and enforced.
+- Mixed naming styles within one language.
+- More than one error-handling approach (return values, exceptions, callbacks).
+- The same operation done differently in different modules (for example, three ways to read config).
 
 ## Measurement Guidance
 

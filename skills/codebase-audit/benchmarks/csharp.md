@@ -34,8 +34,6 @@ C#-specific quality thresholds aligned with .NET ecosystem standards.
 
 | Metric | Threshold | Rating | Source |
 |---|---|---|---|
-| Weighted story score | ≥ 88 | Good (A) | Calibrated to shared/story-readability.md |
-| Weighted story score | ≥ 72 | Acceptable (B) | Calibrated to shared/story-readability.md |
 | LINQ readability (no nested queries) | ≤ 1 level | Good | .NET coding conventions |
 
 ## References

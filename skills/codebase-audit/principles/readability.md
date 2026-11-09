@@ -2,26 +2,14 @@
 
 ## Definition
 
-Readability measures how easily a developer can understand the code's purpose, logic, and intent by reading it. Readable code minimizes the cognitive effort required to comprehend what the code does and why, reducing onboarding time and review effort.
+Readability measures how easily a developer can understand the code's purpose, logic, and intent by reading it.
 
-## Concrete Signals
+## Signals to Look For
 
-**Positive signals:**
-- Self-documenting code — function and variable names express intent
-- Consistent naming conventions across the codebase
-- SLAP — functions operate at a single level of abstraction
-- Appropriate documentation — public APIs documented, complex algorithms explained
-- Clean formatting — consistent indentation, whitespace, line length
-- Small functions focused on a single task
-
-**Negative signals:**
-- Cryptic abbreviations and single-letter variable names (outside loop indices)
-- Inconsistent naming (camelCase mixed with snake_case without convention)
-- Functions doing multiple things at different abstraction levels
-- Missing documentation on public APIs or complex algorithms
-- Clever/tricky code that sacrifices clarity for brevity
-- Deep nesting making control flow hard to follow
-- Over-commenting (restating what code does instead of explaining why)
+- Cryptic abbreviations and single-letter names (outside loop indices).
+- Public APIs or complex algorithms without documentation.
+- Comments that restate the code instead of explaining why.
+- Clever, dense code that trades clarity for brevity.
 
 ## Measurement Guidance
 

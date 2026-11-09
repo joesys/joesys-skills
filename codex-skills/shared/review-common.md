@@ -1,44 +1,35 @@
 # Shared Review Infrastructure
 
-Reference file for `$codereview` and `$quick-review`. Read this file during Phase 1 (Scope Resolution). It is the canonical source for base branch detection, file gathering, target language detection, severity scale, and shared guardrails.
+Reference file for `$codereview` and `$quick-review`. Read it during scope resolution. It holds the review rules, base branch detection, file gathering, the severity scale, and the shared error table.
 
 ---
 
 ## Cross-Skill Discipline (Read First)
 
-These constraints apply to **every** review skill that consumes this file. Subagent prompts MUST inherit them.
+These rules apply to every review skill that reads this file. A reviewing subagent cannot open this file. So paste the block below, word for word, into the prompt of every subagent that reviews code. The orchestrator also follows `./report-style.md` for everything a person reads.
 
-1. **Evidence over speculation.** Every finding cites a specific `file:line_number`. No vague assertions, no "this might be" without naming the location.
-2. **Language-adaptive examples.** Before/after code MUST be in the target file's language. Never default to Python when reviewing TypeScript, Rust, or Go.
-3. **Be specific.** Every finding includes (a) exact path + line, (b) the problem, (c) a concrete fix. Vague advice ("consider refactoring") is rejected.
-4. **No over-engineering.** Do not suggest abstractions, patterns, or interfaces for single-use code. YAGNI/KISS applies.
-5. **Test code follows different standards.** Prefer DAMP over DRY in tests — repeated setup for clarity is acceptable, not a finding.
-6. **Profile before flagging perf.** Surface obvious algorithmic issues (N+1, O(n²) where O(n) is trivial); skip micro-optimizations.
-7. **Write for humans.** The reader may speak English as a second language. Use short sentences, everyday words, and explain jargon on first use. State the point first, then the detail. Simplify the language, never the facts — paths, line numbers, and claims stay exact. Full rules: `./report-style.md`. When building a subagent prompt, embed this rule's text directly — a dispatched agent may not be able to resolve the file path.
+```
+## Review Rules
+1. Evidence: every finding cites a specific `file:line`. If you cannot point to the line, do not report it.
+2. Be specific: state the problem and a concrete fix. "Consider refactoring" is not a finding.
+3. Examples use the language of the file under review. Never switch to another language.
+4. No over-engineering: do not suggest layers, interfaces, or patterns for code with one use. Build for today's need, not a possible future one.
+5. Tests: repeated setup that keeps each test easy to read is fine (DAMP over DRY). Do not flag it.
+6. Performance: flag clear algorithmic problems (N+1 queries, needless quadratic work, blocking calls in async code) on paths whose input can grow. Skip micro-optimizations that no measurement supports.
+7. Duplication: suggest extracting shared code to remove duplication only at three or more copies (Rule of Three). Two copies of one fact or rule that must stay in sync are still a finding. Extracting a function because it makes the code read better needs no second copy.
+8. Severity follows impact. Do not inflate severity to look thorough. Do not lower a real bug to keep the report short.
+9. Write for humans: the reader may speak English as a second language. Use short sentences, everyday words, and explain jargon on first use. State the point first, then the detail. Simplify the language, never the facts — paths, line numbers, and claims stay exact.
+```
 
 ---
 
 ## Base Branch Detection
 
-Determine where the current branch diverged. Check candidates in order:
-
-1. The upstream tracking branch (e.g., `origin/feature-x` tracks `origin/main`)
-2. `main`
-3. `master`
-
-If none exist or the result is ambiguous, ask the user: "Which branch should I compare against?"
-
-Compute the fork point:
-
-```bash
-git merge-base <base-branch> HEAD
-```
+Compare against the branch's upstream base if one is set, otherwise `main`, otherwise `master`. The fork point is `git merge-base <base-branch> HEAD`. If no candidate exists or the choice is unclear, ask: "Which branch should I compare against?"
 
 ---
 
 ## File Gathering
-
-Gather the list of files to review based on the resolved mode:
 
 | Mode | Command |
 |---|---|
@@ -52,54 +43,19 @@ Gather the list of files to review based on the resolved mode:
 
 ## Target Language Detection
 
-Infer the primary language from file extensions:
-
-| Extension | Language |
-|---|---|
-| `.ts`, `.tsx` | TypeScript |
-| `.js`, `.jsx` | JavaScript |
-| `.py` | Python |
-| `.rs` | Rust |
-| `.go` | Go |
-| `.java` | Java |
-| `.cs` | C# |
-| `.rb` | Ruby |
-| `.php` | PHP |
-| `.swift` | Swift |
-| `.kt` | Kotlin |
-| `.cpp`, `.cc`, `.h` | C++ |
-| `.gd` | GDScript |
-
-If the changeset is polyglot, note all languages. Each subagent MUST use the correct language per file. Subagents MUST NOT emit before/after examples in any language other than the target file's language.
+Infer each file's language from its extension. A change can mix languages. Every code example uses the language of the file it is about.
 
 ---
 
 ## Static Analysis Tooling — Detection Protocol
 
-Read the shared tooling registry and per-language profiles:
-- `./tooling-registry.md` — for detection protocol and safety rules
-- `./tooling/{language}.md` — for each detected language
-- `./tooling/general.md` — for cross-language tools
+Read `./tooling-registry.md`, `./tooling/{language}.md` for each detected language, and `./tooling/general.md`. Profiles exist for TypeScript, JavaScript, Python, Rust, Go, C++, C#, and GDScript. Other languages use the general profile only. If a language has no usable profile, skip tool detection for it and say so in the report.
 
-**Coverage note:** Profiles exist for TypeScript, JavaScript, Python, Rust, Go, C++, C#, GDScript, plus a general cross-language profile. Languages without a dedicated profile (Ruby, PHP, Swift, Kotlin, Java) fall back to the general profile only. If no profile is found, skip tooling detection for that language and note in the report: "No static analysis profile for [language] — tool detection skipped."
+1. **Detect config files** — glob for each tool's detection markers.
+2. **Check availability** — check that each tool's binary is on PATH.
+3. **Classify** — mark each tool `available`, `configured-but-unavailable`, or `absent`.
 
-Follow the detection flow (maps to tooling-registry.md Steps 2–4):
-
-1. **Detect config files** — Glob for each tool's detection markers. *(registry Step 2)*
-2. **Check availability** — Run `which`/`where` for each tool's binary. *(registry Step 3)*
-3. **Classify** — Mark each tool as `available`, `configured-but-unavailable`, or `absent`. *(registry Step 4)*
-
-Steps 4+ diverge per skill — see each SKILL.md for execution, safety gates, and TOOLING_CONTEXT assembly. Registry Step 1 (Load Tool Profiles) is implicit in reading the per-language profile files above.
-
-For large output (>50 findings from a single tool): summarize as "{tool} reported N violations: X errors, Y warnings", include top 3 most severe, tell the user: "Run `{exact command}` for full results."
-
-If a tool fails (crash, not a findings exit code): report error, skip tool, continue.
-
----
-
-## Content Loading
-
-Content loading is **intentionally skill-specific** — codereview loads full files + diff for deep analysis; quick-review loads only the diff with `-U50` context for speed. See each skill's SKILL.md for its content loading strategy.
+Each skill defines what happens next. Running tools, large output, and tool failures follow `./tooling-registry.md` § 4.
 
 ---
 
@@ -117,7 +73,7 @@ Shared severity definitions (quick-review reports P0–P1 only; codereview repor
 
 ### Tool Severity Mapping
 
-When including tool-only findings, map tool severity to the review priority scale:
+When a tool finding has no matching AI finding, map the tool's severity to the review scale:
 
 | Tool Severity | Review Priority |
 |---|---|
@@ -125,13 +81,11 @@ When including tool-only findings, map tool severity to the review priority scal
 | warning | **P2** |
 | style / info | **P3** |
 
-Quick-review discards tool findings below P1.
+Quick-review drops tool findings below P1.
 
 ### Severity Discipline
 
-- **MUST NOT inflate** severity to look thorough. P0 means actual bug or security hole. Style polish is P3/P4.
-- **MUST NOT downgrade** real bugs to manage report volume. If correctness or security found something genuine, it stays at its true severity.
-- **Severity follows impact, not the source.** Real bugs usually have high impact, so correctness findings are usually P0 or P1. Do not raise a finding's severity only because of which reviewer found it.
+Review Rule 8 applies: do not inflate severity, and do not lower a real bug. P0 means a real bug or security hole; style polish is P3 or P4. Severity follows impact, not the source. Real bugs usually have high impact, so correctness findings are usually P0 or P1. Do not raise a finding's severity only because of which reviewer found it.
 
 ---
 
@@ -147,7 +101,5 @@ Quick-review discards tool findings below P1.
 | Not a git repository | For git-based modes (branch/PR/commit): report "This isn't a git repository — try directory-scan or `--file` mode instead of asking for a base branch." Do not loop on base-branch selection. |
 | `gh` missing or unauthenticated (PR mode) | Check `gh` availability before PR mode; if absent, report "PR mode needs the GitHub CLI — install it and run `gh auth login`, or use branch-diff / `--commit` mode." |
 | No violations found | codereview: "No violations detected. Code looks solid." quick-review: "No bugs or security issues found. Code looks solid." |
-| Too many files (>100) | codereview: large tier activates logical-cluster dispatch (§ 1.4b) — no warning needed. quick-review: warn about scope size, suggest narrowing with `--file` or a subdirectory, proceed if confirmed. |
-| Tool binary not found | Classify as `configured-but-unavailable`, skip, continue review. |
-| Tool crashes or times out | Report error, skip tool, continue with remaining tools. |
-| Tool output unparseable | Include raw summary in report, skip structured merge. |
+| Too many files (>100) | codereview: split the change into clusters (codereview Phase 1.4) — no warning needed. quick-review: warn about scope size, suggest narrowing with `--file` or a subdirectory, proceed if confirmed. |
+| Tool missing, crashing, timing out, or unparseable | Follow `./tooling-registry.md` § 4. Skip that tool and continue the review. |

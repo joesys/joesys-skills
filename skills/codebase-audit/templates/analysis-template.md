@@ -21,7 +21,7 @@ Non-engineers should understand this section.
 
 ## Criteria Priority Rationale
 
-Based on analysis as a senior {LANGUAGE} engineer specializing in {DOMAIN}:
+Ranked for {LANGUAGE} {DOMAIN} projects (one row per measured criterion):
 
 | Rank | Criterion | Weight | Rationale |
 |---|---|---|---|

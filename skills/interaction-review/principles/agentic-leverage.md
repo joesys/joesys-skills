@@ -1,8 +1,8 @@
 # Agentic Leverage Principles
 
-Evaluate whether the user is taking full advantage of the agent's autonomous capabilities — skills, tools, parallelism, planning, and delegation — or manually steering work the agent could handle independently.
+Evaluate whether the user takes full advantage of the agent's autonomous capabilities — skills, tools, parallelism, batching, and delegation — or manually steers work the agent could handle.
 
-This lens applies to Claude Code and Codex. Judge each tool or feature by its purpose, not by its name in one host. Persistent context (instruction files, memory) is scored only in the Context & Instruction lens.
+This lens applies to Claude Code and Codex. Judge each tool or feature by its purpose, not by its name in one host. Persistent context (instruction files, memory) is scored only in the Context & Instruction lens. Planning before work is scored only in the Workflow Efficiency lens. This lens owns batching and parallelism; Workflow Efficiency does not score them again.
 
 ## Quick Diagnostic Guide
 
@@ -17,62 +17,27 @@ This lens applies to Claude Code and Codex. Judge each tool or feature by its pu
 
 ## Evaluation Criteria
 
+Compare what the user did by hand with the skills and tools that were available in the session. A missed opportunity counts only when a real skill or tool would have done the job better.
+
 ### 1. Skill Utilization
-Does the user invoke available skills when they would be more effective than manual orchestration? Claude Code invokes a skill as `/name`; Codex invokes it as `$name`.
-
-**Signs of strong utilization:**
-- Uses `/codereview` instead of asking "look at this code for issues"
-- Uses `/commit` for structured commits instead of manual `git commit`
-- Uses `/explain` for codebase understanding instead of sequential file reads
-- Uses `/retrospective` for process reflection instead of ad-hoc discussion
-
-**Signs of weak utilization:**
-- Manually replicates what a skill does (e.g., reading files one by one when `/explain` would synthesize)
-- Unaware that a skill exists for their current task
-- Uses skills but with suboptimal invocations (missing flags, wrong mode)
+Does the user invoke an available skill when it would beat manual orchestration? Claude Code invokes a skill as `/name`; Codex invokes it as `$name`.
+- Strong: uses a skill for work it is built for (a review, a commit, a codebase explanation) instead of an ad-hoc request.
+- Weak: manually rebuilds what a skill does, step by step, or uses a skill with the wrong mode or missing options.
 
 ### 2. Tool Awareness
-Does the user leverage the agent's built-in tools effectively?
-
-**Signs of strong awareness:**
-- Asks agent to search the codebase instead of specifying exact files
-- Lets the agent use its own search tools to find relevant code (for example, `Glob`/`Grep` in Claude Code, `rg` in Codex)
-- Trusts the agent to navigate the filesystem
-- Uses agent for git operations, PR creation, etc.
-
-**Signs of weak awareness:**
-- Manually provides file paths the agent could discover
-- Copies code into the prompt instead of referencing the file
-- Performs web searches manually instead of asking the agent
-- Doesn't know the agent can read images, run tests, or create branches
+Does the user let the agent use its own tools?
+- Strong: asks the agent to search, read, run tests, and handle git, instead of doing these by hand.
+- Weak: pastes code or file paths the agent could find itself, or does web searches and test runs by hand and reports the result.
 
 ### 3. Autonomy vs. Micro-Management
-Does the user give the agent room to work, or dictate every step?
-
-**Signs of healthy autonomy:**
-- States the goal and lets the agent determine the approach
-- Reviews output rather than pre-specifying every detail
-- Trusts agent judgment for implementation decisions
-- Intervenes only when the agent is clearly going wrong
-
-**Signs of over-steering:**
-- Dictates exact file names, function names, and line numbers for trivial changes
-- Reviews and approves every intermediate step instead of the final result
-- Provides pseudo-code and asks the agent to "just translate this"
-- Interrupts agent mid-task to redirect before seeing the result
+Does the user give the agent room to work?
+- Strong: states the goal, lets the agent choose the approach, and reviews the result.
+- Weak: dictates exact names and lines for trivial changes, provides pseudo-code to "just translate", or approves every small step.
 
 ### 4. Parallelism and Batching
-Does the user structure work to take advantage of parallel execution?
-
-**Signs of strong parallelism:**
-- Groups independent tasks in a single request
-- Uses multi-agent skills when appropriate
-- Understands that some tasks can run concurrently
-
-**Signs of missed parallelism:**
-- Sequential individual requests for independent tasks
-- Waiting for one task to complete before starting an unrelated one
-- Not asking for a plan or task list before complex work (for example, plan mode or a task-tracking tool, where the host offers one)
+Does the user group work so it can run together?
+- Strong: puts related or independent tasks in one request, and uses multi-agent skills when they fit.
+- Weak: sends independent requests one at a time, re-explaining the same context each time, or waits for one task before starting an unrelated one.
 
 ## Scoring Rubric
 

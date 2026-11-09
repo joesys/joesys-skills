@@ -1,0 +1,27 @@
+{
+  "description": "Ground truth for the synthetic Claude Code session in session.jsonl. The session has designed problems and one designed strength. Lens bands are wide on purpose: a lens is expected to land inside its band, not on an exact number. An issue counts as mentioned when the report text contains one of its keywords (case-insensitive). The runner removes session.jsonl and this file from the work dir, so the reviewed project has no answer key and no instruction file (CLAUDE.md or AGENTS.md).",
+  "lenses": {
+    "prompt_craft":        {"expect": "low-to-mid", "band": [20, 75], "why": "Vague first prompt and two angry corrections, but one precise, well-scoped follow-up."},
+    "workflow_efficiency": {"expect": "low",        "band": [10, 70], "why": "Two wrong edits, two correction loops, and four runs of the same failing test command."},
+    "agentic_leverage":    {"expect": "low",        "band": [10, 70], "why": "Three files read one by one instead of one search; no search tool, no subagent."},
+    "error_recovery":      {"expect": "low",        "band": [10, 70], "why": "Corrections named the area but not the error, so recovery took several turns; the same failing command was repeated."},
+    "context_instruction": {"expect": "low",        "band": [0, 65],  "why": "No CLAUDE.md or AGENTS.md in the project, no memory, and no context given at the start."},
+    "overall":             {"expect": "low",        "band": [15, 70], "why": "Mostly problems, with one good moment."}
+  },
+  "issues": [
+    {"id": "vague-first-prompt", "kind": "problem", "lens": "prompt_craft",
+     "keywords": ["fix the thing", "vague", "ambiguous", "underspecified", "under-specified", "no detail", "lacked detail"]},
+    {"id": "wrong-file-edit", "kind": "problem", "lens": "workflow_efficiency",
+     "keywords": ["users.py", "get_user", "wrong file", "guessed", "guess"]},
+    {"id": "repeated-corrections", "kind": "problem", "lens": "error_recovery",
+     "keywords": ["frustrat", "correction loop", "two corrections", "corrected twice", "second correction", "random things", "all caps"]},
+    {"id": "repeated-failing-command", "kind": "problem", "lens": "error_recovery",
+     "keywords": ["same command", "same test", "four times", "4 times", "re-ran", "reran", "re-running", "rerunning", "repeated the", "repeatedly ran", "ran the tests again", "without changing"]},
+    {"id": "files-read-one-by-one", "kind": "problem", "lens": "agentic_leverage",
+     "keywords": ["one by one", "one at a time", "sequential read", "read three files", "grep", "search for", "searching", "subagent"]},
+    {"id": "no-instruction-file", "kind": "problem", "lens": "context_instruction",
+     "keywords": ["claude.md", "agents.md", "instruction file"]},
+    {"id": "precise-follow-up", "kind": "strength", "lens": "prompt_craft",
+     "keywords": ["well-scoped", "well scoped", "clear constraints", "do not change any other file", "run only that test", "strong prompt", "model prompt"]}
+  ]
+}

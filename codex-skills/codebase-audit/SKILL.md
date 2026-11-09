@@ -5,7 +5,9 @@ description: "Use when the user invokes $codebase-audit to run a language-agnost
 
 # Codebase Audit Skill
 
-Run a comprehensive, language-agnostic codebase quality audit. Measures up to 12 core quality criteria + development velocity across 6 parallel collection agents, displays graded metrics on console, and optionally writes a full analysis report with industry benchmarks and actionable recommendations.
+Measure up to 12 quality criteria and development velocity with 6 collection agents, show graded metrics in the console, and optionally write a full analysis with industry benchmarks and actionable recommendations.
+
+Scores must stay comparable from one audit to the next, so apply the rubrics, benchmarks, adjustments, and labels in the reference files as written.
 
 ## Write for Humans
 
@@ -14,29 +16,23 @@ Write everything a person reads in plain English for a reader who uses English a
 ## Out of Scope
 
 This skill MUST NOT:
-- Modify the audited code. Both observation and tool runs are read-only - even if a typo or obvious bug is noticed, do not edit.
-- Run write-mode tools (formatter `--fix`, linter `--fix`, code generators) as part of measurement. Read-only invocations only. If a tool only runs in fix mode, skip it.
+- Modify the audited code, even to fix an obvious bug. Measurement is read-only: never run write-mode tools (formatter or linter `--fix`, code generators); skip a tool that only runs in fix mode.
+- Skip the live-command safety gate, even on `$codebase-audit metrics`. If the user declines live commands, fall back to static-only collection.
 - Cite a benchmark number without its source. Copy the source from `benchmarks/*.md`. When that source says "Convention - no single authoritative source", call the number a convention. Never present a convention as an "industry standard" or as the rule of a named authority. Unsourced numbers read as fabrication.
-- Continue past the safety gate when live commands were declined. Static-only fallback is mandatory in that case.
-- Grade a criterion without at least one measured metric backing it. If a helper script failed and no metric is available, the grade is "Not measured" - never "Good" or "-" by default.
+- Grade a criterion without at least one measured metric backing it. If no metric is available, the grade is "Not measured" - never "Good" or "-" by default.
 - Inflate grades to be encouraging or deflate them to be alarming. The grade reflects measured evidence, not the reaction it should produce.
-- Claim "no issues found" without actually measuring. Absence of evidence is not evidence of absence.
-- Skip the live-command safety gate. Even on `$codebase-audit metrics`, live commands need approval.
+- Claim "no issues found" without measuring. Absence of evidence is not evidence of absence.
 - Pretend a tool ran when it didn't. If a tool was unavailable, configured-but-unavailable, or timed out, the report says so - it does not fold a missing tool into the "no findings" pile.
 
 ## Reference Files
 
-This skill uses progressive disclosure - read reference files only when needed:
+Read each file when its phase needs it:
 
-| File | Contents | When to read |
-|---|---|---|
-| `references/agent-prompts.md` | Full prompt templates for all 6 collection agents + Phase 4 author agent | Before dispatching agents in Phase 1 or Phase 4 |
-| `references/output-schemas.md` | metrics.json schema, metrics.md template, codebase-audit.md preferences template, execution flows | Before writing output files in Phase 5 |
-| `references/detection-defaults.md` | Language marker files, language defaults, path auto-detection, polyglot rules, config file format | During Phase 0 detection |
+- `references/detection-defaults.md` - detection rules and the config file format (Phase 0).
+- `references/agent-prompts.md` - agent prompts and the path-substitution rule (before any dispatch).
+- `references/output-schemas.md` - output schemas and templates, and the `analysis` and `delta` flows (Phase 5 and those modes).
 
 ## Invocation
-
-Parse the user's `$codebase-audit` arguments:
 
 | Invocation | Mode |
 |---|---|
@@ -48,12 +44,7 @@ Parse the user's `$codebase-audit` arguments:
 | `$codebase-audit velocity` | Just development velocity |
 | `$codebase-audit --static-only` | No live commands (no test run, no dep audit) |
 
-### Parsing Rules
-
-- **Reserved phase words:** `metrics`, `analysis`, `delta`
-- **Everything else:** Treated as criterion names, validated against the 13 valid names
-- **Flags:** `--static-only` - skip all live commands
-- **Invalid names:** Print error listing valid options, stop
+`metrics`, `analysis`, and `delta` are reserved phase words. `--static-only` skips all live commands. Every other word is a criterion name from the table below. If a name is invalid, print the valid names and stop.
 
 ### Valid Criterion Names
 
@@ -77,45 +68,34 @@ Parse the user's `$codebase-audit` arguments:
 
 ## Phase 0 - Parse, Detect & Route
 
-Read `references/detection-defaults.md` for language marker files, language defaults, path detection rules, and config file format.
+Use `references/detection-defaults.md` for detection rules. Use `../shared/tooling-registry.md` and the per-language profiles in `../shared/tooling/` for tools. Use `../shared/skill-context.md` for the preferences protocol (resolve `../shared/...` against the collection root (one level above this SKILL.md) - never the project's working directory).
 
-### Detection Steps
+Phase 0 must produce:
 
-1. **Parse arguments** - determine invocation mode: `full`, `metrics`, `analysis`, `delta`, or `scoped`
-2. **Load user preferences** - read `../shared/skill-context.md` for the full protocol (resolve `../shared/...` against the collection root (one level above this SKILL.md) - never the project's working directory). Load `.codex/skill-context/preferences.md` (shared) and `.codex/skill-context/codebase-audit.md` (skill-specific). Either file may be missing; never run a preferences interview. Shared preferences may supply project phase, team size, and business priority - Phase 3 skips questions already answered there.
-3. **Load config** - read `.codex/audit.yaml` if it exists (all fields optional)
-4. **Auto-detect language** - check marker files in priority order (see reference)
-5. **Apply language defaults** - function patterns, test runner, extension (see reference)
-6. **Detect static analysis tooling** - read `../shared/tooling-registry.md` and per-language profiles from `../shared/tooling/`. Classify tools as `available`, `configured-but-unavailable`, or `absent`. Build gap recommendations for absent tools.
-7. **Auto-detect paths** - source, test, and exclude paths (see reference)
-8. **Polyglot detection** - secondary language >10% of source files -> add to additional
-9. **Auto-detect test runner** - check framework configs, package.json scripts, language default
-10. **Domain inference** - read README, package manifests, scan key imports, check directory names. Use web search for comparable projects if available.
-11. **Prerequisites check** - verify Python 3 is available for helper scripts. If not, warn and offer qualitative-only mode.
-12. **Scope size check & tier selection** - count source files and classify. Default threshold: `large` tier at **>1000 source files**. Override via `.codex/skill-context/codebase-audit.md` key `large_tier_threshold_files`. Large tier activates Phase 1 module decomposition (Section Large Repo Decomposition) and Phase 2 heat-map-driven deep dive (Section Heat-Map-Driven Deep Dive). Below threshold: current whole-repo behavior.
-13. **Merge config** - auto-detected defaults <- config overrides (config always wins)
+1. **The mode:** `full`, `metrics`, `analysis`, `delta`, or `scoped`.
+2. **Loaded context.** Load `.codex/skill-context/preferences.md` (shared) and `.codex/skill-context/codebase-audit.md` (audit-specific). Either may be missing; never run a preferences interview here. Load `.codex/audit.yaml` if it exists. Config always wins: auto-detected defaults <- config overrides.
+3. **The project context block**, passed to every agent:
 
-### Output of Phase 0
+   ```
+   Language: {primary} (+{additional})
+   Source paths: {paths}
+   Test paths: {paths}
+   Exclude: {patterns}
+   Test runner: {runner}
+   Domain: {summary}
+   Engine: {if detected}
+   ```
 
-A **project context block** passed to all agents:
-
-```
-Language: {primary} (+{additional})
-Source paths: {paths}
-Test paths: {paths}
-Exclude: {patterns}
-Test runner: {runner}
-Domain: {summary}
-Engine: {if detected}
-```
-
-If `--static-only` was passed, skip tool execution in Phase 1 but still detect and classify tools.
+   Infer the domain from the README, manifests, key imports, and directory names (web search for comparable projects if available). State the inferred domain so the user can challenge it.
+4. **The tool classification.** Classify each static analysis tool as `available`, `configured-but-unavailable`, or `absent`, and build gap recommendations for absent tools. With `--static-only`, still detect and classify tools, but do not run them.
+5. **The tier.** Count source files. The repo is `large` tier above **1000 source files**, unless `.codex/skill-context/codebase-audit.md` sets `large_tier_threshold_files`. Large tier turns on Section Large Repo Decomposition and Section Heat-Map-Driven Deep Dive. Below the threshold, analyze the whole repo at once.
+6. **Python check.** The helper scripts need Python 3. If it is missing, warn and offer qualitative-only mode.
 
 ---
 
 ## Phase 1 - Parallel Collection
 
-**MUST spawn 6 measurement agents in parallel** via the Codex agent workflow - all 6 in a single response. Sequential dispatch is a defect. Read `references/agent-prompts.md` for the full prompt template for each agent.
+The collection agents are independent; run them in parallel via the Codex agent workflow. Read `references/agent-prompts.md` for each prompt and apply its path-substitution rule before dispatch.
 
 For same-platform subagents, do not pass a model or reasoning-effort override. Let every subagent inherit the parent model and reasoning effort unless the user explicitly asks for an override.
 
@@ -129,6 +109,8 @@ For same-platform subagents, do not pass a model or reasoning-effort override. L
 | 4 | Git/Velocity | Churn, commit frequency, bus factor, knowledge concentration | `helpers/compute_churn.py` |
 | 5 | Performance | Algorithm issues, N+1, blocking I/O, memory leaks | - (Grep/Read) |
 | 6 | Tests | Pass rate, test ratio, assertion density, test quality | Test runner (if approved) |
+
+Security has no agent of its own. The Architecture agent covers it (it reads `principles/security.md` and checks dependency vulnerabilities and security scanners). The Quality agent adds the hardcoded-secrets scan.
 
 ### Scoped Invocations
 
@@ -152,7 +134,7 @@ For scoped criteria, launch only the required agents:
 
 ### Live Command Safety Gate
 
-**MUST present all live commands for approval** before dispatching agents:
+**Before dispatching agents, present every live command for approval:**
 
 > **The following live commands will be executed during collection:**
 > - `{test_runner}` (Tests agent)
@@ -165,28 +147,15 @@ Read-only commands (helper scripts, `git log`, Glob/Grep/Read, tool detection) d
 
 ### Large Repo Decomposition (Large Tier Only)
 
-**Activates when Phase 0 step 12 classified the repo as large tier.**
+In the large tier, the two **qualitative agents** (Architecture, Performance) review the repo module by module. The four statistical agents still run on the whole repo, because their helpers do not degrade with size.
 
-When the repo exceeds the large-tier threshold, the two **qualitative agents** (Architecture, Performance) switch from whole-repo to per-module dispatch. The four statistical agents (Structural, Quality, Git/Velocity, Tests) continue to run whole-repo - their helper scripts aggregate without reading files, so repo size doesn't degrade them.
+- **Modules.** Size modules so one reviewer can read each. Default: each top-level directory under the source paths is a module; merge directories with fewer than 20 source files into one `misc` module; split a module that holds more than 50% of source files one level deeper. Record the module list in the methodology.
+- **Dispatch.** Cover every module with one Architecture and one Performance agent. Each gets only its module's files plus the project context block. Batch dispatch as the host allows, alongside the four whole-repo agents.
+- **Roll-up.** Tag each finding with its `module`. Roll Architecture and Performance results up as the average across modules, weighted by source-file count. Phase 2 grades every criterion that uses these agents (including Security) from the rolled-up results.
 
-Security has no agent of its own. The Architecture agent covers it (it reads `principles/security.md` and checks dependency vulnerabilities and security scanners). The Quality agent adds the hardcoded-secrets scan. See Section Scoped Invocations.
+### Timeouts
 
-**Step 1 - Module detection.** Treat each top-level directory under the detected source paths as a module. Example: `src/api/`, `src/payment/`, `src/ui/`, `src/worker/` -> four modules.
-
-- If a top-level dir contains fewer than 20 source files, merge small dirs into a sibling `misc` module to avoid agent spam.
-- If one module holds >50% of source files, subdivide it one level deeper (e.g., `src/core/` -> `src/core/auth/`, `src/core/data/`).
-
-**Step 2 - Per-module dispatch.** For each module, dispatch one Architecture + one Performance agent in parallel. **MUST fire all modules x 2 agents in the same parallel batch**, alongside the 4 statistical agents that run whole-repo.
-
-Each qualitative agent receives only its module's files plus the shared project context block.
-
-**Step 3 - Roll-up.** Per-module findings carry a `module` tag so the heat map and console display can reference them. Architecture and Performance results roll up as the weighted average across modules (weighted by source file count). Phase 2 grades every criterion that uses these agents (including Security) from the rolled-up results.
-
-This is the "structural breadth" half of large-tier analysis. The "risk depth" half runs in Phase 2 (see Section Heat-Map-Driven Deep Dive).
-
-### Failure Handling
-
-The skill does not set an agent timeout. The only configured timeout is `testing.timeout` in `.codex/audit.yaml`, which limits the test run (in milliseconds; the example config uses 60000, which is 60 s). All failure conditions and fallbacks are in the Section Graceful Degradation table.
+The skill sets no agent timeout. The only configured timeout is `testing.timeout` in `.codex/audit.yaml`, which limits the test run (in milliseconds; the example config uses 60000, which is 60 s).
 
 ---
 
@@ -194,7 +163,7 @@ The skill does not set an agent timeout. The only configured timeout is `testing
 
 ### Assemble Results & Grade
 
-Collect structured JSON from each agent. For each criterion, compute a grade using the principle file rubric + benchmark data.
+Collect the JSON from each agent. Grade each criterion with its principle file rubric and the benchmark data.
 
 **Audit Confidence Model:** Each criterion gets a confidence level (`high`, `medium`, `low`). Append `~` to grades with low confidence (e.g., "B~"). Overall confidence = lowest among all criteria.
 
@@ -210,44 +179,15 @@ Collect structured JSON from each agent. For each criterion, compute a grade usi
 
 ### Risk Heat Map
 
-Cross-reference complexity (Quality agent) with churn (Git/Velocity agent):
-
-```
-              High Churn
-                  |
-   +--------------+--------------+
-   |  Refactor    |  Danger Zone |
-   |  candidates  |  (act now)   |
----+--------------+--------------+--- High Complexity
-   |  Stable      |  Monitor     |
-   |  (leave it)  |  (watch)     |
-   +--------------+--------------+
-              Low Churn
-```
-
-"Danger Zone" files (high complexity + high churn) **MUST be named explicitly**.
+Cross-reference complexity (Quality agent) with churn (Git/Velocity agent) into four quadrants: **Danger Zone** (high complexity, high churn - act now), **Refactor candidates** (high churn, low complexity), **Monitor** (high complexity, low churn), and **Stable** (low both - leave it). The layout is in `templates/analysis-template.md` Section Risk Heat Map.
 
 ### Heat-Map-Driven Deep Dive (Large Tier Only)
 
-**Activates when Phase 0 step 12 classified the repo as large tier.**
+Module decomposition gave breadth; this pass, run after the heat map, gives depth on real risk. The risk clusters are: all Danger Zone files, any module whose Phase 1 qualitative grade was C or below, and cross-module concerns that Phase 1 surfaced (e.g., coupling that spans modules).
 
-Runs *after* the heat map is computed, *in addition to* the Phase 1 per-module dispatch. Module decomposition gave breadth - every top-level dir got a reviewer. Heat-map deep dive gives depth on actual risk.
+For each cluster, dispatch one Architecture and one Performance agent with the cluster's files, their complexity and churn, and the Phase 1 findings for them, so the pass builds on Phase 1 instead of repeating it. Merge the findings into their criteria grades and mark each with `source: heat-map-deep-dive` for the methodology.
 
-**Risk clusters to deep-dive:**
-
-1. All files in the "Danger Zone" quadrant (high complexity x high churn)
-2. Any module whose Phase 1 qualitative grade was C or below
-3. Cross-module concerns surfaced by Phase 1 (e.g., coupling or shared-type issues that span modules)
-
-**Dispatch.** For each risk cluster, dispatch one Architecture + one Performance agent in parallel. Each agent receives:
-
-- The specific files in the cluster
-- The heat map context (complexity + churn for each file)
-- Phase 1 findings for those files, so the deep dive builds on rather than repeats
-
-Deep-dive findings merge into their criteria grades. Mark each deep-dive finding with `source: heat-map-deep-dive` so the methodology section can cite the two-pass structure.
-
-**Skip condition:** if the heat map is clean (no Danger Zone files) and every module graded B or above in Phase 1, skip this step - no risk to dive into.
+Skip this pass when there are no Danger Zone files and every module graded B or above in Phase 1.
 
 ### Grading Scale
 
@@ -266,7 +206,7 @@ The scale has no plus or minus grades. Use only the grades in this table (with `
 
 ### Console Display
 
-Print a summary table directly in the conversation:
+Print a summary table in the conversation:
 
 **CODEBASE AUDIT - {Project Name}**
 {Domain Summary} * {Language} * {Date}
@@ -284,16 +224,15 @@ Print a summary table directly in the conversation:
 **Top Strength:** {criterion} ({grade}) - {reason}
 **Danger Zone:** {file} (CC:{N}, {N} changes)
 
-Dynamically generated - only measured criteria appear. Failed/skipped agents show "-" with a note.
+Show only measured criteria. Failed or skipped agents show "-" with a note.
 
 ### Gate
 
-After displaying the table:
+After the table, ask what to do next with these three options:
 
-> **Metrics collected.** What would you like to do?
-> 1. **Write both** - metrics.json + metrics.md + full analysis
-> 2. **Metrics only** - write metrics.json + metrics.md (numbers, no commentary)
-> 3. **Done** - just the console display, no files
+1. **Write both** - metrics.json + metrics.md + full analysis
+2. **Metrics only** - write metrics.json + metrics.md (numbers, no commentary)
+3. **Done** - just the console display, no files
 
 **Routing rules:**
 - `$codebase-audit metrics` -> skip gate, write metrics files directly
@@ -306,63 +245,25 @@ After displaying the table:
 
 ## Phase 3 - User Context Interview
 
-Gathers context the code alone can't reveal. Uses the shared preferences system (`../shared/skill-context.md`) to avoid re-asking questions.
+Ask only for what neither preference file already holds: project phase, team size, and business priority (shared preferences); deployment cadence (either file); known trade-offs (audit-specific file). Add informed questions from Phase 1 findings (e.g., "I noticed zero tests - intentional for now?"). Ask everything in one short round; these answers change the grading. On a repeat audit, show the combined profile and ask what changed.
 
-### Context Sources (checked in order)
+Save answers to `.codex/skill-context/codebase-audit.md`. Do not write `.codex/skill-context/preferences.md` - that file belongs to the user.
 
-1. **Shared preferences** (`.codex/skill-context/preferences.md`) - loaded in Phase 0 step 2. Contains project phase, team size, business priority.
-2. **Audit-specific preferences** (`.codex/skill-context/codebase-audit.md`) - deployment cadence, known trade-offs.
-
-### First Audit - Build the Profile
-
-Check what's already known from shared preferences. **MUST only ask** questions whose answers are not already captured:
-
-| Question | Skip if already in... |
-|---|---|
-| Project phase | shared preferences -> "Project phase" |
-| Team size | shared preferences -> "Team size" |
-| Deployment cadence | shared preferences -> "Deployment cadence" **or** audit-specific preferences |
-| Business priority | shared preferences -> "Business priority" |
-| Known trade-offs | audit-specific preferences -> "Known trade-offs" |
-
-If shared preferences exist and cover project phase, team size, and business priority, the only new questions are **deployment cadence** (if missing), **known trade-offs**, and **informed questions** based on Phase 1 findings (e.g., "I noticed zero tests - intentional for now?").
-
-If no shared preferences exist, ask the project questions above in the same short round as the audit-specific ones. These answers change the grading, so they are worth one question round.
-
-Save all answers to `.codex/skill-context/codebase-audit.md`. Do not write `.codex/skill-context/preferences.md` - that file belongs to the user.
-
-### Returning Audits - Confirm the Profile
-
-Check for existing audit-specific preferences at `.codex/skill-context/codebase-audit.md`. If found, present the combined profile (shared + audit-specific) and ask if anything has changed. Quick on repeat audits.
-
-### How User Context Shapes the Analysis
-
-| User Context | Analysis Effect |
-|---|---|
-| Solo + Prototype | Lighter on process, heavier on "what to invest in first" |
-| Team of 10 + Mature | Heavier on consistency, modularity, onboarding friction |
-| "Speed to market" priority | Recommendations framed as "do this now" vs. "before scaling" |
-| "Low test coverage intentional" | Testability acknowledges trade-off rather than flagging as surprise |
+Weigh findings and recommendations against the stated phase, team size, and known trade-offs.
 
 ---
 
 ## Phase 4 - Analysis Writing
 
-A single author agent writes the full analysis in one pass. Read `references/agent-prompts.md` for the full author agent prompt.
+One author agent writes the full analysis in one pass. Its prompt is in `references/agent-prompts.md`. It receives the assembled metrics JSON, project context, user context, risk heat map, and previous audit data (if any).
 
-The author receives: assembled metrics JSON, project context, user context, risk heat map, and previous audit data (if any).
-
-### Dynamic Criteria Weighting
-
-The author assigns a **priority rank** (1-12) and **weight** (High/Medium/Low) to each criterion based on language + domain expertise. This affects priority order, overall grade, analysis depth, and recommended actions. Users can override via `criteria_priority` in `audit.yaml`.
+**Dynamic criteria weighting:** The author assigns a **priority rank** (1-12) and **weight** (High/Medium/Low) to each criterion for this language and domain. This sets priority order, overall grade, analysis depth, and recommended actions. Users can override it with `criteria_priority` in `audit.yaml`.
 
 ---
 
 ## Phase 5 - Write & Output
 
-Read `references/output-schemas.md` for the full schemas and templates.
-
-### Output Files
+Use `references/output-schemas.md` for the schemas and templates.
 
 | File | Content | When written |
 |---|---|---|
@@ -373,16 +274,7 @@ Read `references/output-schemas.md` for the full schemas and templates.
 
 Output directory: `docs/reports/codebase-audit/YYYYMMDD/`
 
-### Cleanup
-
-Remove temp files. Report output paths:
-
-> Audit complete.
-> - Metrics: `docs/reports/codebase-audit/{DATE}/metrics.md`
-> - Analysis: `docs/reports/codebase-audit/{DATE}/analysis.md`
-> - Overall grade: **{GRADE}**
-
-Notify completion (cross-platform):
+Remove temp files. Report the output paths and the overall grade. Then notify completion:
 
 ```bash
 if command -v powershell.exe &>/dev/null; then
@@ -398,54 +290,25 @@ fi
 
 ---
 
-## Guardrails
+## Degradation and Errors
 
-Sourcing, grading, and no-issues-found discipline is defined in Out of Scope. In addition:
-
-1. **Always show delta direction (improved/declined/stable) when comparing.**
-2. **Domain inference must be stated explicitly** so the user can challenge it.
-3. **Criteria priority rationale must be shown in the report.**
-4. **Effort estimates must reference codebase size and team context.**
-5. **All Danger Zone files must be named explicitly.**
-6. **User context trade-offs must be acknowledged** in relevant criterion sections.
-
----
-
-## Graceful Degradation
+When something fails, continue with what is left and label the gap with these exact labels:
 
 | Situation | Behavior |
 |---|---|
-| 1-2 agents fail or time out | Proceed with available data. Note missing agents. Offer to retry. |
-| All agents fail | Report failure. Suggest retrying or narrowing scope. |
-| Large tier - partial module failure | Proceed with successful modules. Roll-up grade notes "N of M modules analyzed." |
-| No git history | Git/Velocity agent skips. Churn/bus factor marked "No git history." |
-| No test runner detected | Tests agent does static analysis only. |
-| Helper script fails | Agent falls back to qualitative-only. Metrics marked "Not measured." |
-| No internet (web search unavailable) | Use cached benchmarks. Note "cached benchmarks only" in methodology. |
-| Unknown language | Use general benchmarks. Extension-count fallback. |
-| Massive repo (large tier) | Phase 1 module decomposition (per top-level dir) + Phase 2 heat-map-driven deep dive fire automatically. See Section Large Repo Decomposition and Section Heat-Map-Driven Deep Dive. |
-| No `.codex/audit.yaml` | Fully auto-detected. Note in methodology. |
-| Python not available | Qualitative-only for helper-dependent metrics. |
-| No previous audit for delta | "Need at least 2 audits for delta comparison." |
+| Some agents fail or time out | Proceed with the rest, name the missing agents, and offer a retry. If all fail, suggest a narrower scope. |
+| Helper script fails, or Python is not available | Helper-dependent metrics are "Not measured". The agent falls back to qualitative-only. |
+| Large tier - some modules fail | Proceed with successful modules. The roll-up grade notes "N of M modules analyzed." |
 | Live commands declined | Static analysis fallback. Mark as "Skipped (live commands declined)." |
-| No static analysis tools detected | Gap recommendations included. Criteria graded without tool input. |
-| Tool configured but not installed | Graded as absent. Config noted in analysis. |
-| Tool execution fails | Skip tool, proceed with remaining tools. Note failure. |
-| `--static-only` with tools detected | Tools detected and classified but not executed. |
-
----
-
-## Error Handling
-
-| Error | Behavior |
-|---|---|
-| Invalid criterion name | Print valid names, stop |
-| `.codex/audit.yaml` is malformed | Report parse error, proceed with auto-detection |
+| `--static-only` with tools detected | Tools are detected and classified but not run. |
+| No git history | Git/Velocity skips. Churn and bus factor say "No git history." |
+| No test runner detected | Tests agent does static analysis only. |
+| Tool configured but binary not found | Classify as `configured-but-unavailable` and grade as absent. Note the config in the analysis. |
+| Tool fails, times out, or gives unparseable output | Skip it, note the failure, and continue with the other tools. |
+| No static analysis tools detected | Include gap recommendations. Grade the criteria without tool input. |
+| No internet (web search unavailable) | Use cached benchmarks. Note "cached benchmarks only" in the methodology. |
+| Unknown language | Use general benchmarks and the extension-count fallback. |
+| `.codex/audit.yaml` is malformed | Report the parse error and use auto-detection. |
 | No source files found | "No source files found in detected paths. Check project structure." |
-| metrics.json not found for `analysis` mode | "No previous metrics found. Run `$codebase-audit` first." |
-| <2 metrics.json for `delta` mode | "Need at least 2 audits for delta comparison. Found {N}." |
-| Output directory creation fails | Report error, suggest alternative path |
-| Agent returns malformed JSON | Use what's parseable, note the issue |
-| Tool binary not found | Classify as `configured-but-unavailable`, skip, continue |
-| Tool output unparseable | Report raw summary, skip structured parsing, continue |
-| Tool timeout | Kill process, skip tool, continue with remaining tools |
+| No metrics.json for `analysis` mode | "No previous metrics found. Run `$codebase-audit` first." |
+| Fewer than 2 metrics.json for `delta` mode | "Need at least 2 audits for delta comparison. Found {N}." |

@@ -37,8 +37,6 @@ GDScript-specific quality thresholds for Godot Engine projects.
 
 | Metric | Threshold | Rating | Source |
 |---|---|---|---|
-| Weighted story score | ≥ 88 | Good (A) | Calibrated to ../shared/story-readability.md |
-| Weighted story score | ≥ 72 | Acceptable (B) | Calibrated to ../shared/story-readability.md |
 | Signal naming clarity | verb_noun pattern | Good | Godot style guide |
 
 ## References

@@ -1,6 +1,6 @@
 # Context & Instruction Quality Principles
 
-Evaluate how well the user sets up and maintains the environment for effective agent collaboration — project instruction files, memory utilization, session setup, and reference management. This is the foundational lens: strong context prevents issues flagged by every other lens.
+Evaluate how well the user sets up and maintains the environment the agent works in: project instruction files, memory, session setup, and references. Strong context prevents problems that every other lens would flag.
 
 This lens is the only place that scores persistent context (instruction files, memory, cross-session continuity). Other lenses do not score it again.
 
@@ -20,76 +20,29 @@ This lens is the only place that scores persistent context (instruction files, m
 ## Evaluation Criteria
 
 ### 1. Instruction File Utilization
-Does the project have an instruction file (`CLAUDE.md` or `AGENTS.md`) with useful instructions?
-
-**Signs of strong utilization:**
-- A project instruction file exists with project-specific guidance
-- Contains build/test commands, coding conventions, architecture notes
-- Instructions are current and accurate (not stale)
-- User points to the instruction file when the agent doesn't follow conventions
-
-**Signs of weak utilization:**
-- No project instruction file at all
-- The instruction file exists but is empty, generic, or stale
-- User repeatedly tells the agent things that should be in the instruction file
-- Global instruction file only, no project-specific instructions
+Does the project have an instruction file (`CLAUDE.md` or `AGENTS.md`) with useful, current guidance?
+- Strong: it holds build and test commands, conventions, and architecture notes, and they are still accurate.
+- Weak: missing, empty, generic, or stale — or the user keeps telling the agent things that belong in it.
 
 ### 2. Memory System Usage
-Does the user leverage the memory system for cross-session continuity?
-
-**Signs of strong usage:**
-- Important decisions and preferences are saved to memory
-- User asks agent to remember recurring patterns
-- Memory entries are specific and actionable (not vague notes)
-- Agent references memory to maintain continuity
-
-**Signs of weak usage:**
-- No memory entries for the project
-- User repeats the same context every session
-- Memory exists but is never referenced or updated
-- Important corrections are never persisted
+Does the user use memory for continuity across sessions?
+- Strong: important decisions and corrections are saved as specific entries, and the agent uses them.
+- Weak: no entries for the project, or the user repeats the same context and corrections every session.
 
 ### 3. Session Setup Quality
-How effectively does the user establish context at the start of a session?
-
-**Signs of strong setup:**
-- Clear opening statement of what this session is about
-- References to relevant issues, PRs, or prior work
-- Provides necessary context that isn't in the instruction file
-- Sets expectations for the session's scope
-
-**Signs of weak setup:**
-- Jumps into tasks with no context
-- Assumes agent knows what happened "last time" without memory
-- Doesn't orient the agent to the current state of the work
-- Starts with vague "let's continue" without specifying what
+Does the user set up context at the start of a session?
+- Strong: the opening message says what the session is about and where the work stands.
+- Weak: starts with "let's continue" or assumes the agent knows what happened "last time" without memory or a handoff.
 
 ### 4. Reference Management
-Does the user provide and point to relevant references effectively?
-
-**Signs of strong reference management:**
-- Links to relevant documentation, issues, or PRs
-- Points agent to example code or patterns to follow
-- References specific files or functions as starting points
-- Uses git history for context ("check the last 3 commits on this file")
-
-**Signs of weak reference management:**
-- Agent operates without any external references
-- User describes a pattern from memory instead of pointing to an example
-- Relevant documentation exists but is never referenced
+Does the user point the agent to relevant references?
+- Strong: points to docs, issues, example code, or git history as starting points.
+- Weak: describes a pattern from memory when an example exists, or relevant documentation is never mentioned.
 
 ### 5. Instruction Coherence
-Do the user's instructions remain consistent throughout the session?
-
-**Signs of strong coherence:**
-- Requirements don't contradict earlier statements
-- Changes in direction are explicitly acknowledged
-- Constraints remain stable unless intentionally revised
-
-**Signs of weak coherence:**
-- Contradictory requirements within the same session
-- Implicit assumption changes without notifying the agent
-- "What I actually meant was..." after agent follows stated requirements
+Do the user's instructions stay consistent through the session?
+- Strong: changes in direction are stated openly.
+- Weak: requirements contradict earlier ones without notice, or "what I actually meant was…" after the agent followed the stated requirement.
 
 ## Scoring Rubric
 

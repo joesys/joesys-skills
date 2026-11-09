@@ -13,39 +13,36 @@ Go-specific quality thresholds. Go's error handling idiom affects complexity bas
 
 | Metric | Threshold | Rating | Source |
 |---|---|---|---|
-| Function length (median) | ≤40 lines | Good | Effective Go [^3] |
+| Function length (median) | ≤40 lines | Good | Convention — no single authoritative source |
 | File length | ≤600 lines | Good | Convention — no single authoritative source |
-| Nesting depth | ≤4 | Good | Go proverbs [^4] |
+| Nesting depth | ≤4 | Good | Convention — no single authoritative source |
 | Line length | ≤120 chars | Good | Convention — no single authoritative source |
 
 ## Testing
 
 | Metric | Threshold | Rating | Source |
 |---|---|---|---|
-| Test runner | `go test ./...` | Standard | Built-in [^5] |
+| Test runner | `go test ./...` | Standard | Built-in [^4] |
 | Test-to-source ratio | ≥0.7 | Good | Convention — no single authoritative source |
-| Table-driven tests | Present | Expected | Go testing convention [^5] |
+| Table-driven tests | Present | Expected | Go testing convention [^4] |
 
 ## Dependencies
 
 | Metric | Threshold | Rating | Source |
 |---|---|---|---|
-| govulncheck clean | 0 vulnerabilities | Required | govulncheck [^6] |
-| go.sum present | Present | Required | Go modules [^5] |
+| govulncheck clean | 0 vulnerabilities | Required | govulncheck [^5] |
+| go.sum present | Present | Required | Go modules [^4] |
 
 ## Story Readability
 
 | Metric | Threshold | Rating | Source |
 |---|---|---|---|
-| Weighted story score | ≥ 88 | Good (A) | Calibrated to shared/story-readability.md |
-| Weighted story score | ≥ 72 | Acceptable (B) | Calibrated to shared/story-readability.md |
-| Exported function GoDoc coverage | 100% | Good | Effective Go |
+| Exported function GoDoc coverage | 100% | Good | Go Doc Comments [^3] |
 
 ## References
 
 [^1]: Go idiomatic error handling adds ~3 CC per function via `if err != nil` patterns
 [^2]: golangci-lint, "Linters," golangci-lint.run
-[^3]: Effective Go, go.dev/doc/effective_go
-[^4]: Rob Pike, "Go Proverbs," go-proverbs.github.io
-[^5]: The Go Programming Language, go.dev/doc/
-[^6]: govulncheck, "Check for Known Vulnerabilities," pkg.go.dev/golang.org/x/vuln/cmd/govulncheck
+[^3]: Go Doc Comments, go.dev/doc/comment — "Every exported (capitalized) name should have a doc comment."
+[^4]: The Go Programming Language, go.dev/doc/
+[^5]: govulncheck, "Check for Known Vulnerabilities," pkg.go.dev/golang.org/x/vuln/cmd/govulncheck

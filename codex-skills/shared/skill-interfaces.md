@@ -38,8 +38,8 @@ interfaces, update all callers listed below.
 
 **Behavior contract:**
 - Each file contains review principles for one domain
-- Subagents read these files during analysis and evaluate code against every principle listed
-- Files are structured as markdown with principle names, descriptions, and examples
+- Subagents read these files during analysis and use them as a lens, reporting only problems that matter in the change
+- Files are short markdown lenses: principle names, heuristics tables, severity guidance, and when not to flag
 
 **Callers:**
 - `../codereview/SKILL.md` — Phase 2: each domain subagent reads its principle file (story readability reads `./story-readability.md`)

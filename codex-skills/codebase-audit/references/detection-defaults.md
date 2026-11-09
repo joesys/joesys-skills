@@ -2,17 +2,6 @@
 
 Auto-detection rules for language, paths, test runners, and polyglot repos. Values in `.codex/audit.yaml` always override auto-detected defaults.
 
-## Table of Contents
-
-- [Language Detection (Marker Files)](#language-detection-marker-files)
-- [Language Defaults](#language-defaults)
-- [Path Auto-Detection](#path-auto-detection)
-- [Polyglot Detection](#polyglot-detection)
-- [Test Runner Detection](#test-runner-detection)
-- [Config File Format](#config-file-format)
-
----
-
 ## Language Detection (Marker Files)
 
 Check in priority order — first match wins:
@@ -33,16 +22,16 @@ Check in priority order — first match wins:
 
 ## Language Defaults
 
-| Language | Extension | Test Runner | Function Pattern |
-|---|---|---|---|
-| Python | .py | pytest | `^(def\|async def) ` |
-| TypeScript | .ts | jest/vitest | `^(export )?(async )?function` |
-| JavaScript | .js | jest/vitest | `^(export )?(async )?function` |
-| Rust | .rs | cargo test | `^(pub )?(async )?fn ` |
-| Go | .go | go test ./... | `^func ` |
-| C++ | .cpp | ctest/gtest | `^\w+.*\w+\s*\(` |
-| C# | .cs | dotnet test | `(public\|private).*\w+\(` |
-| GDScript | .gd | gdUnit4 | `^(static )?func ` |
+| Language | Extension | Test Runner |
+|---|---|---|
+| Python | .py | pytest |
+| TypeScript | .ts | jest/vitest |
+| JavaScript | .js | jest/vitest |
+| Rust | .rs | cargo test |
+| Go | .go | go test ./... |
+| C++ | .cpp | ctest/gtest |
+| C# | .cs | dotnet test |
+| GDScript | .gd | gdUnit4 |
 
 ---
 
@@ -110,8 +99,6 @@ language:
   primary: "python"            # auto: from dominant file extension
   additional: ["typescript"]   # auto: if >10% of source files
   extension: ".py"
-  function_pattern: "^(def|async def) "
-  class_pattern: "^class "
 
 testing:
   runner: "pytest --tb=short"

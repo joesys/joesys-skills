@@ -2,27 +2,14 @@
 
 ## Definition
 
-Evolvability measures how easily the codebase can accommodate new requirements, features, or changes without extensive rewrites or cascading modifications. A highly evolvable codebase allows developers to add functionality by extending rather than modifying existing code.
+Evolvability measures how easily the codebase can accommodate new requirements, features, or changes without extensive rewrites or cascading modifications.
 
-## Concrete Signals
+## Signals to Look For
 
-**Positive signals:**
-- Single Responsibility Principle — each module/class has one reason to change
-- Open/Closed Principle — behavior extensible via new types or strategies, not if/else chains
-- Dependency Inversion — high-level modules depend on abstractions, not concrete implementations
-- Composition over inheritance — behavior assembled from small pieces
-- Orthogonality — changing one module does not require changes in unrelated modules
-- Clear module boundaries with well-defined interfaces
-- Low fan-out — each module depends on few others
-
-**Negative signals:**
-- God classes/modules with many responsibilities
-- Shotgun surgery — one change requires edits across many files
-- Feature envy — functions heavily accessing another module's data
-- Deep inheritance hierarchies (>3 levels)
-- Tight coupling via concrete class references instead of interfaces/protocols
-- Circular dependencies between modules
-- Switch/if-else chains that must be updated for every new type
+- God classes or modules with many responsibilities.
+- Shotgun surgery — one change needs edits across many files.
+- Switch or if/else chains that must change for every new type, instead of extension points.
+- Tight coupling to concrete classes in key modules; inheritance deeper than 3 levels where composition would do.
 
 ## Measurement Guidance
 

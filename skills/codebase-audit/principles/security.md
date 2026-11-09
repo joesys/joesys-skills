@@ -2,30 +2,16 @@
 
 ## Definition
 
-Security measures the codebase's resistance to common vulnerabilities and attacks. This criterion assesses static code patterns — penetration testing and dynamic analysis are out of scope. Focus is on OWASP Top 10 and language-specific vulnerability patterns detectable through code inspection.
+Security measures the codebase's resistance to common vulnerabilities and attacks. It covers static code patterns only (OWASP Top 10 and language-specific patterns), not penetration testing or dynamic analysis.
 
-## Concrete Signals
+## Signals to Look For
 
-**Positive signals:**
-- No hardcoded secrets (API keys, passwords, tokens)
-- Parameterized queries (no string interpolation in SQL)
-- Input validation and sanitization at system boundaries
-- Proper authentication and session management
-- Dependencies audited for known vulnerabilities
-- HTTPS/TLS enforced for external communication
-- Principle of least privilege in access control
-- Content Security Policy headers for web applications
-
-**Negative signals:**
-- Hardcoded secrets in source code
-- SQL injection via string concatenation/interpolation
-- Command injection via unsanitized subprocess inputs
-- XSS via unescaped user content in HTML templates
-- Missing input validation on API endpoints
-- Sensitive data in logs (passwords, tokens, PII)
-- Outdated dependencies with known CVEs
-- Path traversal via unsanitized file path inputs
-- Insecure defaults (debug mode in production, permissive CORS)
+- Hardcoded secrets (API keys, passwords, tokens) in source.
+- Injection: SQL built by string concatenation or interpolation, command injection through unsanitized subprocess input, XSS through unescaped user content, path traversal through unsanitized file paths.
+- Missing input validation at system boundaries such as API endpoints.
+- Sensitive data (passwords, tokens, PII) written to logs.
+- Weak authentication or session handling, and insecure defaults (debug mode in production, permissive CORS).
+- Outdated dependencies with known CVEs.
 
 ## Measurement Guidance
 

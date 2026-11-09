@@ -2,29 +2,15 @@
 
 ## Definition
 
-Operability measures how ready the codebase is for deployment, monitoring, and day-to-day operations. An operable codebase can be built, tested, deployed, monitored, and debugged efficiently with established tooling and automation.
+Operability measures how ready the codebase is for deployment, monitoring, and day-to-day operations.
 
-## Concrete Signals
+## Signals to Look For
 
-**Positive signals:**
-- CI/CD pipeline configured (GitHub Actions, GitLab CI, Jenkins, etc.)
-- Containerization (Dockerfile, docker-compose) for consistent environments
-- Health check endpoints for services
-- Structured logging with appropriate levels
-- Configuration via environment variables (12-factor app)
-- Database migration strategy in place
-- Deployment scripts or infrastructure-as-code
-- Dependency lock files present and up-to-date
-
-**Negative signals:**
-- No CI/CD pipeline
-- No containerization for deployable services
-- Hard-coded configuration values
-- Missing or inconsistent logging
-- No health check endpoints for services
-- No dependency lock file
-- Manual deployment process with undocumented steps
-- No database migration strategy
+- A CI/CD pipeline.
+- Containers or infrastructure-as-code for deployable services; a documented, not manual, deployment.
+- Structured logging with levels.
+- Configuration from the environment, not hard-coded values.
+- Dependency lock files, and a database migration strategy where there is a database.
 
 ## Measurement Guidance
 

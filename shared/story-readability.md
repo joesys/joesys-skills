@@ -29,55 +29,16 @@ Each line is a sentence. The function is a paragraph. The reader knows what happ
 
 | # | Dimension | Weight | What It Measures |
 |---|-----------|--------|------------------|
-| 1 | Narrative Flow | 20% | Does a function read top-to-bottom as a sequence of clear steps? Are logical phases separated by paragraph spacing? Do paired operations (begin/end, open/close) appear symmetrically? |
+| 1 | Narrative Flow | 20% | Does a function read top-to-bottom as a sequence of clear steps, in the order they happen? Are logical phases separated by paragraph spacing? Do paired operations (begin/end, open/close, acquire/release) appear symmetrically? |
 | 2 | Naming as Intent | 15% | Do names reveal *what* and *why* without needing to read the body? Are enums used over bools at call sites? Are call sites self-documenting? |
-| 3 | Cognitive Chunking | 15% | Are logical phases of a function extracted into named steps, even when the extraction doesn't reduce complexity or duplication? Can a reader see the story's chapters at a glance? |
+| 3 | Cognitive Chunking | 15% | Are logical phases of a function extracted into named steps, even when the extraction doesn't reduce complexity or duplication? Can a reader see the story's chapters at a glance from the orchestrator? |
 | 4 | Abstraction Consistency (SLAP) | 14% | Does each function operate at a single level of abstraction? Does the orchestrator avoid mixing high-level steps with low-level details? |
-| 5 | Function Focus | 10% | One function, one job. Short enough to hold in your head (~20 lines of logic). Split out a function when either condition holds: it is reused, or it makes the code read better. |
-| 6 | Structural Clarity | 10% | Flat control flow. Guard clauses and early returns for invalid states. Minimal nesting. No arrow anti-patterns. |
+| 5 | Function Focus | 10% | One function, one job. Short enough to hold in your head (~20 lines of logic). Split out a function when either condition holds: it is reused, or it makes the code read better. A wrapper that only renames a built-in adds indirection, not clarity. |
+| 6 | Structural Clarity | 10% | Flat control flow. Guard clauses and early returns for invalid states. The happy path sits at the shallowest indentation. No arrow anti-patterns. |
 | 7 | Documentation Quality | 10% | Comments explain *why*, not *what*. No parrot comments. Business rationale and non-obvious constraints are documented. |
-| 8 | No Clever Tricks | 6% | Absence of dense one-liners, bitwise hacks, ternary chains, negation puzzles, and obscure idioms. |
+| 8 | No Clever Tricks | 6% | Absence of dense one-liners, bitwise hacks, ternary chains, double negatives, and obscure idioms. Complex conditions are broken into named booleans. |
 
 > **Note:** The top 4 dimensions carry 64% of the total weight. Weights are defaults — customizable via user preferences.
-
----
-
-## Sub-Signals per Dimension
-
-### Narrative Flow
-- **Paragraph spacing** — blank lines between logical phases
-- **Symmetry** — paired operations (begin/end, open/close, acquire/release) appear in matching structure
-- **Temporal ordering** — steps appear in the order they logically occur
-
-### Naming as Intent
-- **Enums over bools** — eliminate boolean blindness at call sites
-- **Self-documenting call sites** — arguments read like prose without jumping to the signature
-
-### Cognitive Chunking
-- **Named extraction** — logical phases pulled into named helpers even when it doesn't reduce duplication
-- **Chapter visibility** — a reader can see the story's structure at a glance from the orchestrator
-
-### Abstraction Consistency (SLAP)
-- **Single level** — every line in a function operates at the same abstraction level
-- **No level mixing** — orchestrators delegate details, never inline them
-
-### Function Focus
-- **One responsibility** — each function does exactly one thing
-- **Size discipline** — roughly 20 lines of logic; extraction adds clarity, not just indirection
-
-### Structural Clarity
-- **Early returns** — guard clauses handle invalid states at the top
-- **Happy path at shallowest indentation** — the main logic is never buried in nesting
-- **Flat control flow** — no arrow anti-patterns
-
-### Documentation Quality
-- **Why, not what** — comments explain business rationale and non-obvious constraints
-- **No parrot comments** — never restate what the code already says
-
-### No Clever Tricks
-- **Negation avoidance** — no double-negative conditions
-- **No dense compound expressions** — break complex conditions into named booleans
-- **No obscure idioms** — prefer readable constructs over clever shortcuts
 
 ---
 
@@ -445,8 +406,6 @@ total = sum((dimension_score / 10) * weight_points for each dimension)
 ```
 
 Where `weight_points` is the weight percentage applied directly (e.g., Narrative Flow at 20% contributes up to 20 points).
-
-**Example:** If Narrative Flow scores 8/10, it contributes `(8/10) * 20 = 16` points.
 
 ### Grade Mapping
 

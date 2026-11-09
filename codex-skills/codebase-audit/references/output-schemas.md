@@ -2,16 +2,6 @@
 
 JSON schemas, output file templates, and directory structure for audit artifacts.
 
-## Table of Contents
-
-- [Output Directory Structure](#output-directory-structure)
-- [metrics.json Schema](#metricsjson-schema)
-- [metrics.md Template](#metricsmd-template)
-- [Audit Preferences Template](#audit-preferences-template)
-- [Execution Flows](#execution-flows)
-
----
-
 ## Output Directory Structure
 
 ```
@@ -245,11 +235,11 @@ Last updated: {DATE}
 2. If <2 found: "Need at least 2 audits for delta comparison. Found {N}."
 3. **Comparability check** on `audit_scope`:
    - **Fully compatible** (same `criteria_measured`, `source_paths`, `test_paths`, `exclude_patterns`, `branch`) → full delta with overall grade
-   - **Partially compatible** — proceed with overlap, but display warnings:
-     - Different `criteria_measured`: compare only overlapping criteria, suppress overall grade delta. Warn: "These audits measured different criteria. Comparing {N} overlapping criteria only."
-     - Different `source_paths`/`test_paths`/`exclude_patterns`: compare but warn: "Source scope changed — structural/churn metrics may not be directly comparable."
-     - Different `branch`: warn: "Audits are from different branches ({previous} vs {current})."
-     - Different `static_only` or `confidence`: warn: "Audit conditions differ — previous was {full/static-only}; current is {full/static-only}. Delta may not be directly comparable."
+   - **Partially compatible** → compare the overlap. Warn which `audit_scope` fields differ and what that makes non-comparable:
+     - Different `criteria_measured`: compare only overlapping criteria and suppress the overall grade delta.
+     - Different `source_paths`, `test_paths`, or `exclude_patterns`: structural and churn metrics may not be directly comparable.
+     - Different `branch`: name both branches.
+     - Different `static_only` or confidence: the audit conditions differ, so the whole delta may not be directly comparable.
    - **No overlap** → "These audits share no common criteria and cannot be compared."
-4. Display delta table on console
+4. Display the delta table on the console, with the direction of each change (improved / declined / stable)
 5. Ask if user wants narrative delta analysis

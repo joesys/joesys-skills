@@ -1,48 +1,12 @@
 # Story Readability
 
-## Definition
+Story Readability measures how well code reads as a narrative: can a reader scan a function and follow its steps without reading the details? It is separate from Readability (criterion 7), which measures mechanical parsing ease.
 
-Story Readability measures how well code reads as a coherent narrative. It goes beyond mechanical readability (naming conventions, comment density, nesting depth) to assess whether a developer can scan a function and immediately understand its story — the beginning, middle, and end — without diving into implementation details.
+Read `shared/story-readability.md` for the 8 dimensions, their weights, the calibration examples, the scoring protocol, and the language-aware notes. This file adds only the audit's quantitative floor and grading rubric.
 
-This criterion is separate from Readability (criterion 7), which measures mechanical parsing ease. Story Readability measures narrative quality.
+## Quantitative Floor
 
-## Core Reference
-
-Read `shared/story-readability.md` for the full dimension definitions, weights, calibration examples, and scoring protocol. This file adds audit-specific measurement guidance and grading rubric.
-
-## Concrete Signals
-
-**Positive signals:**
-- Functions read as sequences of named, well-ordered steps
-- Paragraph spacing separates logical phases
-- Call sites are self-documenting (enums over bools, descriptive arguments)
-- Logical phases are extracted into named chunks even without duplication
-- Each function operates at a single level of abstraction
-- Guard clauses and early returns keep the happy path flat
-- Comments explain business rationale, not code mechanics
-
-**Negative signals:**
-- Functions mix high-level orchestration with low-level details
-- No visual separation between logical phases
-- Boolean blindness at call sites (`spawn(world, true, false, true)`)
-- Long functions with multiple interleaved responsibilities
-- Deep nesting burying the happy path
-- Parrot comments that restate what the code does
-- Dense one-liners, double negatives, chained ternaries
-
-## Measurement Guidance
-
-| Metric | How to Measure | Source |
-|---|---|---|
-| Narrative flow score | Qualitative assessment of function-level story structure | Author agent + `shared/story-readability.md` calibration |
-| Naming intent score | Check for boolean blindness, self-documenting call sites | Author agent qualitative |
-| Cognitive chunking score | Check if multi-phase functions are extracted into named steps | Author agent qualitative |
-| Abstraction consistency | Check for SLAP violations — mixed abstraction levels | Author agent qualitative |
-| Average function length | Quantitative — shorter functions correlate with focus | `compute_structure.py` |
-| Max nesting depth | Quantitative — deep nesting hurts structural clarity | `compute_structure.py` |
-| Comment quality ratio | Qualitative — % of comments that explain "why" vs "what" | Author agent qualitative |
-
-**Quantitative floor:** The Structural and Quality agent metrics constrain the qualitative scores:
+The Structural and Quality agent metrics constrain the qualitative scores:
 
 | Quantitative Signal | Dimension Cap |
 |---|---|
@@ -63,7 +27,3 @@ Read `shared/story-readability.md` for the full dimension definitions, weights, 
 | F | No discernible narrative structure. Dense, monolithic functions. Cryptic naming. No documentation. Weighted score below 45. |
 
 The audit grading scale has no plus grades. A shared-scale B+ (80-87) grades as B here, and a shared-scale C+ (64-71) grades as C. The score bands above already include them.
-
-## Language-Aware Notes
-
-See `shared/story-readability.md` § Language-Aware Notes for per-language guidance on what's idiomatic vs. what's a narrative violation.

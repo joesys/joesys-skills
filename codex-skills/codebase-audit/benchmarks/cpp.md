@@ -36,8 +36,6 @@ C++ specific quality thresholds. The language's complexity makes stricter standa
 
 | Metric | Threshold | Rating | Source |
 |---|---|---|---|
-| Weighted story score | ≥ 88 | Good (A) | Calibrated to ../shared/story-readability.md |
-| Weighted story score | ≥ 72 | Acceptable (B) | Calibrated to ../shared/story-readability.md |
 | Average function length | ≤ 25 lines | Good | Google C++ Style Guide [^3] |
 | Designated initializer usage | Preferred over positional | Good | C++ Core Guidelines [^5] |
 

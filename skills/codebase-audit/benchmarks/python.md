@@ -46,8 +46,6 @@ Python-specific quality thresholds. These override general benchmarks where they
 
 | Metric | Threshold | Rating | Source |
 |---|---|---|---|
-| Weighted story score | ≥ 88 | Good (A) | Calibrated to shared/story-readability.md |
-| Weighted story score | ≥ 72 | Acceptable (B) | Calibrated to shared/story-readability.md |
 | Average function length | ≤ 20 lines | Good | Convention — no single authoritative source |
 | Nested comprehension usage | ≤ 1 level | Good | Convention — no single authoritative source |
 
