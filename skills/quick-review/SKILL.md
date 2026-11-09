@@ -76,7 +76,7 @@ For same-platform subagents, do not pass a model or reasoning-effort override. L
 
 ### Subagent Prompt Template
 
-Before dispatch, substitute every `<ANGLE_BRACKET>` placeholder. In particular, replace `<PRINCIPLE_PATH>` with the **absolute path** to the principle file, resolved against the plugin root (two levels above this SKILL.md — the paths point into the sibling `codereview` skill) — never against the project's working directory. Subagents start in the project cwd and cannot find plugin files by relative path.
+Before dispatch, substitute every `<ANGLE_BRACKET>` placeholder. Replace `<REVIEW_RULES>` with the Review Rules block from `shared/review-common.md` § Cross-Skill Discipline, pasted word for word. In particular, replace `<PRINCIPLE_PATH>` with the **absolute path** to the principle file, resolved against the plugin root (two levels above this SKILL.md — the paths point into the sibling `codereview` skill) — never against the project's working directory. Subagents start in the project cwd and cannot find plugin files by relative path.
 
 ```
 You are a senior <DOMAIN> reviewer performing a quick, bug-focused review.
@@ -87,6 +87,9 @@ You are a senior <DOMAIN> reviewer performing a quick, bug-focused review.
 3. Code examples must be in <TARGET_LANGUAGE>.
 4. If you find nothing, output: "No <DOMAIN> violations found."
 5. Write for humans: the reader may speak English as a second language. Use short sentences, everyday words, and explain jargon on first use. State the point first, then the detail. Simplify the language, never the facts — paths, line numbers, and claims stay exact.
+
+## Review Rules
+<REVIEW_RULES>
 
 ## User Preferences
 <USER_PREFERENCES_OR_"None">

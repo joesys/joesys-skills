@@ -1,18 +1,16 @@
 # Static Analysis Tooling Registry
 
-**codebase-audit**, **codereview**, and **quick-review** all reference this file as the single source of truth for discovering, classifying, and safely executing static analysis tools. Per-language tool profiles live in `./tooling/<language>.md`; this file defines the shared protocol that governs all of them.
+**codebase-audit**, **codereview**, and **quick-review** use this file to find, classify, and safely run static analysis tools. Per-language profiles live in `./tooling/<language>.md`. This file is the protocol for all of them.
 
 ---
 
 ## 1. Safety Rules (Non-Negotiable)
 
-These rules are absolute and apply to every tool, every language, every run.
-
 1. **NEVER** run any tool without its report-only / dry-run / check-only flags.
 2. **NEVER** install, update, upgrade, or remove any tool or dependency.
-3. **NEVER** modify source files, configuration files, or the working tree.
-4. **ALWAYS** present tool commands in the **Live Command Safety Gate** before execution — the human must see and approve every command. **Exception:** quick-review auto-runs read-only tools (linters, type checkers, SAST) without a safety gate for speed. It still skips tools marked `⚠️ DANGER: auto-modifies`. This exception is intentional — quick-review trades the gate for faster turnaround on tools that cannot modify files.
-5. Tools that auto-modify by default are marked with `⚠️ DANGER: auto-modifies` in per-language profile files — **double-check report-only flags** before queuing these tools.
+3. **NEVER** modify source files or configuration files. Caches and build output that a tool writes for itself (for example `.mypy_cache/`, `.ruff_cache/`, or Rust's `target/`) are fine. They are not source changes.
+4. **ALWAYS** show tool commands in the **Live Command Safety Gate** before running them. The human must see and approve every command. **Exception:** quick-review runs read-only tools (linters, type checkers, SAST) without the gate, for speed. It still never runs tools marked `⚠️ DANGER: auto-modifies`.
+5. Profiles mark tools that change files by default with `⚠️ DANGER: auto-modifies`. Double-check the report-only flags before queuing them.
 
 ---
 
@@ -25,29 +23,23 @@ These rules are absolute and apply to every tool, every language, every run.
 | **Tier 3** | Formatters | Consistency checking (report-only) | Consistency |
 | **Tier 4** | Security Scanners | Security pattern matching, known vulnerabilities | Security |
 
-Tools are executed in tier order. Higher tiers (lower numbers) take precedence when findings overlap.
-
 ---
 
 ## 3. Detection Flow
 
-The orchestrator follows this 7-step protocol to discover and classify tools before any execution occurs.
-
 ### Step 1 — Load Tool Profiles
 
-Read the per-language profile (`./tooling/<language>.md`) and the general profile (`./tooling/general.md`) to build the candidate tool list. Each profile declares tool names, config file markers, binary names, and report-only flags.
+Read the per-language profile (`./tooling/<language>.md`) and the general profile (`./tooling/general.md`). Each profile lists tool names, config markers, binary names, and report-only flags.
 
 ### Step 2 — Detect Config Files
 
-Glob the repository for each tool's known config file markers (e.g., `.eslintrc.*`, `pyproject.toml`, `rustfmt.toml`). Record which tools have project-level configuration present.
+Glob the repository for each tool's config markers (for example `.eslintrc.*`, `pyproject.toml`, `rustfmt.toml`).
 
 ### Step 3 — Check Binary Availability
 
-For each candidate tool, run `which <binary>` (Unix) or `where <binary>` (Windows) to determine whether the binary is available on the system PATH.
+Check whether each tool's binary is on PATH.
 
 ### Step 4 — Classify Each Tool
-
-Apply this 4-state classification model:
 
 | Config Present | Binary Available | Classification |
 |:-:|:-:|:--|
@@ -56,19 +48,19 @@ Apply this 4-state classification model:
 | No  | Yes | `available` (system-wide install) |
 | No  | No  | `absent` |
 
-Only `available` tools proceed to execution. `configured-but-unavailable` tools are reported as gaps. `absent` tools are silently skipped unless the audit requests gap recommendations.
+Only `available` tools run. Report `configured-but-unavailable` tools as gaps. Skip `absent` tools silently unless the audit asks for gap recommendations.
 
 ### Step 5 — Detect Build-Integrated Analysis
 
-Grep build files (e.g., `Makefile`, `package.json` scripts, `Cargo.toml`, CI configs) for patterns that indicate static analysis is already integrated into the build pipeline (e.g., `lint`, `check`, `analyze`, `clippy`, `mypy`). Record these as build-integrated tools — they inform grading but are not re-executed.
+Grep build files (`Makefile`, `package.json` scripts, `Cargo.toml`, CI configs) for analysis already in the build (`lint`, `check`, `analyze`, `clippy`, `mypy`). Record these as build-integrated tools. They inform grading but are not re-run.
 
 ### Step 6 — Queue Available Tools for Safety Gate
 
-For each `available` tool, assemble the full command with report-only flags and present it in the **Live Command Safety Gate**. The human approves, rejects, or modifies each command before execution.
+For each `available` tool, build the full command with report-only flags and show it in the **Live Command Safety Gate**. The human approves, rejects, or edits each command.
 
 ### Step 7 — Execute Approved Tools
 
-Run each approved command, capture stdout/stderr, and feed results into the TOOLING_CONTEXT block.
+Run each approved command, capture its output, and feed the results into the TOOLING_CONTEXT block.
 
 ---
 
@@ -76,8 +68,7 @@ Run each approved command, capture stdout/stderr, and feed results into the TOOL
 
 ### Timeouts
 
-- If the audit/review configuration (`audit.yaml` or equivalent) specifies `testing.timeout`, respect that value.
-- Otherwise, apply adaptive timeouts based on repository size:
+Use `testing.timeout` from `audit.yaml` (or equivalent) if set. Otherwise scale by repository size:
 
 | Repository Size | Timeout Per Tool |
 |:--|:--|
@@ -87,21 +78,11 @@ Run each approved command, capture stdout/stderr, and feed results into the TOOL
 
 ### Large Output Handling
 
-When a tool produces **more than 50 findings**:
-
-1. **Summarize**: total count by severity (error / warning / style).
-2. **Highlight**: the top 3 most severe findings with file, line, and explanation.
-3. **Tell the user**: the exact command they can run themselves to see the full output.
-
-Do not dump 50+ findings into the report — it overwhelms the signal.
+When a tool reports **more than 50 findings**, do not paste them all. Give the count by severity (error / warning / style), the 3 most severe findings with file and line, and the exact command the user can run to see the full output.
 
 ### Tool Failure
 
-If a tool errors out (non-zero exit unrelated to findings, crash, timeout):
-
-1. **Report** the error concisely (tool name, exit code, first line of stderr).
-2. **Skip** the tool — do not retry.
-3. **Do not fail** the audit or review because of a tool failure. Continue with remaining tools.
+If a tool crashes, times out, exits non-zero for a reason other than findings, or prints output you cannot parse: report it briefly (tool name, exit code, first line of stderr), skip it without retrying, and continue. A missing binary means `configured-but-unavailable` or `absent` (Step 4). A tool failure never fails the audit or review.
 
 ---
 
@@ -184,31 +165,8 @@ Tooling results influence the audit grade through two mechanisms: criteria impac
 
 ## 7. Review Merge Rules
 
-When both AI analysis and tool output identify issues in the same diff, apply these merge rules. Both codereview and quick-review use these rules. quick-review merges only findings that describe the same problem at the same place, and drops findings below P1.
+codereview and quick-review both use these rules when AI findings and tool findings cover the same diff. quick-review also drops findings below P1.
 
-### Overlapping Findings (same file, within 3 lines)
-
-When the AI reviewer and a tool flag the same (or nearly the same) issue:
-
-- **Merge** into a single finding.
-- **Keep** the AI's explanation (richer context, understands intent).
-- **Add** a `Confirmed by: {tool_name}` annotation to increase confidence.
-
-### Tool-Only Findings
-
-When a tool finds something the AI did not flag:
-
-- **Include** the finding with a `[{tool_name}]` prefix.
-- **Map severity** to the review's priority scale:
-
-| Tool Severity | Review Priority |
-|:--|:--|
-| error | **P1** (or **P0** if security-related) |
-| warning | **P2** |
-| style / info | **P3** |
-
-### AI-Only Findings
-
-When the AI flags something no tool detected:
-
-- **No change** — present the finding as-is. AI analysis stands on its own; tools are supplementary, not gatekeepers.
+- **Same problem at the same place** (AI and tool): merge into one finding. Keep the AI's explanation, because it understands intent. Add `Confirmed by: {tool_name}` to show that two independent sources agree.
+- **Tool-only finding:** include it with a `[{tool_name}]` prefix. Map its severity with `./review-common.md` § Tool Severity Mapping.
+- **AI-only finding:** present it as is. Tools support the review; they do not gate it.

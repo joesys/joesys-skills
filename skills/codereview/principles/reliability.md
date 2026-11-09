@@ -1,5 +1,7 @@
 # Reliability Principles
 
+Reliability asks: when something goes wrong, does the system notice, report it clearly, and fail in a safe way? Use this file as a lens, not a checklist. Report only problems that would make a real failure worse in this change: hidden, far from its cause, unrecoverable, or impossible to diagnose.
+
 ## Quick Diagnostic Guide
 
 | Symptom | Likely Principle |
@@ -23,15 +25,7 @@
 | **Boy Scout Rule vs. Scope Creep** | Cleaning up code while working on a feature is good. Refactoring an entire module when you were asked to fix a typo is scope creep. Clean the campground, not the forest. |
 | **Observability vs. Security** | Logs and traces are essential but can leak secrets. Never log credentials, tokens, PII, or full request bodies. Structured logging with explicit field selection prevents accidental exposure. |
 
----
-
-## 1. Fail-Fast & Defensive Programming — Detect and Report Errors Immediately
-
-Do not let invalid state propagate through the system. The further an error travels from
-its origin, the harder it is to diagnose. Validate inputs at entry, check configuration at
-startup, and raise exceptions the moment something is wrong.
-
-**Error type strategies:**
+## Matching the Response to the Error
 
 | Error Type | Example | Strategy |
 |---|---|---|
@@ -40,464 +34,39 @@ startup, and raise exceptions the moment something is wrong.
 | **Deterministic failure** | File not found, invalid SQL | Fail with clear message — retrying won't help |
 | **Invariant violation** | Negative account balance after debit | Assert — indicates logic bug |
 
-### ❌ Wrong
+## Principle Notes
 
-```python
-def transfer_money(from_account: dict, to_account: dict, amount: float) -> dict:
-    from_account["balance"] -= amount  # no validation — invalid state propagates
-    to_account["balance"] += amount
-    if from_account["balance"] < 0:
-        print("Warning: negative balance")  # discovered much later, log and continue?!
-    return {"from": from_account, "to": to_account}
-```
-
-### ✅ Correct
-
-```python
-def transfer_money(from_account: dict, to_account: dict, amount: float) -> dict:
-    if amount <= 0:
-        raise ValueError(f"Transfer amount must be positive, got {amount}")
-    if from_account["balance"] < amount:
-        raise InsufficientFundsError(
-            f"Cannot transfer {amount}: only {from_account['balance']} available"
-        )
-
-    from_account["balance"] -= amount
-    to_account["balance"] += amount
-    assert from_account["balance"] >= 0, "Invariant violated: negative balance after transfer"
-    return {"from": from_account, "to": to_account}
-
-
-def load_config() -> dict:
-    """Validate configuration at startup, not at first use."""
-    config = _read_config_file()
-    required = ["DATABASE_URL", "SECRET_KEY", "REDIS_HOST"]
-    missing = [k for k in required if k not in config]
-    if missing:
-        raise ConfigurationError(f"Missing required config keys: {missing}")
-    return config
-```
-
-**Key points:** Guard clauses catch precondition violations at the function boundary. The invariant assertion catches logic bugs. Config validation at startup prevents cryptic `KeyError` deep in a request handler.
-
----
-
-## 2. Design by Contract — Explicit Agreements Between Caller and Routine
-
-Every function has a contract: *preconditions* (what the caller guarantees), *postconditions*
-(what the function guarantees back), and *invariants* (what is always true about the
-object's state). Making these contracts explicit prevents the ambiguity that causes bugs.
-
-**DbC vs. Defensive Programming:**
-
-| Aspect | Design by Contract | Defensive Programming |
-|---|---|---|
-| **Trust model** | Trusts caller to meet preconditions | Trusts nobody |
-| **On violation** | Crashes (caller's bug) | Handles gracefully |
-| **Best for** | Internal module APIs | System boundaries, public APIs |
-| **Cost** | Simpler implementation | More code, more branches |
-
-### ❌ Wrong
-
-```python
-def calculate_discount(price: float, percentage: float) -> float:
-    # No contract — what happens with negative price? 150% discount?
-    return price * (percentage / 100)
-
-def apply_bulk_discount(items: list[dict]) -> list[dict]:
-    # Caller has no idea what this expects or guarantees
-    for item in items:
-        if item.get("qty", 0) > 10:
-            item["price"] *= 0.9
-    return items
-```
-
-### ✅ Correct
-
-```python
-def calculate_discount(price: float, percentage: float) -> float:
-    """Preconditions: price >= 0, 0 <= percentage <= 100.
-    Postconditions: 0 <= result <= price."""
-    assert price >= 0, f"Precondition: price must be non-negative, got {price}"
-    assert 0 <= percentage <= 100, f"Precondition: percentage must be 0-100, got {percentage}"
-    result = price * (1 - percentage / 100)
-    assert 0 <= result <= price, f"Postcondition: result {result} outside [0, {price}]"
-    return result
-
-class ShoppingCart:
-    """Invariant: total always equals sum of item prices * quantities."""
-    def __init__(self):
-        self._items: list[dict] = []
-        self._total: float = 0.0
-
-    def add_item(self, name: str, price: float, qty: int) -> None:
-        assert price >= 0 and qty > 0, "Precondition: price >= 0, qty > 0"
-        self._items.append({"name": name, "price": price, "qty": qty})
-        self._total += price * qty
-        self._check_invariant()
-
-    def _check_invariant(self) -> None:
-        expected = sum(i["price"] * i["qty"] for i in self._items)
-        assert abs(self._total - expected) < 0.01, "Invariant violated: total mismatch"
-```
-
-**Key points:** Preconditions document what callers must provide. Postconditions document what the function guarantees. Invariants ensure the object is always in a consistent state. Use `assert` for contracts — they can be disabled in production with `python -O` if performance matters.
-
----
-
-## 3. Postel's Law — Be Conservative in What You Send, Liberal in What You Accept
-
-Also known as the Robustness Principle: produce strict, well-formed output but accept
-reasonable variations in input. This makes systems resilient to minor inconsistencies
-from upstream sources without sacrificing the quality of downstream data.
-
-**The Tolerant Reader pattern:** When consuming data, ignore fields you don't need and
-tolerate minor format variations. Don't break because a response added a new field.
-
-**The dark side:** Taken too far, liberal acceptance causes *specification rot* — producers
-never fix their bugs because consumers silently compensate. It can also create security
-risks when the system guesses intent from malformed input (e.g., HTML auto-correction
-enabling XSS).
-
-### ❌ Wrong
-
-```python
-def parse_user_input(data: dict) -> dict:
-    # Too strict: rejects valid data over trivial formatting
-    if data["role"] != "admin":  # rejects "Admin", "ADMIN", " admin "
-        raise ValueError(f"Invalid role: {data['role']}")
-    if not isinstance(data["age"], int):  # rejects "25" from form input
-        raise ValueError("Age must be integer")
-    return data
-
-def generate_api_response(user: dict) -> dict:
-    # Too liberal in output: inconsistent, sloppy
-    return {
-        "Name": user.get("name", ""),    # inconsistent casing
-        "age": user.get("age"),           # might be None, string, or int
-        "extra_debug_info": user,         # leaks internal structure
-    }
-```
-
-### ✅ Correct
-
-```python
-def parse_user_input(data: dict) -> dict:
-    """Liberal in acceptance: tolerate reasonable variations."""
-    role = str(data.get("role", "")).strip().lower()
-    if role not in {"admin", "user", "viewer"}:
-        raise ValueError(f"Invalid role: {data.get('role')!r}")
-
-    try:
-        age = int(data["age"])  # accept "25" or 25
-    except (KeyError, ValueError, TypeError) as exc:
-        raise ValueError(f"Age must be a valid integer, got {data.get('age')!r}") from exc
-    if age < 0 or age > 150:
-        raise ValueError(f"Age out of range: {age}")
-    return {"role": role, "age": age}
-
-def generate_api_response(user: dict) -> dict:
-    """Conservative in output: strict, predictable format."""
-    return {"name": str(user["name"]), "age": int(user["age"]), "role": str(user["role"])}
-```
-
-**Key points:** Input parsing normalizes whitespace and casing (liberal), but still rejects structurally invalid data. Output is strict: consistent key casing, explicit types, no extra fields. The balanced approach accepts reasonable variations without silently swallowing garbage.
-
----
-
-## 4. Resilience & Graceful Degradation — Continue Operating Despite Partial Failures
-
-A resilient system continues to provide value even when some components fail. Rather than
-crashing entirely when a dependency is unavailable, degrade gracefully: serve cached data,
-skip non-critical features, or return partial results with a clear indication of what's
-missing.
-
-**Key patterns:**
-
-| Pattern | Purpose | Example |
-|---|---|---|
-| **Exponential backoff with jitter** | Prevent thundering herd on retries | `delay = min(base * 2^attempt + random(), max_delay)` |
-| **Circuit breaker** | Stop calling a failing service | After N failures, short-circuit for a cooldown period |
-| **Cascading fallback** | Degrade through multiple tiers | Cache → stale cache → default → error |
-
-### ❌ Wrong
-
-```python
-def get_product_details(product_id: str) -> dict:
-    """No resilience: one failure kills the entire response."""
-    product = catalog_service.get(product_id)  # if this times out, everything dies
-    reviews = review_service.get(product_id)   # no timeout, blocks forever
-    price = pricing_service.get(product_id)    # no fallback
-    return {"product": product, "reviews": reviews, "price": price}
-
-def fetch_with_retry(url: str) -> dict:
-    """Naive retry: hammers the failing service."""
-    for _ in range(10):
-        try:
-            return requests.get(url, timeout=30).json()
-        except Exception:
-            time.sleep(1)  # fixed delay, no backoff, no jitter
-    raise RuntimeError("Failed after 10 retries")
-```
-
-### ✅ Correct
-
-```python
-import random, time
-
-
-def fetch_with_backoff(url: str, max_retries: int = 4, base_delay: float = 0.5) -> dict:
-    """Retry with exponential backoff and jitter."""
-    for attempt in range(max_retries):
-        try:
-            resp = requests.get(url, timeout=5)
-            resp.raise_for_status()
-            return resp.json()
-        except requests.RequestException:
-            if attempt == max_retries - 1:
-                raise
-            delay = min(base_delay * (2 ** attempt) + random.uniform(0, 1), 30)
-            time.sleep(delay)
-
-
-def get_product_details(product_id: str) -> dict:
-    """Graceful degradation: partial results beat no results."""
-    product = catalog_service.get(product_id)  # critical — let this fail
-
-    try:  # non-critical: degrade gracefully
-        reviews = review_service.get(product_id, timeout=2)
-    except ServiceUnavailableError:
-        reviews = cache.get(f"reviews:{product_id}", default=[])
-
-    try:
-        price = pricing_service.get(product_id, timeout=2)
-    except ServiceUnavailableError:
-        price = product.get("list_price")  # fallback to catalog price
-
-    return {
-        "product": product, "reviews": reviews, "price": price,
-        "degraded": reviews == [] or price == product.get("list_price"),
-    }
-```
-
-**Key points:** Exponential backoff with jitter prevents thundering herds. Non-critical dependencies degrade to cached data or defaults instead of killing the entire response. The `degraded` flag tells the caller that the response is partial, maintaining transparency.
-
----
-
-## 5. Principle of Least Privilege — Minimum Permissions Necessary
-
-Every component — user, service, process, database connection — should operate with the
-minimum set of permissions needed to accomplish its task, and only for the duration required.
-Excessive privilege turns small bugs into large security incidents.
-
-### ❌ Wrong
-
-```python
-def read_user_profile(user_id: str) -> dict:
-    # Full admin connection — can DROP tables, read all schemas
-    conn = psycopg2.connect(
-        host="db.prod.internal",
-        user="admin",           # superuser!
-        password=ADMIN_PASSWORD,
-        dbname="production",
-    )
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
-    return dict(cursor.fetchone())
-
-# IAM policy: full access to everything
-s3_policy = {"Effect": "Allow", "Action": "s3:*", "Resource": "*"}
-```
-
-### ✅ Correct
-
-```python
-def read_user_profile(user_id: str) -> dict:
-    """Uses a read-only connection scoped to needed columns."""
-    conn = psycopg2.connect(
-        host="db.prod.internal",
-        user="app_readonly",        # read-only role
-        password=READONLY_PASSWORD,
-        dbname="production",
-    )
-    cursor = conn.cursor()
-    cursor.execute("SELECT id, name, email FROM users WHERE id = %s", (user_id,))
-    return dict(cursor.fetchone())
-
-# IAM policy: only what's needed, only where it's needed
-s3_read_policy = {
-    "Effect": "Allow",
-    "Action": ["s3:GetObject"],             # read only
-    "Resource": "arn:aws:s3:::my-bucket/*",  # one bucket only
-}
-
-# Write access is a separate role, scoped to a prefix
-s3_write_policy = {
-    "Effect": "Allow",
-    "Action": ["s3:PutObject"],
-    "Resource": "arn:aws:s3:::my-bucket/reports/*",
-}
-```
-
-**Key points:** The read path uses a read-only database user. IAM policies scope actions (`GetObject` vs `s3:*`) and resources (specific bucket vs `*`). Write access is a separate role scoped to a prefix. If the read-only connection is compromised, the attacker cannot modify or delete data.
-
----
-
-## 6. Boy Scout Rule — Leave Code Better Than You Found It
-
-When you touch a file to add a feature or fix a bug, leave it a little cleaner than you
-found it. Rename a misleading variable, extract a confusing conditional, add a missing
-type hint. Small, incremental improvements compound over time and prevent codebase decay.
-
-**Clean the campground, not the forest:** The rule applies to code you are already
-modifying, not to unrelated files. A drive-by cleanup of an entire module when you were
-asked to fix a one-line bug is scope creep that introduces risk and muddies the diff.
-
-### ❌ Wrong
-
-```python
-# You need to add email validation to this function.
-# The existing code is messy, but you just add your feature on top.
-def reg(d):
-    # not my problem that this is unreadable
-    u = d["u"]
-    p = d["p"]
-    e = d["e"]
-    if len(p) < 8:
-        return {"ok": False, "msg": "bad pw"}
-    # your new feature bolted on
-    if "@" not in e:
-        return {"ok": False, "msg": "bad email"}
-    db.execute("INSERT INTO users (username, password, email) VALUES (%s, %s, %s)",
-               (u, p, e))
-    return {"ok": True}
-```
-
-### ✅ Correct
-
-```python
-# You clean up what you touch while adding the email validation.
-def register_user(data: dict) -> dict:
-    username = data["username"]         # renamed from 'u'
-    password = data["password"]         # renamed from 'p'
-    email = data["email"]              # renamed from 'e'
-
-    if len(password) < 8:
-        return {"ok": False, "msg": "Password must be at least 8 characters"}
-
-    if "@" not in email:               # your new feature
-        return {"ok": False, "msg": "Invalid email address"}
-
-    db.execute(
-        "INSERT INTO users (username, password, email) VALUES (%s, %s, %s)",
-        (username, password, email),
-    )
-    return {"ok": True}
-```
-
-**Key points:** You were going to modify this function anyway, so renaming variables and improving the error message costs almost nothing. The function name, parameter names, and error messages are all clearer. You did not refactor the entire module — just the code you were already touching.
-
----
-
-## 7. Observability & Transparency — Understand What Systems Do in Production
-
-Code that cannot be observed in production is code that cannot be debugged, tuned, or
-trusted. Build observability in from the start: structured logs for events, metrics for
-trends, and traces for request flow. The goal is to answer "what is happening and why?"
-from outside the process.
-
-**Three pillars:**
-
-| Pillar | Purpose | Key Practice |
-|---|---|---|
-| **Logs** | Record discrete events | Structured (JSON), with correlation IDs |
-| **Metrics** | Track aggregate trends | Counters, gauges, histograms (latency, error rate) |
-| **Traces** | Follow a request across services | Distributed trace IDs propagated in headers |
-
-**Anti-patterns:**
-
-| Anti-Pattern | Problem |
+| Principle | Flag When |
 |---|---|
-| Silent failure | `except: pass` — errors vanish without trace |
-| Opaque errors | `raise Exception("Error")` — no context, no cause |
-| Logging secrets | `logger.info(f"Auth: {token}")` — credentials in plaintext |
-| Print debugging | `print("here")` — no severity, no structure, no rotation |
-| Log everything | Gigabytes of noise drown real signals |
-
-### ❌ Wrong
-
-```python
-def process_payment(order_id: str, amount: float) -> bool:
-    try:
-        result = payment_gateway.charge(amount)
-        return True
-    except Exception:
-        return False  # silent failure: nobody knows this failed or why
-
-def authenticate(request) -> dict:
-    token = request.headers.get("Authorization")
-    print(f"DEBUG: auth token = {token}")  # logging secrets in plaintext
-    user = verify_token(token)
-    if not user:
-        raise Exception("Auth failed")  # opaque: no context for debugging
-    return user
-```
-
-### ✅ Correct
-
-```python
-import logging
-import time
-
-logger = logging.getLogger(__name__)
-
-
-def process_payment(order_id: str, amount: float) -> bool:
-    start = time.monotonic()
-    try:
-        result = payment_gateway.charge(amount)
-        duration_ms = (time.monotonic() - start) * 1000
-        logger.info("Payment processed", extra={
-            "order_id": order_id, "amount": amount,
-            "charge_id": result.charge_id, "duration_ms": round(duration_ms, 2),
-        })
-        PAYMENT_COUNTER.labels(status="success").inc()
-        return True
-    except PaymentGatewayError as exc:
-        logger.error("Payment failed", extra={
-            "order_id": order_id, "error_type": type(exc).__name__,
-            "error_message": str(exc),
-        })
-        PAYMENT_COUNTER.labels(status="failure").inc()
-        raise
-
-
-def authenticate(request) -> dict:
-    token = request.headers.get("Authorization")
-    # Log presence, not value — never log secrets
-    logger.debug("Auth attempt", extra={
-        "has_token": token is not None,
-        "token_prefix": token[:8] + "..." if token else None,
-    })
-    user = verify_token(token)
-    if not user:
-        logger.warning("Auth failed", extra={"ip": request.remote_addr})
-        raise AuthenticationError(f"Invalid or expired token from {request.remote_addr}")
-    return user
-```
-
-**Key points:** Structured logging (`extra={}`) enables machine parsing and filtering. Metrics (counters, histograms) enable dashboards and alerts. Secrets are never logged — only presence and a safe prefix. Errors include context (order ID, IP, duration) so on-call engineers can diagnose without reproducing locally.
-
----
+| Fail-Fast & Defensive Programming | Invalid input or config is accepted and fails later, far from its cause. Required config is read lazily deep inside a request instead of checked at startup. |
+| Design by Contract | A function's preconditions are unclear and callers violate them silently. Check at system edges; trust internal callers that meet a stated contract. |
+| Postel's Law | Input handling is so strict it rejects harmless variation (whitespace, case, an extra field), or so loose it guesses at malformed data. Output should always be strict and consistent. |
+| Resilience & Graceful Degradation | A call to an external service has no timeout, retries without backoff and jitter, or retries forever. One optional dependency failing takes down the whole response. Useful patterns: backoff with jitter, a circuit breaker after repeated failures, and fallback from cache to stale cache to a default. Tell the caller when a response is partial. |
+| Principle of Least Privilege | A process, database user, token, or cloud role has more permission than the change needs, such as write access on a read path or a wildcard resource. |
+| Boy Scout Rule | Only as a P4 note for code this change already touches. Never ask for cleanup of untouched code. |
+| Observability & Transparency | A failure would leave no trace, or a trace with no context. Anti-patterns: silent failure (an empty catch), opaque errors ("Error" with no cause or IDs), secrets in logs, print-debugging left in, and logging so much that real signals drown. Good logs are structured and carry IDs (request, order, user) and the original cause. |
 
 ## When to Relax Rules
 
 | Principle | Relax When | Example |
 |---|---|---|
 | **Fail-Fast** | Batch processing where partial results are valuable | Log the error, skip the bad record, continue processing |
-| **Design by Contract** | Performance-critical inner loops where assertions add overhead | Disable with `python -O` after thorough testing |
+| **Design by Contract** | Performance-critical inner loops where assertions add overhead | Disable assertions in release builds after thorough testing |
 | **Postel's Law** | Security-sensitive input (auth tokens, SQL, HTML) | Reject anything that doesn't match the exact expected format |
 | **Resilience** | Data integrity operations where partial results are dangerous | Financial transactions must be all-or-nothing, not degraded |
 | **Least Privilege** | Local development and prototyping | Use broader permissions locally, but never deploy them to production |
 | **Boy Scout Rule** | Under tight deadline with no test coverage | Don't refactor code you can't verify — note it as tech debt instead |
 | **Observability** | Extremely hot paths where logging adds latency | Sample logs (1 in 1000) instead of logging every event |
+
+## Severity Guidance
+
+- **P0:** a failure is hidden while the system reports success, or a partial failure corrupts data (no rollback, money moved once but recorded twice).
+- **P1:** an external call with no timeout on a request path; retries that can storm a failing service; a failure that would leave no usable log; excess privilege that widens the damage of a bug.
+- **P2:** late validation, unclear errors, or missing context in logs.
+- **P3–P4:** polish, and Boy Scout notes.
+
+## When Not to Flag
+
+- Defensive checks inside trusted internal code whose callers already meet the contract.
+- Retry or circuit-breaker machinery for a call that is local, cheap, or one-time. Do not add resilience layers the change does not need.
+- Code outside the change.
