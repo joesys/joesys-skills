@@ -13,15 +13,11 @@ This file holds the scrap path in full, because scraps run often and automatical
 
 ## Write for Humans
 
-Everything a person reads from this skill - reports, findings, summaries, and conversation replies - MUST use plain language that a non-native English reader can follow. Before writing a report or a long reply, read `../shared/report-style.md` (resolve against the collection root (one level above this SKILL.md) - never the project's working directory) and follow it. In short: short sentences, everyday words, jargon explained on first use, the point stated first. Simplify the language, never the facts - paths, line numbers, and claims stay exact.
+Write everything a person reads in plain English for a reader who uses English as a second language. Follow `../shared/report-style.md` (resolve against the collection root (one level above this SKILL.md) - never the project's working directory).
 
 ## Out of Scope
 
-This skill MUST NOT:
-- Draft a full post in scrap mode. Scrap is silent auto-capture; full posts are collaborative (Write mode).
-- Generate an empty or hollow scrap. If gathering finds no decision points, no surprises, no clear insights - report that, do not create a placeholder file.
-- Skip the one-sentence insight test. If you can't complete *"The interesting thing about this commit is ___"* with something specific and non-trivial, do not capture a scrap.
-- Interview the user about preferences. Load preference files if they exist; otherwise use defaults.
+Do not draft a full post in scrap mode. A scrap is a silent capture; a full post is written together with the developer (Write mode).
 
 ## Reference Files
 
@@ -41,17 +37,10 @@ This skill MUST NOT:
 | `$devlog list` | List | Show scrap backlog with age, published posts (across repos if configured) |
 | `$devlog --since <range>` | Write | Full post, mining sessions from a time range |
 | `$devlog --from-scrap <name or path>` | Write | Full post, starting from a specific scrap |
-| `$devlog --since beginning` | Write | Full post, scanning all sessions for the project |
 
-Arguments are combinable. Examples:
-- `$devlog the clone bug --since yesterday` - write about the clone bug, mining recent sessions
-- `$devlog --from-scrap recursive-fix` - write a post starting from an existing scrap
-- `$devlog scrap signing workaround` - quickly capture a scrap about signing
-- `$devlog scrap --from-context auth refactor` - capture a scrap using only what's already in the conversation (used by auto-invoke from the commit skill)
+Arguments can be combined. `--since` accepts natural-language times (`yesterday`, `3 days ago`) and dates (`2026-03-20`); `beginning` means all history.
 
-The `--since` parameter accepts natural language time expressions (`yesterday`, `last week`, `3 days ago`) and absolute dates (`2026-03-20`). The special value `beginning` scans all available history.
-
-If the invocation is ambiguous or unrecognizable, ask the user to clarify: "What would you like to write about? Usage: `$devlog [topic]`, `$devlog scrap [hint]`, `$devlog list`"
+If the invocation is unclear, ask what the user wants to write about and show the main usage forms.
 
 ### Mode Routing
 
@@ -66,22 +55,12 @@ When a mode dispatches same-platform subagents, do not pass a model or reasoning
 
 ## Phase 0: Load Preferences (silent)
 
-Never interview the user about preferences. Read these files if they exist; use defaults for anything missing:
+Read these files if they exist; use defaults for anything missing:
 
 1. `.codex/skill-context/preferences.md` - shared preferences (tone, assumed knowledge).
-2. `.codex/skill-context/devlog.md` - devlog preferences (target audience, writing tone).
+2. `.codex/skill-context/devlog.md` - devlog preferences (target audience, writing tone). Its writing tone overrides the shared tone.
 
-Defaults: casual, story-driven voice; reader is a budding programmer.
-
-| Preference | Effect on Devlog |
-|---|---|
-| Tone: casual | Conversational voice, contractions, first-person narrative |
-| Tone: professional | Clean prose, structured sections, polished for publication |
-| Assumed knowledge: beginner | More context on technical concepts, define jargon |
-| Devlog-specific: target audience | Shapes the drafting voice and assumed reader background |
-| Devlog-specific: writing tone | Overrides the shared tone preference for devlog |
-
-Pass the audience and tone preferences to any gathering agents and to drafting.
+Defaults: casual, story-driven voice; the reader is a budding programmer. Pass the audience and tone to any gathering agents and to drafting.
 
 ---
 
@@ -91,24 +70,21 @@ Scrap mode runs **without any user interaction**.
 
 ### `--from-context` fast path
 
-If `--from-context` is set, **MUST NOT dispatch subagents** and MUST NOT mine session logs or git history again. Instead:
+If `--from-context` is set, do not dispatch subagents and do not mine session logs or git history again. The invoking session (for example, `$commit`) already holds the diff, the commit message, and the discussion; finding them again is slow and adds nothing.
 
-1. **Use current conversation context directly.** The invoking session already contains the diff, commit message, conversation history, and any analysis performed.
-2. **Scan for existing scraps** (dedup only). List `docs/devlog/.scraps/` and check whether a scrap with an overlapping topic and date already exists. If the directory doesn't exist or is empty, proceed.
-3. Build the content brief from that context - the commit message (intent, changes, AI review), the diff, and any notable exchanges from the current session - and continue with the workflow below.
-
-This path exists because auto-invocations (for example, from the commit skill) already have rich context in the conversation. Re-discovering it is redundant and slow.
+1. Build the content brief from the current conversation: the commit message (intent, changes, AI review), the diff, and notable exchanges.
+2. List `docs/devlog/.scraps/` to check for a scrap with an overlapping topic and date (to avoid duplicates). If the folder is missing or empty, continue with the workflow below.
 
 ### Workflow
 
 1. Take the content brief (from the fast path, or from full gathering).
 2. Identify the most interesting moments - decision points, surprises, pivots, dead ends.
-3. **MUST apply the one-sentence test** before generating any output (see "What's Worth Capturing" below). If you can't state the insight in one specific, non-trivial sentence, stop and report empty results (see below).
-4. Infer the developer's thinking - reconstruct *why* decisions were made from the conversation and git history. Mark inferences as inferences.
+3. Apply the capture bar in "What's Worth Capturing" before writing anything. If it fails, stop and follow "Empty Results".
+4. Infer the developer's thinking - reconstruct *why* decisions were made from the conversation and git history. Label inferences as inferences.
 5. Generate a topic slug from the hint (if provided) or infer it from the content (lowercase, hyphenated, 2-5 words).
 6. Create `docs/devlog/.scraps/` if it doesn't exist.
 7. Write the scrap to `docs/devlog/.scraps/YYYYMMDD-<topic>.md`. If that file exists, append a numeric suffix: `YYYYMMDD-<topic>-2.md`.
-8. Report the result to the user (see "Post-Scrap Output").
+8. Report the scrap path, the one-sentence insight, and the `$devlog --from-scrap <topic>` command to turn it into a post.
 
 ### What's Worth Capturing
 
@@ -126,7 +102,8 @@ The capture bar for scraps - applied here and by the commit skill's auto-capture
 - A straightforward feature with no design decisions or tradeoffs
 - A bug fix that was a typo, off-by-one, or other mechanical correction
 - A mechanical refactor (rename, extract, reformat) with no judgment calls
-- Work where you cannot articulate a specific insight in one concrete sentence
+
+**The one-sentence test:** complete *"The interesting thing about this work is ___"* with something specific and non-trivial. If you can't, or the answer is generic ("we added a feature"), do not capture a scrap.
 
 ### Scrap Structure
 
@@ -162,12 +139,4 @@ status: unwritten
 
 ### Empty Results
 
-If nothing noteworthy was found - no pivots, no surprises, no clear decision points - **MUST NOT** generate a hollow scrap. Instead, report:
-
-> I didn't find any clear decision points or surprises in this session. If something specific caught your attention, try `$devlog scrap <hint>` with a description of what was interesting.
-
-### Post-Scrap Output
-
-After writing the scrap, report to the user:
-
-> Scrap saved to `docs/devlog/.scraps/<filename>`. Key insight captured: "<one-sentence summary of inferred insight>". Turn it into a full post later with `$devlog --from-scrap <topic>`.
+If nothing passes the capture bar, do not write a placeholder scrap. Say that no clear decision point or surprise was found, and suggest `$devlog scrap <hint>` if the user saw something interesting.

@@ -1,18 +1,6 @@
 # Retrospective — Output Format Templates
 
-Templates for all output files produced during a retrospective.
-
-## Table of Contents
-
-- [00-carry-forward.md](#00-carry-forwardmd)
-- [01-digest.md](#01-digestmd)
-- [02-topic-discussions.md](#02-topic-discussionsmd)
-- [03-retro-summary.md](#03-retro-summarymd)
-- [03-action-items.md](#03-action-itemsmd)
-- [03-improvements.md](#03-improvementsmd)
-- [04-retro-narrative.md](#04-retro-narrativemd)
-
----
+Templates for every output file of a retrospective.
 
 ## 00-carry-forward.md
 
@@ -39,21 +27,15 @@ Created in Phase 0. Reviews previous retro's action items.
 - [From previous retro's top takeaways — which still apply?]
 ```
 
-### Staleness Rule
+**Staleness rule:** an item carried forward for 3+ consecutive retros gets a `[STALE]` flag. A stale item forces a decision: do it, retire it, or escalate to the human.
 
-Items carried forward for 3+ consecutive retros get a `[STALE]` flag. Stale items force a decision: do it, retire it, or escalate to the human.
-
-### Chain Property
-
-Each retro carries forward from the immediately previous retro only. The previous retro already accumulated older items, so the chain is implicit.
+Carry forward from the immediately previous retro only; it already holds the older items.
 
 ---
 
 ## 01-digest.md
 
-Created after Phase 1 agents return. Contains assembled channel findings with a facilitator preamble.
-
-The digest preserves each channel's findings under its own heading, with a facilitator-written preamble:
+Created after the Phase 1 agents return. Keep each channel's findings under its own heading, after a facilitator preamble:
 - **Period**: start → end (with dates)
 - **Key metrics**: commits, files changed, tests delta (pulled from channel findings)
 - **Narrative arc**: one-sentence story of the period ("from X to Y")
@@ -159,16 +141,7 @@ Created in Phase 3b. Extracted from all topic discussions.
 - [Items noted but not actionable yet — revisit next retro]
 ```
 
-Categories are **not fixed** — use whichever fit the actual action items. Common categories:
-
-| Category | When to use |
-|---|---|
-| **Workflow Changes** | Process or habit changes |
-| **Tooling** | New tools, hooks, CI changes, skill additions |
-| **Testing** | Test additions, coverage improvements, convention changes |
-| **Documentation** | README updates, onboarding docs, architecture docs |
-| **Technical Debt** | Refactoring, cleanup, dependency upgrades |
-| **Deferred / Watch List** | Not actionable yet — track for next retro |
+Use whichever categories fit the actual items (for example Workflow Changes, Tooling, Testing, Documentation, Technical Debt).
 
 Every action item must be **specific and verifiable**. "Improve testing" is not an action. "Add integration tests for the payment API endpoint" is.
 
@@ -201,7 +174,7 @@ Created in Phase 3c. Concrete proposals for process and skill changes.
 **Status:** Proposed
 ```
 
-Each proposal is reviewed one-by-one with the human. Status updated to Approved / Rejected / Modified after review. **Do NOT apply changes without explicit approval.**
+After the Phase 3c review gate, set each status to Approved, Rejected, or Modified.
 
 ---
 

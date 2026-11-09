@@ -19,13 +19,7 @@ re-running or re-doing the earlier work. It writes the explanation and stops.
 
 ## Write for Humans
 
-Everything a person reads from this skill MUST use plain language that a
-non-native English reader can follow. Before writing the reply, read
-`shared/report-style.md` (resolve against the plugin root — two levels above
-this SKILL.md — never the project's working directory) and follow it. In
-short: short sentences, everyday words, jargon explained on first use, the
-point stated first. Simplify the language, never the facts — paths, line
-numbers, and claims stay exact.
+Write everything a person reads in plain English for a reader who uses English as a second language. Follow `shared/report-style.md` (resolve against the plugin root — two levels above this SKILL.md — never the project's working directory).
 
 ## Invocation
 
@@ -45,10 +39,8 @@ the last message with real content.
 
 ## Context Loading
 
-This is a "silent defaults" skill under `shared/skill-context.md`: read
-`.claude/skill-context/preferences.md` if present and let the assumed-knowledge
-level tune the depth. MUST NOT interrupt the operator with a preferences
-interview.
+Read `.claude/skill-context/preferences.md` if present, and let the
+assumed-knowledge level tune the depth.
 
 ## Workflow
 
@@ -99,19 +91,10 @@ short reply.
 | No previous assistant message (fresh session) | Say there is nothing to explain yet and ask what to explain. |
 | Previous message already simple | Keep it short; briefly answer the two closing sections; no padding. |
 | Previous message is relayed output from another tool or model | Explain that content; "Where I am least sure" covers both the source and the explanation. |
-| `/huh <focus>` | Center on the focus; keep enough surrounding context to stand alone. |
 | `/huh` repeated on the same message | Simplify further with different words or an analogy; never repeat the first explanation verbatim. |
 | Previous message was an error or failure report | Treat the error as the issue; the full decision-support structure usually applies. |
 
 ## Final Check
 
-Before replying, verify:
-
-- Is every section that applies present, and every empty section omitted?
-- Would a non-native English reader follow every sentence?
-- Is every addition labeled with the marker?
-- Does "Where I am least sure" name a concrete part and the reason?
-- Is "What you have not asked" curated to the one to three biggest items?
-- Did this skill explain without acting?
-
-If any answer reveals a problem, revise before replying.
+Before replying, check that this skill explained without acting. If it did
+anything else, revise before replying.

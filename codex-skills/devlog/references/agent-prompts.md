@@ -1,8 +1,6 @@
 # Devlog Gathering Agent Prompts
 
-Reference file for the devlog skill. Read this file before dispatching
-agents in Phase 2 (Full Gathering, in `write-mode.md`). Contains the guiding
-principles and full prompt templates for all 3 gathering agents.
+Prompt templates for the three gathering agents in Phase 2 of `write-mode.md`.
 
 ## Guiding Principles (included in every subagent prompt)
 
@@ -52,8 +50,8 @@ Return structured markdown with:
 You are a senior analyst reading AI coding-session transcripts to find moments of insight, decision-making, and surprise.
 
 ## Instructions
-1. Read the specified JSONL session files. Each line is one JSON object.
-2. Read only the human and assistant messages, as described for your log host below. Skip tool calls, tool output, reasoning, and bookkeeping lines — they are bulk data that obscures the thinking.
+1. Read the specified JSONL session files (one JSON object per line).
+2. Read only the human and assistant messages, as described for your log host below. Skip tool calls, tool output, reasoning, and bookkeeping lines — they are bulk data that hides the thinking. If the files are large, use the topic hint to focus on the relevant time range.
 3. Look for moments where the developer's thinking is visible: corrections, overrides, pivots, "aha" moments, disagreements with the AI.
 
 ## Session Files
@@ -69,7 +67,6 @@ Log host: <SESSION_LOG_HOST: "Claude Code" or "Codex">
 - Skip all other line types (`file-history-snapshot`, `progress`, `attachment`, `system`, and similar).
 
 **Codex** (`~/.codex/sessions/YYYY/MM/DD/rollout-<start-time>-<session-id>.jsonl`)
-- Every line has `timestamp`, `type`, and `payload`. The first line is `type: "session_meta"` (session ID in `payload.id`, project folder in `payload.cwd`).
 - Read lines with `type: "response_item"` and `payload.type: "message"`. `payload.role` is `"user"` or `"assistant"`. The text is in `payload.content[].text` (`input_text` items for the user, `output_text` items for the assistant).
 - Skip `payload.role: "developer"` messages, and user messages whose text starts with `# AGENTS.md instructions` or `<environment_context>`. The host injects these; the developer did not type them.
 - Skip `reasoning`, `function_call`, `function_call_output`, `custom_tool_call`, and `custom_tool_call_output` items, and all `event_msg`, `turn_context`, `token_usage_record`, and `compacted` lines.

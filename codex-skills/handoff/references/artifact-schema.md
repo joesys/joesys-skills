@@ -268,8 +268,16 @@ live state, and continue only after the classifier accepts it.
 
 ## Validation Rules
 
+This is the one list of validation checks. The producer applies it before
+saving, and the consumer applies it before resuming.
+
+- Require every frontmatter field listed above.
 - Reject missing or unsupported `schema_version` values.
-- Reject missing or malformed `repository_snapshot` JSON.
+- Reject missing or malformed `repository_snapshot` JSON, or an unsupported
+  `snapshot_version`.
 - Reject unknown audience, detail, or target values.
 - Require every canonical section in its fixed order.
-- Never convert `Unknown` into a guessed fact during resume.
+- The first Next Actions item is executable or names one blocking decision.
+- Every Verification Evidence row is executed evidence, not inference.
+- Unknown information is labeled, not guessed. Never convert `Unknown` into a
+  guessed fact during resume.

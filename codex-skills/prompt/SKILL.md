@@ -5,6 +5,10 @@ description: "Use when the user invokes $prompt or asks to rewrite, improve, or 
 
 # Prompt Skill
 
+## Write for Humans
+
+Write everything a person reads in plain English for a reader who uses English as a second language. Follow `../shared/report-style.md` (resolve against the collection root (one level above this SKILL.md) - never the project's working directory).
+
 ## Purpose
 
 Turn rough input into a clear, ready-to-copy prompt, then explain the meaningful changes so the operator learns how to write better prompts.
@@ -17,7 +21,7 @@ Turn rough input into a clear, ready-to-copy prompt, then explain the meaningful
 $prompt <request>
 ```
 
-Treat all text after `$prompt` as the operator's source request. For an empty invocation, ask what they want turned into a prompt.
+Treat all text after `$prompt` as the operator's source request.
 
 ## Workflow
 
@@ -56,10 +60,6 @@ Create the smallest prompt that expresses the request clearly and completely. Co
 - how the receiving AI should handle uncertainty.
 
 Include only components that improve this request. Keep a simple task as a short paragraph. Use headings, bullets, delimiters, or ordered steps when complexity makes them useful.
-
-### 5. Check and render
-
-Run the Final Check, present the prompt first, explain the meaningful edits, and stop.
 
 ## Prompt-Writing Standard
 
@@ -146,11 +146,7 @@ If the repository does not contain enough evidence, state what information is mi
 | Situation | Response |
 |---|---|
 | Empty invocation | Ask what the operator wants turned into a prompt. |
-| Material ambiguity | Ask one focused question and wait. |
-| Minor uncertainty | Use and disclose a conservative assumption. |
 | Already-strong prompt | Make only worthwhile edits and explain what was already effective. |
-| Contradictory requirements | Ask the operator to resolve the conflict. |
-| Named target | Apply relevant target-specific conventions. |
 | Embedded code fences | Preserve them with a longer outer fence. |
 | Unsafe or disallowed request | Follow the host's safety rules; rewriting is not a bypass. |
 

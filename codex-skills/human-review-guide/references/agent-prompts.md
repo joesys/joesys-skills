@@ -1,26 +1,18 @@
 # Human Review Guide — Agent Prompts
 
-Full prompt templates for the triage agent (Phase 1) and deep analysis agent (Phase 2).
-
-## Table of Contents
-
-- [Guiding Principles](#guiding-principles)
-- [Triage Agent](#triage-agent)
-- [Deep Analysis Agent](#deep-analysis-agent)
-
----
+Prompt templates for the triage agent (Phase 1) and deep analysis agent (Phase 2).
 
 ## Guiding Principles
 
 Prepend to every agent prompt:
 
 1. **You are building a reading guide, not doing a review.** Your job is to help the human know WHERE to spend time, not to tell them WHAT the code should be. Surface decisions and context; don't judge correctness.
-2. **Conservative classification.** When in doubt between two tiers, pick the higher-attention tier. It's better to surface something unnecessary than to let a real decision slip through as SKIP.
-3. **Be specific about decisions.** A decision is a choice between alternatives where the answer isn't obvious. "Used a for-loop" is not a decision. "Chose exponential backoff over linear for retry" is a decision.
+2. **Conservative classification.** When in doubt, escalate one tier up (SKIP→SKIM, SKIM→READ, READ→DECIDE). It's better to surface something unnecessary than to let a real decision slip through as SKIP.
+3. **Be specific about decisions.** A decision is a choice between alternatives where the answer isn't obvious. "Chose exponential backoff over linear for retry" is a decision. "Used a for-loop", variable names, formatting, and import order are not.
 4. **Connect the dots.** Track how chunks relate to each other. A decision in one file often creates constraints in another. Surface these links.
 5. **Adapt to the reviewer.** The calibration profile tells you what the reviewer knows and cares about. A security expert doesn't need hand-holding on auth patterns; they need to see the non-obvious trust boundary decisions.
 6. **No filler.** Every line in the guide should help the reviewer. If a chunk truly has nothing interesting, SKIP it — don't manufacture observations.
-7. **Write for humans.** The reader may speak English as a second language. Use short sentences, everyday words, and explain jargon on first use. State the point first, then the detail. Simplify the language, never the facts — paths, line numbers, and claims stay exact.
+7. **Write for humans.** The reader may speak English as a second language. Use short sentences and everyday words, explain jargon on first use, and state the point first. Simplify the language, never the facts — paths, line numbers, and claims stay exact.
 
 ---
 
@@ -36,18 +28,17 @@ You are classifying a change set into attention tiers for a human reviewer. Your
 
 ## Instructions
 
-1. Read all the content provided below.
-2. Split the content into logical chunks:
-   - For code diffs: one chunk per file if ≤15 files, or one chunk per hunk if >15 files
+1. Split the content into chunks where one chunk holds one idea:
+   - For code: a whole file when it makes one change, single hunks when it makes several
    - For artifacts: one chunk per heading section (H1/H2/H3)
-   - For mixed: apply the appropriate strategy per file type
-3. Classify each chunk into exactly one tier:
+   - For mixed: apply the matching strategy per file type
+2. Classify each chunk into exactly one tier:
    - **DECIDE** — Contains a genuine decision requiring human judgment: a design choice, trade-off, policy call, or architecture decision where reasonable people could disagree
    - **READ** — Non-trivial logic worth understanding to build a mental model, but no open decision the reviewer needs to make
    - **SKIM** — Straightforward implementation that follows from decisions made elsewhere, or standard boilerplate with minor customization
    - **SKIP** — Purely mechanical: auto-generated code, import reordering, formatting changes, renames, dependency bumps with no API changes
-4. For each chunk, write a one-line reason explaining your classification.
-5. For DECIDE and READ chunks, note if they relate to other chunks using the "Related to" field.
+3. For each chunk, write a one-line reason explaining your classification.
+4. For DECIDE and READ chunks, note if they relate to other chunks using the "Related to" field.
 
 ## Reviewer Calibration Profile
 <CALIBRATION_PROFILE>
@@ -99,19 +90,15 @@ You are producing deep analysis for chunks that a triage pass identified as need
 
 ## Instructions
 
-1. Process each DECIDE and READ chunk sequentially (in the order provided).
-2. Build on context as you go — decisions in earlier chunks inform analysis of later ones.
-3. For each DECIDE chunk, produce all 5 analysis fields (decision, alternatives, consequences, questions, reversibility).
-4. For each READ chunk, produce all 4 analysis fields (what, why this way, why it matters, gotchas).
-5. If $codereview findings are provided, weave them into the relevant chunk analysis — don't list them separately.
+1. Process the chunks in the order provided. Build on context as you go — decisions in earlier chunks inform analysis of later ones.
+2. Fill every field of the output format for each chunk.
+3. If $codereview findings are provided, weave them into the relevant chunk analysis — don't list them separately.
 
 ## Reviewer Calibration Profile
 <CALIBRATION_PROFILE>
 
 ## Calibration Rules
-- Verbosity "concise": 1-2 sentences per field, skip obvious alternatives
-- Verbosity "moderate": 2-3 sentences per field, include top 2 alternatives
-- Verbosity "detailed": 3-5 sentences per field, thorough alternative analysis, explain consequences in depth
+- Verbosity "{verbosity}": match length to it — concise gives pointers and skips obvious alternatives; detailed explores alternatives and consequences in depth
 - Role "{role}": frame analysis in terms the reviewer would understand — use domain-appropriate language
 
 ## Triage Output (from Phase 1)

@@ -12,10 +12,10 @@ from pathlib import Path
 
 SCRIPTS_DIR = Path(__file__).parent.parent / "scripts"  # path to plugin ../scripts/
 
-# 1. Existing skill behavior — write the markdown.
+# 1. Write the markdown.
 report_path.write_text(report_markdown, encoding="utf-8")
 
-# 2. New step — render HTML companion (best-effort, non-fatal).
+# 2. Render the HTML companion (best-effort, non-fatal).
 try:
     subprocess.run(
         ["python3", str(SCRIPTS_DIR / "html_render.py"),  # "python" on Windows
@@ -55,13 +55,11 @@ profile: "analytical"
 
 If `title` is absent, the renderer falls back to the first H1 in the document, then to the filename stem.
 
-## Enrichment blocks (Phase 1)
-
-Phase 1 supports one enrichment block. Phase 2+ will add more.
+## Enrichment blocks
 
 ### `mermaid` — Diagrams (REQUIRED for graphs)
 
-**All diagrams in HTML companion reports MUST use Mermaid.** ASCII box-drawing is not permitted as a graph syntax. Use a fenced code block with the `mermaid` language tag — Mermaid supports flowchart (`graph TD` / `graph LR`), sequence (`sequenceDiagram`), state (`stateDiagram-v2`), class, ER, gantt, and more.
+**All diagrams in HTML companion reports use Mermaid,** not ASCII box-drawing. Use a fenced code block with the `mermaid` language tag — Mermaid supports flowchart (`graph TD` / `graph LR`), sequence (`sequenceDiagram`), state (`stateDiagram-v2`), class, ER, gantt, and more.
 
 ````markdown
 ```mermaid
@@ -73,11 +71,11 @@ graph TD
 
 The renderer wraps this in `<pre class="mermaid">`. The Mermaid library (vendored, loaded at page load) turns it into SVG client-side. The block degrades gracefully when the markdown is viewed in a non-rendering tool (just looks like a code block, with readable source).
 
-**Why Mermaid over ASCII:** The HTML companion was always intended to render diagrams as SVG. ASCII box-drawing renders as a `<pre><code>` listing — a code block, not a diagram — defeating the purpose of the HTML view. Mermaid is rendered natively by GitHub, GitLab, VS Code (with the standard preview extension), Obsidian, and most modern markdown viewers. In raw `cat` view, Mermaid source (e.g., `A --> B`) remains legible.
+**Why Mermaid:** ASCII box-drawing renders as a code listing, not a diagram. Mermaid renders as SVG here and in GitHub, GitLab, VS Code, and Obsidian, and its source (`A --> B`) stays readable as plain text.
 
 **Tabular data → markdown tables, not ASCII boxes.** A scorecard or summary with rows and columns is not a graph. Use a real markdown table — it renders as a styled HTML table and is more readable in raw markdown than ASCII box-drawing.
 
-**ASCII fallback escape hatch (opt-in, per-report):** Authors MAY wrap an equivalent ASCII version in a collapsible `<details>` block when a specific report is reviewed primarily through tools that don't render Mermaid (terminal-only workflows, custom viewers). This is *not* the default — protocol does not require dual output, and the drift cost is on the author who opts in.
+**ASCII fallback (opt-in, per report):** when a report is mostly read in tools that do not render Mermaid, an author may add an equivalent ASCII version in a collapsible `<details>` block. This is not the default.
 
 ````markdown
 ```mermaid
@@ -94,10 +92,6 @@ graph TD
 
 </details>
 ````
-
-## Opt-out flags
-
-(Phase 1 ships with the renderer behavior controlled at the renderer CLI level. Per-skill `--no-html` flags will be added in each skill's SKILL.md as part of phase rollouts.)
 
 ## Output paths
 

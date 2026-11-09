@@ -43,7 +43,7 @@ interfaces, update all callers listed below.
 
 **Callers:**
 - `skills/codereview/SKILL.md` — Phase 2: each domain subagent reads its principle file (story readability reads `shared/story-readability.md`)
-- `skills/quick-review/SKILL.md` — Phase 2, Track 2: correctness and security subagents read `correctness.md` and `security.md`
+- `skills/quick-review/SKILL.md` — Phase 2: the correctness and security subagents read `correctness.md` and `security.md`
 
 **Note:** Quick-review reaches into `skills/codereview/principles/` for its principle files. This is an intentional cross-skill dependency — the principles are shared content, not codereview-exclusive. If the principles directory is moved or restructured, both skills must be updated.
 

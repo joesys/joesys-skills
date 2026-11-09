@@ -5,32 +5,28 @@ description: "Use when the user invokes /retrospective to run a structured, disc
 
 # Retrospective Skill
 
-Run a structured retrospective facilitated by AI, interleaved with human check-ins from Phase 1 onward. Dispatch 5 parallel channel agents — each mining a different data source (git history, conversations, code quality, planning docs, tests) — to build a comprehensive digest. Derive discussion topics from the data, walk through them with the human, and produce three output layers: action items, process improvements, and skill improvements. Finish with a readable narrative written by a fresh-context agent.
+Run a structured retrospective with the human. Five channel agents mine different data sources (git history, conversations, code quality, planning docs, tests) into a digest. Derive discussion topics from that data, walk through them with the human, and produce three output layers: action items, process improvements, and skill improvements. Finish with a readable narrative.
 
 ## Write for Humans
 
-Everything a person reads from this skill — reports, findings, summaries, and conversation replies — MUST use plain language that a non-native English reader can follow. Before writing a report or a long reply, read `shared/report-style.md` (resolve against the plugin root — two levels above this SKILL.md — never the project's working directory) and follow it. In short: short sentences, everyday words, jargon explained on first use, the point stated first. Simplify the language, never the facts — paths, line numbers, and claims stay exact.
+Write everything a person reads in plain English for a reader who uses English as a second language. Follow `shared/report-style.md` (resolve against the plugin root — two levels above this SKILL.md — never the project's working directory).
 
 ## Out of Scope
 
 This skill MUST NOT:
 - Skip a human check-in. They happen after Phase 1 topic derivation, at every Phase 2 topic, at the Phase 3c review gate (which covers 3a–3c), and at the Phase 4 narrative review. Phase 0 runs without a pause.
-- Apply approved improvements before the user has explicitly approved them in the Phase 3c review gate. "Proceed" earlier in the session does not authorize improvement application.
-- Manufacture consensus across the 5 channels. If channels disagree, surface the tension — do not paper over it.
-- Use a templated topic list. Topics emerge from channel findings; if the data doesn't support a topic, drop it instead of padding.
-- Skip the fresh-context narrative agent in Phase 4. Reusing the discussion context produces a reformatted summary, not a narrative.
-- Re-mine source files, git logs, or session transcripts on session resume. Resume reads only what's needed for the resume point — upstream phases are already distilled into saved files.
+- Manufacture consensus across the channels. If channels disagree, surface the tension.
+- Use a templated topic list. Topics come from channel findings; if the data does not support a topic, drop it instead of padding.
+- Re-mine source files, git logs, or session transcripts on session resume. Upstream phases are already distilled into saved files.
 
 ## Reference Files
 
 | File | Contents | When to read |
 |---|---|---|
-| `references/agent-prompts.md` | Guiding principles, all 5 channel agent prompts, narrative agent prompt | Before dispatching agents in Phase 1 or Phase 4 |
-| `references/output-formats.md` | Templates for all output files (carry-forward, digest, discussions, summary, action items, improvements, narrative) | Before writing output files in Phase 3 |
+| `references/agent-prompts.md` | Guiding principles, the 5 channel agent prompts, the narrative agent prompt | Before dispatching agents in Phase 1 or Phase 4 |
+| `references/output-formats.md` | Templates for all output files (carry-forward, digest, discussions, summary, action items, improvements, narrative) | Before writing output files |
 
 ## Invocation
-
-Parse the user's `/retrospective` arguments:
 
 | Invocation | Mode | Description |
 |---|---|---|
@@ -41,14 +37,14 @@ Parse the user's `/retrospective` arguments:
 | `/retrospective --output docs/sprints/3/` | Output override | Combinable with any mode |
 | `/retrospective continue` | Resume | Resume an interrupted retro |
 
-The `--since` parameter accepts dates, natural language (`yesterday`, `2 weeks ago`), git tags, tag ranges, and `beginning` (from first commit).
+`--since` also accepts natural language (`yesterday`, `2 weeks ago`) and `beginning` (from the first commit).
 
 ### Time Boundary Resolution
 
-1. If `--since` is provided, use it directly
-2. If no `--since`, scan `docs/retros/` for the most recent retro directory. Chain from its end date.
-3. If no previous retro exists, ask the human: **From beginning** or **Specify a start point**
-4. End boundary is always HEAD / current date
+1. If `--since` is provided, use it.
+2. Otherwise, chain from the end date of the most recent retro directory in `docs/retros/`.
+3. If no previous retro exists, ask the human whether to start from the beginning or from a point they name.
+4. The end boundary is always HEAD / the current date.
 
 ### Output Directory
 
@@ -58,24 +54,12 @@ Default: `docs/retros/YYYY-MM-DD/` (retro execution date). Override with `--outp
 
 ## Phase 0a: Load Preferences (silent)
 
-Never interview the user about preferences. Read these files if they exist; use defaults for anything missing:
+Read these files if they exist; use defaults for anything missing:
 
 1. `.claude/skill-context/preferences.md` — shared preferences (detail level, tone, project phase).
-2. `.claude/skill-context/retrospective.md` — retro-specific preferences, including optional plan and spec folders for Channel 4 (see below).
+2. `.claude/skill-context/retrospective.md` — retro-specific preferences: formality, and optional plan and spec folders for Channel 4.
 
-Defaults: balanced detail, casual tone, structured review.
-
-**How preferences shape this skill:**
-
-| Preference | Effect on Retrospective |
-|---|---|
-| Detail level: concise | Tighter narrative, fewer discussion prompts, streamlined output |
-| Detail level: detailed | Richer context in the digest, more discussion topics surfaced |
-| Tone: casual | Informal discussion facilitation ("What did we learn?") |
-| Tone: professional | Structured facilitation ("Key takeaway for this topic:") |
-| Project phase | Shapes what the retro focuses on (prototype → velocity, mature → process) |
-| Retro-specific: formality | Casual reflection / Structured review / Formal with action items and owners |
-| Retro-specific: plan folders | Paths that Channel 4 searches for plans and specs, used before the default list |
+Defaults: balanced detail, casual tone, structured review. Let detail level shape how many topics and how much digest context you surface, tone shape how you facilitate, and project phase shape the focus (prototype → velocity, mature → process). Pass project context and tone to all channel agents and to the narrative agent.
 
 To point Channel 4 at the project's plans, add this to `.claude/skill-context/retrospective.md`:
 
@@ -85,126 +69,88 @@ To point Channel 4 at the project's plans, add this to `.claude/skill-context/re
 - docs/specs
 ```
 
-Pass project context and tone preferences to all channel agents in Phase 1 and to the narrative agent in Phase 4.
-
 ---
 
 ## Phase 0b: Carry-Forward Check
 
-Closes the feedback loop from the previous retro. Read `references/output-formats.md` for the carry-forward format.
+Closes the feedback loop from the previous retro. On the first retro, skip silently — no file, no message.
 
-**First retro?** Skip silently — no output file, no message.
+Otherwise, read the previous retro's `03-action-items.md` and the Top Takeaways in its `03-retro-summary.md`. Mark each action item Completed (cite evidence: commit hash, file path, PR link), Incomplete (carry forward with its category), or Retired (give the reason). Apply the staleness rule in `references/output-formats.md`.
 
-**Otherwise:** Read the most recent previous retro's `03-action-items.md` and `03-retro-summary.md` (Top Takeaways only). For each action item, determine status:
-- **Completed** — cite evidence (commit hash, file path, PR link)
-- **Incomplete** — carry forward with original category
-- **Retired** — note the reason
-
-Items carried forward for 3+ consecutive retros get a `[STALE]` flag — forces a decision: do it, retire it, or escalate.
-
-Save to `<retro-dir>/00-carry-forward.md`. No checkpoint pause — feeds directly into Phase 1.
+Save to `<retro-dir>/00-carry-forward.md`, then continue to Phase 1 without a pause.
 
 ---
 
 ## Phase 1: Mine via Parallel Channel Agents
 
-**MUST dispatch 5 subagents simultaneously** — all 5 in a single response. Read `references/agent-prompts.md` for full prompt templates and guiding principles.
+Cover all five channels; run them in parallel. Read `references/agent-prompts.md` for the prompts and guiding principles.
 
 For same-platform subagents, do not pass a model or reasoning-effort override. Let every subagent inherit the parent model and reasoning effort unless the user explicitly asks for an override.
 
 Tell Channel 2 which host you are running in (Claude Code or Codex), so it reads the matching session logs. Pass Channel 4 the plan folders from `retrospective.md`, if any.
 
-### Agent Roster
-
 | # | Channel | Data Source | Key Focus |
 |---|---|---|---|
-| 1 | Git History | `git log`, `git diff`, `git shortlog` | Timeline, velocity, hotspots, pivots |
-| 2 | Conversation History | Session logs of the host: Claude Code `~/.claude/projects/<project-dir>/*.jsonl`, or Codex `~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl` | Corrections, friction, AI failures |
+| 1 | Git History | Git log, diffs, contributors | Timeline, velocity, hotspots, pivots |
+| 2 | Conversation History | The host's AI session logs (see Agent 2) | Corrections, friction, AI failures |
 | 3 | Code Quality Delta | File structure, git diffs, audit metrics | What got better/worse structurally |
-| 4 | Planning vs. Reality | Plan folders from `retrospective.md`, else common plan and spec folders (see Agent 4 in `references/agent-prompts.md`) | Completed, abandoned, unplanned work |
+| 4 | Planning vs. Reality | Plan and spec folders | Completed, abandoned, unplanned work |
 | 5 | Testing & Reliability | Test files, test runner, git diffs | Test health, coverage gaps, flakiness |
 
 ### Output Assembly
 
-After all 5 agents return, assemble findings into `<retro-dir>/01-digest.md` with a facilitator preamble (period, key metrics, narrative arc).
+When all channels return, assemble their findings into `<retro-dir>/01-digest.md` with a facilitator preamble (period, key metrics, narrative arc).
 
 ### Topic Derivation
 
-Derive **4–7 discussion topics** from the channel findings:
-1. Scan all findings for recurring themes, tensions, high-signal observations
-2. Group related findings into candidates
-3. Rank by signal strength (evidence count, number of channels that flagged it)
-4. **MUST drop** candidates with thin evidence
-5. Merge overlapping candidates
-
-Each topic needs: a descriptive name and a one-line justification citing which channels surfaced evidence.
+Derive as many discussion topics as the evidence supports — usually a handful. Group related findings, merge overlaps, and drop candidates with thin evidence. Rank by evidence strength and by how many channels flagged the theme. Give each topic a descriptive name and a one-line justification that names the channels behind it.
 
 ### Human Check-In
 
-Present the narrative arc, key metrics, and proposed topic list. Ask using `AskUserQuestion`:
-- **Proceed** — "Topics look good, start the discussion"
-- **Adjust** — "I want to add/remove/reorder topics"
-- **Add context** — "I have observations to include before we start"
+Present the narrative arc, key metrics, and proposed topics. Let the human approve, adjust the list, or add context before the discussion starts.
 
 ---
 
 ## Phase 2: Topic-by-Topic Discussion
 
-The core of the retrospective — raw findings become actionable insights through human judgment.
+Raw findings become insights through human judgment. Create `<retro-dir>/02-topic-discussions.md` with its YAML status header (see `references/output-formats.md`).
 
-### Initialize
+For each topic:
 
-Create `<retro-dir>/02-topic-discussions.md` with YAML status header (`status: in-progress`, `topics_completed: 0`). Read `references/output-formats.md` for the format.
+1. **Present findings** — what the data shows (with specific evidence), the patterns and tensions, and the blind spots only the human can fill.
+2. **Ask the human to react** — agree, correct, add perspective, or skip.
+3. **Capture the outcome** — key insights, the human's perspective, Start/Stop/Continue items.
+4. **Save immediately** — append to `02-topic-discussions.md` and update the YAML header. After saving, keep only the Start/Stop/Continue items and a one-sentence insight in context; the full discussion is on disk.
 
-### For Each Topic
-
-1. **Present findings** — synthesize what channel agents found. Include:
-   - **What the data shows** — facts with specific evidence
-   - **Patterns and tensions** — what's interesting, contradictory, or surprising
-   - **Blind spots** — what only the human knows
-
-2. **Ask the human to react** using `AskUserQuestion`:
-   - **Agree** / **Correct something** / **Add perspective** / **Skip**
-
-3. **Capture outcome** — key insights, human's perspective, Start/Stop/Continue items
-
-4. **Save immediately** — append to `02-topic-discussions.md`, update YAML header
-
-5. **Context management** — after saving, retain only Start/Stop/Continue + one-sentence insight. Full discussion is on disk.
-
-### Human Corrections Are Highest Signal
-
-When the human corrects the analysis, tag with `**[Human Correction]**`. These reveal where the AI's model was wrong — the most valuable data in the entire retro. Surface prominently in Phase 3 summary.
+When the human corrects the analysis, tag it `**[Human Correction]**`. Corrections show where the AI's model was wrong — the most valuable data in the retro. Surface them prominently in Phase 3. If no corrections came up, ask the human directly whether there were moments they corrected the AI during the period.
 
 ---
 
 ## Phase 3: Synthesize & Deliver
 
-Re-reads only `02-topic-discussions.md` — everything upstream is distilled there. Read `references/output-formats.md` for all output templates.
+Read only `02-topic-discussions.md` — everything upstream is distilled there. Use the templates in `references/output-formats.md`. The synthesis must faithfully represent the discussions; do not contradict them.
 
 ### 3a: Retrospective Summary → `03-retro-summary.md`
 
-Consolidate topic discussions: metrics, narrative arc, human corrections, topic insights, top 3–5 takeaways.
+Metrics, narrative arc, human corrections, topic insights, and the top 3–5 takeaways.
 
 ### 3b: Action Items → `03-action-items.md`
 
-Extract Start/Stop/Continue items into actionable changes grouped by category with priorities. **MUST be specific and verifiable** — vague action items ("improve testing") are not acceptable; rewrite with specifics.
+Turn the Start/Stop/Continue items into specific, verifiable action items, grouped by category with priorities.
 
 ### 3c: Improvement Proposals → `03-improvements.md`
 
-Draft process and skill improvement proposals grounded in retro evidence.
+Draft process and skill improvement proposals. Each one must cite retro evidence.
 
 ### Human Review Gate
 
-Present improvement proposals **one by one** using `AskUserQuestion`: Approve / Reject / Modify. Update status in the file. **MUST NOT apply changes without explicit approval.**
+Present the proposals one by one. The human approves, rejects, or modifies each; record the status in the file. **Do not apply any change until the human explicitly approves it here.** "Proceed" earlier in the session is not approval.
 
 ---
 
 ## Phase 4: Retro Narrative
 
-**MUST run in a fresh context agent** (`subagent_type: "general-purpose"`). Read `references/agent-prompts.md` for the narrative agent prompt and writing rules.
-
-The agent receives `03-retro-summary.md` and `02-topic-discussions.md`. Output: `<retro-dir>/04-retro-narrative.md` — engaging prose, not reformatted summary.
+Run the narrative in a fresh-context agent (`subagent_type: "general-purpose"`). The analytical phases fill the context with structured data; writing from that context produces a reformatted summary instead of a story. Give the agent `03-retro-summary.md`, `02-topic-discussions.md`, and the narrative prompt in `references/agent-prompts.md`. It writes `<retro-dir>/04-retro-narrative.md`. Show the narrative to the human for review.
 
 ---
 
@@ -212,15 +158,15 @@ The agent receives `03-retro-summary.md` and `02-topic-discussions.md`. Output: 
 
 After Phase 4 completes:
 
-1. **Devlog scrap** — auto-invoke `/devlog scrap --from-context` with the retro's most surprising insight. Skip silently if skill unavailable.
+1. **Devlog scrap** — invoke `/devlog scrap --from-context` with the retro's most surprising insight. Skip silently if the skill is unavailable.
 
-2. **Apply approved improvements** — implement any approved proposals from Phase 3c. Each change gets its own commit through the `/commit` skill.
+2. **Apply approved improvements** — implement the proposals approved in Phase 3c. Each change gets its own commit through the `/commit` skill.
 
-3. **Commit retro artifacts** — if the project is a git repo, commit all output files through the `/commit` skill, suggesting the subject `docs(retro): add retrospective for <date range>`. If it is **not** a git repo (the retro can still run on the conversation/planning/testing channels), skip the commit and report that artifacts were saved uncommitted.
+3. **Commit retro artifacts** — if the project is a git repo, commit all output files through the `/commit` skill, suggesting the subject `docs(retro): add retrospective for <date range>`. If it is not a git repo (the conversation, planning, and testing channels still work), skip the commit and report that the artifacts are saved but uncommitted.
 
    Never run a raw `git commit`. If `/commit` is not available, do not commit: report which changes and artifacts are left uncommitted.
 
-4. **End message:** `Retrospective complete. Artifacts saved to <retro-dir>/.`
+4. **Finish** by telling the human the retro is complete and where the artifacts are saved.
 
 ---
 
@@ -228,11 +174,9 @@ After Phase 4 completes:
 
 **Invocation:** `/retrospective continue`
 
-### Recovery Procedure
-
 1. Find today's retro directory in `docs/retros/`, or the most recent incomplete one (missing `04-retro-narrative.md`).
 
-2. File inventory determines resume point:
+2. The files present decide the resume point:
 
 | Files Found | Resume Point |
 |---|---|
@@ -243,42 +187,10 @@ After Phase 4 completes:
 | `03-retro-summary.md` exists | Phase 4 |
 | `04-retro-narrative.md` exists | Final Steps only |
 
-3. For Phase 2 resume: read YAML front matter — `status: complete` → Phase 3; `topics_completed: N` → resume at topic N+1.
+3. For a Phase 2 resume, read the YAML front matter: `status: complete` → Phase 3; `topics_completed: N` → resume at topic N+1.
 
-4. **What to read on resume:**
-   - Phase 1 resume: `00-carry-forward.md` + time boundary from directory name
-   - Phase 2 resume: YAML header + topic list from digest + next topic's channel data only
-   - Phase 3 resume: `02-topic-discussions.md` only
-   - Phase 4 resume: `03-retro-summary.md` + `02-topic-discussions.md` (fresh agent)
-
-5. **MUST NOT re-read** source files, git logs, or session transcripts already synthesized into the digest.
-
----
-
-## Red Flags
-
-Watch for these signs during the retrospective:
-
-| Sign | Problem | Fix |
-|---|---|---|
-| All channels agree | Manufactured consensus | Re-examine for glossed-over tensions |
-| No human corrections captured | Mining missed them, or unusually smooth period | Ask directly: "Were there moments where you corrected the AI?" |
-| Vague action items | "Improve testing" is not an action | Rewrite with specifics |
-| Ungrounded proposals | Must reference retro evidence | Go back and cite findings |
-| Skipping human reaction | Human perspective is the most valuable input | Always use `AskUserQuestion` |
-| Topic list feels templated | Topics emerge from data, not a template | Re-examine channel findings |
-| Narrative reads like reformatted summary | Should be engaging prose | Fresh-context agent prevents this |
-| Phase 3 contradicts Phase 2 | Synthesis must faithfully represent discussions | Re-read and fix contradictions |
-| Empty topics | Drop topics with no evidence | Fewer, richer topics > padding |
-
----
-
-## Context Management
-
-| Phase | Budget / Strategy |
-|---|---|
-| Phase 1 agents | ~4,000 lines each. Prioritize breadth. |
-| Phase 2 discussions | After saving to disk, retain only Start/Stop/Continue + one-sentence insight. |
-| Phase 3 synthesis | Reads only `02-topic-discussions.md`. Everything upstream is distilled. |
-| Phase 4 narrative | Fresh context agent. **MUST NOT** be in same context as Phases 0–3. |
-| Incremental saves | Every topic saved immediately — enables both context management and session resumption. |
+4. Read only what the resume point needs:
+   - Phase 1: `00-carry-forward.md` + the time boundary from the directory name
+   - Phase 2: the YAML header + the topic list from the digest + the next topic's channel data
+   - Phase 3: `02-topic-discussions.md`
+   - Phase 4: `03-retro-summary.md` + `02-topic-discussions.md` (fresh agent)
