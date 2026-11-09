@@ -108,7 +108,7 @@ If the answer is no, rewrite the message before creating the commit.
 
 ## Signing Failure Recovery
 
-If a commit or merge fails with `error: 1Password: failed to fill whole buffer` or a similar 1Password SSH signing error, retry the same command with `-c commit.gpgsign=false`. Do not ask first; the user may be away. Afterwards, tell the user which commit is unsigned and that they can re-sign it later with `git rebase --exec "git commit --amend --no-edit" <parent-hash>`.
+If a commit or merge fails with `error: 1Password: failed to fill whole buffer` or a similar 1Password SSH signing error, retry the same command with `-c commit.gpgsign=false`. Do not ask first; the user may be away. Afterwards, tell the user which commit is unsigned and that they can re-sign it later with `git rebase --rebase-merges --exec "git commit --amend --no-edit" <parent-hash>`. Keep `--rebase-merges`: a plain rebase flattens merge bubbles.
 
 ## Branching Strategy (OneFlow Option 3)
 
