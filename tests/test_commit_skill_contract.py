@@ -117,3 +117,8 @@ def test_restructure_owns_the_history_rewrite_safely() -> None:
         )
         assert "MUST wait" in skill
         assert "git push" in skill and "express" in normalized
+
+
+def test_resign_recipe_keeps_merge_bubbles() -> None:
+    for skill in commit_skills():
+        assert "git rebase --rebase-merges --exec" in skill
