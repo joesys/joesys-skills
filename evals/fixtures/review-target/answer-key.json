@@ -1,0 +1,39 @@
+{
+  "description": "Planted defects in evals/fixtures/review-target/src. Line ranges are 1-based and inclusive. A finding matches when it cites the file at a line inside the range (+/- 2 lines) and its text contains one of the keywords.",
+  "bugs": [
+    {"id": "sql-injection", "file": "orders.py", "lines": [13, 15], "severity": "P0", "domain": "security",
+     "keywords": ["injection", "parameter", "placeholder", "f-string", "interpolat"], "required_by": ["codereview", "quick-review"]},
+    {"id": "page-off-by-one", "file": "orders.py", "lines": [24, 26], "severity": "P1", "domain": "correctness",
+     "keywords": ["off-by-one", "off by one", "size - 1", "drops", "skips", "last item", "one fewer", "one item short"], "required_by": ["codereview", "quick-review"]},
+    {"id": "mutable-default", "file": "orders.py", "lines": [29, 31], "severity": "P1", "domain": "correctness",
+     "keywords": ["mutable default", "shared", "default argument", "default list", "cart=None", "cart: list | None"], "required_by": ["codereview", "quick-review"]},
+    {"id": "swallowed-charge-error", "file": "orders.py", "lines": [34, 39], "severity": "P1", "domain": "reliability",
+     "keywords": ["bare except", "except:", "swallow", "silent", "returns true", "return true", "always true", "success"], "required_by": ["codereview", "quick-review"]},
+    {"id": "n-plus-one", "file": "orders.py", "lines": [50, 56], "severity": "P1", "domain": "performance",
+     "keywords": ["n+1", "n + 1", "query per", "per customer", "in a loop", "inside the loop", "batch", "IN ("], "required_by": ["codereview"]},
+    {"id": "jwt-decode-no-verify", "file": "auth.ts", "lines": [14, 17], "severity": "P0", "domain": "security",
+     "keywords": ["verify", "signature", "forge", "unverified", "decode"], "required_by": ["codereview", "quick-review"]},
+    {"id": "missing-await", "file": "auth.ts", "lines": [24, 26], "severity": "P1", "domain": "correctness",
+     "keywords": ["await", "floating", "unawaited", "not awaited", "fire-and-forget", "promise"], "required_by": ["codereview", "quick-review"]},
+    {"id": "map-data-race", "file": "cache.go", "lines": [27, 34], "severity": "P0", "domain": "correctness",
+     "keywords": ["race", "concurrent", "mutex", "lock", "goroutine"], "required_by": ["codereview", "quick-review"]},
+    {"id": "response-body-leak", "file": "cache.go", "lines": [39, 45], "severity": "P1", "domain": "reliability",
+     "keywords": ["close", "leak", "body"], "required_by": ["codereview", "quick-review"]},
+    {"id": "ignored-persist-errors", "file": "cache.go", "lines": [57, 61], "severity": "P1", "domain": "reliability",
+     "keywords": ["ignored", "discard", "error", "_ ="], "required_by": ["codereview", "quick-review"]}
+  ],
+  "out_of_scope": [
+    {"id": "deep-nesting", "file": "orders.py", "lines": [60, 80], "severity": "P3", "domain": "readability",
+     "keywords": ["nest", "guard clause", "early return", "readab", "arrow"], "expected_by": ["codereview"], "forbidden_for": ["quick-review"]}
+  ],
+  "decoys": [
+    {"id": "parameterized-query", "file": "orders.py", "lines": [18, 21],
+     "keywords": ["injection"], "note": "Uses a ? placeholder; this is the safe form."},
+    {"id": "logged-reraise", "file": "orders.py", "lines": [42, 47],
+     "keywords": ["swallow", "silent", "bare except"], "note": "Catches one specific error, logs it, and re-raises."},
+    {"id": "loose-null-check", "file": "auth.ts", "lines": [21, 21],
+     "keywords": ["===", "strict equality", "loose equality"], "note": "== null is the standard idiom for null or undefined."},
+    {"id": "locked-get", "file": "cache.go", "lines": [47, 53],
+     "keywords": ["race", "lock", "mutex"], "note": "Get holds the mutex correctly."}
+  ]
+}
