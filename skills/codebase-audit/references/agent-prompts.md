@@ -1,6 +1,6 @@
 # Codebase Audit — Agent Prompts
 
-Full prompt templates for the 6 collection agents (Phase 1) and the analysis author agent (Phase 4). Each prompt receives `{PROJECT_CONTEXT_BLOCK}` and `{TOOLING_CONTEXT}` from Phase 0.
+Prompt templates for the 6 collection agents (Phase 1) and the analysis author agent (Phase 4). Each prompt receives `{PROJECT_CONTEXT_BLOCK}` and `{TOOLING_CONTEXT}` from Phase 0. Keep every JSON output shape exactly as written: metrics.json, delta mode, and `/retrospective` read these fields.
 
 ## Path Substitution (required before dispatch)
 
@@ -11,16 +11,6 @@ These templates contain **plugin-relative** paths — `skills/codebase-audit/...
 - Resolve `shared/...` against the plugin root (two levels above the skill directory).
 
 This applies to both the file references (`Read ...`) and the helper-script invocations (`python skills/codebase-audit/helpers/...` — invoke with `python3` where present, falling back to `python` on Windows; stock macOS/Linux expose only `python3`). Leave no `skills/codebase-audit/...` or `shared/...` path in a dispatched prompt. Project-relative paths (e.g. `docs/reports/...`) resolve in the user's project and must **not** be rewritten.
-
-## Table of Contents
-
-- [Agent 1: Structural](#agent-1-structural)
-- [Agent 2: Quality](#agent-2-quality)
-- [Agent 3: Architecture](#agent-3-architecture)
-- [Agent 4: Git/Velocity](#agent-4-gitvelocity)
-- [Agent 5: Performance](#agent-5-performance)
-- [Agent 6: Tests](#agent-6-tests)
-- [Phase 4: Analysis Author](#phase-4-analysis-author)
 
 ---
 
@@ -35,38 +25,17 @@ You are a structural metrics analyst for a codebase audit.
 ## Static Analysis Results
 {TOOLING_CONTEXT}
 
-## Principles
-Read the following principle files before analysis:
-- `skills/codebase-audit/principles/maintainability.md`
-- `skills/codebase-audit/principles/readability.md`
-
-## Benchmarks
-Read the relevant benchmark file(s) from `skills/codebase-audit/benchmarks/`:
-- `{language}.md` (language-specific)
-- `general.md` (cross-language fallback)
+## Principles and Benchmarks
+Read `skills/codebase-audit/principles/maintainability.md` and `skills/codebase-audit/principles/readability.md`.
+Read `skills/codebase-audit/benchmarks/{language}.md` and `skills/codebase-audit/benchmarks/general.md`.
 
 ## Your Task
-
-1. Run the structure helper script:
+Measure size, length, nesting, comment density, and type-annotation coverage. Run the helper (once per language in polyglot repos):
 python skills/codebase-audit/helpers/compute_structure.py --lang {language} --source {source_paths} --exclude {exclude_patterns}
 
-2. Parse the JSON output and supplement with qualitative observations from reading the code.
-
-3. For polyglot repos, run the helper once per language.
-
-## Metrics to Collect
-
-- LOC (total, per-file, per-function distributions)
-- File length distribution (max, median, p90)
-- Function length distribution (max, median, p90)
-- Nesting depth (max, median, p90)
-- Comment density (comment_lines / total_lines)
-- Type annotation coverage
-- Files over 500 lines (list them)
-- Functions over 50 lines (list them)
+Use its JSON for the numbers. Add qualitative notes from reading the code. List every file over 500 lines and every function over 50 lines.
 
 ## Output Format
-
 Return JSON matching this structure:
 {
   "agent": "structural",
@@ -91,7 +60,7 @@ Return JSON matching this structure:
   "qualitative_notes": "Free text observations"
 }
 
-The `by_language` field is only present for polyglot repos (where `language.additional` is non-empty). For single-language repos, omit it.
+Include `by_language` only for polyglot repos (where `language.additional` is non-empty).
 ```
 
 ---
@@ -107,36 +76,21 @@ You are a code quality analyst for a codebase audit.
 ## Static Analysis Results
 {TOOLING_CONTEXT}
 
-## Principles
-Read these principle files before analysis:
-- `skills/codebase-audit/principles/maintainability.md`
-- `skills/codebase-audit/principles/readability.md`
-- `skills/codebase-audit/principles/consistency.md`
-
-## Benchmarks
-Read: `skills/codebase-audit/benchmarks/{language}.md` and `skills/codebase-audit/benchmarks/general.md`
+## Principles and Benchmarks
+Read `skills/codebase-audit/principles/maintainability.md`, `skills/codebase-audit/principles/readability.md`, and `skills/codebase-audit/principles/consistency.md`.
+Read `skills/codebase-audit/benchmarks/{language}.md` and `skills/codebase-audit/benchmarks/general.md`.
 
 ## Your Task
-
-1. Run the complexity helper:
+Measure complexity and code hygiene, and scan for hardcoded secrets. Run the helper:
 python skills/codebase-audit/helpers/compute_complexity.py --lang {language} --source {source_paths} --exclude {exclude_patterns}
 
-2. Parse complexity JSON and supplement with qualitative analysis by reading code via Grep and Read.
-
-## Metrics to Collect
-
-- Cyclomatic complexity (avg, max, distribution) — from helper
-- Naming convention violations — scan files for inconsistent casing
-- Magic number density — grep for numeric literals outside constants
-- Code duplication signals — look for 3+ repeated patterns of 5+ lines
-- TODO/FIXME/HACK counts grouped by theme
-- Commented-out code blocks
-- Unused imports/exports
-- Hardcoded secrets (API keys, passwords, tokens in source)
-- Sensitive data in logs
+Take cyclomatic complexity from the helper. Fill the other fields by reading the code with Grep and Read. Use these definitions so counts stay comparable between audits:
+- Magic number: a numeric literal outside a named constant.
+- Duplication signal: a pattern of 5+ lines repeated 3+ times.
+- Group TODO/FIXME/HACK markers by theme.
+- Secrets: API keys, passwords, or tokens in source; sensitive data written to logs.
 
 ## Output Format
-
 Return JSON:
 {
   "agent": "quality",
@@ -174,20 +128,12 @@ You are an architecture analyst for a codebase audit.
 ## Static Analysis Results
 {TOOLING_CONTEXT}
 
-## Principles
-Read these principle files:
-- `skills/codebase-audit/principles/evolvability.md`
-- `skills/codebase-audit/principles/modularity.md`
-- `skills/codebase-audit/principles/reliability.md`
-- `skills/codebase-audit/principles/operability.md`
-- `skills/codebase-audit/principles/security.md`
-
-## Benchmarks
-Read: `skills/codebase-audit/benchmarks/{language}.md` and `skills/codebase-audit/benchmarks/general.md`
+## Principles and Benchmarks
+Read these principle files from `skills/codebase-audit/principles/`: evolvability.md, modularity.md, reliability.md, operability.md, security.md.
+Read `skills/codebase-audit/benchmarks/{language}.md` and `skills/codebase-audit/benchmarks/general.md`.
 
 ## Your Task
-
-Analyze the codebase architecture by reading imports, tracing dependencies, and checking infrastructure config. Use Grep and Read extensively.
+Judge structure, operations, and security. Trace imports to measure coupling (fan-in and fan-out per module), cycles, and boundary violations (per config or inferred). Check CI/CD, container config, health checks, logging, environment config, lock files, and dependency health. Summarize static analysis tooling (detected tools, build-integrated checks, gaps) from TOOLING_CONTEXT. Use Grep and Read.
 
 {IF_LIVE_COMMANDS_APPROVED}
 Run dependency audit if applicable:
@@ -198,25 +144,7 @@ Run dependency audit if applicable:
 - C#: `dotnet list package --vulnerable`
 {END_IF}
 
-## Metrics to Collect
-
-- Module coupling: fan-in/fan-out per module
-- Circular dependency detection
-- Boundary violations (per config or inferred)
-- Import graph analysis
-- Separation of concerns assessment
-- CI/CD presence and configuration
-- Container config (Dockerfile, docker-compose)
-- Health check endpoints
-- Dependency health (lock file, audit results, outdated/vulnerable count)
-- Environment config handling
-- Logging patterns
-- Static analysis tooling adoption (from TOOLING_CONTEXT: tools detected, status, findings summary)
-- Build-integrated analysis patterns (from TOOLING_CONTEXT)
-- Tooling gap recommendations (from TOOLING_CONTEXT)
-
 ## Output Format
-
 Return JSON:
 {
   "agent": "architecture",
@@ -277,26 +205,12 @@ You are a git history and development velocity analyst for a codebase audit.
 {TOOLING_CONTEXT}
 
 ## Your Task
-
-1. Run the churn helper:
+Measure 30-day churn, commit activity, and knowledge concentration. Run the helper:
 python skills/codebase-audit/helpers/compute_churn.py --source {source_paths} --exclude {exclude_patterns}
 
-2. Supplement with `git log` analysis for velocity trends and contributor patterns.
-
-3. If a previous `metrics.json` exists at `docs/reports/codebase-audit/*/metrics.json`, read the most recent one for delta comparison.
-
-## Metrics to Collect
-
-- Code churn (30-day): lines added, deleted, net change, files changed
-- Most-churned files (top 10)
-- Commit frequency (total commits in 30 days)
-- Contributor activity (unique contributors, commits per contributor)
-- Knowledge concentration / bus factor: per-module, identify files with single contributor
-- Commit size distribution (small/medium/large)
-- Previous audit data (if metrics.json exists)
+Add `git log` analysis for velocity trends, contributors, and commit sizes. If a previous `metrics.json` exists at `docs/reports/codebase-audit/*/metrics.json`, read the most recent one for delta comparison.
 
 ## Output Format
-
 Return JSON:
 {
   "agent": "git_velocity",
@@ -320,7 +234,7 @@ Return JSON:
   "qualitative_notes": ""
 }
 
-Each `knowledge_concentration` entry must have: `module` (path), `primary_contributor` (git author), `commit_pct` (percentage of commits by that author), `bus_factor_risk` ("high" if one person >80%, "medium" if >60%, "low" otherwise). Compute via `git shortlog -sn -- {module}`.
+`most_churned_files` holds the top 10. Each `knowledge_concentration` entry must have: `module` (path), `primary_contributor` (git author), `commit_pct` (percentage of commits by that author), `bus_factor_risk` ("high" if one person >80%, "medium" if >60%, "low" otherwise). Compute via `git shortlog -sn -- {module}`.
 ```
 
 ---
@@ -336,28 +250,14 @@ You are a performance analyst for a codebase audit (static analysis only).
 ## Static Analysis Results
 {TOOLING_CONTEXT}
 
-## Principles
-Read: `skills/codebase-audit/principles/performance.md`
-
-## Benchmarks
-Read: `skills/codebase-audit/benchmarks/{language}.md` and `skills/codebase-audit/benchmarks/general.md`
+## Principles and Benchmarks
+Read `skills/codebase-audit/principles/performance.md`.
+Read `skills/codebase-audit/benchmarks/{language}.md` and `skills/codebase-audit/benchmarks/general.md`.
 
 ## Your Task
-
-Analyze the codebase for performance anti-patterns using Grep and Read. This is static analysis only — no profiling or benchmarking.
-
-## Patterns to Detect
-
-- Algorithm complexity issues (nested loops for lookup where set/dict would work)
-- N+1 query patterns (DB queries inside loops)
-- Blocking I/O in async contexts (sync calls in async functions)
-- String concatenation in loops (quadratic allocation)
-- Missing caching for repeated expensive operations
-- Memory leak patterns (unbounded collections, unclosed resources)
-- Lazy vs eager loading issues
+Find the performance anti-patterns named by the JSON keys below, using Grep and Read. Static analysis only — no profiling or benchmarking.
 
 ## Output Format
-
 Return JSON:
 {
   "agent": "performance",
@@ -390,13 +290,9 @@ You are a test suite analyst for a codebase audit.
 ## Static Analysis Results
 {TOOLING_CONTEXT}
 
-## Principles
-Read these principle files:
-- `skills/codebase-audit/principles/testability.md`
-- `skills/codebase-audit/principles/correctness.md`
-
-## Benchmarks
-Read: `skills/codebase-audit/benchmarks/{language}.md` and `skills/codebase-audit/benchmarks/general.md`
+## Principles and Benchmarks
+Read `skills/codebase-audit/principles/testability.md` and `skills/codebase-audit/principles/correctness.md`.
+Read `skills/codebase-audit/benchmarks/{language}.md` and `skills/codebase-audit/benchmarks/general.md`.
 
 ## Your Task
 
@@ -406,25 +302,9 @@ Read: `skills/codebase-audit/benchmarks/{language}.md` and `skills/codebase-audi
 Capture: pass count, fail count, execution time, failure details.
 {END_IF}
 
-2. Static analysis of test quality: read test files via Glob and Read.
-
-## Metrics to Collect
-
-- Test pass rate (if tests were run)
-- Test execution time (if tests were run)
-- Test failure details (if any)
-- Test file count vs source file count ratio
-- Test type distribution (unit / integration / e2e)
-- Assertion density (assertions per test function)
-- Test quality signals:
-  - Testing behavior vs implementation details
-  - Meaningful assertions vs smoke tests
-  - Edge case coverage
-  - Mock/stub usage patterns
-- Coverage signals (if coverage report available)
+2. Read the test files with Glob and Read. Fill the JSON fields. In `qualitative_notes`, judge test quality: do tests check behavior or implementation details, are assertions meaningful or smoke-only, are edge cases covered, and how are mocks used? Note coverage figures if a coverage report exists.
 
 ## Output Format
-
 Return JSON:
 {
   "agent": "tests",
@@ -450,18 +330,10 @@ Return JSON:
 
 ## Phase 4: Analysis Author
 
-The author agent receives assembled metrics from all collection agents and writes the full analysis report. Its persona is dynamically composed from Phase 0 detection.
-
-### Dynamic Author Persona
-
-> "You are a senior {language} engineer with deep knowledge of {language} idioms, ecosystem tooling, and community standards. You have extensive experience building {domain} systems and understand the specific quality trade-offs, failure modes, and performance characteristics of this domain."
-
-### Author Prompt
+The author receives the assembled metrics from all collection agents and writes the full analysis report.
 
 ```
-{DYNAMIC_AUTHOR_PERSONA}
-
-You are writing a comprehensive codebase quality audit report.
+You are writing a codebase quality audit report. Judge the code against {language} and {domain} norms: the language's idioms and ecosystem tooling, and the quality trade-offs and failure modes of this domain.
 
 ## Inputs
 
@@ -479,59 +351,43 @@ You are writing a comprehensive codebase quality audit report.
 
 5. **Previous Audit:** {PREVIOUS_METRICS_JSON_OR_NULL}
 
-## Principle Files
-Read ALL 12 principle files from `skills/codebase-audit/principles/`:
-maintainability.md, evolvability.md, correctness.md, testability.md, reliability.md,
-performance.md, readability.md, modularity.md, consistency.md, operability.md, security.md,
-story-readability.md
-
-For Story Readability, also read `shared/story-readability.md` for the full dimension
-definitions, calibration examples, and scoring protocol. The principle file at
-`skills/codebase-audit/principles/story-readability.md` provides audit-specific guidance
-including the quantitative floor constraints and grading rubric.
-
-## Benchmark Files
-Read: `skills/codebase-audit/benchmarks/{language}.md` and `skills/codebase-audit/benchmarks/general.md`
-
-## Analysis Template
-Read: `skills/codebase-audit/templates/analysis-template.md` — follow this structure exactly.
+## Files to Read
+- The principle files in `skills/codebase-audit/principles/` for the criteria measured. Grade each criterion with its file's rubric.
+- For Story Readability, also `shared/story-readability.md` (dimensions, calibration examples, scoring protocol). `skills/codebase-audit/principles/story-readability.md` adds the quantitative floor and the audit rubric.
+- `skills/codebase-audit/benchmarks/{language}.md` and `skills/codebase-audit/benchmarks/general.md`.
+- `skills/codebase-audit/templates/analysis-template.md` — use the template's sections; omit sections with no data.
 
 ## Instructions
 
-1. **Assign priority ranks and weights** to all 12 criteria based on your language + domain expertise. Show your reasoning in the "Criteria Priority Rationale" section.
+1. **Rank and weight** each measured criterion (all 12 in a full audit) for this language and domain. Explain the order in the "Criteria Priority Rationale" section.
 
-   **Story Readability scoring:** This criterion uses hybrid scoring:
-   - Use quantitative metrics from the Structural and Quality agents as a floor (see `principles/story-readability.md` § Quantitative floor)
-   - Sample 5-10 representative files and score each of the 8 dimensions using the calibration examples in `shared/story-readability.md`
-   - Compute the weighted average across sampled files
-   - Report confidence as `medium` by default (qualitative-heavy). Only `high` if quantitative metrics strongly corroborate the qualitative assessment.
+2. **Story Readability** uses hybrid scoring:
+   - Apply the quantitative floor from `principles/story-readability.md` to the Structural and Quality agent metrics.
+   - Sample 5-10 representative files and score each of the 8 dimensions with the calibration examples in `shared/story-readability.md`. List the sampled files in the methodology.
+   - Compute the weighted average across sampled files.
+   - Report confidence as `medium` by default. Use `high` only if the quantitative metrics strongly corroborate the qualitative scores.
 
-2. **Write the full analysis report** following the template structure. For each criterion:
-   - Grade it using the principle file's rubric + benchmark data
-   - Include measured metrics with benchmarks and sources
-   - Provide qualitative analysis referencing specific files
-   - List actionable improvements with effort estimates (considering team size and codebase size)
-   - Write for humans: the reader may speak English as a second language. Use short sentences, everyday words, and explain jargon on first use. State the point first, then the detail. Simplify the language, never the facts — paths, line numbers, and claims stay exact.
+3. **For each criterion:** grade it with the rubric and benchmark data; show the measured metrics with benchmarks and sources; give qualitative analysis that names specific files; list actionable improvements with effort estimates.
 
-3. **Benchmark integration** — for every metric, resolve benchmarks in priority order:
-   Language + domain specific → Language specific → Domain specific → General.
-   Every benchmark must have a source citation. If the source is a convention, label it as a convention — never as an industry standard.
+4. **Benchmarks:** resolve each in this order: language + domain → language → domain → general.
 
-4. **Risk heat map** — include the complexity × churn cross-reference with Danger Zone files named.
+5. **Recommended actions:** group as Immediate / Near-term / Future. Each gives affected criteria, description, risk of inaction, and effort.
 
-5. **Recommended actions** — group by Immediate / Near-term / Future. Each includes: affected criteria, description, risk of inaction, effort estimate.
+6. **Delta:** if previous audit data is provided, include the delta section.
 
-6. **Delta comparison** — if previous audit data is provided, include the delta section.
+7. **Write for humans.** The reader may use English as a second language. Use short sentences and everyday words, and explain jargon on first use. State the point first, then the detail. Simplify the language, never the facts — paths, line numbers, and claims stay exact.
 
-7. **Return two outputs:**
-   a. The complete analysis report (markdown)
-   b. The final priority rankings as JSON: {"rankings": [{"criterion": "...", "rank": N, "weight": "high|medium|low"}], "overall_grade": "...", "overall_grade_rationale": "..."}
+## Report Rules
+- Show the criteria priority rationale at the top of the report.
+- State the inferred domain so the user can challenge it.
+- Every benchmark has a source citation in the footnotes. Label a convention-based number as a convention — never as an industry standard.
+- Every grade cites at least one measured metric. With no metric, the grade is "Not measured".
+- Name every Danger Zone file explicitly.
+- Effort estimates reference codebase size and team context.
+- Acknowledge the user's stated trade-offs in the relevant criterion sections.
+- When comparing with a previous audit, show the direction of each change (improved / declined / stable).
+
+## Return two outputs
+a. The complete analysis report (markdown)
+b. The final priority rankings as JSON: {"rankings": [{"criterion": "...", "rank": N, "weight": "high|medium|low"}], "overall_grade": "...", "overall_grade_rationale": "..."}
 ```
-
-### Transparency Requirements
-
-- Show criteria priority rationale at the top of the report
-- Every benchmark has a source citation in footnotes; convention-based numbers are labeled as conventions
-- Every grade references at least one measured metric
-- Effort estimates reference codebase size and team context
-- User context trade-offs acknowledged in relevant sections

@@ -2,26 +2,14 @@
 
 ## Definition
 
-Performance measures the efficiency of the code in terms of time complexity, space complexity, and resource utilization. This criterion assesses static code patterns — actual runtime profiling is out of scope for v1. Focus is on anti-patterns that are reliably detectable through code analysis.
+Performance measures the efficiency of the code in terms of time complexity, space complexity, and resource utilization. It covers static patterns only: anti-patterns that code reading can detect reliably, not runtime profiling.
 
-## Concrete Signals
+## Signals to Look For
 
-**Positive signals:**
-- Appropriate data structures (sets for membership, dicts for lookup)
-- Eager loading of related data in database queries (avoiding N+1)
-- Async I/O in async contexts (no blocking calls)
-- Caching of expensive computations with invalidation strategy
-- Bounded resource consumption (connection pools, bounded queues)
-- Lazy/streaming processing for large datasets
-
-**Negative signals:**
-- Nested loops doing lookup (O(n²) where O(n) is possible with set/dict)
-- N+1 query patterns (one query per item in a loop)
-- String concatenation with += in loops (quadratic allocation)
-- Blocking I/O in async functions (time.sleep, synchronous HTTP in async)
-- Missing caching for repeated expensive operations
-- Unbounded in-memory collections growing without limit
-- Eager loading of entire tables when only a subset is needed
+- Lookups in nested loops where a set or dict would make them O(n).
+- Queries or remote calls inside a loop (N+1).
+- Blocking calls inside async functions.
+- Unbounded in-memory collections and unclosed resources.
 
 ## Measurement Guidance
 

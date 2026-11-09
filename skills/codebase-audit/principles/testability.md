@@ -2,25 +2,14 @@
 
 ## Definition
 
-Testability measures how amenable the codebase is to automated testing. A testable codebase has clear inputs and outputs, injectable dependencies, and minimal reliance on global state — making it possible to write fast, reliable, isolated tests.
+Testability measures how amenable the codebase is to automated testing.
 
-## Concrete Signals
+## Signals to Look For
 
-**Positive signals:**
-- Dependency injection (constructor injection, parameter injection)
-- Pure functions with no side effects where possible
-- Separation of concerns — business logic separate from I/O
-- Small, focused functions with clear contracts
-- Interfaces/protocols for external dependencies
-- Test fixtures and factories for data setup
-
-**Negative signals:**
-- Hard-coded dependencies (direct instantiation of collaborators)
-- Global state accessed from business logic
-- Functions with hidden side effects (file I/O, network, database mixed with logic)
-- Tight coupling between modules making isolated testing impossible
-- No test infrastructure (no test runner, no test directory)
-- Tests that require complex environment setup
+- Collaborators created inside business logic instead of injected (constructor or parameter injection).
+- Business logic mixed with I/O (file, network, database) so it cannot run in isolation.
+- Global or module-level mutable state read by business logic.
+- Tests that need complex environment setup to run.
 
 ## Measurement Guidance
 

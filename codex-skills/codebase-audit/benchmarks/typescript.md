@@ -44,8 +44,6 @@ TypeScript-specific quality thresholds.
 
 | Metric | Threshold | Rating | Source |
 |---|---|---|---|
-| Weighted story score | ≥ 88 | Good (A) | Calibrated to ../shared/story-readability.md |
-| Weighted story score | ≥ 72 | Acceptable (B) | Calibrated to ../shared/story-readability.md |
 | Explicit type annotation (over `any`) | ≥ 90% | Good | Convention — no single authoritative source |
 
 ## References

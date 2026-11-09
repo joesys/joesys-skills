@@ -2,28 +2,15 @@
 
 ## Definition
 
-Maintainability measures how easily the codebase can be understood, modified, and corrected by developers who did not write the original code. It is the single largest factor in long-term development cost — every future change pays the tax of poor maintainability.
+Maintainability measures how easily the codebase can be understood, modified, and corrected by developers who did not write the original code.
 
-## Concrete Signals
+## Signals to Look For
 
-**Positive signals:**
-- Short, focused functions (≤25 lines typical)
-- Low cyclomatic complexity (≤10 branches per function)
-- Guard clauses that flatten nesting instead of deep if/else chains
-- Meaningful, self-documenting variable and function names
-- DRY — shared logic extracted, no copy-pasted blocks
-- SLAP — each function operates at a single level of abstraction
-- Type annotations on function signatures
-
-**Negative signals:**
-- Functions exceeding 50 lines
-- Cyclomatic complexity >15 per function
-- Nesting depth >4 levels
-- Magic numbers and string literals without named constants
-- Duplicated code blocks (3+ repeated patterns of 5+ lines)
-- Mixed abstraction levels within a single function
-- Commented-out code blocks retained in production code
-- TODO/FIXME/HACK markers accumulating without resolution
+- Duplication, counted by the Rule of Three: a block of 5+ lines repeated 3+ times.
+- Extraction: split out a function when it is reused **or** when it makes the code read better. Either reason is enough.
+- Mixed abstraction levels inside one function (SLAP — Single Level of Abstraction Principle).
+- Magic numbers and string literals without named constants.
+- Commented-out code, and TODO/FIXME/HACK markers that pile up without resolution.
 
 ## Measurement Guidance
 

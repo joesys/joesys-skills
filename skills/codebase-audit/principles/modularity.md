@@ -2,25 +2,14 @@
 
 ## Definition
 
-Modularity measures how well the codebase is divided into independent, composable units with clear boundaries. Good modularity means each module can be understood, modified, and tested in isolation without requiring knowledge of the entire system.
+Modularity measures how well the codebase is divided into independent, composable units with clear boundaries.
 
-## Concrete Signals
+## Signals to Look For
 
-**Positive signals:**
-- Deep modules — simple interfaces hiding complex implementations
-- Strong encapsulation — internal details not leaked through public APIs
-- Law of Demeter observed — objects interact with immediate collaborators only
-- Separation of concerns — each module owns one domain concept
-- Single source of truth — data and logic not duplicated across modules
-- Clear public API per module (index/barrel files, __init__.py exports)
-
-**Negative signals:**
-- Wide, shallow modules — large interfaces exposing implementation details
-- Law of Demeter violations (long method chains: `a.b.c.d.doThing()`)
-- Circular dependencies between modules
-- Shared mutable state across module boundaries
-- Feature envy — modules heavily accessing other modules' internals
-- No clear boundary between public and private APIs
+- Wide, shallow modules whose large interfaces expose internals; deep modules (small interface, large hidden implementation) are the positive signal.
+- No clear boundary between public and private APIs.
+- Shared mutable state across module boundaries.
+- Long call chains that reach into other modules' internals (`a.b.c.d.doThing()`).
 
 ## Measurement Guidance
 

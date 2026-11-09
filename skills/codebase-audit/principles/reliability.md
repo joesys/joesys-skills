@@ -2,27 +2,15 @@
 
 ## Definition
 
-Reliability measures the system's ability to handle failures gracefully, recover from errors without data loss, and continue operating under adverse conditions. A reliable codebase anticipates failures and has strategies to contain, report, and recover from them.
+Reliability measures the system's ability to handle failures gracefully, recover from errors without data loss, and continue operating under adverse conditions.
 
-## Concrete Signals
+## Signals to Look For
 
-**Positive signals:**
-- Fail-fast on invalid inputs (validate early, reject clearly)
-- Explicit error recovery strategies (retry, fallback, circuit breaker)
-- Graceful degradation under partial failure
-- Resource cleanup guaranteed (context managers, finally blocks, defer)
-- Observability — logging, metrics, health checks
-- Idempotent operations where possible
-- Transaction boundaries around multi-step mutations
-
-**Negative signals:**
-- Swallowed exceptions hiding failures
-- Missing timeout on network calls / external operations
-- No retry logic for transient failures
-- Missing health check endpoints for services
-- No logging at error boundaries
-- Partial operations without rollback (debit without credit guarantee)
-- Unbounded resource consumption (queues, connections, memory)
+- Swallowed exceptions that hide failures.
+- Network and external calls without a timeout; no retry for transient failures.
+- No logging at error boundaries.
+- Resource cleanup not guaranteed (context managers, `finally`, `defer`).
+- Multi-step mutations without a transaction or rollback.
 
 ## Measurement Guidance
 
