@@ -1,11 +1,11 @@
 ---
 name: interaction-review
-description: "Use when the user invokes /interaction-review to grade the human-AI collaboration quality of past Claude Code sessions and produce a coaching report."
+description: "Use when the user invokes /interaction-review to grade the human-AI collaboration quality of past Claude Code or Codex sessions and produce a coaching report."
 ---
 
 # Interaction Review Skill
 
-Analyze Claude Code conversation transcripts (JSONL files) to evaluate how effectively the user collaborates with the AI agent. Dispatch 5 parallel analysis subagents — each evaluating a specific dimension of interaction quality (prompt craft, workflow efficiency, agentic leverage, error recovery, context & instruction) — collect their scored findings, synthesize a weighted composite report, run a coach re-review for quality and actionability, and produce dual-format output (HTML + markdown) with a prioritized improvement roadmap.
+Analyze AI coding-session transcripts (JSONL files from Claude Code or Codex) to evaluate how effectively the user collaborates with the AI agent. Dispatch 5 parallel analysis subagents — each evaluating a specific dimension of interaction quality (prompt craft, workflow efficiency, agentic leverage, error recovery, context & instruction) — collect their scored findings, synthesize a weighted composite report, run a coach re-review for quality and actionability, and produce dual-format output (HTML + markdown) with a prioritized improvement roadmap.
 
 The report is a self-improvement tool, not an audit. Tone is coaching, not punitive.
 
@@ -38,7 +38,7 @@ Parse the user's `/interaction-review` arguments:
 | Invocation | Mode | Description |
 |---|---|---|
 | `/interaction-review` | Default | Analyze sessions since the last report. If no prior report, analyze all. |
-| `/interaction-review session <id>` | Single session | Deep-dive on one session. `<id>` is the JSONL filename stem (session UUID). |
+| `/interaction-review session <id>` | Single session | Deep-dive on one session. `<id>` is the session ID (see 1.1). |
 | `/interaction-review since YYYY-MM-DD` | Date range | Analyze sessions from a specific date forward (ISO8601 date). |
 | `/interaction-review trend` | Trend | Multi-session aggregate with score progression across all prior reports. |
 
@@ -48,12 +48,14 @@ If the invocation is ambiguous or unrecognizable, ask the user to clarify before
 
 ## Phase 0: Setup
 
-### 0.1 Load User Preferences
+### 0.1 Load Preferences (silent)
 
-Read `shared/skill-context.md` for the full protocol (resolve `shared/...` against the plugin root — two levels above this SKILL.md — never the project's working directory). In brief:
+Never interview the user about preferences. Read these files if they exist; use defaults for anything missing:
 
-1. Read `.claude/skill-context/preferences.md` — if missing, invoke `/preferences` (streamlined).
-2. Read `.claude/skill-context/interaction-review.md` (if it exists) for skill-specific preferences.
+1. `.claude/skill-context/preferences.md` — shared preferences (detail level, assumed knowledge).
+2. `.claude/skill-context/interaction-review.md` — skill-specific preferences (lens weights, scoring strictness, focus areas).
+
+Defaults: balanced detail, intermediate knowledge, weights 30/25/20/15/10, standard strictness.
 
 **How preferences shape this skill:**
 
@@ -78,24 +80,33 @@ Read `shared/skill-context.md` for the full protocol (resolve `shared/...` again
 
 ## Phase 1: Session Discovery & Selection
 
-### 1.1 Resolve Session Directory
+### 1.1 Resolve Session Files
 
-1. Determine the project directory slug: take the current working directory path and replace every non-alphanumeric character (`:`, `\`, `/`) with a single `-` (e.g., `C:\Users\joesy\Projects\my-project` becomes `C--Users-joesy-Projects-my-project` — the double dash after the drive letter is `:` and `\` each becoming one `-`).
-2. Session files are at: `~/.claude/projects/<project-slug>/*.jsonl`
+Read the session logs of the host you are running in: Claude Code logs when you run in Claude Code, Codex logs when you run in Codex. If the user asks for both, review both and label every session with its host.
+
+**Claude Code**
+1. Project directory slug: take the current working directory path and replace every non-alphanumeric character (`:`, `\`, `/`) with a single `-` (e.g., `C:\Users\joesy\Projects\my-project` becomes `C--Users-joesy-Projects-my-project` — the double dash after the drive letter is `:` and `\` each becoming one `-`).
+2. Session files: `~/.claude/projects/<project-slug>/*.jsonl`. The session ID is the filename stem.
+3. Session start: scan lines from the top until the first one with a top-level `timestamp`, and use that. The leading lines (`mode`, `last-prompt`, `file-history-snapshot`) carry no `timestamp`.
+
+**Codex**
+1. Session files: `~/.codex/sessions/YYYY/MM/DD/rollout-<start-time>-<session-id>.jsonl`. The date folders are the session start date. Compressed older sessions may be in `~/.codex/archived_sessions/*.jsonl.zst` (read with `zstd -dc`).
+2. The first line of each file is `type: "session_meta"`. Keep the file only if its `payload.cwd` equals the current working directory. Skip files whose `payload.source` is an object with a `subagent` key — those are subagent runs, not the user's sessions.
+3. The session ID is `payload.id` (also the UUID at the end of the filename). The session start is `payload.timestamp`.
+4. `~/.codex/history.jsonl` lists every user prompt across all projects (`session_id`, `ts` in Unix seconds, `text`). It is not needed for the review; use the rollout files.
 
 ### 1.2 List and Filter Sessions
 
-1. List all `.jsonl` files in the session directory.
-2. For each file, scan entries from the top until the first one containing a `timestamp` field, and use that — the leading entries (`mode`, `last-prompt`, `file-history-snapshot`) carry no top-level `timestamp`.
-3. Apply the filter based on invocation mode:
+1. List this project's session files for the host (see 1.1) and read each session's start time.
+2. Apply the filter based on invocation mode:
    - **Default:** Sessions with timestamp newer than the most recent report's `generated_at`. If no prior report, include all sessions.
-   - **Single session:** Match the session ID (filename stem) against the `<id>` argument.
+   - **Single session:** Match the session ID against the `<id>` argument.
    - **Date range:** Sessions with first timestamp >= the specified date.
    - **Trend:** All sessions (no filtering — trend mode differs in report generation, not input).
 
 ### 1.3 Validate and Confirm
 
-- If no sessions match the filter: report "No sessions found in the specified range. Try a broader date range or check `~/.claude/projects/`." and exit.
+- If no sessions match the filter: report "No sessions found in the specified range. Try a broader date range or check the session folder (`~/.claude/projects/` for Claude Code, `~/.codex/sessions/` for Codex)." and exit.
 - Otherwise, display to the user:
   - Number of sessions found
   - Date range (earliest to latest)
@@ -124,7 +135,7 @@ For same-platform subagents, do not pass a model or reasoning-effort override. L
 
 Each agent receives in its prompt:
 1. The guiding principles block from `references/agent-prompts.md`
-2. The session file list (paths to the filtered JSONL files from Phase 1)
+2. The session file list (paths to the filtered JSONL files from Phase 1), the log host (Claude Code or Codex), and the matching log format from the Session Resolution section of `references/agent-prompts.md`
 3. The agent's specific prompt template from `references/agent-prompts.md`
 4. Instructions to read its principles file
 5. The previous report's findings for its lens (if a prior report exists)
@@ -200,7 +211,7 @@ One Agent call. Sequential — runs after Phase 3 produces the draft report. Rea
 ### Inputs
 
 1. The draft report from Phase 3 (complete synthesized report)
-2. The session file list (so the coach can spot-check claims against actual transcripts)
+2. The session file list and the matching log format (so the coach can spot-check claims against actual transcripts)
 3. The previous report (if any)
 
 ### Coach Authorities
@@ -256,10 +267,8 @@ If the renderer fails, warn the user but do not fail the skill.
 
 ### 4.3 Surface Report
 
-1. Send the HTML file to the user using `SendUserFile` (if HTML was generated successfully).
-2. If HTML failed, send the markdown file instead.
-3. If `SendUserFile` is unavailable in this harness, print the absolute report path instead.
-4. Display a brief summary: overall score/grade, biggest improvement, and Coach's Note.
+1. Tell the user the absolute path of the saved HTML report (if HTML was generated successfully) and of the markdown report.
+2. Display a brief summary: overall score/grade, biggest improvement, and Coach's Note.
 
 ### 4.4 Devlog Scrap (Optional)
 

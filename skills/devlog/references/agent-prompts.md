@@ -1,8 +1,8 @@
 # Devlog Gathering Agent Prompts
 
 Reference file for the devlog skill. Read this file before dispatching
-agents in Phase 2 (Parallel Gathering). Contains the guiding principles
-and full prompt templates for all 3 gathering agents.
+agents in Phase 2 (Full Gathering, in `write-mode.md`). Contains the guiding
+principles and full prompt templates for all 3 gathering agents.
 
 ## Guiding Principles (included in every subagent prompt)
 
@@ -49,15 +49,30 @@ Return structured markdown with:
 ~~~
 <GUIDING_PRINCIPLES>
 
-You are a senior analyst reading Claude Code conversation transcripts to find moments of insight, decision-making, and surprise.
+You are a senior analyst reading AI coding-session transcripts to find moments of insight, decision-making, and surprise.
 
 ## Instructions
-1. Read the specified JSONL session files.
-2. Focus on user and assistant messages (type: "user" and "assistant"). Skip tool results, file-history-snapshots, and progress messages — they are bulk data that obscures the thinking.
+1. Read the specified JSONL session files. Each line is one JSON object.
+2. Read only the human and assistant messages, as described for your log host below. Skip tool calls, tool output, reasoning, and bookkeeping lines — they are bulk data that obscures the thinking.
 3. Look for moments where the developer's thinking is visible: corrections, overrides, pivots, "aha" moments, disagreements with the AI.
 
 ## Session Files
+Log host: <SESSION_LOG_HOST: "Claude Code" or "Codex">
 <SESSION_FILE_PATHS>
+
+## How to Read the Log Host's Format
+
+**Claude Code** (`~/.claude/projects/<project-dir>/<sessionId>.jsonl`)
+- Read lines with `type` `"user"` or `"assistant"`. The time is in `timestamp`. The text is in `message.content`: either a string, or a list of blocks whose `type` is `text`, `thinking`, `tool_use`, or `tool_result`. Read the `text` blocks (and string content).
+- A `user` line whose content holds only `tool_result` blocks is tool output, not the developer. Skip it.
+- Lines with `isSidechain: true` come from subagents. Skip them unless they matter to the topic.
+- Skip all other line types (`file-history-snapshot`, `progress`, `attachment`, `system`, and similar).
+
+**Codex** (`~/.codex/sessions/YYYY/MM/DD/rollout-<start-time>-<session-id>.jsonl`)
+- Every line has `timestamp`, `type`, and `payload`. The first line is `type: "session_meta"` (session ID in `payload.id`, project folder in `payload.cwd`).
+- Read lines with `type: "response_item"` and `payload.type: "message"`. `payload.role` is `"user"` or `"assistant"`. The text is in `payload.content[].text` (`input_text` items for the user, `output_text` items for the assistant).
+- Skip `payload.role: "developer"` messages, and user messages whose text starts with `# AGENTS.md instructions` or `<environment_context>`. The host injects these; the developer did not type them.
+- Skip `reasoning`, `function_call`, `function_call_output`, `custom_tool_call`, and `custom_tool_call_output` items, and all `event_msg`, `turn_context`, `token_usage_record`, and `compacted` lines.
 
 ## Topic Hint (if provided)
 <TOPIC_HINT or "None — scan broadly for interesting moments">
@@ -90,7 +105,7 @@ You are scanning existing devlog content scraps to find material related to the 
 ## Instructions
 1. Read all scrap files in the specified directory.
 2. Match scraps to the current topic by content similarity and timeframe.
-3. If a specific scrap was requested via --from-scrap, load it directly and rank it first.
+3. If a specific scrap was requested via --from-scrap (a name or a file path), load it directly and rank it first.
 
 ## Scraps Directory
 docs/devlog/.scraps/

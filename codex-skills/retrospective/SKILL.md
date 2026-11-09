@@ -56,12 +56,14 @@ Default: `docs/retros/YYYY-MM-DD/` (retro execution date). Override with `--outp
 
 ---
 
-## Phase 0a: Load User Preferences
+## Phase 0a: Load Preferences (silent)
 
-Read `../shared/skill-context.md` for the full protocol (resolve `../shared/...` against the collection root (one level above this SKILL.md) - never the project's working directory). In brief:
+Never interview the user about preferences. Read these files if they exist; use defaults for anything missing:
 
-1. Read `.codex/skill-context/preferences.md` - if missing, invoke `$preferences` (streamlined).
-2. Read `.codex/skill-context/retrospective.md` (if it exists) for retro-specific preferences.
+1. `.codex/skill-context/preferences.md` - shared preferences (detail level, tone, project phase).
+2. `.codex/skill-context/retrospective.md` - retro-specific preferences, including optional plan and spec folders for Channel 4 (see below).
+
+Defaults: balanced detail, casual tone, structured review.
 
 **How preferences shape this skill:**
 
@@ -73,6 +75,15 @@ Read `../shared/skill-context.md` for the full protocol (resolve `../shared/...`
 | Tone: professional | Structured facilitation ("Key takeaway for this topic:") |
 | Project phase | Shapes what the retro focuses on (prototype -> velocity, mature -> process) |
 | Retro-specific: formality | Casual reflection / Structured review / Formal with action items and owners |
+| Retro-specific: plan folders | Paths that Channel 4 searches for plans and specs, used before the default list |
+
+To point Channel 4 at the project's plans, add this to `.codex/skill-context/retrospective.md`:
+
+```markdown
+## Plan folders
+- docs/plans
+- docs/specs
+```
 
 Pass project context and tone preferences to all channel agents in Phase 1 and to the narrative agent in Phase 4.
 
@@ -101,14 +112,16 @@ Save to `<retro-dir>/00-carry-forward.md`. No checkpoint pause - feeds directly 
 
 For same-platform subagents, do not pass a model or reasoning-effort override. Let every subagent inherit the parent model and reasoning effort unless the user explicitly asks for an override.
 
+Tell Channel 2 which host you are running in (Claude Code or Codex), so it reads the matching session logs. Pass Channel 4 the plan folders from `retrospective.md`, if any.
+
 ### Agent Roster
 
 | # | Channel | Data Source | Key Focus |
 |---|---|---|---|
 | 1 | Git History | `git log`, `git diff`, `git shortlog` | Timeline, velocity, hotspots, pivots |
-| 2 | Conversation History | `~/.claude/projects/{project}/*.jsonl` | Corrections, friction, AI failures |
+| 2 | Conversation History | Session logs of the host: Claude Code `~/.claude/projects/<project-dir>/*.jsonl`, or Codex `~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl` | Corrections, friction, AI failures |
 | 3 | Code Quality Delta | File structure, git diffs, audit metrics | What got better/worse structurally |
-| 4 | Planning vs. Reality | `docs/superpowers/plans/`, `docs/superpowers/specs/` | Completed, abandoned, unplanned work |
+| 4 | Planning vs. Reality | Plan folders from `retrospective.md`, else common plan and spec folders (see Agent 4 in `references/agent-prompts.md`) | Completed, abandoned, unplanned work |
 | 5 | Testing & Reliability | Test files, test runner, git diffs | Test health, coverage gaps, flakiness |
 
 ### Output Assembly
@@ -201,9 +214,11 @@ After Phase 4 completes:
 
 1. **Devlog scrap** - auto-invoke `$devlog scrap --from-context` with the retro's most surprising insight. Skip silently if skill unavailable.
 
-2. **Apply approved improvements** - implement any approved proposals from Phase 3c. Each change gets its own commit via `$commit` (or standard Conventional Commits if unavailable).
+2. **Apply approved improvements** - implement any approved proposals from Phase 3c. Each change gets its own commit through the `$commit` skill.
 
-3. **Commit retro artifacts** - if the project is a git repo, commit all output files via `$commit`, suggesting the subject `docs(retro): add retrospective for <date range>` (or a plain `git commit` with that subject if `$commit` is unavailable). If it is **not** a git repo (the retro can still run on the conversation/planning/testing channels), skip the commit and report that artifacts were saved uncommitted.
+3. **Commit retro artifacts** - if the project is a git repo, commit all output files through the `$commit` skill, suggesting the subject `docs(retro): add retrospective for <date range>`. If it is **not** a git repo (the retro can still run on the conversation/planning/testing channels), skip the commit and report that artifacts were saved uncommitted.
+
+   Never run a raw `git commit`. If `$commit` is not available, do not commit: report which changes and artifacts are left uncommitted.
 
 4. **End message:** `Retrospective complete. Artifacts saved to <retro-dir>/.`
 
