@@ -38,7 +38,7 @@ rm -f "$PROMPT_FILE"
 
 If `mktemp` is unavailable, fall back to a deterministic path: `/tmp/<skill>-prompt.txt`.
 
-The `-p ""` flag (Claude, Antigravity) or no `-p` flag (Codex) triggers non-interactive mode while stdin provides the actual prompt.
+The `-p ""` flag (Claude) or no `-p` flag (Codex) triggers non-interactive mode while stdin provides the actual prompt. Antigravity goes through `../scripts/agy_adapter.py`, which reads the prompt from stdin and passes it to `agy` itself.
 
 **Why `2>/dev/null`?** CLI tools emit progress indicators, ANSI escape codes, and status messages on stderr. These pollute captured output when running programmatically. **Exception:** Codex prints its `session id:` banner on stderr — when resume matters, capture stderr to a temp file instead (see `./model-defaults.md` § Codex Resume).
 

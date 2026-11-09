@@ -16,7 +16,7 @@ Everything a person reads from this skill — result summaries, the critical eva
 This skill MUST NOT:
 - Answer the question itself instead of delegating. The user invoked this skill to get Antigravity's take — substituting your own answer defeats the purpose.
 - Skip the critical-evaluation step. Always surface your honest assessment after the delegated model responds.
-- Modify the user's project (files, git state, settings) as part of the dispatch. The CLI runs read-only by default per `shared/model-defaults.md`; the skill itself never writes either.
+- Modify the user's project (files, git state, settings) as part of the dispatch. The CLI runs read-only (`--mode plan`) per `shared/model-defaults.md`; the skill itself never writes either.
 - Save the delegated response to a file. If the user wants it saved, they'll ask in a follow-up turn.
 - Combine outputs across multiple invocations into a synthesis. That's `/ai-council`'s job.
 
@@ -28,7 +28,7 @@ Before dispatching, **MUST**:
 
 ## User Preferences
 
-Read `shared/skill-context.md` for the full protocol. Load `.claude/skill-context/preferences.md` if it exists. **MUST NOT invoke** `/preferences` on first contact — delegation is a pass-through and should not be interrupted by interviews. Shared communication-style preferences shape the critical-evaluation phase only.
+Read `shared/skill-context.md` for the full protocol. Load `.claude/skill-context/preferences.md` if it exists; otherwise use defaults. Never interview the user about preferences — delegation is a pass-through. Shared communication-style preferences shape the critical-evaluation phase only.
 
 ## Running a Task
 
@@ -44,7 +44,7 @@ Read `shared/skill-context.md` for the full protocol. Load `.claude/skill-contex
    rm -f "$PROMPT_FILE"
    ```
 
-   The adapter always reads the prompt from **stdin** — do **not** pass `-p` (the adapter appends it). The same stdin-pipe pattern is used for session resume.
+   The adapter always reads the prompt from **stdin** and sends it to `agy` as stream-json — do **not** pass `-p`, `--print`, `--input-format`, or `--output-format`. The same stdin-pipe pattern is used for session resume. The adapter rejects prompts over 150,000 bytes, because `agy` silently drops the end of very large prompts; shorten or split such a prompt.
 3. **MUST present Antigravity's full response verbatim** — clearly labeled as **Antigravity's response** — *before* any assessment. No truncation, no summarization, no interleaving your own commentary.
 4. Critically evaluate the output (see Critical Evaluation below).
 5. Provide a brief summary: "Here's what Antigravity said, here's what I think."
@@ -59,14 +59,14 @@ When the user invokes `/antigravity resume`:
    - `/antigravity resume <PROMPT>` — resume the latest session. Deliver the follow-up
      prompt via the same temp-file-and-stdin pattern as the initial dispatch:
      ```bash
-     cat "$PROMPT_FILE" | python <ADAPTER> -c
+     cat "$PROMPT_FILE" | python <ADAPTER> --mode plan --sandbox -c
      ```
    - `/antigravity resume <ID> <PROMPT>` — resume a specific session by conversation ID:
      ```bash
-     cat "$PROMPT_FILE" | python <ADAPTER> --conversation <ID>
+     cat "$PROMPT_FILE" | python <ADAPTER> --mode plan --sandbox --conversation <ID>
      ```
 3. **Resume rules:**
-   - Resumed sessions inherit settings from the original run.
+   - Always pass `--mode plan --sandbox` on resume. Do not rely on the resumed session to keep read-only mode.
 4. After resume, follow the same output flow: present full response → evaluate → summarize → offer resume.
 
 ## Critical Evaluation & Error Handling
