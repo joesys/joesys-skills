@@ -1,44 +1,12 @@
 # Interaction Review — Output Formats
 
-Templates and format specifications for all output files produced by the interaction review skill.
-
----
-
-## Subagent Output Format
-
-Each of the 5 lens agents MUST return structured markdown in this exact format:
-
-```markdown
-### Score
-**Score:** [0–100]
-**Justification:** [2–3 sentences explaining the score with evidence]
-
-### Findings
-[3–8 findings, each:]
-
-#### [Lens Name] — [Specific Issue Title]
-**Transcript Reference**: Session <id>, turns N–M
-**What happened**: [Factual description of the interaction pattern observed]
-**Why it matters**: [Impact — wasted turns, missed opportunity, compounding error, etc.]
-**What to do differently**: [Concrete, actionable change the user can make next session]
-
-### Improvement Suggestions
-1. [Specific, actionable suggestion with expected impact]
-2. [Specific, actionable suggestion with expected impact]
-3. [Optional third suggestion]
-
-### Delta from Previous Report
-[One of:]
-- "Baseline analysis — no prior data."
-- "Improved: [what got better and evidence]. Regressed: [what got worse]. Unchanged: [persistent patterns]."
-- "Rubric changed (vN → v2) — the score change is not comparable. Behavior notes: [what got better, worse, or stayed the same]."
-```
+Format of the final report. The lens agents' output format is in `agent-prompts.md` § Lens Prompt Template, because the agents see only their prompt.
 
 ---
 
 ## Final Report Format
 
-The final markdown report uses this structure. The HTML companion is generated from this file by `../scripts/html_render.py`.
+The HTML companion is generated from the markdown report by `../scripts/html_render.py`.
 
 ### Front-matter
 

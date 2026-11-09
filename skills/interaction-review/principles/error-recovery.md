@@ -1,6 +1,8 @@
 # Error Recovery & Adaptation Principles
 
-Evaluate how both the user and agent handle mistakes, misunderstandings, and pivots. Strong error recovery is about early detection, clear redirection, and avoiding compounding drift.
+Evaluate how the user and agent handle mistakes, misunderstandings, and pivots. Strong recovery means early detection, clear redirection, and no compounding drift.
+
+This lens owns how fast a wrong turn is caught and corrected, including how many rounds a correction takes. Workflow Efficiency counts correction turns only as part of the turn total.
 
 ## Quick Diagnostic Guide
 
@@ -16,70 +18,29 @@ Evaluate how both the user and agent handle mistakes, misunderstandings, and piv
 ## Evaluation Criteria
 
 ### 1. Early Detection
-How quickly does the user notice when the agent is going in the wrong direction?
-
-**Signs of early detection:**
-- User checks agent's understanding before it starts work ("before you start, confirm: you're going to...")
-- Catches misalignment in the next turn after it appears
-- Reads agent's plan/approach before approving execution
-- Checks the first result before asking for more work built on it
-
-**Signs of late detection:**
-- A wrong assumption is caught only after the agent has spent one or more full turns of work on it. One turn can now produce hundreds of lines, so each missed turn is expensive.
-- User reviews only the final output, not intermediate steps
-- Misunderstanding compounds across multiple turns before being caught
+How quickly does the user notice that the agent is going the wrong way?
+- Strong: checks the agent's plan or first result before asking for more work built on it.
+- Weak: a wrong assumption is caught only after one or more full turns of work on it. One turn can now produce hundreds of lines, so each missed turn is expensive.
 
 ### 2. Correction Clarity
-When the user redirects, is the correction clear enough to prevent repetition?
-
-**Signs of clear correction:**
-- States what was wrong AND what "right" looks like
-- Provides concrete examples or references
-- Addresses root cause, not just the symptom
-
-**Signs of vague correction:**
-- "No, not that" without specifying what to do instead
-- Repeated "try again" without new information
-- Correction is ambiguous enough to produce a different but still wrong result
+Is the redirect clear enough to stop the mistake from coming back?
+- Strong: says what was wrong and what "right" looks like, and addresses the cause, not only the symptom.
+- Weak: "no, not that" or "try again" with no new information, which produces a different but still wrong result.
 
 ### 3. Pivot Decisiveness
-When an approach isn't working, does the user pivot cleanly or drag out a failing strategy?
-
-**Signs of decisive pivoting:**
-- Explicit "let's try a different approach" when current one stalls
-- Explains why the pivot is happening
-- Doesn't revisit abandoned approaches without reason
-
-**Signs of indecisive pivoting:**
-- Keeps tweaking a fundamentally wrong approach for many turns after it is clearly failing
-- Oscillates between two approaches without committing
-- Partial pivots that leave the session in an inconsistent state
+When an approach is failing, does the user pivot cleanly?
+- Strong: says "let's try a different approach" when the current one stalls, and explains why.
+- Weak: keeps tweaking a clearly failing approach for many turns, or switches back and forth between two approaches.
 
 ### 4. Recovery Efficiency
-After a correction, how quickly does the session get back on track?
-
-**Signs of efficient recovery:**
-- Single correction -> agent adjusts -> progress resumes
-- User provides enough context in the correction to avoid follow-up questions
-- Agent acknowledges the correction and explains its adjusted approach
-
-**Signs of inefficient recovery:**
-- Multiple rounds of correction on the same issue
-- Recovery itself introduces new problems
-- Time spent on the correction exceeds the time the mistake cost
+After a correction, how many rounds until the session is back on track?
+- Strong: one correction, the agent adjusts, progress resumes (a 2-turn loop).
+- Weak: 3+ rounds on the same issue, or the fix itself introduces new problems.
 
 ### 5. Learning Within Session
-Does the interaction show adaptation — are later mistakes avoided because earlier ones were caught?
-
-**Signs of in-session learning:**
-- Similar issues don't recur after being corrected once
-- User proactively sets constraints based on earlier corrections
-- Agent applies corrections to analogous situations later in the session
-
-**Signs of no learning:**
-- Same type of mistake appears 3+ times despite corrections
-- User doesn't generalize corrections into broader guidance
-- Session-end mistakes are the same class as session-start mistakes
+Are later mistakes avoided because earlier ones were caught?
+- Strong: a corrected issue does not come back, and the user turns a correction into a general rule for the rest of the session.
+- Weak: the same type of mistake appears 3+ times despite corrections.
 
 ## Scoring Rubric
 

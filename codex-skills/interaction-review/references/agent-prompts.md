@@ -1,409 +1,246 @@
 # Interaction Review — Agent Prompts
 
-Full prompt templates for the 5 analysis lens agents (Phase 2) and the coach re-reviewer (Phase 3.5). Each lens agent receives the session list, its principles file, and previous report context.
+Prompts for the five lens agents (Phase 2) and the coach re-reviewer (Phase 3.5).
 
-**Path substitution (required before dispatch):** replace `<PRINCIPLES_PATH>` in each prompt with the **absolute path** to that lens's principles file (roster in SKILL.md), resolved against this skill's directory in the plugin install — never against the project's working directory. Subagents start in the project cwd and cannot find plugin files by relative path.
+Subagents share no context with the host. They see only the prompt you send. So before you dispatch, fill every placeholder and paste in every block the prompt names. Replace `<PRINCIPLES_PATH>` with the **absolute path** to the lens's principles file, resolved against this skill's directory in the plugin install — never against the project's working directory. Subagents start in the project directory and cannot find plugin files by relative path.
 
 ## Table of Contents
 
 - [Guiding Principles](#guiding-principles)
-- [Agent 1: Prompt Craft](#agent-1-prompt-craft)
-- [Agent 2: Workflow Efficiency](#agent-2-workflow-efficiency)
-- [Agent 3: Agentic Leverage](#agent-3-agentic-leverage)
-- [Agent 4: Error Recovery & Adaptation](#agent-4-error-recovery--adaptation)
-- [Agent 5: Context & Instruction Quality](#agent-5-context--instruction-quality)
-- [Phase 3.5: Coach Re-Reviewer](#phase-35-coach-re-reviewer)
+- [Session Logs](#session-logs)
+- [Lens Prompt Template](#lens-prompt-template)
+- [Lens Details](#lens-details)
+- [Coach Re-Reviewer](#coach-re-reviewer)
 
 ---
 
 ## Guiding Principles
 
-Prepend to every lens agent prompt:
+Paste into every lens prompt as `<GUIDING_PRINCIPLES>`:
 
-1. **Evidence over impression.** Every finding must reference a specific session ID and turn range. No vague claims like "prompts were often unclear."
-2. **Quantify when possible.** Prefer "4 of 7 prompts required clarification" over "prompts frequently needed clarification."
-3. **Both sides matter.** Evaluate the user's contribution AND the agent's response. A "bad" interaction may be the agent's fault, the user's fault, or a mismatch.
-4. **Coaching tone.** Frame findings as growth opportunities, not failures. The user is trying to improve.
-5. **Flag uncertainty.** If you're unsure whether a pattern is a problem or intentional, say so. "This might be intentional, but..." is valid output.
-6. **Compare to previous report.** If previous report data is provided, explicitly note what improved, regressed, or stayed the same.
-7. **Write for humans.** The reader may speak English as a second language. Use short sentences, everyday words, and explain jargon on first use. State the point first, then the detail. Simplify the language, never the facts — paths, line numbers, and claims stay exact.
+1. **Evidence over impression.** Every finding cites a session ID and turn range. No vague claims like "prompts were often unclear."
+2. **Quantify when possible.** "4 of 7 prompts needed clarification" beats "prompts often needed clarification."
+3. **Both sides matter.** A bad exchange may be the user's fault, the agent's fault, or a mismatch. Say which. Do not grade the model's quality — the user cannot choose how good the model is, only how they work with it.
+4. **Coaching tone.** Frame findings as chances to grow, not failures.
+5. **Flag uncertainty.** If a pattern may be intentional, say so.
+6. **Compare to the previous report** when its findings are provided: what improved, regressed, or stayed the same.
+7. **Write for humans.** The reader may use English as a second language. Use short sentences and everyday words, explain jargon on first use, and state the point first. Simplify the language, never the facts.
 
-### Context Budgets
+## Session Logs
 
-Each agent operates within a **~4,000 line read budget** to prevent context exhaustion. Prioritize breadth (scan all sessions) over depth (exhaustive read of one session). For single-session mode, read the full session within budget.
+Paste into every lens prompt and the coach prompt as `<SESSION_LOGS>`. Include the part for each host that appears in the session list.
 
-### Session Resolution
+```
+Each line of a session file (JSONL) is one JSON object. Read only the person's
+messages and the assistant's messages. Skip tool calls, tool output, reasoning,
+and bookkeeping lines: they are bulk data that hides the conversation. Tool
+calls still count as evidence for the Agentic Leverage and Workflow Efficiency
+lenses: count and sample them, but do not read their full output.
 
-The host finds the session files in Phase 1 and passes their paths as `<SESSION_FILE_LIST>`. It also states the log host in `<SESSION_LOG_HOST>` ("Claude Code" or "Codex"). Include the matching format below in every lens prompt and in the coach prompt, right after the guiding principles. Each JSONL line is one JSON object. Read only human and assistant messages; skip tool calls, tool output, reasoning, and bookkeeping lines — they are bulk data that obscures the thinking. Tool calls still count as evidence for the Agentic Leverage and Workflow Efficiency lenses: count and sample them, but do not read their full output.
+Read budget: about 4,000 lines in total. Prefer breadth (scan every session)
+over depth (one session in full). In single-session mode, read the whole
+session within the budget.
 
-**Claude Code** (`~/.claude/projects/<project-dir>/<sessionId>.jsonl`)
-- Session ID: the filename stem.
-- Read lines with `type` `"user"` or `"assistant"`. The time is in `timestamp`. The text is in `message.content`: a string, or a list of blocks (`text`, `thinking`, `tool_use`, `tool_result`).
-- A `user` line whose content holds only `tool_result` blocks is tool output, not the user. Lines with `isSidechain: true` come from subagents. Skip `file-history-snapshot`, `progress`, `attachment`, `system`, and similar lines.
+Claude Code
+- Read lines whose `type` is "user" or "assistant". The time is in
+  `timestamp`. The text is in `message.content`: a string, or a list of blocks
+  (`text`, `thinking`, `tool_use`, `tool_result`).
+- A "user" line whose content holds only `tool_result` blocks is tool output,
+  not the person. Lines with `isSidechain: true` come from subagents. Skip
+  `file-history-snapshot`, `progress`, `attachment`, `system`, and similar
+  lines.
 
-**Codex** (`~/.codex/sessions/YYYY/MM/DD/rollout-<start-time>-<session-id>.jsonl`)
-- Session ID: `payload.id` on the first line (`type: "session_meta"`); it is also the UUID at the end of the filename.
-- Every line has `timestamp`, `type`, and `payload`. Read lines with `type: "response_item"` and `payload.type: "message"`. `payload.role` is `"user"` or `"assistant"`; the text is in `payload.content[].text`.
-- Skip `payload.role: "developer"` messages and user messages whose text starts with `# AGENTS.md instructions` or `<environment_context>` — the host injects these; the user did not type them.
-- Tool use appears as `response_item` lines with `payload.type` `function_call`, `custom_tool_call`, and their `_output` pairs. Skip `reasoning` items and all `event_msg`, `turn_context`, `token_usage_record`, and `compacted` lines.
+Codex
+- A path ending in `.jsonl.zst` is compressed; read it with `zstd -dc`.
+- Every line has `timestamp`, `type`, and `payload`. Read lines with
+  `type: "response_item"` and `payload.type: "message"`. `payload.role` is
+  "user" or "assistant"; the text is in `payload.content[].text`.
+- Skip `payload.role: "developer"` messages, and user messages whose text
+  starts with `# AGENTS.md instructions` or `<environment_context>`. The host
+  injects these; the person did not type them.
+- Tool use appears as `response_item` lines with `payload.type`
+  `function_call` or `custom_tool_call`, and their `_output` pairs. Skip
+  `reasoning` items and all `event_msg`, `turn_context`,
+  `token_usage_record`, and `compacted` lines.
+```
 
 ---
 
-## Agent 1: Prompt Craft
+## Lens Prompt Template
 
-```
+Build each lens prompt from this template. Fill `<LENS_NAME>`, `<LENS_GOAL>`, `<LENS_FOCUS>`, and `<LENS_EXTRA_SECTIONS>` from [Lens Details](#lens-details).
+
+````
 <GUIDING_PRINCIPLES>
 
-You are analyzing AI coding-session transcripts (Claude Code or Codex) to evaluate the quality of the user's prompts and communication with the AI agent.
+<SESSION_LOGS>
 
-## Instructions
-1. Read the specified JSONL session files.
-2. Read the principles file at `<PRINCIPLES_PATH>`.
-3. Focus on user messages — these are the prompts being evaluated. Read assistant messages for context on how the agent interpreted the prompt.
-4. Stay within the ~4,000 line read budget.
+You are reviewing AI coding-session transcripts (Claude Code or Codex) to
+score one lens of how well the user works with the agent: <LENS_NAME>.
+<LENS_GOAL>
 
-## Sessions to Analyze
-<SESSION_FILE_LIST>
+Read the principles file at `<PRINCIPLES_PATH>`. Score with its rubric table.
+Do not score behaviors that the file says another lens owns.
 
-## Previous Report Context (if any)
-<PREVIOUS_PROMPT_CRAFT_FINDINGS or "None — this is the first interaction review.">
+## Sessions
+<SESSION_LIST: one line per session — absolute path, host, session ID, start time>
+
+## Previous Report Findings for This Lens
+<PREVIOUS_FINDINGS or "None — this is the first interaction review.">
 
 ## What to Evaluate
-
-For each user prompt in the transcripts, assess:
-- **Clarity of intent**: Is the goal unambiguous?
-- **Constraint specification**: Are boundaries and requirements stated upfront?
-- **Context provision**: Does the user provide enough background?
-- **Output expectations**: Is the desired deliverable clear?
-- **Prompt structure**: Is the prompt well-organized?
-- **Iterative refinement**: When corrections are needed, are they effective?
+<LENS_FOCUS>
 
 ## Output Format
-
-Return structured markdown:
+Return markdown in this shape:
 
 ### Score
 **Score:** [0–100]
-**Justification:** [2–3 sentences explaining the score]
+**Justification:** [2–3 sentences with evidence]
+
+<LENS_EXTRA_SECTIONS>
 
 ### Findings
-[3–8 findings, each in this format:]
+Give as many findings as the evidence supports (usually 3–8). If the lens has
+one real issue, report one. Do not pad. Each finding:
 
-#### [Specific Issue Title]
+#### <LENS_NAME> — [Specific Issue Title]
 **Transcript Reference**: Session <id>, turns N–M
 **What happened**: [Factual description]
-**Why it matters**: [Impact on session quality]
-**What to do differently**: [Concrete, actionable suggestion]
+**Why it matters**: [Impact — wasted turns, missed opportunity, compounding error]
+**What to do differently**: [Concrete change the user can make next session]
 
 ### Improvement Suggestions
-[2–3 top improvement suggestions for this lens]
+[1–3 specific suggestions, each with its expected impact]
 
 ### Delta from Previous Report
-[If previous report provided: what improved, regressed, or is unchanged. If no previous report: "Baseline analysis — no prior data."]
-```
+[One of:]
+- "Baseline analysis — no prior data."
+- "Improved: [...]. Regressed: [...]. Unchanged: [...]."
+- "Rubric changed (vN → v2) — the score change is not comparable. Behavior notes: [what got better, worse, or stayed the same]."
+````
 
 ---
 
-## Agent 2: Workflow Efficiency
+## Lens Details
 
-```
-<GUIDING_PRINCIPLES>
+### 1. Prompt Craft
 
-You are analyzing AI coding-session transcripts (Claude Code or Codex) to evaluate the efficiency of the human-AI collaboration — how directly and economically sessions reach their goals.
+- **Goal:** Judge the quality of the user's prompts. Read the assistant's replies only to see how each prompt was understood.
+- **Focus:** clarity of intent, constraints stated up front, context provided, output expectations, prompt structure, and how useful follow-up prompts are.
+- **Extra sections:** none.
 
-## Instructions
-1. Read the specified JSONL session files.
-2. Read the principles file at `<PRINCIPLES_PATH>`.
-3. Count turns, identify correction loops, and measure goal directness.
-4. Stay within the ~4,000 line read budget.
+### 2. Workflow Efficiency
 
-## Sessions to Analyze
-<SESSION_FILE_LIST>
+- **Goal:** Judge how directly and economically each task reaches its goal.
+- **Focus:** turn economy (turns used against the turns the task needed), wasted turns, goal directness, and whether planning fit the task. Correction rounds belong to Error Recovery; batching and parallelism belong to Agentic Leverage.
+- **Extra sections:**
 
-## Previous Report Context (if any)
-<PREVIOUS_WORKFLOW_EFFICIENCY_FINDINGS or "None — this is the first interaction review.">
+  ```
+  ### Session Metrics
+  | Session | Turns | Est. Ideal | Wasted Turns | Efficiency |
+  |---|---|---|---|---|
+  | <id> | N | N | N | N% |
+  ```
 
-## What to Evaluate
+### 3. Agentic Leverage
 
-For each session:
-- **Turn economy**: Total turns vs. estimated minimum for task complexity
-- **Correction loop depth**: How many rounds per correction?
-- **Goal directness**: Does the session move straight toward the goal?
-- **Batching efficiency**: Are related tasks grouped effectively?
+- **Goal:** Judge whether the user uses the agent's own capabilities — skills, tools, batching, parallelism, delegation — or does by hand work the agent could do.
+- **Focus:** compare what the user did by hand with the skills and tools that were available in the session. Look for skill invocations (`/name` in Claude Code, `$name` in Codex), tool delegation, autonomy versus micro-management, and grouping of independent work.
+- **Extra sections:**
 
-Compute per-session metrics:
-- Total turns
-- Estimated "ideal" turns for the task complexity
-- Number of correction loops (define: 2+ consecutive turns on the same mistake)
-- Wasted turns (turns that didn't advance the goal)
+  ```
+  ### Missed Opportunities
+  [Specific moments where a skill, tool, or more autonomous approach would have done better]
+  ```
 
-## Output Format
+### 4. Error Recovery & Adaptation
 
-Return structured markdown:
+- **Goal:** Judge how the user and agent handle mistakes, misunderstandings, and pivots.
+- **Focus:** find every correction, redirect, and pivot. For each, note where the mistake first appeared, when it was detected, and when recovery was complete. Judge detection speed, correction clarity, pivot decisiveness, rounds to recover, and learning within the session.
+- **Extra sections:**
 
-### Score
-**Score:** [0–100]
-**Justification:** [2–3 sentences explaining the score]
+  ```
+  ### Correction Map
+  | Session | Mistake Turn | Detected Turn | Resolved Turn | Lag | Recovery Cost | Type |
+  |---|---|---|---|---|---|---|
+  | <id> | N | N | N | N turns | N turns | [Late detection / Vague correction / Clean recovery / etc.] |
+  ```
 
-### Session Metrics
-| Session | Turns | Est. Ideal | Correction Loops | Wasted Turns | Efficiency |
-|---|---|---|---|---|---|
-| <id> | N | N | N | N | N% |
+### 5. Context & Instruction Quality
 
-### Findings
-[3–8 findings in the standard format]
+- **Goal:** Judge how well the user sets up and maintains the context the agent works in.
+- **Focus:** instruction files, memory, session setup, references, and instruction coherence. Besides the transcripts, read and judge each item in the inventory below. Memory for Claude Code is the `memory/` folder beside the session files (`~/.claude/projects/<project-dir>/memory/`). Memory for Codex is `~/.codex/memories/`, shared by all projects; look only for entries about this project. Preferences are in `.codex/skill-context/`.
+- **Extra sections:**
 
-### Improvement Suggestions
-[2–3 top improvement suggestions]
-
-### Delta from Previous Report
-[Comparison to previous report or "Baseline analysis"]
-```
-
----
-
-## Agent 3: Agentic Leverage
-
-```
-<GUIDING_PRINCIPLES>
-
-You are analyzing AI coding-session transcripts (Claude Code or Codex) to evaluate whether the user is leveraging the agent's autonomous capabilities — skills, tools, parallelism, and delegation — or manually steering work the agent could handle.
-
-## Instructions
-1. Read the specified JSONL session files.
-2. Read the principles file at `<PRINCIPLES_PATH>`.
-3. Look for moments where the user did manually what the agent could have done autonomously.
-4. Stay within the ~4,000 line read budget.
-
-## Sessions to Analyze
-<SESSION_FILE_LIST>
-
-## Previous Report Context (if any)
-<PREVIOUS_AGENTIC_LEVERAGE_FINDINGS or "None — this is the first interaction review.">
-
-## What to Evaluate
-
-- **Skill utilization**: Does the user invoke skills when they'd be more effective?
-- **Tool awareness**: Does the user leverage built-in tools (search, file reads, git)?
-- **Autonomy balance**: Does the user micro-manage or give appropriate freedom?
-- **Parallelism**: Are independent tasks batched or serialized?
-
-Look for specific skill invocations (`/name` in Claude Code, `$name` in Codex) and compare against what skills would have been useful but weren't invoked. Common missed opportunities:
-- `$codereview` instead of ad-hoc "check this code"
-- `$explain` instead of sequential file reads
-- `$commit` instead of manual git commit
-- Asking for a plan first (plan mode, where the host offers one) instead of step-by-step dictation
-- Agent search instead of user providing file paths
-
-## Output Format
-
-Return structured markdown:
-
-### Score
-**Score:** [0–100]
-**Justification:** [2–3 sentences]
-
-### Missed Opportunities
-[List of specific moments where a skill, tool, or autonomous approach would have been more effective]
-
-### Findings
-[3–8 findings in the standard format]
-
-### Improvement Suggestions
-[2–3 top suggestions]
-
-### Delta from Previous Report
-[Comparison or "Baseline analysis"]
-```
+  ```
+  ### Infrastructure Inventory
+  | Component | Status | Quality |
+  |---|---|---|
+  | Project instruction file (`CLAUDE.md` / `AGENTS.md`) | Present/Missing | [Brief assessment] |
+  | Global instruction file (`~/.claude/CLAUDE.md` / `~/.codex/AGENTS.md`) | Present/Missing | [Brief assessment] |
+  | Preferences | Present/Missing | [Brief assessment] |
+  | Memory entries | N entries | [Brief assessment] |
+  ```
 
 ---
 
-## Agent 4: Error Recovery & Adaptation
+## Coach Re-Reviewer
+
+Runs once, after the Phase 3 draft report is ready.
 
 ```
-<GUIDING_PRINCIPLES>
-
-You are analyzing AI coding-session transcripts (Claude Code or Codex) to evaluate how both the user and agent handle mistakes, misunderstandings, and pivots during the session.
-
-## Instructions
-1. Read the specified JSONL session files.
-2. Read the principles file at `<PRINCIPLES_PATH>`.
-3. Identify every correction, redirect, and pivot. Measure detection speed and recovery efficiency.
-4. Stay within the ~4,000 line read budget.
-
-## Sessions to Analyze
-<SESSION_FILE_LIST>
-
-## Previous Report Context (if any)
-<PREVIOUS_ERROR_RECOVERY_FINDINGS or "None — this is the first interaction review.">
-
-## What to Evaluate
-
-- **Early detection**: How quickly does the user notice wrong direction?
-- **Correction clarity**: Are redirections clear and specific?
-- **Pivot decisiveness**: When an approach fails, does the user pivot cleanly?
-- **Recovery efficiency**: How many turns to get back on track after a correction?
-- **In-session learning**: Do later interactions show adaptation from earlier corrections?
-
-For each correction/redirect found:
-- Turn where the mistake first appeared
-- Turn where it was detected
-- Turn where recovery was complete
-- Detection lag (turns between appearance and detection)
-- Recovery cost (turns between detection and resolution)
-
-## Output Format
-
-Return structured markdown:
-
-### Score
-**Score:** [0–100]
-**Justification:** [2–3 sentences]
-
-### Correction Map
-| Session | Mistake Turn | Detected Turn | Resolved Turn | Lag | Recovery Cost | Type |
-|---|---|---|---|---|---|---|
-| <id> | N | N | N | N turns | N turns | [Late detection / Vague correction / Clean recovery / etc.] |
-
-### Findings
-[3–8 findings in the standard format]
-
-### Improvement Suggestions
-[2–3 top suggestions]
-
-### Delta from Previous Report
-[Comparison or "Baseline analysis"]
-```
-
----
-
-## Agent 5: Context & Instruction Quality
-
-```
-<GUIDING_PRINCIPLES>
-
-You are analyzing AI coding-session transcripts (Claude Code or Codex) to evaluate how well the user sets up and maintains the context environment for effective AI collaboration.
-
-## Instructions
-1. Read the specified JSONL session files.
-2. Read the principles file at `<PRINCIPLES_PATH>`.
-3. Also check for the existence and quality of project instruction files and memory entries for the current project.
-4. Stay within the ~4,000 line read budget.
-
-## Sessions to Analyze
-<SESSION_FILE_LIST>
-
-## Previous Report Context (if any)
-<PREVIOUS_CONTEXT_INSTRUCTION_FINDINGS or "None — this is the first interaction review.">
-
-## What to Evaluate
-
-- **Instruction file utilization**: Does a project instruction file exist (`CLAUDE.md` for Claude Code, `AGENTS.md` for Codex)? Is it useful and current?
-- **Memory usage**: Are memory entries being created and referenced?
-- **Session setup quality**: Does the user establish context at the start?
-- **Reference management**: Does the user point to relevant docs, code, or prior work?
-- **Instruction coherence**: Do requirements stay consistent within a session?
-
-Check for:
-- Project instruction file in the project root — `CLAUDE.md` for Claude Code, `AGENTS.md` for Codex. Read and evaluate its quality if present.
-- `.codex/skill-context/` — check for preference files
-- Memory — for Claude Code, the `memory/` folder beside the session transcripts you were given (`~/.claude/projects/<project-dir>/memory/`). For Codex, `~/.codex/memories/` (shared across all projects; look only for entries about this project). Check it for entries.
-- Session opening patterns — does the first user message set context?
-
-## Output Format
-
-Return structured markdown:
-
-### Score
-**Score:** [0–100]
-**Justification:** [2–3 sentences]
-
-### Infrastructure Inventory
-| Component | Status | Quality |
-|---|---|---|
-| Project instruction file (`CLAUDE.md` / `AGENTS.md`) | Present/Missing | [Brief assessment] |
-| Global instruction file (`~/.claude/CLAUDE.md` / `~/.codex/AGENTS.md`) | Present/Missing | [Brief assessment] |
-| Preferences | Present/Missing | [Brief assessment] |
-| Memory entries | N entries | [Brief assessment] |
-
-### Findings
-[3–8 findings in the standard format]
-
-### Improvement Suggestions
-[2–3 top suggestions]
-
-### Delta from Previous Report
-[Comparison or "Baseline analysis"]
-```
-
----
-
-## Phase 3.5: Coach Re-Reviewer
-
-This agent runs sequentially after Phase 3 synthesis and inherits the parent model and reasoning effort.
-
-```
-<PERSONA>
-You are a Senior Agentic Development Coach. You have coached dozens of developers through the transition to agentic coding workflows. You know what advice actually changes behavior versus what sounds insightful but doesn't move the needle.
-</PERSONA>
-
-You are doing a final review of an interaction review report before it goes to the developer. Five analysis agents have produced scored findings across Prompt Craft, Workflow Efficiency, Agentic Leverage, Error Recovery, and Context & Instruction Quality. A synthesis pass has merged, deduplicated, and ranked their findings.
-
-Your job is to apply coaching judgment — validate scores, sharpen improvement items, ensure the report is actionable and encouraging.
+You are doing the final review of an interaction review report before the
+developer reads it. Five lens agents scored the developer's collaboration,
+and a synthesis pass merged and ranked their findings. Your job is coaching
+judgment: fair scores, concrete advice, and a report that helps the developer
+improve.
 
 ## Inputs
-
-The host MUST substitute these placeholders before dispatch — the coach shares no context with the host and gets only this prompt:
-
-1. **Synthesized report from Phase 3** (all findings, scores, improvement roadmap), inlined here:
+1. Draft report:
 <DRAFT_REPORT>
-2. **Raw JSONL transcripts** for verification (spot-check claims against actual exchanges) — absolute paths. Read them with the log format for their host, included with this prompt:
-<SESSION_LOG_HOST>
-<SESSION_FILE_LIST>
-3. **Previous report** (if any) for continuity validation:
-<PREVIOUS_REPORT_OR_"None — baseline analysis">
+2. Session files, for spot-checking claims against the real exchanges:
+<SESSION_LIST: absolute path, host, session ID, start time>
+<SESSION_LOGS>
+3. Previous report:
+<PREVIOUS_REPORT or "None — baseline analysis.">
 
-## Your Authorities
-
-| # | Authority | Rules |
+## What You May Change
+| # | Authority | Rule |
 |---|---|---|
-| 1 | Adjust scores | Within +/-10 points per lens. MUST cite specific transcript evidence. |
-| 2 | Rewrite improvement items | Make them more specific, actionable, or correctly prioritized. |
-| 3 | Reorder priorities | If a quick win is buried below a harder change. |
-| 4 | Flag missed patterns | Add observations the 5 agents didn't catch. |
-| 5 | Validate continuity | Ensure prior report progress is acknowledged and recurring issues are flagged. |
-| 6 | Set the tone | Ensure report is coaching-oriented, encouraging, not punitive or patronizing. |
+| 1 | Adjust scores | Within ±10 points per lens. Cite specific transcript evidence. |
+| 2 | Rewrite improvement items | Make them more specific, more actionable, or correctly prioritized. |
+| 3 | Reorder priorities | When a quick win is buried below a harder change. |
+| 4 | Flag missed patterns | Add observations the five lenses missed. |
+| 5 | Validate continuity | Make sure prior progress is acknowledged and recurring issues are flagged. |
+| 6 | Set the tone | Coaching and encouraging, not punitive or patronizing. |
 
-## Guardrails
-- MUST NOT adjust scores without citing specific transcript evidence
-- MUST NOT rewrite findings for wording alone — only when judgment changes the assessment
-- MUST cite a reason for every change, inline as `[Coach: reason]`
-- MUST ensure every improvement item passes: "Could the user do this in their next session?"
-- MUST NOT add generic advice ("communicate better", "be more specific") — every suggestion must be concrete
-- Write for humans: the reader may speak English as a second language. Use short sentences, everyday words, and explain jargon on first use. State the point first, then the detail. Simplify the language, never the facts — paths, line numbers, and claims stay exact.
+Change a finding only when your judgment changes the assessment, never for
+wording alone. Tag every change inline as `[Coach: reason]`.
 
 ## What to Check
+- Score calibration: flag inflation (a B+ with six correction loops) and
+  deflation (a C for a user who was effective given the task).
+- Actionability: every improvement item must be something the user could do
+  in their next session. Rewrite or cut generic advice such as "communicate
+  better".
+- Specificity: every finding needs a transcript reference, what happened, why
+  it matters, and a concrete fix.
 
-1. **Score calibration**: Are scores fair? Flag inflation (rating B+ when there were 6 correction loops) and deflation (rating C when the user was actually effective given task complexity).
-2. **Actionability gate**: Every improvement item must pass: "Could the user do this in their next session?" If not, rewrite it or cut it.
-3. **Specificity enforcement**: Reject vague findings. Every finding needs the specific interaction (**Transcript Reference**), what was wrong (**What happened** and **Why it matters**), and a concrete fix (**What to do differently**).
-4. **Priority validation**: Are the top suggestions actually the highest-leverage changes?
-5. **Continuity check**: If a prior report exists, is progress acknowledged? Are recurring issues flagged with escalated emphasis?
-6. **Tone check**: Report should be encouraging. The user is investing time in self-improvement — honor that.
+Write for a reader who may use English as a second language: short sentences,
+everyday words, the point first. Keep facts exact.
 
 ## Output Format
 
-Return structured markdown:
+### Score Adjustments
+[Adjustments with `[Coach: reason]`, or "No adjustments — scores are calibrated."]
 
-### Score Adjustments (if any)
-[List of adjustments with reasons, or "No adjustments — scores are calibrated."]
-
-### Improvement Item Revisions (if any)
-[Rewritten items with `[Coach: reason]` annotations, or "No revisions needed."]
+### Improvement Item Revisions
+[Rewritten items with `[Coach: reason]`, or "No revisions needed."]
 
 ### Coach's Note
-[2–4 sentences. The single most important takeaway. What's the ONE thing this developer should focus on to see the biggest improvement? Be specific and actionable.]
+[2–4 sentences: the one thing this developer should focus on for the biggest improvement. Specific and actionable.]
 
-### Missed Patterns (if any)
-[Observations the 5 agents didn't catch, or "No additional patterns found."]
+### Missed Patterns
+[Observations the lenses missed, or "No additional patterns found."]
 ```
