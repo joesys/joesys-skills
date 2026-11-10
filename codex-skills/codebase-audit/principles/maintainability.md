@@ -23,7 +23,7 @@ Maintainability measures how easily the codebase can be understood, modified, an
 | Type annotation coverage | annotated_functions / total_functions | `compute_structure.py` |
 | Files over 500 lines | Count files exceeding threshold | `compute_structure.py` |
 | Functions over 50 lines | Count functions exceeding threshold | `compute_structure.py` |
-| TODO/FIXME/HACK count | Grep for markers, group by theme | Agent qualitative scan |
+| TODO/FIXME/HACK count | Search for markers, group by theme | Agent qualitative scan |
 | Duplicated code signals | Look for 3+ repeated patterns | Agent qualitative scan |
 
 ## Grading Rubric

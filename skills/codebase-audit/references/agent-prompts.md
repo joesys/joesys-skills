@@ -84,7 +84,7 @@ Read `skills/codebase-audit/benchmarks/{language}.md` and `skills/codebase-audit
 Measure complexity and code hygiene, and scan for hardcoded secrets. Run the helper:
 python skills/codebase-audit/helpers/compute_complexity.py --lang {language} --source {source_paths} --exclude {exclude_patterns}
 
-Take cyclomatic complexity from the helper. Fill the other fields by reading the code with Grep and Read. Use these definitions so counts stay comparable between audits:
+Take cyclomatic complexity from the helper. Fill the other fields by searching and reading the code. Use these definitions so counts stay comparable between audits:
 - Magic number: a numeric literal outside a named constant.
 - Duplication signal: a pattern of 5+ lines repeated 3+ times.
 - Group TODO/FIXME/HACK markers by theme.
@@ -133,7 +133,7 @@ Read these principle files from `skills/codebase-audit/principles/`: evolvabilit
 Read `skills/codebase-audit/benchmarks/{language}.md` and `skills/codebase-audit/benchmarks/general.md`.
 
 ## Your Task
-Judge structure, operations, and security. Trace imports to measure coupling (fan-in and fan-out per module), cycles, and boundary violations (per config or inferred). Check CI/CD, container config, health checks, logging, environment config, lock files, and dependency health. Summarize static analysis tooling (detected tools, build-integrated checks, gaps) from TOOLING_CONTEXT. Use Grep and Read.
+Judge structure, operations, and security. Trace imports to measure coupling (fan-in and fan-out per module), cycles, and boundary violations (per config or inferred). Check CI/CD, container config, health checks, logging, environment config, lock files, and dependency health. Summarize static analysis tooling (detected tools, build-integrated checks, gaps) from TOOLING_CONTEXT. Search and read the code.
 
 {IF_LIVE_COMMANDS_APPROVED}
 Run dependency audit if applicable:
@@ -255,7 +255,7 @@ Read `skills/codebase-audit/principles/performance.md`.
 Read `skills/codebase-audit/benchmarks/{language}.md` and `skills/codebase-audit/benchmarks/general.md`.
 
 ## Your Task
-Find the performance anti-patterns named by the JSON keys below, using Grep and Read. Static analysis only — no profiling or benchmarking.
+Find the performance anti-patterns named by the JSON keys below, by searching and reading the code. Static analysis only — no profiling or benchmarking.
 
 ## Output Format
 Return JSON:
@@ -302,7 +302,7 @@ Read `skills/codebase-audit/benchmarks/{language}.md` and `skills/codebase-audit
 Capture: pass count, fail count, execution time, failure details.
 {END_IF}
 
-2. Read the test files with Glob and Read. Fill the JSON fields. In `qualitative_notes`, judge test quality: do tests check behavior or implementation details, are assertions meaningful or smoke-only, are edge cases covered, and how are mocks used? Note coverage figures if a coverage report exists.
+2. Find and read the test files. Fill the JSON fields. In `qualitative_notes`, judge test quality: do tests check behavior or implementation details, are assertions meaningful or smoke-only, are edge cases covered, and how are mocks used? Note coverage figures if a coverage report exists.
 
 ## Output Format
 Return JSON:

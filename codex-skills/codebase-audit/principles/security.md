@@ -17,13 +17,13 @@ Security measures the codebase's resistance to common vulnerabilities and attack
 
 | Metric | How to Measure | Source |
 |---|---|---|
-| Hardcoded secrets | Grep for API_KEY, password, secret, token patterns | Quality agent |
-| SQL injection patterns | Grep for string formatting in SQL queries | Architecture agent |
-| Command injection patterns | Grep for subprocess/exec with unsanitized input | Architecture agent |
+| Hardcoded secrets | Search for API_KEY, password, secret, token patterns | Quality agent |
+| SQL injection patterns | Search for string formatting in SQL queries | Architecture agent |
+| Command injection patterns | Search for subprocess/exec with unsanitized input | Architecture agent |
 | Dependency vulnerabilities | Run npm audit, pip-audit, cargo audit | Architecture agent (live) |
 | Input validation presence | Check API endpoints for validation decorators/middleware | Architecture agent |
 | Auth patterns | Check for authentication middleware, session management | Architecture agent |
-| Sensitive data in logs | Grep for logging of credentials, tokens, PII | Quality agent |
+| Sensitive data in logs | Search for logging of credentials, tokens, PII | Quality agent |
 
 ## Grading Rubric
 

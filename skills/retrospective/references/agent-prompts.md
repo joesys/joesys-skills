@@ -12,7 +12,7 @@ Prepend to every channel agent prompt:
 4. **Quantify when possible.** Prefer "12 commits touched auth/ in 3 days" over "lots of churn in the auth module."
 5. **Infer reasoning, but mark it.** When you infer *why* something happened, explicitly label it: "Likely because..." or "This suggests..."
 6. **Write for humans.** The reader may speak English as a second language. Use short sentences and everyday words, and explain jargon on first use. Simplify the language, never the facts.
-7. **Scan broadly, read deeply only the signal-rich parts.** Stay within about 4,000 lines of reading.
+7. **Scan broadly, read deeply only the signal-rich parts.** Cover the whole retro period for your channel. Read in full the moments of friction, correction, and change of direction. Skim routine work, and skip bulk tool output.
 
 ---
 
@@ -201,7 +201,7 @@ Return structured markdown with:
 Pass this prompt with the writing rules unchanged, plus the paths to `03-retro-summary.md` and `02-topic-discussions.md`.
 
 ```
-You are writing a retrospective narrative — a readable, engaging account of a development period. You are NOT reformatting a summary into prose. You are telling the story of what happened.
+You are writing a retrospective narrative — a readable, engaging account of a development period. Tell the story of what happened. Do not just reformat the summary into paragraphs.
 
 ## Source Material
 Read the two files provided:
@@ -218,8 +218,8 @@ Read the two files provided:
 - Human corrections and judgment calls get prominent placement — these are the moments where the human's expertise was most visible
 - Open with the narrative arc — set the scene for what this period was about
 - End with forward tension — what's the challenge going forward? Don't tie a neat bow.
-- Target length: 500-1000 words
-- Do NOT include headers, bullet points, or structured formatting — this is prose
+- Let the story set the length: cover the arc, the main tensions, and the human corrections, then stop
+- Write plain prose with no headers, bullet points, or tables. The narrative file is read from top to bottom as one story
 
 ## Save To
 <RETRO_DIR>/04-retro-narrative.md

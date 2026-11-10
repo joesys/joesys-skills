@@ -105,9 +105,9 @@ For same-platform subagents, do not pass a model or reasoning-effort override. L
 |---|---|---|---|
 | 1 | Structural | LOC, file/function lengths, nesting, comment density | `helpers/compute_structure.py` |
 | 2 | Quality | Cyclomatic complexity, naming, magic numbers, duplication, secrets | `helpers/compute_complexity.py` |
-| 3 | Architecture | Coupling, circular deps, CI/CD, dependency health, tooling adoption | - (Grep/Read) |
+| 3 | Architecture | Coupling, circular deps, CI/CD, dependency health, tooling adoption | - (search and read the code) |
 | 4 | Git/Velocity | Churn, commit frequency, bus factor, knowledge concentration | `helpers/compute_churn.py` |
-| 5 | Performance | Algorithm issues, N+1, blocking I/O, memory leaks | - (Grep/Read) |
+| 5 | Performance | Algorithm issues, N+1, blocking I/O, memory leaks | - (search and read the code) |
 | 6 | Tests | Pass rate, test ratio, assertion density, test quality | Test runner (if approved) |
 
 Security has no agent of its own. The Architecture agent covers it (it reads `principles/security.md` and checks dependency vulnerabilities and security scanners). The Quality agent adds the hardcoded-secrets scan.
@@ -143,7 +143,7 @@ For scoped criteria, launch only the required agents:
 >
 > Options: **Run all** | **Static only** | **Select**
 
-Read-only commands (helper scripts, `git log`, Glob/Grep/Read, tool detection) do not need approval.
+Read-only commands (helper scripts, `git log`, searching and reading files, tool detection) do not need approval.
 
 ### Large Repo Decomposition (Large Tier Only)
 

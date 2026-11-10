@@ -20,7 +20,7 @@ Readability measures how easily a developer can understand the code's purpose, l
 | Average function length | Shorter functions are generally more readable | `compute_structure.py` |
 | Nesting depth | Deep nesting hinders readability | `compute_structure.py` |
 | Documentation presence | Check for docstrings/JSDoc on public functions | Agent qualitative |
-| Single-letter variable usage | Grep for single-letter names outside standard patterns | Agent qualitative |
+| Single-letter variable usage | Search for single-letter names outside standard patterns | Agent qualitative |
 
 ## Grading Rubric
 

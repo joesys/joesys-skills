@@ -85,3 +85,49 @@ def test_commit_example_uses_a_model_placeholder() -> None:
 
 def test_html_report_snippet_uses_python3() -> None:
     assert '["python", ' not in read("shared/html-reports.md")
+
+
+# --- Fable 5.2 review, 2026-11-10 -------------------------------------------
+# Current models follow instructions more literally than the models these
+# skills were first written for. Each test below pins one joesys decision.
+
+
+def test_report_style_has_no_comma_counting_rule() -> None:
+    # A hard style rule ("split at the second comma") makes prose choppy when
+    # the model applies it to every sentence. The short-sentence rule stays.
+    style = read("shared/report-style.md")
+    assert "second comma" not in style
+    assert "**Short sentences.** One idea per sentence." in style
+
+
+def test_skills_do_not_name_host_specific_search_tools() -> None:
+    # Glob and Grep are tool names in some hosts only. A skill should say
+    # what to do ("search", "read"), so it works where those tools are absent.
+    markdown_files = [*SKILLS.rglob("*.md"), *(REPO_ROOT / "shared").rglob("*.md")]
+    assert markdown_files
+    for path in markdown_files:
+        text = path.read_text(encoding="utf-8")
+        assert not re.search(r"\b(Glob|Grep)\b", text), path
+
+
+def test_session_log_readers_state_a_goal_not_a_line_budget() -> None:
+    # A fixed line budget forces sampling. The prompt states what to cover and
+    # what to skip instead.
+    interaction = compact(read("skills/interaction-review/references/agent-prompts.md"))
+    assert "4,000" not in interaction
+    assert "Cover every session" in interaction
+    assert "Skip tool calls, tool output" in interaction
+
+    retro = compact(read("skills/retrospective/references/agent-prompts.md"))
+    assert "4,000" not in retro
+    assert "Cover the whole retro period" in retro
+
+
+def test_retro_narrative_prompt_uses_plain_wording() -> None:
+    # The no-headers rule is a format contract (see output-formats.md), so it
+    # stays, in normal case and with its reason. The word count goes.
+    prompts = read("skills/retrospective/references/agent-prompts.md")
+    assert "Target length" not in prompts
+    assert "Do NOT" not in prompts
+    assert "You are NOT" not in prompts
+    assert "no headers, bullet points" in compact(prompts)

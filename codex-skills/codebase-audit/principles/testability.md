@@ -17,10 +17,10 @@ Testability measures how amenable the codebase is to automated testing.
 |---|---|---|
 | Test-to-source ratio | test_file_count / source_file_count | Tests agent |
 | Test type distribution | Categorize tests as unit/integration/e2e | Tests agent |
-| DI pattern usage | Grep for constructor injection, interface parameters | Agent qualitative |
+| DI pattern usage | Search for constructor injection, interface parameters | Agent qualitative |
 | Mock/stub usage | Check for mock libraries in test files | Tests agent |
 | Test quality signals | Assert count per test, behavior vs implementation testing | Tests agent |
-| Global state reliance | Grep for global/module-level mutable state | Agent qualitative |
+| Global state reliance | Search for global/module-level mutable state | Agent qualitative |
 
 ## Grading Rubric
 

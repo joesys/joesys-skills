@@ -16,11 +16,11 @@ Performance measures the efficiency of the code in terms of time complexity, spa
 | Metric | How to Measure | Source |
 |---|---|---|
 | Algorithm complexity issues | Identify nested loops over collections | Performance agent |
-| N+1 query patterns | Grep for DB queries inside loops | Performance agent |
-| Blocking I/O in async | Grep for sync calls inside async functions | Performance agent |
-| String concatenation in loops | Grep for += on strings inside loops | Performance agent |
+| N+1 query patterns | Search for DB queries inside loops | Performance agent |
+| Blocking I/O in async | Search for sync calls inside async functions | Performance agent |
+| String concatenation in loops | Search for += on strings inside loops | Performance agent |
 | Missing caching | Identify repeated expensive calls | Performance agent |
-| Memory leak patterns | Grep for unbounded growth patterns | Performance agent |
+| Memory leak patterns | Search for unbounded growth patterns | Performance agent |
 
 ## Grading Rubric
 

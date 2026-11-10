@@ -12,7 +12,7 @@ The reader of a skill's output is a human operator, often reading English as a s
 
 ## The Rules
 
-1. **Short sentences.** One idea per sentence. If a sentence needs a second comma, consider splitting it.
+1. **Short sentences.** One idea per sentence.
 2. **Everyday words.** Prefer the common word over the impressive one: "use" not "utilize", "start" not "initiate". Keep exact technical names when naming real code or tools.
 3. **Explain jargon on first use.** Technical terms are fine — follow each one with a short plain explanation the first time it appears. Example: "a race condition (two pieces of code changing the same data at the same time)".
 4. **Active voice, named actors.** "The parser drops the last row" — not "the last row is dropped".

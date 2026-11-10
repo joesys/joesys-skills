@@ -17,11 +17,11 @@ Reliability measures the system's ability to handle failures gracefully, recover
 | Metric | How to Measure | Source |
 |---|---|---|
 | Error handling coverage | Ratio of functions with explicit error handling | Agent qualitative |
-| Retry/fallback patterns | Grep for retry, backoff, circuit_breaker patterns | Architecture agent |
-| Logging presence | Grep for logging/logger usage at error boundaries | Architecture agent |
+| Retry/fallback patterns | Search for retry, backoff, circuit_breaker patterns | Architecture agent |
+| Logging presence | Search for logging/logger usage at error boundaries | Architecture agent |
 | Health check endpoints | Check for /health, /ready, /alive routes | Architecture agent |
 | Resource management | Check for context managers, defer, finally | Structural agent |
-| Timeout presence | Grep for timeout parameters on network calls | Architecture agent |
+| Timeout presence | Search for timeout parameters on network calls | Architecture agent |
 
 ## Grading Rubric
 

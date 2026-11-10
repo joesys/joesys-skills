@@ -33,7 +33,7 @@ Read the per-language profile (`./tooling/<language>.md`) and the general profil
 
 ### Step 2 — Detect Config Files
 
-Glob the repository for each tool's config markers (for example `.eslintrc.*`, `pyproject.toml`, `rustfmt.toml`).
+Search the repository for each tool's config markers (for example `.eslintrc.*`, `pyproject.toml`, `rustfmt.toml`).
 
 ### Step 3 — Check Binary Availability
 
@@ -52,7 +52,7 @@ Only `available` tools run. Report `configured-but-unavailable` tools as gaps. S
 
 ### Step 5 — Detect Build-Integrated Analysis
 
-Grep build files (`Makefile`, `package.json` scripts, `Cargo.toml`, CI configs) for analysis already in the build (`lint`, `check`, `analyze`, `clippy`, `mypy`). Record these as build-integrated tools. They inform grading but are not re-run.
+Search build files (`Makefile`, `package.json` scripts, `Cargo.toml`, CI configs) for analysis already in the build (`lint`, `check`, `analyze`, `clippy`, `mypy`). Record these as build-integrated tools. They inform grading but are not re-run.
 
 ### Step 6 — Queue Available Tools for Safety Gate
 

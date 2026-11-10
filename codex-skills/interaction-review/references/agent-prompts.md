@@ -37,9 +37,9 @@ and bookkeeping lines: they are bulk data that hides the conversation. Tool
 calls still count as evidence for the Agentic Leverage and Workflow Efficiency
 lenses: count and sample them, but do not read their full output.
 
-Read budget: about 4,000 lines in total. Prefer breadth (scan every session)
-over depth (one session in full). In single-session mode, read the whole
-session within the budget.
+Cover every session in the list. Read in full the places where the person
+corrects the agent, changes direction, or repeats a request. Skim the
+routine stretches. In single-session mode, read the whole conversation.
 
 Claude Code
 - Read lines whose `type` is "user" or "assistant". The time is in

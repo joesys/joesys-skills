@@ -70,7 +70,7 @@ Each subagent prompt contains, in this order:
 
 1. **Evidence over guesswork.** Tie every claim about what the code does to a specific file, function, or config.
 2. **Flag uncertainty.** Separate what the code definitely does, what seems intended, and what is unclear. Saying "unclear" is valid output. Guessing confidently is not.
-3. **Use LSP tools if available.** Otherwise use Glob, Grep, and Read. Missing LSP is not a failure.
+3. **Use LSP tools if available.** Otherwise search and read the code with the tools your host provides. Missing LSP is not a failure.
 4. **Respect the scope.** Mention outside context where it helps ("this module is called from `src/api/routes.ts`"), but do not analyze unrelated modules.
 5. **Point to code; don't copy it.** Use `file:line_number` references and only short snippets. The reader has the code and needs understanding, not a copy.
 6. **Draw diagrams only in Mermaid**, following the Diagram Standards appended to this prompt.

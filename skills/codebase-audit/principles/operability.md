@@ -18,8 +18,8 @@ Operability measures how ready the codebase is for deployment, monitoring, and d
 |---|---|---|
 | CI/CD config presence | Check for .github/workflows, .gitlab-ci.yml, Jenkinsfile | Architecture agent |
 | Container config presence | Check for Dockerfile, docker-compose.yml | Architecture agent |
-| Health check endpoints | Grep for /health, /ready, /status routes | Architecture agent |
-| Logging patterns | Grep for logger/logging usage, check for structured logging | Structural agent |
+| Health check endpoints | Search for /health, /ready, /status routes | Architecture agent |
+| Logging patterns | Search for logger/logging usage, check for structured logging | Structural agent |
 | Environment config handling | Check for .env files, environment variable usage | Architecture agent |
 | Lock file presence | Check for package-lock.json, poetry.lock, Cargo.lock, go.sum | Architecture agent |
 | Dependency health | Run audit commands (npm audit, pip-audit, cargo audit) | Architecture agent (live) |
