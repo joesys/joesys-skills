@@ -5,9 +5,13 @@ description: "Use when the user invokes $prompt or asks to rewrite, improve, or 
 
 # Prompt Skill
 
+## Collection Root
+
+The collection root is the folder one level above this SKILL.md. Every path in this skill that starts with `../` is relative to this skill's folder, so it points into the collection root, never into the project's working directory.
+
 ## Write for Humans
 
-Write everything a person reads in plain English for a reader who uses English as a second language. Follow `../shared/report-style.md` (resolve against the collection root (one level above this SKILL.md) - never the project's working directory).
+Write everything a person reads in plain English for a reader who uses English as a second language. Follow `../shared/report-style.md`.
 
 ## Purpose
 

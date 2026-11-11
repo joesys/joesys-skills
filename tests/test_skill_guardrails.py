@@ -138,3 +138,38 @@ def test_claude_skill_lists_the_current_cli_flag_values() -> None:
     skill = read("skills/claude/SKILL.md")
     assert "(`manual`, `acceptEdits`, `auto`, `dontAsk`)" in skill
     assert "(`low`, `medium`, `high`, `xhigh`, `max`)" in skill
+
+
+PLUGIN_ROOT_SECTION = (
+    "## Plugin Root\n\n"
+    "`${CLAUDE_PLUGIN_ROOT}` is the plugin root. If that is not a real folder path, "
+    "your host did not fill it in; use the folder two levels above this SKILL.md "
+    "instead. Every `shared/...`, `scripts/...` and `skills/...` path in this skill "
+    "is under the plugin root, never under the project's working directory.\n"
+)
+
+
+def test_every_skill_states_the_plugin_root_once_with_a_host_neutral_fallback() -> None:
+    # Claude Code fills in ${CLAUDE_PLUGIN_ROOT}. Other hosts do not, so the same
+    # sentence must also say where the plugin root is without the variable.
+    skill_files = sorted(SKILLS.glob("*/SKILL.md"))
+    assert skill_files
+    for skill_md in skill_files:
+        text = skill_md.read_text(encoding="utf-8")
+        assert text.count(PLUGIN_ROOT_SECTION) == 1, skill_md
+        assert text.count("two levels above this SKILL.md") == 1, skill_md
+        first_mention = text.index("plugin root")
+        assert first_mention > text.index("## Plugin Root"), skill_md
+
+
+def test_the_plugin_root_variable_stays_out_of_files_no_host_fills_in() -> None:
+    # Claude Code replaces the variable only inside SKILL.md.
+    other_files = [
+        path
+        for folder in (SKILLS, REPO_ROOT / "shared")
+        for path in folder.rglob("*.md")
+        if path.name != "SKILL.md"
+    ]
+    assert other_files
+    for path in other_files:
+        assert "CLAUDE_PLUGIN_ROOT" not in path.read_text(encoding="utf-8"), path

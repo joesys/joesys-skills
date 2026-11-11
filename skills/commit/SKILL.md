@@ -9,9 +9,13 @@ Create git commits with clear, structured messages (Conventional Commits plus a 
 
 This skill only adds new commits. It never rewrites existing history: no hard resets, no cherry-picking, no rebasing, and no `--amend` on commits already pushed. To group commits that already exist, use `/restructure-commit`.
 
+## Plugin Root
+
+`${CLAUDE_PLUGIN_ROOT}` is the plugin root. If that is not a real folder path, your host did not fill it in; use the folder two levels above this SKILL.md instead. Every `shared/...`, `scripts/...` and `skills/...` path in this skill is under the plugin root, never under the project's working directory.
+
 ## Write for Humans
 
-Write everything a person reads in plain English for a reader who uses English as a second language. Follow `shared/report-style.md` (resolve against the plugin root — two levels above this SKILL.md — never the project's working directory).
+Write everything a person reads in plain English for a reader who uses English as a second language. Follow `shared/report-style.md`.
 
 ## Out of Scope
 
@@ -36,7 +40,7 @@ If unsure whether something counts as an express order, assume it does **NOT**. 
 
 ## User Preferences
 
-Read `shared/skill-context.md` (resolve `shared/...` against the plugin root — two levels above this SKILL.md — never the project's working directory) and the preference files it names, if present. `auto-devlog scrap: off` in `.claude/skill-context/commit.md` skips the Post-Commit devlog scrap step (default on).
+Read `shared/skill-context.md` and the preference files it names, if present. `auto-devlog scrap: off` in `.claude/skill-context/commit.md` skips the Post-Commit devlog scrap step (default on).
 
 ## Convention
 

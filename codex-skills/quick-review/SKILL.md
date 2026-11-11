@@ -7,14 +7,18 @@ description: "Use when the user invokes $quick-review for a fast bug-focused cod
 
 Fast, bug-focused code review. A correctness reviewer and a security reviewer run in parallel, with streamlined static analysis. Only the host model is used, for speed. For a full 7-domain review, use `$codereview`.
 
+## Collection Root
+
+The collection root is the folder one level above this SKILL.md. Every path in this skill that starts with `../` is relative to this skill's folder, so it points into the collection root, never into the project's working directory.
+
 ## Write for Humans
 
-Write everything a person reads in plain English for a reader who uses English as a second language. Follow `../shared/report-style.md` (resolve against the collection root (one level above this SKILL.md) - never the project's working directory).
+Write everything a person reads in plain English for a reader who uses English as a second language. Follow `../shared/report-style.md`.
 
 ## Out of Scope
 
 This skill MUST NOT:
-- Modify source code unless the user explicitly asks for fixes. Quick-review is **report-only** by default. When the user explicitly asks for fixes, fix only the flagged findings they asked for. Follow the fix rules in `../codereview/SKILL.md` Phase 4 Section Parallel Fix Strategy (resolve against the plugin root, not the project). In short: check that the before-code still matches, and apply exactly what was flagged, nothing more. Then show what changed in each file.
+- Modify source code unless the user explicitly asks for fixes. Quick-review is **report-only** by default. When the user explicitly asks for fixes, fix only the flagged findings they asked for. Follow the fix rules in `../codereview/SKILL.md` Phase 4 Section Parallel Fix Strategy. In short: check that the before-code still matches, and apply exactly what was flagged, nothing more. Then show what changed in each file.
 - Report on code outside the resolved scope, even if you notice it while gathering context.
 - Report P2 (maintainability), P3 (polish), or P4 (style) findings. This skill reports P0-P1 only, even if subagents or tools return lower-severity findings.
 
@@ -36,7 +40,7 @@ If the invocation is ambiguous, ask the user to clarify.
 
 ### 1.0 Load User Preferences
 
-Read `../shared/skill-context.md` for the full protocol (resolve `../shared/...` against the collection root (one level above this SKILL.md) - never the project's working directory). Read `.codex/skill-context/preferences.md` and `.codex/skill-context/codereview.md` if present (quick-review shares review preferences with codereview); otherwise use defaults. Pass relevant preferences to the subagents in Phase 2.
+Read `../shared/skill-context.md` for the full protocol. Read `.codex/skill-context/preferences.md` and `.codex/skill-context/codereview.md` if present (quick-review shares review preferences with codereview); otherwise use defaults. Pass relevant preferences to the subagents in Phase 2.
 
 ### 1.1 Base Branch, Files, and Language
 
@@ -76,7 +80,7 @@ For same-platform subagents, do not pass a model or reasoning-effort override. L
 
 ### Subagent Prompt Template
 
-Before dispatch, substitute every `<ANGLE_BRACKET>` placeholder. Replace `<REVIEW_RULES>` with the Review Rules block from `../shared/review-common.md` Section Cross-Skill Discipline, pasted word for word. In particular, replace `<PRINCIPLE_PATH>` with the **absolute path** to the principle file, resolved against the collection root (one level above this SKILL.md - the paths point into the sibling `codereview` skill) - never against the project's working directory. Subagents start in the project cwd and cannot find plugin files by relative path.
+Before dispatch, substitute every `<ANGLE_BRACKET>` placeholder. Replace `<REVIEW_RULES>` with the Review Rules block from `../shared/review-common.md` Section Cross-Skill Discipline, pasted word for word. In particular, replace `<PRINCIPLE_PATH>` with the **absolute path** to the principle file under the collection root (the paths point into the sibling `codereview` skill). Subagents start in the project cwd and cannot find plugin files by relative path.
 
 ```
 You are a senior <DOMAIN> reviewer performing a quick, bug-focused review.

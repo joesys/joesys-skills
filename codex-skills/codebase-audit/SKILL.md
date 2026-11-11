@@ -9,9 +9,13 @@ Measure up to 12 quality criteria and development velocity with 6 collection age
 
 Scores must stay comparable from one audit to the next, so apply the rubrics, benchmarks, adjustments, and labels in the reference files as written.
 
+## Collection Root
+
+The collection root is the folder one level above this SKILL.md. Every path in this skill that starts with `../` is relative to this skill's folder, so it points into the collection root, never into the project's working directory.
+
 ## Write for Humans
 
-Write everything a person reads in plain English for a reader who uses English as a second language. Follow `../shared/report-style.md` (resolve against the collection root (one level above this SKILL.md) - never the project's working directory).
+Write everything a person reads in plain English for a reader who uses English as a second language. Follow `../shared/report-style.md`.
 
 ## Out of Scope
 
@@ -68,7 +72,7 @@ Read each file when its phase needs it:
 
 ## Phase 0 - Parse, Detect & Route
 
-Use `references/detection-defaults.md` for detection rules. Use `../shared/tooling-registry.md` and the per-language profiles in `../shared/tooling/` for tools. Use `../shared/skill-context.md` for the preferences protocol (resolve `../shared/...` against the collection root (one level above this SKILL.md) - never the project's working directory).
+Use `references/detection-defaults.md` for detection rules. Use `../shared/tooling-registry.md` and the per-language profiles in `../shared/tooling/` for tools. Use `../shared/skill-context.md` for the preferences protocol.
 
 Phase 0 must produce:
 

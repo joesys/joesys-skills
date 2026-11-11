@@ -65,7 +65,7 @@ codex exec resume --last --skip-git-repo-check "<PROMPT>" 2>/dev/null         # 
 
 ### Antigravity
 
-Dispatch through the adapter, not `agy` directly. `<ADAPTER>` is the **absolute path** to `../scripts/agy_adapter.py` under the plugin root (the directory containing this file's parent, `./`) — resolve it before running; the project's working directory does not contain the adapter:
+Dispatch through the adapter, not `agy` directly. `<ADAPTER>` is the **absolute path** to `../scripts/agy_adapter.py` under the collection root (the directory containing this file's parent, `./`) — resolve it before running; the project's working directory does not contain the adapter:
 
 ```bash
 python <ADAPTER> --mode plan --sandbox

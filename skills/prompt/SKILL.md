@@ -5,9 +5,13 @@ description: "Use when the user invokes /prompt or asks to rewrite, improve, or 
 
 # Prompt Skill
 
+## Plugin Root
+
+`${CLAUDE_PLUGIN_ROOT}` is the plugin root. If that is not a real folder path, your host did not fill it in; use the folder two levels above this SKILL.md instead. Every `shared/...`, `scripts/...` and `skills/...` path in this skill is under the plugin root, never under the project's working directory.
+
 ## Write for Humans
 
-Write everything a person reads in plain English for a reader who uses English as a second language. Follow `shared/report-style.md` (resolve against the plugin root — two levels above this SKILL.md — never the project's working directory).
+Write everything a person reads in plain English for a reader who uses English as a second language. Follow `shared/report-style.md`.
 
 ## Purpose
 

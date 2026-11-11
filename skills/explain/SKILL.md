@@ -7,9 +7,13 @@ description: "Use when the user invokes /explain to analyze a codebase, director
 
 Run five analysis subagents in parallel. Each one is a lens: structure, behavior, domain and data, external dependencies, and health and risk. Then combine their findings into one layered report that goes from a 30-second overview to deep understanding.
 
+## Plugin Root
+
+`${CLAUDE_PLUGIN_ROOT}` is the plugin root. If that is not a real folder path, your host did not fill it in; use the folder two levels above this SKILL.md instead. Every `shared/...`, `scripts/...` and `skills/...` path in this skill is under the plugin root, never under the project's working directory.
+
 ## Write for Humans
 
-Write everything a person reads in plain English for a reader who uses English as a second language. Follow `shared/report-style.md` (resolve against the plugin root — two levels above this SKILL.md — never the project's working directory).
+Write everything a person reads in plain English for a reader who uses English as a second language. Follow `shared/report-style.md`.
 
 ## Out of Scope
 
@@ -40,7 +44,7 @@ Arguments can be combined. Choose the scope mode from the argument: an existing 
 
 ### 1.1 Load User Preferences
 
-Read `shared/skill-context.md` for the protocol (resolve `shared/...` against the plugin root, not the project's working directory). Read `.claude/skill-context/preferences.md` and `.claude/skill-context/explain.md` if they exist; otherwise use defaults.
+Read `shared/skill-context.md` for the protocol. Read `.claude/skill-context/preferences.md` and `.claude/skill-context/explain.md` if they exist; otherwise use defaults.
 
 Give each subagent only the preferences that affect its lens, as a `## User Preferences` section — for example detail level, explanation style, and assumed knowledge. A top-down or bottom-up preference in `explain.md` sets the order of the Structure lens.
 
@@ -179,7 +183,7 @@ Scope name:
    profile: "analytical"
    ---
    ```
-2. **Render the HTML companion** unless `--no-html` is present. This is best-effort: if it fails, warn and continue, because the markdown is already saved. **Resolve `scripts/html_render.py` to its absolute path under the plugin root (two levels above this SKILL.md) before running** — the command runs in the user's project, which does not contain the plugin's `scripts/` folder (use `python3` where present, `python` on Windows):
+2. **Render the HTML companion** unless `--no-html` is present. This is best-effort: if it fails, warn and continue, because the markdown is already saved. **Resolve `scripts/html_render.py` to its absolute path under the plugin root before running** — the command runs in the user's project, which does not contain the plugin's `scripts/` folder (use `python3` where present, `python` on Windows):
    ```bash
    python scripts/html_render.py <report-path>.md --profile analytical
    ```

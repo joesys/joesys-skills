@@ -142,10 +142,26 @@ def test_generated_guidance_matches_standalone_layout(tmp_path):
 
     commit = (output / "commit" / "SKILL.md").read_text(encoding="utf-8")
 
-    assert "collection root (one level above this SKILL.md)" in commit
+    assert "## Collection Root" in commit
+    assert "The collection root is the folder one level above this SKILL.md." in commit
     for skill_md in output.glob("*/SKILL.md"):
         skill = skill_md.read_text(encoding="utf-8")
         assert "two levels above this SKILL.md" not in skill, skill_md
+        assert skill.count("## Collection Root") == 1, skill_md
+
+
+def test_generated_files_never_name_the_claude_plugin_root(tmp_path):
+    # Codex has no ${CLAUDE_PLUGIN_ROOT} variable and no plugin root: generated
+    # skills sit side by side in one collection folder.
+    output = tmp_path / "joesys-skills"
+    codex_adapter.build_collection(REPO_ROOT, output)
+
+    markdown_files = list(output.rglob("*.md"))
+    assert markdown_files
+    for markdown in markdown_files:
+        text = markdown.read_text(encoding="utf-8")
+        assert "CLAUDE_PLUGIN_ROOT" not in text, markdown
+        assert "plugin root" not in text.lower(), markdown
 
 
 def test_no_skill_mentions_a_removed_skill(tmp_path):

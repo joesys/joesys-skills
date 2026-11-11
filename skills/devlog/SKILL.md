@@ -11,9 +11,13 @@ Capture development insights for budding programmers. A **scrap** is a short, si
 
 This file holds the scrap path in full, because scraps run often and automatically (for example, `/commit` runs `/devlog scrap --from-context` after significant commits). Write mode and List mode live in reference files and are read only when needed.
 
+## Plugin Root
+
+`${CLAUDE_PLUGIN_ROOT}` is the plugin root. If that is not a real folder path, your host did not fill it in; use the folder two levels above this SKILL.md instead. Every `shared/...`, `scripts/...` and `skills/...` path in this skill is under the plugin root, never under the project's working directory.
+
 ## Write for Humans
 
-Write everything a person reads in plain English for a reader who uses English as a second language. Follow `shared/report-style.md` (resolve against the plugin root — two levels above this SKILL.md — never the project's working directory).
+Write everything a person reads in plain English for a reader who uses English as a second language. Follow `shared/report-style.md`.
 
 ## Out of Scope
 

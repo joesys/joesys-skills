@@ -7,13 +7,17 @@ description: "Use when the user invokes /claude to delegate a prompt to Claude C
 
 Send the user's prompt to a separate Claude Code CLI instance, show its answer, and evaluate it critically.
 
+## Plugin Root
+
+`${CLAUDE_PLUGIN_ROOT}` is the plugin root. If that is not a real folder path, your host did not fill it in; use the folder two levels above this SKILL.md instead. Every `shared/...`, `scripts/...` and `skills/...` path in this skill is under the plugin root, never under the project's working directory.
+
 ## Write for Humans
 
-Write everything a person reads in plain English for a reader who uses English as a second language. Follow `shared/report-style.md` (resolve against the plugin root — two levels above this SKILL.md — never the project's working directory).
+Write everything a person reads in plain English for a reader who uses English as a second language. Follow `shared/report-style.md`.
 
 ## Shared Flow
 
-Read `shared/delegation-common.md` first, and resolve every `shared/...` path against the same plugin root. It holds the flow for every delegation skill: delegate instead of answering, never send an empty prompt, show Claude's full response verbatim, then evaluate it critically and summarize, and report failures plainly. Take the command template from `shared/model-defaults.md` § Claude CLI; do not hardcode the model or flags.
+Read `shared/delegation-common.md` first. It holds the flow for every delegation skill: delegate instead of answering, never send an empty prompt, show Claude's full response verbatim, then evaluate it critically and summarize, and report failures plainly. Take the command template from `shared/model-defaults.md` § Claude CLI; do not hardcode the model or flags.
 
 ## Running a Task
 

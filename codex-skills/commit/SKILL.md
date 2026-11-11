@@ -9,9 +9,13 @@ Create git commits with clear, structured messages (Conventional Commits plus a 
 
 This skill only adds new commits. It never rewrites existing history: no hard resets, no cherry-picking, no rebasing, and no `--amend` on commits already pushed. To group commits that already exist, use `$restructure-commit`.
 
+## Collection Root
+
+The collection root is the folder one level above this SKILL.md. Every path in this skill that starts with `../` is relative to this skill's folder, so it points into the collection root, never into the project's working directory.
+
 ## Write for Humans
 
-Write everything a person reads in plain English for a reader who uses English as a second language. Follow `../shared/report-style.md` (resolve against the collection root (one level above this SKILL.md) - never the project's working directory).
+Write everything a person reads in plain English for a reader who uses English as a second language. Follow `../shared/report-style.md`.
 
 ## Out of Scope
 
@@ -36,7 +40,7 @@ If unsure whether something counts as an express order, assume it does **NOT**. 
 
 ## User Preferences
 
-Read `../shared/skill-context.md` (resolve `../shared/...` against the collection root (one level above this SKILL.md) - never the project's working directory) and the preference files it names, if present. `auto-devlog scrap: off` in `.codex/skill-context/commit.md` skips the Post-Commit devlog scrap step (default on).
+Read `../shared/skill-context.md` and the preference files it names, if present. `auto-devlog scrap: off` in `.codex/skill-context/commit.md` skips the Post-Commit devlog scrap step (default on).
 
 ## Convention
 

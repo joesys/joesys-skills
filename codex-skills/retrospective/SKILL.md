@@ -7,9 +7,13 @@ description: "Use when the user invokes $retrospective to run a structured, disc
 
 Run a structured retrospective with the human. Five channel agents mine different data sources (git history, conversations, code quality, planning docs, tests) into a digest. Derive discussion topics from that data, walk through them with the human, and produce three output layers: action items, process improvements, and skill improvements. Finish with a readable narrative.
 
+## Collection Root
+
+The collection root is the folder one level above this SKILL.md. Every path in this skill that starts with `../` is relative to this skill's folder, so it points into the collection root, never into the project's working directory.
+
 ## Write for Humans
 
-Write everything a person reads in plain English for a reader who uses English as a second language. Follow `../shared/report-style.md` (resolve against the collection root (one level above this SKILL.md) - never the project's working directory).
+Write everything a person reads in plain English for a reader who uses English as a second language. Follow `../shared/report-style.md`.
 
 ## Out of Scope
 

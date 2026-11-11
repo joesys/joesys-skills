@@ -7,9 +7,13 @@ description: "Use when the user invokes $codereview to analyze code for correctn
 
 Run seven domain reviewers in parallel - correctness, clean code, architecture, reliability, security, performance, and story readability - plus two cross-model reviewers. Merge their findings, have a senior tech lead check the result, and deliver a severity-grouped report with concrete before/after fixes in the reviewed code's language.
 
+## Collection Root
+
+The collection root is the folder one level above this SKILL.md. Every path in this skill that starts with `../` is relative to this skill's folder, so it points into the collection root, never into the project's working directory.
+
 ## Write for Humans
 
-Write everything a person reads in plain English for a reader who uses English as a second language. Follow `../shared/report-style.md` (resolve against the collection root (one level above this SKILL.md) - never the project's working directory).
+Write everything a person reads in plain English for a reader who uses English as a second language. Follow `../shared/report-style.md`.
 
 ## Out of Scope
 
@@ -38,7 +42,7 @@ Arguments combine, for example `$codereview --pr 42 --min-severity P1`. If the i
 
 ### 1.0 Load User Preferences
 
-Read `../shared/skill-context.md` for the protocol (resolve `../shared/...` against the collection root (one level above this SKILL.md) - never the project's working directory). Read `.codex/skill-context/preferences.md` and `.codex/skill-context/codereview.md` if they exist; otherwise use defaults. Never interview the user about preferences.
+Read `../shared/skill-context.md` for the protocol. Read `.codex/skill-context/preferences.md` and `.codex/skill-context/codereview.md` if they exist; otherwise use defaults. Never interview the user about preferences.
 
 Pass the preferences to each subagent as a `## User Preferences` section. Use them to shape detail level and explanation depth in the report. A severity focus in `codereview.md` sets the default `--min-severity`.
 
@@ -106,7 +110,7 @@ For same-platform subagents, do not pass a model or reasoning-effort override. L
 
 ### Subagent Prompt Template
 
-Substitute every placeholder before dispatch. `<PRINCIPLE_PATH>` must be the **absolute path** to the roster file: resolve `principles/...` against this skill's own directory and `../shared/...` against the collection root (one level above this SKILL.md). Subagents start in the project directory and cannot find plugin files by relative path.
+Substitute every placeholder before dispatch. `<PRINCIPLE_PATH>` must be the **absolute path** to the roster file: resolve `principles/...` against this skill's own directory and `../shared/...` against the collection root. Subagents start in the project directory and cannot find plugin files by relative path.
 
 Replace `<REVIEW_RULES>` with the Review Rules block from `../shared/review-common.md` Section Cross-Skill Discipline, pasted word for word (the block's contents, without the code fence). Subagents cannot open that file. The same placeholder appears in the cross-model and tech lead prompts below.
 

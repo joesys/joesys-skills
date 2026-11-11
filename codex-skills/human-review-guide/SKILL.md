@@ -9,9 +9,13 @@ Generate a personalized reading guide for human review. Analyze a change set or 
 
 The existing review skills (`$codereview`, `$quick-review`, `$readability-review`) have the AI do the review. This skill is different - it helps the *human* review more effectively.
 
+## Collection Root
+
+The collection root is the folder one level above this SKILL.md. Every path in this skill that starts with `../` is relative to this skill's folder, so it points into the collection root, never into the project's working directory.
+
 ## Write for Humans
 
-Write everything a person reads in plain English for a reader who uses English as a second language. Follow `../shared/report-style.md` (resolve against the collection root (one level above this SKILL.md) - never the project's working directory).
+Write everything a person reads in plain English for a reader who uses English as a second language. Follow `../shared/report-style.md`.
 
 ## Out of Scope
 
@@ -46,7 +50,7 @@ Arguments combine. If the invocation is ambiguous or unrecognizable, ask the use
 
 ### 0.1 Load User Preferences
 
-Read `../shared/skill-context.md` for the full protocol (resolve `../shared/...` against the collection root (one level above this SKILL.md) - never the project's working directory). In brief: read `.codex/skill-context/preferences.md` and `.codex/skill-context/human-review-guide.md` if present; otherwise use defaults.
+Read `../shared/skill-context.md` for the full protocol. In brief: read `.codex/skill-context/preferences.md` and `.codex/skill-context/human-review-guide.md` if present; otherwise use defaults.
 
 Preferences tune triage and depth. A beginner or a conservative skip tolerance surfaces more chunks; an expert or an aggressive skip tolerance surfaces fewer and focuses on non-obvious decisions. Review focus weights triage toward that concern. Detail level and verbosity set how long each analysis is.
 
@@ -167,7 +171,7 @@ Choose terminal markdown for small changes and an HTML report for large ones - t
 **HTML report:**
 
 1. Write the guide as markdown to `docs/review-guides/YYYYMMDD-HHMMSS-<slug>.md` (create the folder if needed), with YAML front-matter per `../shared/html-reports.md`. The renderer writes the `.html` next to it.
-2. Call the HTML renderer. **Resolve `../scripts/html_render.py` to its absolute path under the collection root (one level above this SKILL.md) before running** - the command runs in the user's project cwd, which does not contain the plugin's `../scripts/` folder (use `python3` where present, falling back to `python` on Windows):
+2. Call the HTML renderer. **Resolve `../scripts/html_render.py` to its absolute path under the collection root before running** - the command runs in the user's project cwd, which does not contain the plugin's `../scripts/` folder (use `python3` where present, falling back to `python` on Windows):
 
 ````bash
 python ../scripts/html_render.py <report_path> --profile analytical

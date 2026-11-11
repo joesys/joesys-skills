@@ -275,6 +275,22 @@ def _adapt_text(
     return adapted
 
 
+_CANONICAL_PLUGIN_ROOT_SECTION = (
+    "## Plugin Root\n\n"
+    "`${CLAUDE_PLUGIN_ROOT}` is the plugin root. If that is not a real folder path, "
+    "your host did not fill it in; use the folder two levels above this SKILL.md "
+    "instead. Every `shared/...`, `scripts/...` and `skills/...` path in this skill "
+    "is under the plugin root, never under the project's working directory.\n"
+)
+_COLLECTION_ROOT_SECTION = (
+    "## Collection Root\n\n"
+    "The collection root is the folder one level above this SKILL.md. Every path "
+    "in this skill that starts with `../` is relative to this skill's folder, so "
+    "it points into the collection root, never into the project's working "
+    "directory.\n"
+)
+
+
 def _adapt_resource_paths(text: str, *, in_shared: bool) -> str:
     """Rewrite repo-root-relative references relative to the reading file.
 
@@ -284,7 +300,10 @@ def _adapt_resource_paths(text: str, *, in_shared: bool) -> str:
     (references/, principles/, ...) stay untouched — they are already
     relative to the skill directory.
     """
-    adapted = text
+    # The canonical section names a Claude Code variable and the canonical
+    # folder layout. Swap the whole section before the path rewrites below,
+    # so they do not rewrite the example paths inside it.
+    adapted = text.replace(_CANONICAL_PLUGIN_ROOT_SECTION, _COLLECTION_ROOT_SECTION)
 
     # Dynamic skill-name validation is not matched by the concrete-name regex
     # below. Generated skills are siblings in the collection, not children of
@@ -315,18 +334,10 @@ def _adapt_resource_paths(text: str, *, in_shared: bool) -> str:
     # sync with the rewritten ../ paths, especially for standalone installs
     # that do not contain the canonical repository tree.
     adapted = adapted.replace(
-        "plugin root (two levels above this SKILL.md",
-        "collection root (one level above this SKILL.md",
-    )
-    adapted = adapted.replace(
-        "plugin root — two levels above this SKILL.md —",
-        "collection root (one level above this SKILL.md) —",
-    )
-    adapted = adapted.replace(
         "plugin root (two levels above the skill directory)",
         "collection root (one level above the skill directory)",
     )
-    return adapted
+    return adapted.replace("plugin root", "collection root")
 
 
 def _ascii_normalize(text: str) -> str:
