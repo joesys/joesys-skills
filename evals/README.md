@@ -61,7 +61,7 @@ them better.
 
 | Skill | Measure | Fable 5.2 (1 run) | Opus 5.5, for scale (step 3 "new") |
 |---|---|---|---|
-| quick-review | bugs found / false alarms | 10/10 / 0 | 9/9 / 0 |
+| quick-review | required bugs found / false alarms | 9/9 / 0 | 9/9 / 0 |
 | | cost / time | $3.85 / 7 min | $1.11 |
 | codereview | planted bugs found / false alarms | 10/10 / 0 | 10/10 / 0 |
 | | cost / time | $12.92 / 20 min | $5.66, $7.48 / 13-14 min |
@@ -73,8 +73,12 @@ What the transcripts show:
 
 - Reviewer prompts held no pasted code: about 3,400-4,000 characters each, with
   a file list. Each reviewer read the files itself.
-- The plugin root variable was filled in with the temporary plugin folder, and
-  no run searched for the plugin.
+- The plugin root variable was filled in: the loaded skill text shows the
+  temporary plugin folder as the plugin root. The runs still listed the plugin's
+  folders once to find file names.
+- quick-review also reported the N+1 query, a performance bug that only
+  codereview is required to find.
+- codereview made 8 helper-agent calls: seven reviewers and the tech lead.
 - interaction-review scored agentic leverage 72, two points above the band
   (10-70), and missed "files read one by one". Opus missed the same issue in one
   of two runs. Watch this lens on the next run.
