@@ -58,6 +58,8 @@ Diff-based modes start from the diff with 50 lines of context, not full files:
 
 For these modes `<CODE_SOURCE>` is: "Run `<command>` to see the change with 50 lines of context. Open more of a file only to confirm or reject a specific finding." Do not say the diff has 50 lines of context if the command does not provide it.
 
+If the working tree does not hold the reviewed version (`--pr`, or `--commit` on an older commit), add to `<CODE_SOURCE>`: "Read file contents with `git show <ref>:<path>`, not from disk."
+
 Directory-scan and single-file modes have no diff. `<CODE_SOURCE>` is then: "Read these files in full: `<file list>`."
 
 ### 1.3 Static Analysis (Streamlined)

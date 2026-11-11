@@ -217,3 +217,17 @@ def test_cross_model_prompt_gets_the_code_from_the_shell() -> None:
     codereview = read("skills/codereview/SKILL.md")
     assert '>> "$PROMPT_FILE"' in codereview
     assert "Let the shell append" in compact(codereview)
+
+
+def test_reviewers_read_the_reviewed_version_not_whatever_is_on_disk() -> None:
+    # A pull request or an older commit may not be checked out. A reviewer that
+    # reads files from disk would then judge the wrong version of the code.
+    for relative in (
+        "skills/codereview/SKILL.md",
+        "skills/quick-review/SKILL.md",
+        "skills/readability-review/SKILL.md",
+        "skills/human-review-guide/SKILL.md",
+    ):
+        text = compact(read(relative))
+        assert "git show <ref>:<path>" in text, relative
+        assert "working tree does not hold the reviewed version" in text, relative

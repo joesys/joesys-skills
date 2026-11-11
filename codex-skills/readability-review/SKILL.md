@@ -65,6 +65,8 @@ The subagent reads the code itself. Do not copy file contents or the diff into t
 - `<FILE_LIST>`: the path of every file in scope. The subagent reads each file in full, not just the diff hunks. Story readability needs function-level context to judge narrative flow, abstraction consistency, and cognitive chunking.
 - `<DIFF_COMMAND>`: in branch-diff or PR mode, the command that prints the change (`git diff <base>...HEAD` or `gh pr diff <number>`), so the analysis can highlight what changed. In directory or file scan mode, use "N/A: directory/file scan mode".
 
+If the working tree does not hold the reviewed version (a pull request that is not checked out), fetch its head commit, name that commit in the prompt, and tell the subagent to read each file with `git show <ref>:<path>`. Use the commit id, not `FETCH_HEAD`, which can change.
+
 ---
 
 ## Phase 1: Analysis
@@ -111,7 +113,7 @@ You are a senior readability reviewer. Your job is to grade code on how well it
 
 ## Files Under Review
 <FILE_LIST>
-Read each file in full yourself before you score it.
+Read each file in full yourself before you score it. <READ_FROM_REF_NOTE_OR_OMIT>
 
 ## Change Under Review (if applicable)
 To see what changed, run: <DIFF_COMMAND>

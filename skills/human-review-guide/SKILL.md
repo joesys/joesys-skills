@@ -102,7 +102,7 @@ Pass the mode to the agent prompts. For code, chunk at the size where one chunk 
 - **`artifact`:** the content is the target file, split by heading structure (H1, H2, H3).
 - **`mixed`:** classify each file as code or non-code by extension. For code, use its diff if it has changes, otherwise its full content. For non-code, split by headings.
 
-The agents read the content themselves. Do not copy the diff or the files into a prompt: re-typing is slow, costs tokens, and makes the agents judge a copy. Prepare `<CONTENT_SOURCE>` for both agent prompts: the files to read and, for changed code, the command that prints the change (`git diff <base>...HEAD`, or `gh pr diff <number>` in PR mode). A dispatched agent cannot ask the host for more content mid-run, so make the file list and the command complete.
+The agents read the content themselves. Do not copy the diff or the files into a prompt: re-typing is slow, costs tokens, and makes the agents judge a copy. Prepare `<CONTENT_SOURCE>` for both agent prompts: the files to read and, for changed code, the command that prints the change (`git diff <base>...HEAD`, or `gh pr diff <number>` in PR mode). A dispatched agent cannot ask the host for more content mid-run, so make the file list and the command complete. If the working tree does not hold the reviewed version (a pull request that is not checked out), fetch its head commit and add to `<CONTENT_SOURCE>`: read files with `git show <ref>:<path>`, not from disk.
 
 ### 1.2 Triage — Classification Pass
 
