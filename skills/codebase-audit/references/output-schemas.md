@@ -19,7 +19,7 @@ User context is now stored in the shared preferences system:
 └── codebase-audit.md               # Audit-specific (trade-offs, cadence, history)
 ```
 
-Date-stamped directories. If today's directory exists, append suffix: `YYYYMMDD-2`.
+Date-stamped directories. If today's directory exists from an earlier run, append suffix: `YYYYMMDD-2`. Choose the folder once per run, before the first write, and put every file of the run in it.
 
 ---
 

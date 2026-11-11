@@ -274,3 +274,21 @@ def test_explain_lenses_get_the_diagram_rules_by_path() -> None:
     assert "appended to this prompt" not in skill
     standards = read("skills/explain/references/diagram-standards.md")
     assert "appended to every subagent prompt" not in standards
+
+
+def test_audit_author_reads_the_metrics_file_instead_of_receiving_a_copy() -> None:
+    # The orchestrator used to type the whole metrics JSON into the author's
+    # prompt. It now saves the file first and passes the path.
+    prompts = read("skills/codebase-audit/references/agent-prompts.md")
+    assert "{ASSEMBLED_METRICS_JSON}" not in prompts
+    assert "{PREVIOUS_METRICS_JSON_OR_NULL}" not in prompts
+    assert "{METRICS_JSON_PATH}" in prompts
+    assert "{PREVIOUS_METRICS_JSON_PATH_OR_NONE}" in prompts
+
+    skill = compact(read("skills/codebase-audit/SKILL.md"))
+    assert "save the assembled metrics as `metrics.json`" in skill
+    # One run writes in two steps, so the folder is chosen once. Otherwise the
+    # "folder exists, add a suffix" rule would split one run over two folders.
+    assert "Choose this folder once" in skill
+    schemas = compact(read("skills/codebase-audit/references/output-schemas.md"))
+    assert "Choose the folder once per run" in schemas

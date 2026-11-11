@@ -259,7 +259,9 @@ Weigh findings and recommendations against the stated phase, team size, and know
 
 ## Phase 4 - Analysis Writing
 
-One author agent writes the full analysis in one pass. Its prompt is in `references/agent-prompts.md`. It receives the assembled metrics JSON, project context, user context, risk heat map, and previous audit data (if any).
+One author agent writes the full analysis in one pass. Its prompt is in `references/agent-prompts.md`.
+
+Before you start the author, save the assembled metrics as `metrics.json` in this run's output folder (see Phase 5), with `rank` and `weight` still `null`. In `analysis` mode the file is already there. The author's prompt gets the absolute path to that file, never a copy of its contents. It also gets the project context, the user context, the risk heat map, and the absolute path to the previous audit's `metrics.json` if there is one. The previous audit is the newest `metrics.json` outside this run's folder.
 
 **Dynamic criteria weighting:** The author assigns a **priority rank** (1-12) and **weight** (High/Medium/Low) to each criterion for this language and domain. This sets priority order, overall grade, analysis depth, and recommended actions. Users can override it with `criteria_priority` in `audit.yaml`.
 
@@ -277,6 +279,8 @@ Use `references/output-schemas.md` for the schemas and templates.
 | `.codex/skill-context/codebase-audit.md` | Audit-specific preferences (trade-offs, cadence, history) | Updated each audit |
 
 Output directory: `docs/reports/codebase-audit/YYYYMMDD/`
+
+Choose this folder once, when the run writes its first file, and put every file of the run in it. For option 1 that first file is the `metrics.json` saved before Phase 4; update it here with the final ranks, weights, and overall grade by changing only those fields.
 
 Remove temp files. Report the output paths and the overall grade. Then notify completion:
 
