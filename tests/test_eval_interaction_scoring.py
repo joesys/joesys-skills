@@ -209,6 +209,7 @@ def test_one_at_a_time_about_prompts_is_not_the_file_reading_issue():
         "Each missing piece cost one turn. In that time the agent made 2 wrong edits.",
         "#### Prompt Craft — Key facts arrived one at a time (drip-feeding)",
         "Rated one by one, the prompts go from very weak (turn 0) to weak (turn 8).",
+        "Your opening prompt gave the facts one at a time.",
     ):
         assert "files-read-one-by-one" not in found_in(sentence), sentence
 

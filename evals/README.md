@@ -118,7 +118,7 @@ What this run shows:
   That sentence is about the person's prompts, not about the agent reading
   files. No finding says that the agent read three files one by one. The
   scorer is now fixed: "one by one" and "one at a time" count only in a
-  sentence that is also about reading, opening or files. Re-scoring the saved
+  sentence that also has a word starting with "read" or "file". Re-scoring the saved
   reports gives 6/7 for this run and changes no other run.
 - The reviewers did read the tool calls. The report now names the three files
   the agent read in turn 2 (`api/__init__.py`, `api/routes.py`,

@@ -18,7 +18,7 @@
     {"id": "repeated-failing-command", "kind": "problem", "lens": "error_recovery",
      "keywords": ["same command", "same test", "four times", "4 times", "re-ran", "reran", "re-running", "rerunning", "repeated the", "repeatedly ran", "ran the tests again", "without changing"]},
     {"id": "files-read-one-by-one", "kind": "problem", "lens": "agentic_leverage",
-     "keywords": [{"phrase": "one by one", "with": ["read", "file", "open"]}, {"phrase": "one at a time", "with": ["read", "file", "open"]}, "sequential read", "read three files", "grep", "search for", "searching", "subagent"]},
+     "keywords": [{"phrase": "one by one", "with": ["read", "file"]}, {"phrase": "one at a time", "with": ["read", "file"]}, "sequential read", "read three files", "grep", "search for", "searching", "subagent"]},
     {"id": "no-instruction-file", "kind": "problem", "lens": "context_instruction",
      "keywords": ["claude.md", "agents.md", "instruction file"]},
     {"id": "precise-follow-up", "kind": "strength", "lens": "prompt_craft",
