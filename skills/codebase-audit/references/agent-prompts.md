@@ -16,7 +16,7 @@ This applies to both the file references (`Read ...`) and the helper-script invo
 
 Fill these two placeholders the same way in every command:
 
-- `{source_paths}` is every source folder, separated by spaces (for example `src lib`). Put a path that contains a space in quotes. The helper scripts and the analysis tools take several folders in one call, so do not run a helper once per folder.
+- `{source_paths}` is every source folder, separated by spaces (for example `src lib`). Put a path that contains a space in quotes. The helper scripts take several folders in one call, so do not run a helper once per folder. The tool commands in `shared/tooling/` use the same placeholder where their path arguments go.
 - `{exclude_patterns}` is one quoted string of glob patterns separated by commas (for example `"vendor/*,*.min.js"`).
 
 The helpers print file paths in two ways. `compute_churn.py` prints paths relative to the repository root. `compute_structure.py` and `compute_complexity.py` print paths relative to the source folder when there is one, and relative to the closest shared parent of the source folders when there are several. Bring both to the same form before you join them for the Risk Heat Map.
