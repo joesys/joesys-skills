@@ -18,6 +18,14 @@ Use `--only old|new` to run one side and `--old-ref <commit>` to pick the
 baseline. Run each side at least twice before you trust a difference: single
 runs vary.
 
+Each run saves `<side>-<n>.md` (the printed report), `<side>-<n>.json` (cost
+and run data) and `<side>-<n>-files/` (the report files the skill wrote). An
+interaction-review run also saves `<side>-<n>-transcripts/`: the run's own
+transcript and its helpers' transcripts. The harness must delete the log
+folder of that run, because it holds the planted session, so it copies the
+transcripts out first. The other skills leave their transcripts in
+`~/.claude/projects/-tmp-skilleval-*`.
+
 | Skill | Fixture | What is scored |
 |---|---|---|
 | codereview, quick-review | `fixtures/review-target`: 10 planted bugs, 4 correct look-alikes, 1 readability-only issue | bugs found, false alarms, out-of-scope findings, other citations |
@@ -122,5 +130,6 @@ What this run shows:
 - So the new rule removed a contradiction and the reviewers now cite tool
   calls, but one run shows no gain on the two measures it was meant to help.
   It cost about $1.20 more.
-- The run's transcript is not kept: the harness deletes the temporary project
-  folder for this skill. The statements above come from the saved report.
+- The transcript of this run was not kept: the harness deleted the temporary
+  project folder for this skill. The statements above come from the saved
+  report. Later runs keep the transcript in `<side>-<n>-transcripts/`.

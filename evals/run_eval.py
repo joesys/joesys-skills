@@ -230,8 +230,15 @@ def claude_projects_root() -> Path:
 
 
 @contextmanager
-def installed_session(fixture_file: Path, work: Path, projects_root: Path, session_id: str):
+def installed_session(fixture_file: Path, work: Path, projects_root: Path, session_id: str,
+                      keep: Path | None = None):
     """Install a transcript as a Claude Code log for `work`, and remove it afterwards.
+
+    The run under review writes its own transcript, and its helpers'
+    transcripts, into the same folder. With `keep`, everything the run added is
+    copied there before the cleanup, so the run can be checked later. The
+    installed fixture log and anything that was in the folder before are not
+    copied.
 
     The fixture was written for a made-up project folder. Every mention of that
     folder (the `cwd` fields and the tool file paths) is rewritten to `work`, and
@@ -241,6 +248,7 @@ def installed_session(fixture_file: Path, work: Path, projects_root: Path, sessi
     folder = projects_root / claude_project_slug(work)
     created = not folder.exists()
     path = folder / f"{session_id}.jsonl"
+    already_there = set() if created else set(folder.iterdir())
     raw_lines = fixture_file.read_text(encoding="utf-8").splitlines()
     fixture_cwd = next(json.loads(raw)["cwd"] for raw in raw_lines if '"cwd"' in raw)
     try:
@@ -252,6 +260,15 @@ def installed_session(fixture_file: Path, work: Path, projects_root: Path, sessi
                 out.write(json.dumps(line) + "\n")
         yield path
     finally:
+        if keep is not None and folder.is_dir():
+            for entry in sorted(folder.iterdir()):
+                if entry == path or entry in already_there:
+                    continue
+                keep.mkdir(parents=True, exist_ok=True)
+                if entry.is_dir():
+                    shutil.copytree(entry, keep / entry.name, dirs_exist_ok=True)
+                else:
+                    shutil.copy2(entry, keep / entry.name)
         if created:
             shutil.rmtree(folder, ignore_errors=True)
         else:
@@ -281,13 +298,19 @@ def run_once(plugin: Path, plugin_name: str, skill: str, work: Path,
 
 
 def run_skill(plugin: Path, plugin_name: str, skill: str, work: Path,
-              budget: float, model: str | None) -> dict:
-    """Run once; for interaction-review, with the session log installed around the run."""
+              budget: float, model: str | None, transcripts: Path | None = None) -> dict:
+    """Run once; for interaction-review, with the session log installed around the run.
+
+    That log folder is deleted after the run, so the run's own transcript is
+    first copied to `transcripts`. Other skills leave their transcript in the
+    Claude Code log folder of the work dir, where it stays.
+    """
     config = SKILLS[skill]
     if config.session is None:
         return run_once(plugin, plugin_name, skill, work, budget, model)
     session_id = str(uuid.uuid4())
-    with installed_session(FIXTURES / config.session, work, claude_projects_root(), session_id):
+    with installed_session(FIXTURES / config.session, work, claude_projects_root(), session_id,
+                           keep=transcripts):
         payload = run_once(plugin, plugin_name, skill, work, budget, model,
                            target=config.target.format(session_id=session_id))
     payload["eval_session_id"] = session_id
@@ -347,7 +370,8 @@ def main(argv: list[str] | None = None) -> int:
             for label in labels:
                 work = prepare_skill_workdir(args.skill, tmp_root / f"work-{label}-{run}")
                 payload = run_skill(plugins[label], f"skilleval-{label}", args.skill,
-                                    work, budget, args.model)
+                                    work, budget, args.model,
+                                    transcripts=out / f"{label}-{run}-transcripts")
                 report = payload.get("result") or ""
                 (out / f"{label}-{run}.md").write_text(report, encoding="utf-8")
                 (out / f"{label}-{run}.json").write_text(json.dumps(payload, indent=2), encoding="utf-8")
