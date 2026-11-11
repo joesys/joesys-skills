@@ -252,3 +252,15 @@ def test_claude_delegation_defaults_to_fable() -> None:
 
     council = read("skills/ai-council/SKILL.md")
     assert "--model opus" not in council
+
+
+def test_review_rules_are_pasted_for_a_reason_that_is_true() -> None:
+    # Helper agents can open plugin files by absolute path, so "cannot open
+    # that file" was false. The block is still pasted, because it is short and
+    # a rule in the prompt is always in front of the reviewer.
+    codereview = compact(read("skills/codereview/SKILL.md"))
+    common = compact(read("shared/review-common.md"))
+    assert "cannot open" not in codereview
+    assert "cannot open" not in common
+    assert "pasted word for word" in codereview
+    assert "Paste the block below, word for word" in common

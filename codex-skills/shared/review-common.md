@@ -6,7 +6,7 @@ Reference file for `$codereview` and `$quick-review`. Read it during scope resol
 
 ## Cross-Skill Discipline (Read First)
 
-These rules apply to every review skill that reads this file. A reviewing subagent cannot open this file. So paste the block below, word for word, into the prompt of every subagent that reviews code. The orchestrator also follows `./report-style.md` for everything a person reads.
+These rules apply to every review skill that reads this file. Paste the block below, word for word, into the prompt of every subagent that reviews code. The block is short, and a rule inside the prompt is always in front of the reviewer. The orchestrator also follows `./report-style.md` for everything a person reads.
 
 ```
 ## Review Rules
