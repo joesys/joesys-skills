@@ -131,3 +131,10 @@ def test_retro_narrative_prompt_uses_plain_wording() -> None:
     assert "Do NOT" not in prompts
     assert "You are NOT" not in prompts
     assert "no headers, bullet points" in compact(prompts)
+
+
+def test_claude_skill_lists_the_current_cli_flag_values() -> None:
+    # Checked against `claude --help` on 2026-11-11.
+    skill = read("skills/claude/SKILL.md")
+    assert "(`manual`, `acceptEdits`, `auto`, `dontAsk`)" in skill
+    assert "(`low`, `medium`, `high`, `xhigh`, `max`)" in skill

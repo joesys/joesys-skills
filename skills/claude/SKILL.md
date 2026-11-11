@@ -19,8 +19,8 @@ Read `shared/delegation-common.md` first, and resolve every `shared/...` path ag
 
 Arguments to `/claude`:
 - `--model <MODEL>` - override the default model (for example `sonnet`, `haiku`, `opus[1m]`)
-- `--permission-mode <MODE>` - override the default (`default`, `acceptEdits`, `dontAsk`)
-- `--effort <LEVEL>` - override the default (`low`, `medium`, `high`, `max`)
+- `--permission-mode <MODE>` - override the default (`manual`, `acceptEdits`, `auto`, `dontAsk`)
+- `--effort <LEVEL>` - override the default (`low`, `medium`, `high`, `xhigh`, `max`)
 - `--bare` - bare mode (skips hooks, plugins, CLAUDE.md, MCP servers)
 - Any remaining text is the prompt
 
