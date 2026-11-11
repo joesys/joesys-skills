@@ -121,3 +121,14 @@ def test_readme_documents_prompt_rewriting_and_teaching() -> None:
     assert "### prompt" in readme
     assert "/prompt" in readme
     assert "what was added, removed, reorganized, or assumed" in readme
+
+
+def test_prompt_skill_teaches_the_current_prompt_style() -> None:
+    # Current models follow plain instructions closely. A prompt works better
+    # when it gives the purpose and the result, and worse when it shouts.
+    for skill in prompt_skills():
+        normalized = compact(skill)
+        assert "Say why the request exists and who the result is for" in normalized
+        assert "Give ordered steps only when the order itself matters" in normalized
+        assert "Write in a calm, normal tone" in normalized
+        assert "think step by step" in normalized

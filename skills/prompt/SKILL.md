@@ -64,6 +64,8 @@ Include only components that improve this request. Keep a simple task as a short
 ## Prompt-Writing Standard
 
 - Put the task and desired outcome in clear, direct language.
+- Say why the request exists and who the result is for, when the operator's input tells you. A receiving AI that knows the purpose makes better choices in cases the prompt did not name.
+- Describe the result, its limits, and how to check it. Give ordered steps only when the order itself matters.
 - Include relevant context and remove unrelated detail.
 - Prefer positive instructions that say what to do. Keep negative constraints when they define a real boundary.
 - Define the output when format, audience, tone, length, or completeness matters.
@@ -71,6 +73,7 @@ Include only components that improve this request. Keep a simple task as a short
 - Use a functional role only when it adds relevant expertise, perspective, or tone. Do not add decorative claims such as "world-class expert."
 - Put important instructions where they are easy to find and use consistent structure.
 - Avoid repeating a requirement in several forms.
+- Write in a calm, normal tone. Leave out capital-letter warnings, "think step by step", and "be thorough". Current models follow plain instructions closely, and extra emphasis makes them overreact.
 
 ## Coding Requests
 
