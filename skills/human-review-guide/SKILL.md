@@ -9,9 +9,13 @@ Generate a personalized reading guide for human review. Analyze a change set or 
 
 The existing review skills (`/codereview`, `/quick-review`, `/readability-review`) have the AI do the review. This skill is different — it helps the *human* review more effectively.
 
+## Plugin Root
+
+`${CLAUDE_PLUGIN_ROOT}` is the plugin root. If that is not a real folder path, your host did not fill it in; use the folder two levels above this SKILL.md instead. Every `shared/...`, `scripts/...` and `skills/...` path in this skill is under the plugin root, never under the project's working directory.
+
 ## Write for Humans
 
-Write everything a person reads in plain English for a reader who uses English as a second language. Follow `shared/report-style.md` (resolve against the plugin root — two levels above this SKILL.md — never the project's working directory).
+Write everything a person reads in plain English for a reader who uses English as a second language. Follow `shared/report-style.md`.
 
 ## Out of Scope
 
@@ -46,7 +50,7 @@ Arguments combine. If the invocation is ambiguous or unrecognizable, ask the use
 
 ### 0.1 Load User Preferences
 
-Read `shared/skill-context.md` for the full protocol (resolve `shared/...` against the plugin root — two levels above this SKILL.md — never the project's working directory). In brief: read `.claude/skill-context/preferences.md` and `.claude/skill-context/human-review-guide.md` if present; otherwise use defaults.
+Read `shared/skill-context.md` for the full protocol. In brief: read `.claude/skill-context/preferences.md` and `.claude/skill-context/human-review-guide.md` if present; otherwise use defaults.
 
 Preferences tune triage and depth. A beginner or a conservative skip tolerance surfaces more chunks; an expert or an aggressive skip tolerance surfaces fewer and focuses on non-obvious decisions. Review focus weights triage toward that concern. Detail level and verbosity set how long each analysis is.
 
@@ -94,13 +98,15 @@ Pass the mode to the agent prompts. For code, chunk at the size where one chunk 
 
 ### 1.1 Input Resolution
 
-- **`code-diff`:** detect the base branch and gather changed files per `shared/review-common.md` § Base Branch Detection and § File Gathering. Capture the diff and per-file stats (`gh pr diff <number>` in PR mode). Count files and lines changed for the output format decision in Phase 3.
-- **`artifact`:** read the target and split it by heading structure (H1, H2, H3).
+- **`code-diff`:** detect the base branch and gather changed files per `shared/review-common.md` § Base Branch Detection and § File Gathering. Capture per-file stats, and count files and lines changed for the output format decision in Phase 3.
+- **`artifact`:** the content is the target file, split by heading structure (H1, H2, H3).
 - **`mixed`:** classify each file as code or non-code by extension. For code, use its diff if it has changes, otherwise its full content. For non-code, split by headings.
+
+The agents read the content themselves. Do not copy the diff or the files into a prompt: re-typing is slow, costs tokens, and makes the agents judge a copy. Prepare `<CONTENT_SOURCE>` for both agent prompts: the files to read and, for changed code, the command that prints the change (`git diff <base>...HEAD`, or `gh pr diff <number>` in PR mode). A dispatched agent cannot ask the host for more content mid-run, so make the file list and the command complete.
 
 ### 1.2 Triage — Classification Pass
 
-Dispatch a **single subagent** to classify every chunk, using `references/agent-prompts.md` § Triage Agent. Give it the mode, the content, the calibration profile, and file stats.
+Dispatch a **single subagent** to classify every chunk, using `references/agent-prompts.md` § Triage Agent. Give it the mode, the content source, the calibration profile, and file stats.
 
 For same-platform subagents, do not pass a model or reasoning-effort override. Let every subagent inherit the parent model and reasoning effort unless the user explicitly asks for an override.
 
@@ -113,8 +119,6 @@ For same-platform subagents, do not pass a model or reasoning-effort override. L
 | 3 | `SKIM` | Straightforward, follows from decisions elsewhere | Glance for context |
 | 4 | `SKIP` | Mechanical/boilerplate | Safe to ignore |
 
-For large diffs (more than about 100 files), send the file list and stats **plus the resolved base ref** (or the `gh pr diff` command in PR mode), and tell the agent to run `git diff <base>...HEAD -- <file>` itself for any file it needs. A dispatched agent cannot ask the host for more content mid-run.
-
 ### 1.3 Validate Triage Output
 
 Every chunk needs exactly one tier and a reason; re-ask the agent for any it missed. If nothing is `DECIDE` or `READ`, say the change is mechanical and show the skip summary — do not invent decisions or run Phase 2.
@@ -125,7 +129,7 @@ Every chunk needs exactly one tier and a reason; re-ask the agent for any it mis
 
 Runs only on `DECIDE` and `READ` chunks. Other chunks pass to Phase 3 with their triage label.
 
-Dispatch a **single subagent** that processes the `DECIDE` and `READ` chunks **in order, one after another** — chunks often relate, and later analysis benefits from earlier context. Use `references/agent-prompts.md` § Deep Analysis Agent. Give it the mode, the triage output, the chunk content with surrounding context (the file around the hunk, or the parent section), the calibration profile, and any `/codereview` findings.
+Dispatch a **single subagent** that processes the `DECIDE` and `READ` chunks **in order, one after another** — chunks often relate, and later analysis benefits from earlier context. Use `references/agent-prompts.md` § Deep Analysis Agent. Give it the mode, the triage output, the content source from Phase 1, the calibration profile, and any `/codereview` findings. It reads each chunk itself, together with the file around the hunk or the parent section.
 
 It returns a decision block per `DECIDE` chunk and a comprehension block per `READ` chunk.
 
@@ -167,7 +171,7 @@ Choose terminal markdown for small changes and an HTML report for large ones —
 **HTML report:**
 
 1. Write the guide as markdown to `docs/review-guides/YYYYMMDD-HHMMSS-<slug>.md` (create the folder if needed), with YAML front-matter per `shared/html-reports.md`. The renderer writes the `.html` next to it.
-2. Call the HTML renderer. **Resolve `scripts/html_render.py` to its absolute path under the plugin root (two levels above this SKILL.md) before running** — the command runs in the user's project cwd, which does not contain the plugin's `scripts/` folder (use `python3` where present, falling back to `python` on Windows):
+2. Call the HTML renderer. **Resolve `scripts/html_render.py` to its absolute path under the plugin root before running** — the command runs in the user's project cwd, which does not contain the plugin's `scripts/` folder (use `python3` where present, falling back to `python` on Windows):
 
 ````bash
 python scripts/html_render.py <report_path> --profile analytical

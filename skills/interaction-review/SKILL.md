@@ -9,9 +9,13 @@ Grade how well the user collaborates with an AI coding agent, from past session 
 
 The report is a self-improvement tool, not an audit. The tone is coaching, not punitive.
 
+## Plugin Root
+
+`${CLAUDE_PLUGIN_ROOT}` is the plugin root. If that is not a real folder path, your host did not fill it in; use the folder two levels above this SKILL.md instead. Every `shared/...`, `scripts/...` and `skills/...` path in this skill is under the plugin root, never under the project's working directory.
+
 ## Write for Humans
 
-Write everything a person reads in plain English for a reader who uses English as a second language. Follow `shared/report-style.md` (resolve against the plugin root — two levels above this SKILL.md — never the project's working directory).
+Write everything a person reads in plain English for a reader who uses English as a second language. Follow `shared/report-style.md`.
 
 ## Out of Scope
 
@@ -145,7 +149,7 @@ If the coach fails, keep the Phase 3 draft, note in the header that the coach re
 ## Phase 4: Report
 
 1. Write the report to `docs/interaction-review/YYYYMMDD-interaction-review.md` (today's date), with the front-matter from `references/output-formats.md`. Create the folder if needed.
-2. Render the HTML companion. This is best-effort; the markdown is always saved. Resolve `scripts/html_render.py` to its absolute path under the plugin root (two levels above this SKILL.md) first, because the command runs in the user's project directory. Use `python3`, or `python` on Windows. If rendering fails, warn the user and continue.
+2. Render the HTML companion. This is best-effort; the markdown is always saved. Resolve `scripts/html_render.py` to its absolute path under the plugin root first, because the command runs in the user's project directory. Use `python3`, or `python` on Windows. If rendering fails, warn the user and continue.
 
    ```
    python scripts/html_render.py docs/interaction-review/YYYYMMDD-interaction-review.md --profile analytical

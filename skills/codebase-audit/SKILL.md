@@ -9,9 +9,13 @@ Measure up to 12 quality criteria and development velocity with 6 collection age
 
 Scores must stay comparable from one audit to the next, so apply the rubrics, benchmarks, adjustments, and labels in the reference files as written.
 
+## Plugin Root
+
+`${CLAUDE_PLUGIN_ROOT}` is the plugin root. If that is not a real folder path, your host did not fill it in; use the folder two levels above this SKILL.md instead. Every `shared/...`, `scripts/...` and `skills/...` path in this skill is under the plugin root, never under the project's working directory.
+
 ## Write for Humans
 
-Write everything a person reads in plain English for a reader who uses English as a second language. Follow `shared/report-style.md` (resolve against the plugin root — two levels above this SKILL.md — never the project's working directory).
+Write everything a person reads in plain English for a reader who uses English as a second language. Follow `shared/report-style.md`.
 
 ## Out of Scope
 
@@ -68,7 +72,7 @@ Read each file when its phase needs it:
 
 ## Phase 0 — Parse, Detect & Route
 
-Use `references/detection-defaults.md` for detection rules. Use `shared/tooling-registry.md` and the per-language profiles in `shared/tooling/` for tools. Use `shared/skill-context.md` for the preferences protocol (resolve `shared/...` against the plugin root — two levels above this SKILL.md — never the project's working directory).
+Use `references/detection-defaults.md` for detection rules. Use `shared/tooling-registry.md` and the per-language profiles in `shared/tooling/` for tools. Use `shared/skill-context.md` for the preferences protocol.
 
 Phase 0 must produce:
 

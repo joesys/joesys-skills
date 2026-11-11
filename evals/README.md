@@ -51,3 +51,36 @@ cheaper and faster. interaction-review scores about 3-4 points more leniently
 on the same session (error recovery +5, context +7), and codebase-audit moved
 modularity up one step; both are noted here so later trend comparisons are
 read with that in mind.
+
+## Results: first runs on Fable 5.2 (2026-11-11)
+
+One run per skill of the working tree after the Fable 5.2 review edits
+(`--only new --model claude-fable-5-2`). There is no "old" run on Fable, so
+these runs show that the skills work on this model, not that the edits made
+them better.
+
+| Skill | Measure | Fable 5.2 (1 run) | Opus 5.5, for scale (step 3 "new") |
+|---|---|---|---|
+| quick-review | bugs found / false alarms | 10/10 / 0 | 9/9 / 0 |
+| | cost / time | $3.85 / 7 min | $1.11 |
+| codereview | planted bugs found / false alarms | 10/10 / 0 | 10/10 / 0 |
+| | cost / time | $12.92 / 20 min | $5.66, $7.48 / 13-14 min |
+| interaction-review | designed issues found | 6/7 | 6/7, 7/7 |
+| | overall score (bad session) | 62 | 60, 61 |
+| | cost / time | $10.96 / 18 min | $7.31, $6.71 |
+
+What the transcripts show:
+
+- Reviewer prompts held no pasted code: about 3,400-4,000 characters each, with
+  a file list. Each reviewer read the files itself.
+- The plugin root variable was filled in with the temporary plugin folder, and
+  no run searched for the plugin.
+- interaction-review scored agentic leverage 72, two points above the band
+  (10-70), and missed "files read one by one". Opus missed the same issue in one
+  of two runs. Watch this lens on the next run.
+- codereview on Fable tried to send the review to Codex and Antigravity, which
+  the Opus runs never did. The harness denied the command, because
+  `ALLOWED_TOOLS` has no rule for it. So the cross-model path is still not
+  tested, and a run that should test it needs a wider allow list.
+- The fixture reviews a folder, not a diff, so the diff-command wording in the
+  review skills was not exercised.

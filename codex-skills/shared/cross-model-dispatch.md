@@ -21,7 +21,7 @@ Choose the cross-model CLI based on which host you are:
 | You Are | Dispatch To | Command |
 |---|---|---|
 | Claude | Both Codex + Antigravity | Two parallel dispatches |
-| Codex | Antigravity | `python <ADAPTER> --mode plan --sandbox` (absolute path to `../scripts/agy_adapter.py` under the plugin root — see `./model-defaults.md` § Antigravity) |
+| Codex | Antigravity | `python <ADAPTER> --mode plan --sandbox` (absolute path to `../scripts/agy_adapter.py` under the collection root — see `./model-defaults.md` § Antigravity) |
 | Antigravity | Codex | `codex exec` |
 | Unknown | Both Codex + Claude | Two parallel dispatches |
 

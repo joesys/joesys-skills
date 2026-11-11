@@ -49,7 +49,7 @@ artifact.
 | `auto` | Detect the current host and use it; fall back to `generic` when detection is inconclusive |
 | `claude` | Use Claude Code terminology and point to applicable `CLAUDE.md` guidance |
 | `codex` | Use Codex skill terminology, applicable `AGENTS.md`, and active sandbox and approval policy |
-| `gemini` | Use Gemini terminology and point to applicable `GEMINI.md` guidance |
+| `antigravity` | Use Antigravity terminology and point to applicable `AGENTS.md` or `GEMINI.md` guidance |
 | `generic` | Use no client-specific commands, paths, tools, memory locations, or capability assumptions |
 
 Target profiles may change only:
@@ -81,12 +81,13 @@ a named host from repository files alone.
 - Do not require Claude model aliases, Claude tool names, or unavailable
   per-agent model selection.
 
-### `gemini`
+### `antigravity`
 
-- Refer generically to activating the handoff skill unless the installed Gemini
-  surface provides a stable invocation alias.
-- Tell the reader to follow applicable `GEMINI.md` instructions.
-- Do not depend on Gemini checkpoint storage or transcript paths.
+- Refer generically to activating the handoff skill unless the installed
+  Antigravity surface provides a stable invocation alias.
+- Tell the reader to follow applicable `AGENTS.md` or `GEMINI.md` instructions.
+  Antigravity reads both.
+- Do not depend on Antigravity conversation storage or transcript paths.
 - Do not prescribe a model, approval mode, or subagent topology.
 
 ### `generic`
@@ -102,7 +103,7 @@ a named host from repository files alone.
 |---|---|---|---|
 | Default fresh session | `self` | `auto` | Concise checkpoint for the same operator on the current host |
 | Move personal work from Claude to Codex | `self` | `codex` | Same-operator context with a Codex bootstrap |
-| Delegate implementation to Gemini | `agent` | `gemini` | Explicit authority and report-back contract with a Gemini bootstrap |
+| Delegate implementation to Antigravity | `agent` | `antigravity` | Explicit authority and report-back contract with an Antigravity bootstrap |
 | Hand work to a teammate | `human` | `generic` | Rationale and review guidance without agent instructions |
 
 ## Stability Rule

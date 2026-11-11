@@ -7,9 +7,13 @@ description: "Use when the user invokes $readability-review to grade how well co
 
 Grade code on how well it "reads like a story" using 8 weighted dimensions. Produces a numeric score (0-100) mapped to a letter grade, with thematic findings and file-by-file breakdown including concrete refactoring suggestions.
 
+## Collection Root
+
+The collection root is the folder one level above this SKILL.md. Every path in this skill that starts with `../` is relative to this skill's folder, so it points into the collection root, never into the project's working directory.
+
 ## Write for Humans
 
-Write everything a person reads in plain English for a reader who uses English as a second language. Follow `../shared/report-style.md` (resolve against the collection root (one level above this SKILL.md) - never the project's working directory).
+Write everything a person reads in plain English for a reader who uses English as a second language. Follow `../shared/report-style.md`.
 
 ## Out of Scope
 
@@ -41,7 +45,7 @@ If the invocation is ambiguous, ask the user to clarify.
 
 ### 0.1 Load User Preferences
 
-Read `../shared/skill-context.md` for the full protocol (resolve `../shared/...` against the collection root (one level above this SKILL.md) - never the project's working directory). Read `.codex/skill-context/preferences.md` and `.codex/skill-context/readability-review.md` if present; otherwise use defaults. Two readability settings change the scoring:
+Read `../shared/skill-context.md` for the full protocol. Read `.codex/skill-context/preferences.md` and `.codex/skill-context/readability-review.md` if present; otherwise use defaults. Two readability settings change the scoring:
 
 | Preference | Effect |
 |---|---|
@@ -54,11 +58,12 @@ Pass relevant preferences to the analysis subagent in Phase 1.
 
 Read `../shared/review-common.md` Section Base Branch Detection, Section File Gathering, and Section Target Language Detection.
 
-### 0.3 Content Loading
+### 0.3 Review Inputs
 
-Load the **full content** of every file in scope - not just diff hunks. Story readability requires function-level context to judge narrative flow, abstraction consistency, and cognitive chunking.
+The subagent reads the code itself. Do not copy file contents or the diff into the prompt: re-typing is slow, costs tokens, and makes the reviewer judge a copy. Prepare two values:
 
-In branch-diff or PR mode, also capture the diff so the analysis can highlight what changed.
+- `<FILE_LIST>`: the path of every file in scope. The subagent reads each file in full, not just the diff hunks. Story readability needs function-level context to judge narrative flow, abstraction consistency, and cognitive chunking.
+- `<DIFF_COMMAND>`: in branch-diff or PR mode, the command that prints the change (`git diff <base>...HEAD` or `gh pr diff <number>`), so the analysis can highlight what changed. In directory or file scan mode, use "N/A: directory/file scan mode".
 
 ---
 
@@ -70,7 +75,7 @@ For same-platform subagents, do not pass a model or reasoning-effort override. L
 
 ### Subagent Prompt
 
-Before dispatch, substitute **every** `<ANGLE_BRACKET>` placeholder in the template below. In particular, replace `<PRINCIPLE_PATH>` with the **absolute path** to `../shared/story-readability.md`, resolved against the collection root (one level above this SKILL.md) - never against the project's working directory; subagents start in the project cwd and cannot find plugin files by relative path. The remaining placeholders take their resolved values or the quoted fallback.
+Before dispatch, substitute **every** `<ANGLE_BRACKET>` placeholder in the template below. In particular, replace `<PRINCIPLE_PATH>` with the **absolute path** to `../shared/story-readability.md` under the collection root; subagents start in the project cwd and cannot find plugin files by relative path. The remaining placeholders take their resolved values or the quoted fallback.
 
 ```
 You are a senior readability reviewer. Your job is to grade code on how well it
@@ -105,10 +110,11 @@ You are a senior readability reviewer. Your job is to grade code on how well it
 <USER_PREFERENCES_OR_"None">
 
 ## Files Under Review
-<FILES_CONTENT>
+<FILE_LIST>
+Read each file in full yourself before you score it.
 
-## Diff Context (if applicable)
-<DIFF_CONTENT_OR_"N/A - directory/file scan mode">
+## Change Under Review (if applicable)
+To see what changed, run: <DIFF_COMMAND>
 
 ## Output Format
 For each file, output a table with one row per dimension (all 8, in the

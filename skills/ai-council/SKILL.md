@@ -7,9 +7,13 @@ description: "Use when the user invokes /ai-council to consult three frontier AI
 
 Send the same question to three frontier AI models (Claude, GPT via Codex, Antigravity) in parallel. Then combine their answers into one analysis that shows where they agree and where they differ.
 
+## Plugin Root
+
+`${CLAUDE_PLUGIN_ROOT}` is the plugin root. If that is not a real folder path, your host did not fill it in; use the folder two levels above this SKILL.md instead. Every `shared/...`, `scripts/...` and `skills/...` path in this skill is under the plugin root, never under the project's working directory.
+
 ## Write for Humans
 
-Write everything a person reads in plain English for a reader who uses English as a second language. Follow `shared/report-style.md` (resolve against the plugin root — two levels above this SKILL.md — never the project's working directory).
+Write everything a person reads in plain English for a reader who uses English as a second language. Follow `shared/report-style.md`.
 
 ## Ground Rules
 
@@ -18,7 +22,7 @@ Write everything a person reads in plain English for a reader who uses English a
 - Treat the three legs as peers. Do not tilt the synthesis toward the host model; dissent from any leg gets equal weight.
 - Never drop a leg silently. If a leg fails, name the missing model in the synthesis and offer a retry.
 - Write nothing to the project except the council output folder.
-- Read `shared/delegation-common.md` (resolve `shared/...` against the same plugin root) for prompt delivery, critical evaluation, and failure reporting, and `shared/model-defaults.md` for the current CLI command templates.
+- Read `shared/delegation-common.md` for prompt delivery, critical evaluation, and failure reporting, and `shared/model-defaults.md` for the current CLI command templates.
 
 ## Invocation
 

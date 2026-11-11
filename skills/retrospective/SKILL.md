@@ -7,9 +7,13 @@ description: "Use when the user invokes /retrospective to run a structured, disc
 
 Run a structured retrospective with the human. Five channel agents mine different data sources (git history, conversations, code quality, planning docs, tests) into a digest. Derive discussion topics from that data, walk through them with the human, and produce three output layers: action items, process improvements, and skill improvements. Finish with a readable narrative.
 
+## Plugin Root
+
+`${CLAUDE_PLUGIN_ROOT}` is the plugin root. If that is not a real folder path, your host did not fill it in; use the folder two levels above this SKILL.md instead. Every `shared/...`, `scripts/...` and `skills/...` path in this skill is under the plugin root, never under the project's working directory.
+
 ## Write for Humans
 
-Write everything a person reads in plain English for a reader who uses English as a second language. Follow `shared/report-style.md` (resolve against the plugin root — two levels above this SKILL.md — never the project's working directory).
+Write everything a person reads in plain English for a reader who uses English as a second language. Follow `shared/report-style.md`.
 
 ## Out of Scope
 

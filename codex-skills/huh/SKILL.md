@@ -17,9 +17,13 @@ explanation is least confident, and what the operator has not asked yet.
 **Boundary:** This skill explains. It never acts - no edits, no commands, no
 re-running or re-doing the earlier work. It writes the explanation and stops.
 
+## Collection Root
+
+The collection root is the folder one level above this SKILL.md. Every path in this skill that starts with `../` is relative to this skill's folder, so it points into the collection root, never into the project's working directory.
+
 ## Write for Humans
 
-Write everything a person reads in plain English for a reader who uses English as a second language. Follow `../shared/report-style.md` (resolve against the collection root (one level above this SKILL.md) - never the project's working directory).
+Write everything a person reads in plain English for a reader who uses English as a second language. Follow `../shared/report-style.md`.
 
 ## Invocation
 

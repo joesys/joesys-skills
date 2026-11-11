@@ -11,9 +11,13 @@ Capture development insights for budding programmers. A **scrap** is a short, si
 
 This file holds the scrap path in full, because scraps run often and automatically (for example, `$commit` runs `$devlog scrap --from-context` after significant commits). Write mode and List mode live in reference files and are read only when needed.
 
+## Collection Root
+
+The collection root is the folder one level above this SKILL.md. Every path in this skill that starts with `../` is relative to this skill's folder, so it points into the collection root, never into the project's working directory.
+
 ## Write for Humans
 
-Write everything a person reads in plain English for a reader who uses English as a second language. Follow `../shared/report-style.md` (resolve against the collection root (one level above this SKILL.md) - never the project's working directory).
+Write everything a person reads in plain English for a reader who uses English as a second language. Follow `../shared/report-style.md`.
 
 ## Out of Scope
 

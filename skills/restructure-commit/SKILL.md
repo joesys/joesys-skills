@@ -9,13 +9,17 @@ Restructure recent history. Take related recent commits — plus any new uncommi
 
 For ordinary new commits, use `/commit`. This skill is only for changing commits that already exist.
 
+## Plugin Root
+
+`${CLAUDE_PLUGIN_ROOT}` is the plugin root. If that is not a real folder path, your host did not fill it in; use the folder two levels above this SKILL.md instead. Every `shared/...`, `scripts/...` and `skills/...` path in this skill is under the plugin root, never under the project's working directory.
+
 ## Write for Humans
 
-Write everything a person reads in plain English for a reader who uses English as a second language. Follow `shared/report-style.md` (resolve against the plugin root — two levels above this SKILL.md — never the project's working directory).
+Write everything a person reads in plain English for a reader who uses English as a second language. Follow `shared/report-style.md`.
 
 ## Rules Shared with /commit
 
-Read `skills/commit/SKILL.md` (resolve against the plugin root — two levels above this SKILL.md — never the project's working directory). Apply these sections from it exactly:
+Read `skills/commit/SKILL.md`. Apply these sections from it exactly:
 
 - **Preflight: Never `git push` Without Express Authorization**
 - **Convention**, **Plain-Language Standard**, **Body**, **Durable-reader check** — every new commit and the merge commit use this message format.

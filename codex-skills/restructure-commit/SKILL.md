@@ -9,13 +9,17 @@ Restructure recent history. Take related recent commits - plus any new uncommitt
 
 For ordinary new commits, use `$commit`. This skill is only for changing commits that already exist.
 
+## Collection Root
+
+The collection root is the folder one level above this SKILL.md. Every path in this skill that starts with `../` is relative to this skill's folder, so it points into the collection root, never into the project's working directory.
+
 ## Write for Humans
 
-Write everything a person reads in plain English for a reader who uses English as a second language. Follow `../shared/report-style.md` (resolve against the collection root (one level above this SKILL.md) - never the project's working directory).
+Write everything a person reads in plain English for a reader who uses English as a second language. Follow `../shared/report-style.md`.
 
 ## Rules Shared with $commit
 
-Read `../commit/SKILL.md` (resolve against the collection root (one level above this SKILL.md) - never the project's working directory). Apply these sections from it exactly:
+Read `../commit/SKILL.md`. Apply these sections from it exactly:
 
 - **Preflight: Never `git push` Without Express Authorization**
 - **Convention**, **Plain-Language Standard**, **Body**, **Durable-reader check** - every new commit and the merge commit use this message format.

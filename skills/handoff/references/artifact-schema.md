@@ -46,8 +46,8 @@ Field rules:
 | `audience` | `self`, `agent`, or `human` |
 | `detail` | `operational`, `full`, or `compact` |
 | `project` | Repository or project name, not an absolute path |
-| `source_host` | `claude`, `codex`, `gemini`, or `generic` |
-| `target_host` | `claude`, `codex`, `gemini`, or `generic` |
+| `source_host` | `claude`, `codex`, `antigravity`, or `generic` |
+| `target_host` | `claude`, `codex`, `antigravity`, or `generic` |
 | `branch` | Git branch, or `null` when unavailable |
 | `head` | Full Git object ID, or `null` when unavailable |
 | `working_tree` | `clean`, `dirty`, or `unverifiable` |
@@ -55,6 +55,9 @@ Field rules:
 
 Keep `repository_snapshot` on one line so the standard-library helper can
 extract it without a YAML dependency. Do not edit its data manually.
+
+Handoffs saved before November 2026 may name the host `gemini`. When you load
+one, read `gemini` as `antigravity`.
 
 ## Required Sections
 

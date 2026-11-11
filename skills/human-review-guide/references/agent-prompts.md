@@ -51,7 +51,8 @@ You are classifying a change set into attention tiers for a human reviewer. Your
 - Role "{role}": adjust thresholds based on what the reviewer would find obvious vs. unfamiliar
 
 ## Content to Classify
-<DIFF_OR_CONTENT>
+<CONTENT_SOURCE>
+Read the content yourself. For a large change, run the diff one file at a time (`<command> -- <file>`).
 
 ## File Statistics
 <FILE_STATS>
@@ -105,7 +106,8 @@ You are producing deep analysis for chunks that a triage pass identified as need
 <TRIAGE_OUTPUT>
 
 ## Content of DECIDE and READ Chunks
-<CHUNK_CONTENT_WITH_CONTEXT>
+<CONTENT_SOURCE>
+Read each DECIDE and READ chunk yourself, together with the file around the hunk or the parent section.
 
 ## /codereview Findings (if --with-review)
 <CODE_REVIEW_FINDINGS or "None — running without /codereview enrichment.">

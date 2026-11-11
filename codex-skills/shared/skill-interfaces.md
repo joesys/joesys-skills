@@ -112,7 +112,7 @@ interfaces, update all callers listed below.
 
 ## Handoff Skill Interface
 
-**Invocation:** `$handoff [--full | --compact] [--interactive] [--for self|agent|human] [--target auto|claude|codex|gemini|generic] [--include-diff] [--output <path>]`
+**Invocation:** `$handoff [--full | --compact] [--interactive] [--for self|agent|human] [--target auto|claude|codex|antigravity|generic] [--include-diff] [--output <path>]`
 
 **Resume:** `$handoff resume [<file>]`
 
@@ -136,7 +136,7 @@ interfaces, update all callers listed below.
 
 **Stable enum values:**
 - Audience: `self`, `agent`, `human`
-- Target: `auto`, `claude`, `codex`, `gemini`, `generic`
+- Target: `auto`, `claude`, `codex`, `antigravity`, `generic`
 - Detail: `operational`, `full`, `compact`
 - Drift: `exact`, `advanced`, `drifted`, `unverifiable`
 

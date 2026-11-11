@@ -10,9 +10,13 @@ continue work safely without replaying or mining the original conversation.
 The default is a concise checkpoint for the same operator in a fresh AI
 session. The same schema also supports independent agents and humans.
 
+## Plugin Root
+
+`${CLAUDE_PLUGIN_ROOT}` is the plugin root. If that is not a real folder path, your host did not fill it in; use the folder two levels above this SKILL.md instead. Every `shared/...`, `scripts/...` and `skills/...` path in this skill is under the plugin root, never under the project's working directory.
+
 ## Write for Humans
 
-Write everything a person reads in plain English for a reader who uses English as a second language. Follow `shared/report-style.md` (resolve against the plugin root — two levels above this SKILL.md — never the project's working directory).
+Write everything a person reads in plain English for a reader who uses English as a second language. Follow `shared/report-style.md`.
 
 ## Out of Scope
 
@@ -42,7 +46,7 @@ to this skill's directory, never the user's project working directory.
 | `references/audience-target-profiles.md` | Audience emphasis and target-specific bootstrap rules |
 | `helpers/handoff_state.py` | Deterministic read-only snapshot and drift classifier |
 
-Also read `shared/skill-context.md` (resolve against the plugin root — two levels above this SKILL.md — never the project's working directory) and the preference files it names, if present.
+Also read `shared/skill-context.md` and the preference files it names, if present.
 Preferences may tune concision, tone, and assumed knowledge. They never change
 repository truth or drift classification.
 
@@ -54,7 +58,7 @@ repository truth or drift classification.
 /handoff --compact
 /handoff --interactive
 /handoff --for self|agent|human
-/handoff --target auto|claude|codex|gemini|generic
+/handoff --target auto|claude|codex|antigravity|generic
 /handoff --include-diff
 /handoff --output <path>
 
@@ -71,7 +75,7 @@ Options may be combined except where noted:
 | `--compact` | Emit the minimum schema-valid checkpoint |
 | `--interactive` | Ask focused questions before writing instead of relying entirely on inference |
 | `--for self|agent|human` | Select the audience profile; default `self` |
-| `--target auto|claude|codex|gemini|generic` | Select Target Bootstrap; default `auto` |
+| `--target auto|claude|codex|antigravity|generic` | Select Target Bootstrap; default `auto` |
 | `--include-diff` | Append a filtered relevant Diff Appendix |
 | `--output <path>` | Override `.handoffs/YYYYMMDD-HHMMSS-<slug>.md` |
 | `resume [<file>]` | Validate and continue a named handoff, or the newest valid handoff for the current project |
