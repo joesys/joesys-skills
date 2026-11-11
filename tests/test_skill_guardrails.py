@@ -303,3 +303,12 @@ def test_audit_updates_the_saved_metrics_file_instead_of_typing_it_again() -> No
     skill = compact(read("skills/codebase-audit/SKILL.md"))
     assert "by changing only those fields" in skill
     assert "the save before Phase 4, Phase 5, and those modes" in skill
+
+
+def test_audit_prompts_say_how_to_write_several_source_folders() -> None:
+    # `{source_paths}` goes into helper and tool commands. The helpers take
+    # several folders in one call, so the prompt file states the format once.
+    prompts = compact(read("skills/codebase-audit/references/agent-prompts.md"))
+    assert "`{source_paths}` is every source folder, separated by spaces" in prompts
+    assert "do not run a helper once per folder" in prompts
+    assert "`{exclude_patterns}` is one quoted string of glob patterns separated by commas" in prompts

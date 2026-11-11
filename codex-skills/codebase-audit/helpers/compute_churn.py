@@ -18,20 +18,21 @@ from pathlib import PurePosixPath
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Compute git churn metrics")
-    parser.add_argument("--source", default=".", help="Source directory to analyze (default: .)")
+    parser.add_argument("--source", default=["."], nargs="+",
+                        help="One or more source directories, separated by spaces (default: .)")
     parser.add_argument("--exclude", default="", help="Comma-separated glob patterns to exclude")
     parser.add_argument("--days", type=int, default=30, help="Number of days to look back (default: 30)")
     return parser.parse_args()
 
 
-def get_git_numstat(source: str, days: int) -> str:
+def get_git_numstat(sources: list[str], days: int) -> str:
     """Run git log --numstat and return raw output."""
     cmd = [
         "git", "log",
         f"--since={days} days ago",
         "--numstat",
         "--pretty=format:",
-        "--", source,
+        "--", *sources,
     ]
     result = subprocess.run(cmd, capture_output=True, text=True)
     if result.returncode != 0:
@@ -85,11 +86,11 @@ def parse_numstat(raw: str, exclude_patterns: list[str]) -> dict[str, dict]:
     return dict(files)
 
 
-def compute_churn(source: str, exclude: str, days: int) -> dict:
+def compute_churn(sources: list[str], exclude: str, days: int) -> dict:
     """Compute churn metrics and return structured data."""
     exclude_patterns = [p.strip() for p in exclude.split(",") if p.strip()]
 
-    raw = get_git_numstat(source, days)
+    raw = get_git_numstat(sources, days)
     files = parse_numstat(raw, exclude_patterns)
 
     total_added = sum(f["added"] for f in files.values())

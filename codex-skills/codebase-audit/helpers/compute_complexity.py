@@ -94,7 +94,8 @@ def parse_args() -> argparse.Namespace:
         choices=list(LANGUAGE_PROFILES.keys()),
         help="Language to analyse",
     )
-    parser.add_argument("--source", required=True, help="Root directory to scan")
+    parser.add_argument("--source", required=True, nargs="+",
+                        help="One or more root directories to scan, separated by spaces")
     parser.add_argument("--exclude", default="", help="Comma-separated glob patterns to exclude")
     return parser.parse_args()
 
@@ -128,6 +129,25 @@ def discover_files(source: str, extensions: list[str], exclude_patterns: list[st
             results.append(str(fpath))
     results.sort()
     return results
+
+
+def discover_all(sources: list[str], extensions: list[str], exclude_patterns: list[str]) -> list[str]:
+    """Files under every source folder, each file once, in sorted order."""
+    found: set[str] = set()
+    for source in sources:
+        found.update(discover_files(source, extensions, exclude_patterns))
+    return sorted(found)
+
+
+def display_root(sources: list[str]) -> str:
+    """The folder that printed paths are relative to.
+
+    With one source folder it is that folder, as before. With several it is
+    their closest shared parent, so `src/a.py` and `lib/a.py` stay different.
+    """
+    if len(sources) == 1:
+        return sources[0]
+    return os.path.commonpath([str(Path(source).resolve()) for source in sources])
 
 
 # ── Source cleaning ───────────────────────────────────────────────
@@ -345,7 +365,8 @@ def main() -> None:
     profile = LANGUAGE_PROFILES[args.lang]
     exclude_patterns = [p.strip() for p in args.exclude.split(",") if p.strip()]
 
-    files = discover_files(args.source, profile["extensions"], exclude_patterns)
+    files = discover_all(args.source, profile["extensions"], exclude_patterns)
+    root = display_root(args.source)
 
     all_functions: list[dict] = []
 
@@ -357,10 +378,10 @@ def main() -> None:
 
         if profile["mode"] == "indent":
             cleaned = _strip_strings_and_comments_indent(raw)
-            funcs = _parse_indent_based(raw, cleaned, profile, fpath, args.source)
+            funcs = _parse_indent_based(raw, cleaned, profile, fpath, root)
         else:
             cleaned = _strip_strings_and_comments_brace(raw)
-            funcs = _parse_brace_based(raw, cleaned, profile, fpath, args.source)
+            funcs = _parse_brace_based(raw, cleaned, profile, fpath, root)
 
         all_functions.extend(funcs)
 

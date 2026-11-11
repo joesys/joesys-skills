@@ -200,3 +200,31 @@ class TestComputeComplexity:
         assert data["total_functions"] == 1
         # CC = 1 + case + case = 3
         assert data["functions"][0]["complexity"] == 3
+
+
+class TestSeveralSourceFolders:
+    def test_two_roots_with_the_same_file_name_keep_different_paths(self, tmp_path):
+        _write_file(tmp_path, "src/a.py", """\
+            def one():
+                return 1
+        """)
+        _write_file(tmp_path, "lib/a.py", """\
+            def two():
+                return 2
+        """)
+        data = _run([
+            "--lang", "python",
+            "--source", str(tmp_path / "src"), str(tmp_path / "lib"),
+        ])
+
+        assert data["total_functions"] == 2
+        assert sorted(f["file"] for f in data["functions"]) == ["lib/a.py", "src/a.py"]
+
+    def test_one_root_keeps_paths_relative_to_it(self, tmp_path):
+        _write_file(tmp_path, "src/a.py", """\
+            def one():
+                return 1
+        """)
+        data = _run(["--lang", "python", "--source", str(tmp_path / "src")])
+
+        assert [f["file"] for f in data["functions"]] == ["a.py"]
