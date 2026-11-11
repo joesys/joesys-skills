@@ -52,8 +52,9 @@ def test_profiles_separate_audience_from_target() -> None:
     profiles = read("references/audience-target-profiles.md")
     for audience in ["self", "agent", "human"]:
         assert f"`{audience}`" in profiles
-    for target in ["auto", "claude", "codex", "gemini", "generic"]:
+    for target in ["auto", "claude", "codex", "antigravity", "generic"]:
         assert f"`{target}`" in profiles
+    assert "`gemini`" not in profiles
     assert "authority" in profiles.lower()
     assert "report-back" in profiles.lower()
     assert "review" in profiles.lower()
@@ -73,7 +74,7 @@ def test_skill_frontmatter_and_invocations() -> None:
         "--compact",
         "--interactive",
         "--for self|agent|human",
-        "--target auto|claude|codex|gemini|generic",
+        "--target auto|claude|codex|antigravity|generic",
         "--include-diff",
         "--output <path>",
         "/handoff resume",
@@ -122,3 +123,11 @@ def test_skill_does_not_mine_host_transcript_paths() -> None:
     assert "~/.claude/projects" not in skill
     assert "~/.codex/sessions" not in skill
     assert "~/.gemini/tmp" not in skill
+
+
+def test_older_handoffs_that_name_gemini_still_resume() -> None:
+    # The target was called `gemini` before November 2026. Saved handoffs keep
+    # that value, so the schema must say how to read it.
+    schema = " ".join(read("references/artifact-schema.md").split())
+    assert "`claude`, `codex`, `antigravity`, or `generic`" in schema
+    assert "read `gemini` as `antigravity`" in schema

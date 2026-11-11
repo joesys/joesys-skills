@@ -332,7 +332,7 @@ without copying raw conversation transcripts.
 /handoff --compact
 /handoff --interactive
 /handoff --for self --target codex
-/handoff --for agent --target gemini
+/handoff --for agent --target antigravity
 /handoff --for human --include-diff
 /handoff --output notes/my-handoff.md
 /handoff resume
@@ -342,7 +342,7 @@ without copying raw conversation transcripts.
 | Setting | Values and behavior |
 |---|---|
 | Audience | `self`, `agent`, or `human`; default `self` |
-| Target | `auto`, `claude`, `codex`, `gemini`, or `generic`; default `auto` |
+| Target | `auto`, `claude`, `codex`, `antigravity`, or `generic`; default `auto` |
 | Detail | Operational by default, or `--full` / `--compact` |
 | Drift | Resume classifies state as `exact`, `advanced`, `drifted`, or `unverifiable` |
 | Output | `.handoffs/YYYYMMDD-HHMMSS-<slug>.md` unless overridden |

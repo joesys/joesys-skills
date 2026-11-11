@@ -54,7 +54,7 @@ repository truth or drift classification.
 /handoff --compact
 /handoff --interactive
 /handoff --for self|agent|human
-/handoff --target auto|claude|codex|gemini|generic
+/handoff --target auto|claude|codex|antigravity|generic
 /handoff --include-diff
 /handoff --output <path>
 
@@ -71,7 +71,7 @@ Options may be combined except where noted:
 | `--compact` | Emit the minimum schema-valid checkpoint |
 | `--interactive` | Ask focused questions before writing instead of relying entirely on inference |
 | `--for self|agent|human` | Select the audience profile; default `self` |
-| `--target auto|claude|codex|gemini|generic` | Select Target Bootstrap; default `auto` |
+| `--target auto|claude|codex|antigravity|generic` | Select Target Bootstrap; default `auto` |
 | `--include-diff` | Append a filtered relevant Diff Appendix |
 | `--output <path>` | Override `.handoffs/YYYYMMDD-HHMMSS-<slug>.md` |
 | `resume [<file>]` | Validate and continue a named handoff, or the newest valid handoff for the current project |
