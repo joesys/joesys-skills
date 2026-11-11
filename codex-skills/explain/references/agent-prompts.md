@@ -1,6 +1,6 @@
 # Explain — Agent Prompts
 
-Prompt templates for the five lens subagents in Phase 2. Build each prompt as described in `SKILL.md`: Guiding Principles, then Diagram Standards, then preferences, then the template below.
+Prompt templates for the five lens subagents in Phase 2. Build each prompt as described in `SKILL.md`: Guiding Principles, then the path to the Diagram Standards file, then preferences, then the template below.
 
 ---
 

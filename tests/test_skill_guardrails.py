@@ -264,3 +264,13 @@ def test_review_rules_are_pasted_for_a_reason_that_is_true() -> None:
     assert "cannot open" not in common
     assert "pasted word for word" in codereview
     assert "Paste the block below, word for word" in common
+
+
+def test_explain_lenses_get_the_diagram_rules_by_path() -> None:
+    # The same 46-line file was typed into five prompts. Each lens can read it.
+    skill = compact(read("skills/explain/SKILL.md"))
+    assert "The contents of `references/diagram-standards.md`" not in skill
+    assert "The **absolute path** to `references/diagram-standards.md`" in skill
+    assert "appended to this prompt" not in skill
+    standards = read("skills/explain/references/diagram-standards.md")
+    assert "appended to every subagent prompt" not in standards
