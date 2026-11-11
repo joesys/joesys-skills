@@ -5,7 +5,9 @@ The report is markdown with YAML front-matter. The scorer reads:
 - `rubric_version` from the front-matter,
 - the per-lens scores and the overall score from the first scorecard table,
 - which designed issues the report mentions (any keyword, case-insensitive,
-  the same loose match that scoring.py uses for review findings).
+  the same loose match that scoring.py uses for review findings). A keyword
+  that also fits unrelated sentences can carry a condition: it then counts
+  only in a sentence that also holds one of its `with` words.
 
 It then checks each score against the band in the answer key. Bands are wide on
 purpose: the question is "did this lens land low, as designed?", not an exact
@@ -31,6 +33,7 @@ ROW_PREFIXES = {
 }
 NUMBER = re.compile(r"\d+")
 GRADE = re.compile(r"^[A-F][+-]?$")
+SENTENCE_END = re.compile(r"[.!?]\s+|\n")
 
 
 def read_front_matter(report: str) -> dict:
@@ -79,6 +82,22 @@ def read_scorecard(report: str) -> dict[str, tuple[int, str | None]]:
     return found
 
 
+def mentions(text: str, sentences: list[str], keyword: str | dict) -> bool:
+    """True when the lower-case report text mentions the keyword.
+
+    A plain keyword matches anywhere. A keyword written as
+    `{"phrase": ..., "with": [...]}` matches only in a sentence that also has a
+    word starting with one of the `with` entries ("read" fits "reading", but
+    not "already").
+    """
+    if isinstance(keyword, str):
+        return keyword.lower() in text
+    phrase = keyword["phrase"].lower()
+    near = [re.compile(r"\b" + re.escape(word.lower())) for word in keyword["with"]]
+    return any(phrase in sentence and any(word.search(sentence) for word in near)
+               for sentence in sentences)
+
+
 def score_interaction(report: str, key: dict) -> dict:
     scorecard = read_scorecard(report)
     lens_scores = {lens: scorecard[lens][0] for lens in LENSES if lens in scorecard}
@@ -91,8 +110,9 @@ def score_interaction(report: str, key: dict) -> dict:
         in_band[lens] = None if value is None else low <= value <= high
 
     text = report.lower()
+    sentences = SENTENCE_END.split(text)
     found = [issue["id"] for issue in key["issues"]
-             if any(word.lower() in text for word in issue["keywords"])]
+             if any(mentions(text, sentences, word) for word in issue["keywords"])]
     problems = [issue["id"] for issue in key["issues"] if issue["kind"] == "problem"]
     strengths = [issue["id"] for issue in key["issues"] if issue["kind"] == "strength"]
 

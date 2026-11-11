@@ -97,7 +97,7 @@ output. One more run on Fable 5.2 checked the two weak points of the first run.
 
 | Measure | First run | Rerun with the new rule |
 |---|---|---|
-| designed issues found (scorer) | 6/7 | 7/7, but see the note below |
+| designed issues found (scorer) | 6/7 | 6/7 (the scorer first said 7/7, see below) |
 | "files read one by one" reported as a finding | no | no |
 | agentic leverage (band 10-70) | 72 | 73 |
 | overall score (bad session) | 62 | 62 |
@@ -105,10 +105,13 @@ output. One more run on Fable 5.2 checked the two weak points of the first run.
 
 What this run shows:
 
-- The scorer's 7/7 is a false match. The scorer looks for keywords, and the
-  report says the person gave requirements "one at a time". That sentence is
-  about the person's prompts, not about the agent reading files. No finding
-  says that the agent read three files one by one.
+- The scorer first reported 7/7, which was a false match. The scorer looks for
+  keywords, and the report says the person gave requirements "one at a time".
+  That sentence is about the person's prompts, not about the agent reading
+  files. No finding says that the agent read three files one by one. The
+  scorer is now fixed: "one by one" and "one at a time" count only in a
+  sentence that is also about reading, opening or files. Re-scoring the saved
+  reports gives 6/7 for this run and changes no other run.
 - The reviewers did read the tool calls. The report now names the three files
   the agent read in turn 2 (`api/__init__.py`, `api/routes.py`,
   `api/orders.py`). The first report did not mention them. It files them under
