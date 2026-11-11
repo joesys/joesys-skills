@@ -50,9 +50,14 @@ Pass the preferences to each subagent as a `## User Preferences` section. Use th
 
 Read `../shared/review-common.md` Section Base Branch Detection, Section File Gathering, and Section Target Language Detection.
 
-### 1.2 Content Loading
+### 1.2 Review Inputs
 
-Load the **full content** of every changed file, not just the diff hunks. Reviewers need the surrounding code to judge structure and control flow. Also capture the **diff** (`git diff <base>...HEAD` or the equivalent for the mode) so reviewers can focus on what changed.
+Reviewers read the code themselves. Do not copy file contents or the diff into a prompt: re-typing is slow, costs tokens, and makes reviewers judge a copy instead of the source. Prepare two values for the prompts:
+
+- `<FILE_LIST>`: the path of every file under review. Reviewers read each file in full, not just the diff hunks, because they need the surrounding code to judge structure and control flow.
+- `<DIFF_COMMAND>`: the command that prints the change for this mode, such as `git diff <base>...HEAD`, `git diff <commit>^..<commit>`, or `gh pr diff <number>`. Directory-scan and single-file modes have no diff; use "None: review the files as they are".
+
+If the working tree does not hold the reviewed version (an older commit, or a pull request that is not checked out), also name the commit to read from and tell reviewers to read each file with `git show <ref>:<path>`. For a pull request, fetch its head commit first and use the commit id, not `FETCH_HEAD`, which can change.
 
 ### 1.3 Static Analysis Tooling
 
@@ -86,7 +91,7 @@ When you split, write the groups as a cluster manifest. Every changed file must 
 - path/to/file2
 ```
 
-Each cluster's reviewers receive only that cluster's files and its slice of the diff. Run cluster reviews in parallel as far as the host allows. Do not stop for the user between scoping and dispatch.
+Each cluster's reviewers receive only that cluster's file list, and a diff command limited to those files (`<DIFF_COMMAND> -- <files>`). Run cluster reviews in parallel as far as the host allows. Do not stop for the user between scoping and dispatch.
 
 ---
 
@@ -128,10 +133,11 @@ You are a senior <DOMAIN> reviewer.
 <USER_PREFERENCES_OR_"None">
 
 ## Code Under Review
-<FILES_CONTENT>
+Files: <FILE_LIST>
+Read each file in full yourself before you judge it. <READ_FROM_REF_NOTE_OR_OMIT>
 
-## Diff Context
-<DIFF_CONTENT>
+## Change Under Review
+To see what changed, run: <DIFF_COMMAND>
 
 ## Static Analysis Results
 {TOOLING_CONTEXT}
@@ -172,7 +178,7 @@ Story readability findings usually fall at P2-P4. Narrative problems are maintai
 
 Also send the review to **Codex and Antigravity**, in the same parallel batch as the domain subagents. Read `../shared/cross-model-dispatch.md` for host detection, temp files, CLI command templates, and failure handling. Read `../shared/model-defaults.md` for model identifiers.
 
-Both cross-model reviewers get the same full file content and diff as the domain subagents. When the change is split into clusters, each cluster gets its own cross-model pair.
+Both cross-model reviewers get the full files and the diff inside the prompt file, because their sandbox may not let them read the project or run git. Let the shell append that content, as in the commands below; do not type it out. When the change is split into clusters, each cluster gets its own cross-model pair.
 
 Write the prompt to two temp files with `mktemp` (one per CLI), dispatch both in parallel with a 600000 ms timeout, and delete the files afterwards:
 
@@ -184,13 +190,9 @@ You are a comprehensive code reviewer. Analyze the following code changes for bu
 Use this severity scale: P0 (critical), P1 (high), P2 (medium), P3 (low), P4 (optional).
 Every finding must reference a specific location.
 
+The files under review and the diff are at the end of this prompt.
+
 <REVIEW_RULES>
-
-## Files Under Review
-<FILES_CONTENT>
-
-## Diff
-<DIFF_CONTENT>
 
 ## Static Analysis Results
 {TOOLING_CONTEXT}
@@ -201,7 +203,14 @@ For each finding:
 
 If you find no issues, output: "No issues found."
 PROMPT_EOF
+
+# Append the code with the shell. When reviewing a commit that is not checked
+# out, use `git show <ref>:"$f"` in place of `cat "$f"`.
+for f in <FILE_LIST>; do printf '\n## File: %s\n' "$f"; cat "$f"; done >> "$PROMPT_FILE"
+{ printf '\n## Diff\n'; <DIFF_COMMAND>; } >> "$PROMPT_FILE"
 ```
+
+In directory-scan and single-file modes there is no diff; leave the last line out.
 
 Substitute `<FINDING_FORMAT>` with the Output Format from Section Subagent Prompt Template (`### [Principle Name] - [Specific Issue]` through `**Why**`), using `[Category]` in place of `[Principle Name]`.
 
@@ -215,7 +224,7 @@ Gather findings from every domain subagent and cross-model reviewer. If a source
 
 ### 3.2 Cross-Cluster Synthesis
 
-Run this only when the change was split into more than one cluster. Spawn one synthesis agent with the cluster manifest, all findings from every cluster (before merging), and the full diff (`git diff <base>...HEAD`). Its job is to find issues that span clusters - things no single-cluster reviewer could see:
+Run this only when the change was split into more than one cluster. Spawn one synthesis agent with the cluster manifest, all findings from every cluster (before merging), and the diff command for the whole change (`<DIFF_COMMAND>`), which it runs itself. Its job is to find issues that span clusters - things no single-cluster reviewer could see:
 
 - Cluster A introduces a field, type, or contract that cluster B uses incorrectly
 - Cluster A deprecates behavior that cluster B still relies on
@@ -294,7 +303,7 @@ Omit empty severity sections. Also name any missing source (domain, cross-model 
 
 Dispatch **one** subagent as a senior tech lead. It is the last judgment pass over all merged findings, including cross-cluster findings. Its output **replaces** the mechanical report. It is on by default; `--no-re-review` skips it and the mechanical report goes to the user directly.
 
-Give the tech lead the mechanical report, the full diff, the full file contents, TOOLING_CONTEXT, the cluster manifest (if any), and whether `--min-severity` is set. Give it **all** findings, even below the threshold, so it can move a misclassified finding across it.
+Give the tech lead the mechanical report, the file list, the diff command, TOOLING_CONTEXT, the cluster manifest (if any), and whether `--min-severity` is set. Give it **all** findings, even below the threshold, so it can move a misclassified finding across it.
 
 ```
 You are a senior tech lead doing a final read of a code review report before it goes to the engineer.
@@ -321,11 +330,10 @@ Guardrails:
 ## Mechanical Synthesis Output (Your Input)
 <MECHANICAL_REPORT>
 
-## Diff Context
-<DIFF_CONTENT>
-
-## Full File Contents
-<FILES_CONTENT>
+## Code Under Review
+Files: <FILE_LIST>
+Read the files yourself to check a finding. <READ_FROM_REF_NOTE_OR_OMIT>
+To see what changed, run: <DIFF_COMMAND>
 
 ## Static Analysis Results
 {TOOLING_CONTEXT}

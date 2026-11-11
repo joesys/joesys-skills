@@ -173,3 +173,47 @@ def test_the_plugin_root_variable_stays_out_of_files_no_host_fills_in() -> None:
     assert other_files
     for path in other_files:
         assert "CLAUDE_PLUGIN_ROOT" not in path.read_text(encoding="utf-8"), path
+
+
+def test_review_prompts_point_at_the_code_instead_of_pasting_it() -> None:
+    # A literal-minded model re-types every file into every reviewer prompt when
+    # the template says to. Reviewers can read files and run git themselves.
+    pasted_placeholders = (
+        "<FILES_CONTENT>",
+        "<DIFF_CONTENT",
+        "<DIFF_U50>",
+        "<DIFF_OR_CONTENT>",
+        "<CHUNK_CONTENT_WITH_CONTEXT>",
+    )
+    for path in SKILLS.rglob("*.md"):
+        text = path.read_text(encoding="utf-8")
+        for placeholder in pasted_placeholders:
+            assert placeholder not in text, (path, placeholder)
+
+    codereview = compact(read("skills/codereview/SKILL.md"))
+    assert "Do not copy file contents or the diff into a prompt" in codereview
+    assert codereview.count("<FILE_LIST>") >= 3
+    assert codereview.count("<DIFF_COMMAND>") >= 3
+    assert "git show <ref>:<path>" in codereview
+
+    quick = compact(read("skills/quick-review/SKILL.md"))
+    assert "<CODE_SOURCE>" in quick
+    assert "Do not copy the diff or the files into the prompt" in quick
+
+    readability = compact(read("skills/readability-review/SKILL.md"))
+    assert "<FILE_LIST>" in readability
+    assert "Do not copy file contents or the diff into the prompt" in readability
+
+    guide = compact(read("skills/human-review-guide/SKILL.md"))
+    assert "Do not copy the diff or the files into a prompt" in guide
+    guide_prompts = read("skills/human-review-guide/references/agent-prompts.md")
+    assert guide_prompts.count("<CONTENT_SOURCE>") == 2
+
+
+def test_cross_model_prompt_gets_the_code_from_the_shell() -> None:
+    # Codex and Antigravity run in a sandbox that may not read the project, so
+    # their prompt file still holds the code. The shell appends it; the agent
+    # does not type it.
+    codereview = read("skills/codereview/SKILL.md")
+    assert '>> "$PROMPT_FILE"' in codereview
+    assert "Let the shell append" in compact(codereview)

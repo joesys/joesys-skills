@@ -48,13 +48,17 @@ Read `../shared/review-common.md` Section Base Branch Detection, Section File Ga
 
 ### 1.2 Context Loading
 
+Subagents read the code themselves. Do not copy the diff or the files into the prompt: re-typing is slow, costs tokens, and makes reviewers judge a copy. Prepare `<CODE_SOURCE>`, one or two lines that say how to get the code.
+
 Diff-based modes start from the diff with 50 lines of context, not full files:
 
 - Branch: `git diff -U50 <base>...HEAD`
 - `--commit <hash>`: `git diff -U50 <commit>^..<commit>`
-- `--pr <n>`: `gh pr diff` has no context-width flag, so fetch and diff locally: `git fetch origin pull/<n>/head && git diff -U50 $(git merge-base HEAD FETCH_HEAD)...FETCH_HEAD`
+- `--pr <n>`: `gh pr diff` has no context-width flag, so fetch and diff locally. Run `git fetch origin pull/<n>/head` yourself, then give subagents the diff command with commit ids in place of `FETCH_HEAD`, which can change: `git diff -U50 <merge-base>...<pr-head>`
 
-Open more of a file only to confirm or reject a specific finding. Do not tell subagents the diff has 50-line context if the command did not provide it. Directory-scan and single-file modes have no diff: read the specified files directly.
+For these modes `<CODE_SOURCE>` is: "Run `<command>` to see the change with 50 lines of context. Open more of a file only to confirm or reject a specific finding." Do not say the diff has 50 lines of context if the command does not provide it.
+
+Directory-scan and single-file modes have no diff. `<CODE_SOURCE>` is then: "Read these files in full: `<file list>`."
 
 ### 1.3 Static Analysis (Streamlined)
 
@@ -98,8 +102,8 @@ You are a senior <DOMAIN> reviewer performing a quick, bug-focused review.
 ## User Preferences
 <USER_PREFERENCES_OR_"None">
 
-## Code Changes (Diff with Context)
-<DIFF_U50>
+## Code Under Review
+<CODE_SOURCE>
 
 ## Static Analysis Results
 {TOOLING_CONTEXT}

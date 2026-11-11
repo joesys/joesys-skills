@@ -58,11 +58,12 @@ Pass relevant preferences to the analysis subagent in Phase 1.
 
 Read `shared/review-common.md` § Base Branch Detection, § File Gathering, and § Target Language Detection.
 
-### 0.3 Content Loading
+### 0.3 Review Inputs
 
-Load the **full content** of every file in scope — not just diff hunks. Story readability requires function-level context to judge narrative flow, abstraction consistency, and cognitive chunking.
+The subagent reads the code itself. Do not copy file contents or the diff into the prompt: re-typing is slow, costs tokens, and makes the reviewer judge a copy. Prepare two values:
 
-In branch-diff or PR mode, also capture the diff so the analysis can highlight what changed.
+- `<FILE_LIST>`: the path of every file in scope. The subagent reads each file in full, not just the diff hunks. Story readability needs function-level context to judge narrative flow, abstraction consistency, and cognitive chunking.
+- `<DIFF_COMMAND>`: in branch-diff or PR mode, the command that prints the change (`git diff <base>...HEAD` or `gh pr diff <number>`), so the analysis can highlight what changed. In directory or file scan mode, use "N/A: directory/file scan mode".
 
 ---
 
@@ -109,10 +110,11 @@ You are a senior readability reviewer. Your job is to grade code on how well it
 <USER_PREFERENCES_OR_"None">
 
 ## Files Under Review
-<FILES_CONTENT>
+<FILE_LIST>
+Read each file in full yourself before you score it.
 
-## Diff Context (if applicable)
-<DIFF_CONTENT_OR_"N/A — directory/file scan mode">
+## Change Under Review (if applicable)
+To see what changed, run: <DIFF_COMMAND>
 
 ## Output Format
 For each file, output a table with one row per dimension (all 8, in the
