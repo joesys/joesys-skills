@@ -88,3 +88,36 @@ What the transcripts show:
   tested, and a run that should test it needs a wider allow list.
 - The fixture reviews a folder, not a diff, so the diff-command wording in the
   review skills was not exercised.
+
+### Rerun after the tool-call reading rule (interaction-review, 2026-11-11)
+
+The session-log guide used to say "skip tool calls" and also "count and sample
+them". It now says: read each tool call's name and arguments, skip only the
+output. One more run on Fable 5.2 checked the two weak points of the first run.
+
+| Measure | First run | Rerun with the new rule |
+|---|---|---|
+| designed issues found (scorer) | 6/7 | 7/7, but see the note below |
+| "files read one by one" reported as a finding | no | no |
+| agentic leverage (band 10-70) | 72 | 73 |
+| overall score (bad session) | 62 | 62 |
+| cost / time | $10.96 / 18 min | $12.17 / 17 min |
+
+What this run shows:
+
+- The scorer's 7/7 is a false match. The scorer looks for keywords, and the
+  report says the person gave requirements "one at a time". That sentence is
+  about the person's prompts, not about the agent reading files. No finding
+  says that the agent read three files one by one.
+- The reviewers did read the tool calls. The report now names the three files
+  the agent read in turn 2 (`api/__init__.py`, `api/routes.py`,
+  `api/orders.py`). The first report did not mention them. It files them under
+  Context & Instruction, as a cost of the missing instruction file, not under
+  Agentic Leverage.
+- Agentic leverage is still above its band, now by three points. The coach
+  raised it from 66 to 73, with the reason that the person did nothing by hand.
+- So the new rule removed a contradiction and the reviewers now cite tool
+  calls, but one run shows no gain on the two measures it was meant to help.
+  It cost about $1.20 more.
+- The run's transcript is not kept: the harness deletes the temporary project
+  folder for this skill. The statements above come from the saved report.

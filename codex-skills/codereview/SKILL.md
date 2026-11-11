@@ -117,7 +117,7 @@ For same-platform subagents, do not pass a model or reasoning-effort override. L
 
 Substitute every placeholder before dispatch. `<PRINCIPLE_PATH>` must be the **absolute path** to the roster file: resolve `principles/...` against this skill's own directory and `../shared/...` against the collection root. Subagents start in the project directory and cannot find plugin files by relative path.
 
-Replace `<REVIEW_RULES>` with the Review Rules block from `../shared/review-common.md` Section Cross-Skill Discipline, pasted word for word (the block's contents, without the code fence). Subagents cannot open that file. The same placeholder appears in the cross-model and tech lead prompts below.
+Replace `<REVIEW_RULES>` with the Review Rules block from `../shared/review-common.md` Section Cross-Skill Discipline, pasted word for word (the block's contents, without the code fence). The block is short, and a rule inside the prompt is always in front of the reviewer. The same placeholder appears in the cross-model and tech lead prompts below.
 
 ```
 You are a senior <DOMAIN> reviewer.

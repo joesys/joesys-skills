@@ -1,6 +1,6 @@
 # Diagram Standards
 
-Shared rules for diagrams in `/explain` reports. They are appended to every subagent prompt.
+Shared rules for diagrams in `/explain` reports. Every lens subagent reads this file before it draws a diagram, and the orchestrator follows it in the synthesis.
 
 **All graphs MUST use Mermaid syntax.** ASCII box-drawing is not permitted. The HTML renderer turns Mermaid blocks into SVG, and Mermaid source stays readable in raw markdown.
 

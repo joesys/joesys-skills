@@ -31,11 +31,13 @@ Paste into every lens prompt as `<GUIDING_PRINCIPLES>`:
 Paste into every lens prompt and the coach prompt as `<SESSION_LOGS>`. Include the part for each host that appears in the session list.
 
 ```
-Each line of a session file (JSONL) is one JSON object. Read only the person's
-messages and the assistant's messages. Skip tool calls, tool output, reasoning,
-and bookkeeping lines: they are bulk data that hides the conversation. Tool
-calls still count as evidence for the Agentic Leverage and Workflow Efficiency
-lenses: count and sample them, but do not read their full output.
+Each line of a session file (JSONL) is one JSON object. Read the person's
+messages and the assistant's messages. For each tool call, read its name and
+its arguments: they show what the agent did, in what order, and whether it
+repeated a call or did one by one what one call could do. When an argument
+holds a whole file or another long text, its first lines are enough. Skip tool
+output, reasoning, and bookkeeping lines: they are bulk data that hides the
+conversation.
 
 Cover every session in the list. Read in full the places where the person
 corrects the agent, changes direction, or repeats a request. Skim the
@@ -45,6 +47,8 @@ Claude Code
 - Read lines whose `type` is "user" or "assistant". The time is in
   `timestamp`. The text is in `message.content`: a string, or a list of blocks
   (`text`, `thinking`, `tool_use`, `tool_result`).
+- A `tool_use` block is a tool call: its name is in `name` and its arguments
+  are in `input`. Skip `thinking` and `tool_result` blocks.
 - A "user" line whose content holds only `tool_result` blocks is tool output,
   not the person. Lines with `isSidechain: true` come from subagents. Skip
   `file-history-snapshot`, `progress`, `attachment`, `system`, and similar
@@ -58,9 +62,11 @@ Codex
 - Skip `payload.role: "developer"` messages, and user messages whose text
   starts with `# AGENTS.md instructions` or `<environment_context>`. The host
   injects these; the person did not type them.
-- Tool use appears as `response_item` lines with `payload.type`
-  `function_call` or `custom_tool_call`, and their `_output` pairs. Skip
-  `reasoning` items and all `event_msg`, `turn_context`,
+- A tool call is a `response_item` line with `payload.type` `function_call`
+  (name in `payload.name`, arguments in `payload.arguments`) or
+  `custom_tool_call` (name in `payload.name`, arguments in `payload.input`).
+  Skip the matching `function_call_output` and `custom_tool_call_output`
+  lines, `reasoning` items, and all `event_msg`, `turn_context`,
   `token_usage_record`, and `compacted` lines.
 ```
 

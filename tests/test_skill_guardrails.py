@@ -116,7 +116,15 @@ def test_session_log_readers_state_a_goal_not_a_line_budget() -> None:
     interaction = compact(read("skills/interaction-review/references/agent-prompts.md"))
     assert "4,000" not in interaction
     assert "Cover every session" in interaction
-    assert "Skip tool calls, tool output" in interaction
+    # Tool calls are evidence (repeated calls, files read one by one), so the
+    # reader sees each call's name and arguments. Only the output is bulk.
+    assert "Skip tool calls" not in interaction
+    assert "For each tool call, read its name and its arguments" in interaction
+    assert "Skip tool output, reasoning, and bookkeeping lines" in interaction
+    # Each host part says where the name and the arguments are.
+    assert "name is in `name` and its arguments are in `input`" in interaction
+    assert "`payload.arguments`" in interaction
+    assert "`payload.input`" in interaction
 
     retro = compact(read("skills/retrospective/references/agent-prompts.md"))
     assert "4,000" not in retro
@@ -231,3 +239,67 @@ def test_reviewers_read_the_reviewed_version_not_whatever_is_on_disk() -> None:
         text = compact(read(relative))
         assert "git show <ref>:<path>" in text, relative
         assert "working tree does not hold the reviewed version" in text, relative
+
+
+def test_claude_delegation_defaults_to_fable() -> None:
+    # A Fable session that delegates to `opus` hands the work to a weaker
+    # model. One default serves `/claude`, the council's Claude leg and the
+    # review routing, so no skill has to swap the model in the template.
+    defaults = read("shared/model-defaults.md")
+    assert "claude --model fable --effort high --permission-mode plan" in defaults
+    assert "--model opus" not in defaults
+    assert "| Anthropic (Claude CLI) | `opus` |" not in defaults
+
+    council = read("skills/ai-council/SKILL.md")
+    assert "--model opus" not in council
+
+
+def test_review_rules_are_pasted_for_a_reason_that_is_true() -> None:
+    # Helper agents can open plugin files by absolute path, so "cannot open
+    # that file" was false. The block is still pasted, because it is short and
+    # a rule in the prompt is always in front of the reviewer.
+    codereview = compact(read("skills/codereview/SKILL.md"))
+    common = compact(read("shared/review-common.md"))
+    assert "cannot open" not in codereview
+    assert "cannot open" not in common
+    assert "pasted word for word" in codereview
+    assert "Paste the block below, word for word" in common
+
+
+def test_explain_lenses_get_the_diagram_rules_by_path() -> None:
+    # The same 46-line file was typed into five prompts. Each lens can read it.
+    skill = compact(read("skills/explain/SKILL.md"))
+    assert "The contents of `references/diagram-standards.md`" not in skill
+    assert "The **absolute path** to `references/diagram-standards.md`" in skill
+    assert "appended to this prompt" not in skill
+    standards = read("skills/explain/references/diagram-standards.md")
+    assert "appended to every subagent prompt" not in standards
+
+
+def test_audit_author_reads_the_metrics_file_instead_of_receiving_a_copy() -> None:
+    # The orchestrator used to type the whole metrics JSON into the author's
+    # prompt. It now saves the file first and passes the path.
+    prompts = read("skills/codebase-audit/references/agent-prompts.md")
+    assert "{ASSEMBLED_METRICS_JSON}" not in prompts
+    assert "{PREVIOUS_METRICS_JSON_OR_NULL}" not in prompts
+    assert "{METRICS_JSON_PATH}" in prompts
+    assert "{PREVIOUS_METRICS_JSON_PATH_OR_NONE}" in prompts
+
+    skill = compact(read("skills/codebase-audit/SKILL.md"))
+    assert "save the assembled metrics as `metrics.json`" in skill
+    # One run writes in two steps, so the folder is chosen once. Otherwise the
+    # "folder exists, add a suffix" rule would split one run over two folders.
+    assert "Choose this folder once" in skill
+    schemas = compact(read("skills/codebase-audit/references/output-schemas.md"))
+    assert "Choose the folder once per run" in schemas
+
+
+def test_audit_updates_the_saved_metrics_file_instead_of_typing_it_again() -> None:
+    # The file is saved before the report writer runs. Afterwards only the
+    # ranks, weights and overall grade change, so no step says "rewrite".
+    schemas = compact(read("skills/codebase-audit/references/output-schemas.md"))
+    assert "rewrite metrics.json" not in schemas.lower()
+    assert schemas.count("change only those fields") == 2
+    skill = compact(read("skills/codebase-audit/SKILL.md"))
+    assert "by changing only those fields" in skill
+    assert "the save before Phase 4, Phase 5, and those modes" in skill

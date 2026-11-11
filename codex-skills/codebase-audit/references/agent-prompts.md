@@ -330,15 +330,15 @@ Return JSON:
 
 ## Phase 4: Analysis Author
 
-The author receives the assembled metrics from all collection agents and writes the full analysis report.
+The author reads the assembled metrics of all collection agents from `metrics.json` and writes the full analysis report. Fill `{METRICS_JSON_PATH}` and `{PREVIOUS_METRICS_JSON_PATH_OR_NONE}` with absolute paths; do not copy either file into the prompt.
 
 ```
 You are writing a codebase quality audit report. Judge the code against {language} and {domain} norms: the language's idioms and ecosystem tooling, and the quality trade-offs and failure modes of this domain.
 
 ## Inputs
 
-1. **Metrics JSON** — all measured values from Phase 1 collection agents:
-{ASSEMBLED_METRICS_JSON}
+1. **Metrics JSON** — all measured values from the Phase 1 collection agents. Read this file first:
+{METRICS_JSON_PATH}
 
 2. **Project Context:**
 {PROJECT_CONTEXT_BLOCK}
@@ -349,7 +349,8 @@ You are writing a codebase quality audit report. Judge the code against {languag
 4. **Risk Heat Map — Danger Zone files:**
 {DANGER_ZONE_LIST}
 
-5. **Previous Audit:** {PREVIOUS_METRICS_JSON_OR_NULL}
+5. **Previous Audit** — the `metrics.json` of the audit before this one. Read it if a path is given:
+{PREVIOUS_METRICS_JSON_PATH_OR_NONE}
 
 ## Files to Read
 - The principle files in `../codebase-audit/principles/` for the criteria measured. Grade each criterion with its file's rubric.

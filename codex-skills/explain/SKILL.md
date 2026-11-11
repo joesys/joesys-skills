@@ -66,7 +66,7 @@ For same-platform subagents, do not pass a model or reasoning-effort override. L
 
 Each subagent prompt contains, in this order:
 - The full Guiding Principles block below.
-- The contents of `references/diagram-standards.md` (resolved against this skill's directory, not the project's working directory).
+- The **absolute path** to `references/diagram-standards.md` in this skill's own folder (not the project's working directory), with one line that tells the subagent to read that file before it draws a diagram. Do not copy the file into the prompt. Read it yourself too: the Architecture Overview in Phase 3 follows it.
 - The relevant user preferences.
 - The lens template from `references/agent-prompts.md`, with `<SCOPE_DESCRIPTION>` filled in and `<FILE_LIST if applicable>` replaced by the file list (or the line removed when there is no list).
 
@@ -77,7 +77,7 @@ Each subagent prompt contains, in this order:
 3. **Use LSP tools if available.** Otherwise search and read the code with the tools your host provides. Missing LSP is not a failure.
 4. **Respect the scope.** Mention outside context where it helps ("this module is called from `src/api/routes.ts`"), but do not analyze unrelated modules.
 5. **Point to code; don't copy it.** Use `file:line_number` references and only short snippets. The reader has the code and needs understanding, not a copy.
-6. **Draw diagrams only in Mermaid**, following the Diagram Standards appended to this prompt.
+6. **Draw diagrams only in Mermaid**, following the Diagram Standards file named in this prompt.
 7. **No value judgments outside Health & Risk.** Lenses 1-4 describe and explain; they never say "this is good" or "this is bad." Only the Health & Risk lens assesses quality and risk, and it reports facts - what is fragile, unclear, or risky to change - not whether the architecture is good.
 8. **Write for humans.** The reader may use English as a second language. Use short sentences and everyday words, and explain jargon the first time. Simplify the language, never the facts.
 
