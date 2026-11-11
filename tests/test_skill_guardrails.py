@@ -239,3 +239,16 @@ def test_reviewers_read_the_reviewed_version_not_whatever_is_on_disk() -> None:
         text = compact(read(relative))
         assert "git show <ref>:<path>" in text, relative
         assert "working tree does not hold the reviewed version" in text, relative
+
+
+def test_claude_delegation_defaults_to_fable() -> None:
+    # A Fable session that delegates to `opus` hands the work to a weaker
+    # model. One default serves `/claude`, the council's Claude leg and the
+    # review routing, so no skill has to swap the model in the template.
+    defaults = read("shared/model-defaults.md")
+    assert "claude --model fable --effort high --permission-mode plan" in defaults
+    assert "--model opus" not in defaults
+    assert "| Anthropic (Claude CLI) | `opus` |" not in defaults
+
+    council = read("skills/ai-council/SKILL.md")
+    assert "--model opus" not in council

@@ -22,7 +22,7 @@ Read `../shared/delegation-common.md` first. It holds the flow for every delegat
 ## Running a Task
 
 Arguments to `$claude`:
-- `--model <MODEL>` - override the default model (for example `sonnet`, `haiku`, `opus[1m]`)
+- `--model <MODEL>` - override the default model (for example `opus`, `sonnet`, `haiku`)
 - `--permission-mode <MODE>` - override the default (`manual`, `acceptEdits`, `auto`, `dontAsk`)
 - `--effort <LEVEL>` - override the default (`low`, `medium`, `high`, `xhigh`, `max`)
 - `--bare` - bare mode (skips hooks, plugins, CLAUDE.md, MCP servers)

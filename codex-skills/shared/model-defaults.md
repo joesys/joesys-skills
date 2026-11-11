@@ -12,8 +12,7 @@ Single source of truth for default model identifiers and CLI flags used across s
 |---|---|---|
 | OpenAI (Codex CLI) | `gpt-6.1-sol` | `$codex`, `$ai-council`, `$codereview` |
 | Google (Antigravity CLI) | *(managed by agy)* | `$antigravity`, `$ai-council`, `$codereview` |
-| Anthropic (Claude CLI) | `opus` | `$claude` |
-| Anthropic (Claude CLI) | `fable` | `$ai-council` (Claude leg) |
+| Anthropic (Claude CLI) | `fable` | `$claude`, `$ai-council` (Claude leg) |
 
 ## Review Model Routing
 
@@ -23,7 +22,7 @@ this registry:
 | Model identifier | Provider | Command source |
 |---|---|---|
 | `gpt-6.1-sol` | Codex CLI | Codex template below |
-| `fable` | Claude CLI | Claude template below with `--model fable` |
+| `fable` | Claude CLI | Claude template below |
 
 A known unique bare identifier routes to its registered provider. Custom or
 ambiguous identifiers must be provider-qualified, such as
@@ -98,12 +97,12 @@ Why the adapter exists, its own 600-second timeout, and its environment override
 ### Claude CLI
 
 ```bash
-claude --model opus --effort high --permission-mode plan -p "" 2>/dev/null
+claude --model fable --effort high --permission-mode plan -p "" 2>/dev/null
 ```
 
 | Flag | Purpose |
 |---|---|
-| `--model opus` | Model selection — `$ai-council`'s Claude leg substitutes `--model fable` |
+| `--model fable` | Model selection |
 | `--effort high` | Reasoning effort level |
 | `--permission-mode plan` | Safety: read-only |
 | `-p ""` | Non-interactive mode (stdin provides the prompt) |

@@ -91,7 +91,7 @@ cat <RUN_DIR>/antigravity.txt | <AGY_CMD>
 
 **Use a Claude Code Fable subagent** only when the parent runs in Claude Code and Phase 1 resolved all the context the question needs. This is an intentional cross-model council leg, so its explicit `model: "fable"` setting is an exception to normal parent-model inheritance. Pass the full four-part prompt. A subagent is faster because there is no CLI startup.
 
-**Use CLI** when the parent is not Claude Code, or when the question points to files or code paths that Phase 1 could not fully resolve and the Claude leg needs tool access to explore. Replace `<CLAUDE_CMD>` with the template from `shared/model-defaults.md` § Claude CLI, change `--model opus` to `--model fable` (the council's Claude leg runs Fable), and append `--name` so it can be resumed:
+**Use CLI** when the parent is not Claude Code, or when the question points to files or code paths that Phase 1 could not fully resolve and the Claude leg needs tool access to explore. Replace `<CLAUDE_CMD>` with the template from `shared/model-defaults.md` § Claude CLI (it runs Fable) and append `--name` so it can be resumed:
 
 ```bash
 cat <RUN_DIR>/claude.txt | <CLAUDE_CMD> --name "council-<topic>"
