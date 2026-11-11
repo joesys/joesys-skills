@@ -177,3 +177,35 @@ class TestComputeStructure:
         ])
 
         assert data["total_files"] == 2  # main.py + utils.py, not vendor/lib.py
+
+    # ── 8. Several source folders ────────────────────────────────────
+    def test_several_source_folders_are_scanned_together(self, tmp_path):
+        """Two roots with a file of the same name: both are counted, and their
+        paths stay different, so later steps can join on the path."""
+        big_content = "\n".join([f"x_{i} = {i}" for i in range(510)])
+        _write_file(tmp_path, "src/big.py", big_content)
+        _write_file(tmp_path, "lib/big.py", big_content)
+        _write_file(tmp_path, "docs/big.py", big_content)
+        data = _run([
+            "--lang", "python",
+            "--source", str(tmp_path / "src"), str(tmp_path / "lib"),
+        ])
+
+        assert data["total_files"] == 2
+        assert data["files_over_500_lines"] == ["lib/big.py", "src/big.py"]
+
+    def test_one_source_folder_keeps_paths_relative_to_it(self, tmp_path):
+        big_content = "\n".join([f"x_{i} = {i}" for i in range(510)])
+        _write_file(tmp_path, "src/big.py", big_content)
+        data = _run(["--lang", "python", "--source", str(tmp_path / "src")])
+
+        assert data["files_over_500_lines"] == ["big.py"]
+
+    def test_a_folder_inside_another_source_folder_is_counted_once(self, tmp_path):
+        _write_file(tmp_path, "src/api/a.py", "def one():\n    return 1\n")
+        data = _run([
+            "--lang", "python",
+            "--source", str(tmp_path / "src"), str(tmp_path / "src" / "api"),
+        ])
+
+        assert data["total_files"] == 1

@@ -1,5 +1,5 @@
 {
-  "description": "Ground truth for the synthetic Claude Code session in session.jsonl. The session has designed problems and one designed strength. Lens bands are wide on purpose: a lens is expected to land inside its band, not on an exact number. An issue counts as mentioned when the report text contains one of its keywords (case-insensitive). The runner removes session.jsonl and this file from the work dir, so the reviewed project has no answer key and no instruction file (CLAUDE.md or AGENTS.md).",
+  "description": "Ground truth for the synthetic Claude Code session in session.jsonl. The session has designed problems and one designed strength. Lens bands are wide on purpose: a lens is expected to land inside its band, not on an exact number. An issue counts as mentioned when the report text contains one of its keywords (case-insensitive). A keyword written as an object with `phrase` and `with` counts only in a sentence that also holds a word starting with one of the `with` entries; this keeps a phrase such as 'one at a time' from matching a sentence about the person's prompts. The runner removes session.jsonl and this file from the work dir, so the reviewed project has no answer key and no instruction file (CLAUDE.md or AGENTS.md).",
   "lenses": {
     "prompt_craft":        {"expect": "low-to-mid", "band": [20, 75], "why": "Vague first prompt and two angry corrections, but one precise, well-scoped follow-up."},
     "workflow_efficiency": {"expect": "low",        "band": [10, 70], "why": "Two wrong edits, two correction loops, and four runs of the same failing test command."},
@@ -18,7 +18,7 @@
     {"id": "repeated-failing-command", "kind": "problem", "lens": "error_recovery",
      "keywords": ["same command", "same test", "four times", "4 times", "re-ran", "reran", "re-running", "rerunning", "repeated the", "repeatedly ran", "ran the tests again", "without changing"]},
     {"id": "files-read-one-by-one", "kind": "problem", "lens": "agentic_leverage",
-     "keywords": ["one by one", "one at a time", "sequential read", "read three files", "grep", "search for", "searching", "subagent"]},
+     "keywords": [{"phrase": "one by one", "with": ["read", "file"]}, {"phrase": "one at a time", "with": ["read", "file"]}, "sequential read", "read three files", "grep", "search for", "searching", "subagent"]},
     {"id": "no-instruction-file", "kind": "problem", "lens": "context_instruction",
      "keywords": ["claude.md", "agents.md", "instruction file"]},
     {"id": "precise-follow-up", "kind": "strength", "lens": "prompt_craft",

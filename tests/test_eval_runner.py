@@ -201,6 +201,55 @@ def test_session_is_installed_with_rewritten_ids_and_removed_afterwards(tmp_path
     assert not (projects / run_eval.claude_project_slug(work)).exists()
 
 
+def test_run_transcripts_are_copied_out_before_the_log_folder_is_removed(tmp_path):
+    # The review run writes its own transcript, and its helpers' transcripts,
+    # into the same folder as the installed fixture log. Without a copy, nobody
+    # can check afterwards what the helpers were told.
+    work = tmp_path / "work"
+    work.mkdir()
+    projects = tmp_path / "claude-projects"
+    fixture = REPO_ROOT / "evals" / "fixtures" / "interaction-session" / "session.jsonl"
+    session_id = "11111111-2222-4333-8444-555555555555"
+    keep = tmp_path / "kept"
+
+    try:
+        with run_eval.installed_session(fixture, work, projects, session_id, keep=keep) as path:
+            (path.parent / "run-1" / "subagents").mkdir(parents=True)
+            (path.parent / "run-1.jsonl").write_text("main\n")
+            (path.parent / "run-1" / "subagents" / "agent-a.jsonl").write_text("helper\n")
+            raise RuntimeError("the run failed")
+    except RuntimeError:
+        pass
+    assert not (projects / run_eval.claude_project_slug(work)).exists()
+    assert (keep / "run-1.jsonl").read_text() == "main\n"
+    assert (keep / "run-1" / "subagents" / "agent-a.jsonl").read_text() == "helper\n"
+    assert not (keep / f"{session_id}.jsonl").exists()
+
+
+def test_other_sessions_in_an_existing_log_folder_are_not_copied(tmp_path):
+    work = tmp_path / "work"
+    work.mkdir()
+    projects = tmp_path / "claude-projects"
+    folder = projects / run_eval.claude_project_slug(work)
+    folder.mkdir(parents=True)
+    (folder / "someone-elses-session.jsonl").write_text("private\n")
+    fixture = REPO_ROOT / "evals" / "fixtures" / "interaction-session" / "session.jsonl"
+    keep = tmp_path / "kept"
+
+    with run_eval.installed_session(fixture, work, projects, "s-1", keep=keep) as path:
+        (path.parent / "run-1.jsonl").write_text("main\n")
+    assert sorted(p.name for p in keep.iterdir()) == ["run-1.jsonl"]
+    assert (folder / "someone-elses-session.jsonl").is_file()
+
+
+def test_saved_results_are_ignored_by_git():
+    # Transcripts hold everything the run read. They must never be staged.
+    import subprocess
+    probe = "evals/results/any-run/new-1-transcripts/run-1.jsonl"
+    ignored = subprocess.run(["git", "check-ignore", "-q", probe], cwd=REPO_ROOT)
+    assert ignored.returncode == 0
+
+
 def test_score_run_reads_the_interaction_report_file(tmp_path):
     files = tmp_path / "files"
     files.mkdir()
@@ -236,6 +285,10 @@ else:
     session_id = re.search(r"session (\S+)", prompt).group(1)
     slug = re.sub(r"[^A-Za-z0-9]", "-", str(work))
     log = Path(os.environ["CLAUDE_CONFIG_DIR"]) / "projects" / slug / f"{session_id}.jsonl"
+    if log.is_file():
+        (log.parent / "run-1" / "subagents").mkdir(parents=True)
+        (log.parent / "run-1.jsonl").write_text('{"main": true}\n')
+        (log.parent / "run-1" / "subagents" / "agent-a.jsonl").write_text('{"helper": true}\n')
     folder = work / "docs" / "interaction-review"
     folder.mkdir(parents=True)
     (folder / "20261109-interaction-review.md").write_text(
@@ -278,6 +331,11 @@ def test_main_interaction_run_installs_and_removes_the_session_log(tmp_path, mon
     result = json.loads((out / "summary.json").read_text())["results"][0]
     assert result["report_file"] is True
     assert result["lens_scores"] == {"prompt_craft": 50}
+    # The run's own transcript is kept; the installed fixture log is not.
+    kept = out / "new-1-transcripts"
+    assert (kept / "run-1.jsonl").is_file()
+    assert (kept / "run-1" / "subagents" / "agent-a.jsonl").is_file()
+    assert sorted(path.name for path in kept.iterdir()) == ["run-1", "run-1.jsonl"]
 
 
 def test_codereview_default_budget_covers_a_full_run():

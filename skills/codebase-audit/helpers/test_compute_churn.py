@@ -125,3 +125,18 @@ class TestComputeChurn:
         data = _run(["--exclude", "vendor/"], cwd=repo)
         vendor_files = [f["file"] for f in data["most_churned_files"] if "vendor" in f["file"]]
         assert len(vendor_files) == 0
+
+    def test_several_source_folders_are_counted_together(self, tmp_path):
+        repo = _make_git_repo(str(tmp_path))
+        for folder in ("lib", "docs"):
+            (Path(repo) / folder).mkdir()
+            (Path(repo) / folder / "extra.py").write_text("x = 1\n")
+        subprocess.run(["git", "add", "."], cwd=repo, capture_output=True, check=True)
+        subprocess.run(
+            ["git", "commit", "-m", "add lib and docs"],
+            cwd=repo, capture_output=True, check=True,
+        )
+
+        data = _run(["--source", "src/", "lib/"], cwd=repo)
+        files = sorted(f["file"] for f in data["most_churned_files"])
+        assert files == ["lib/extra.py", "src/main.py", "src/utils.py"]

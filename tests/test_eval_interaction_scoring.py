@@ -185,3 +185,51 @@ def test_scorecard_reads_the_score_column_when_a_weight_column_comes_first():
     assert card["prompt_craft"] == (58, "F")
     assert card["error_recovery"] == (68, "D+")
     assert card["overall"] == (57, "F")
+
+
+# --- Keywords that also fit unrelated sentences ---------------------------
+# "one by one" and "one at a time" matched sentences about the person's
+# prompts, so a report was scored as naming the file-reading issue when it did
+# not. These sentences are copied from saved reports.
+
+SCORECARD = """
+| Lens | Score | Grade |
+|---|---|---|
+| Agentic Leverage | 60 | D- |
+"""
+
+
+def found_in(sentence):
+    return interaction_scoring.score_interaction(SCORECARD + sentence, KEY)["issues_found"]
+
+
+def test_one_at_a_time_about_prompts_is_not_the_file_reading_issue():
+    for sentence in (
+        'This pattern is called "drip-feeding": giving requirements one at a time. '
+        "Each missing piece cost one turn. In that time the agent made 2 wrong edits.",
+        "#### Prompt Craft — Key facts arrived one at a time (drip-feeding)",
+        "Rated one by one, the prompts go from very weak (turn 0) to weak (turn 8).",
+        "Your opening prompt gave the facts one at a time.",
+    ):
+        assert "files-read-one-by-one" not in found_in(sentence), sentence
+
+
+def test_reading_files_one_by_one_is_the_file_reading_issue():
+    for sentence in (
+        "The agent learned the project layout by reading files one by one "
+        "(`api/__init__.py`, `api/routes.py`, `api/orders.py`). It guessed the test command.",
+        "It opened three files one at a time instead of running one search.",
+        "It also had 0 Grep/Glob calls and 0 subagents.",
+    ):
+        assert "files-read-one-by-one" in found_in(sentence), sentence
+
+
+def test_a_keyword_with_a_condition_needs_it_in_the_same_sentence():
+    key = {"lenses": {}, "issues": [
+        {"id": "x", "kind": "problem", "lens": "agentic_leverage",
+         "keywords": [{"phrase": "one by one", "with": ["read", "file"]}]},
+    ]}
+    score = interaction_scoring.score_interaction
+    assert score("He read the notes. Then he answered one by one.", key)["issues_found"] == []
+    assert score("He was already done, one by one.", key)["issues_found"] == []
+    assert score("The agent read them one by one.", key)["issues_found"] == ["x"]

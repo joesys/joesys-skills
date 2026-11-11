@@ -18,6 +18,14 @@ Use `--only old|new` to run one side and `--old-ref <commit>` to pick the
 baseline. Run each side at least twice before you trust a difference: single
 runs vary.
 
+Each run saves `<side>-<n>.md` (the printed report), `<side>-<n>.json` (cost
+and run data) and `<side>-<n>-files/` (the report files the skill wrote). An
+interaction-review run also saves `<side>-<n>-transcripts/`: the run's own
+transcript and its helpers' transcripts. The harness must delete the log
+folder of that run, because it holds the planted session, so it copies the
+transcripts out first. The other skills leave their transcripts in
+`~/.claude/projects/-tmp-skilleval-*`.
+
 | Skill | Fixture | What is scored |
 |---|---|---|
 | codereview, quick-review | `fixtures/review-target`: 10 planted bugs, 4 correct look-alikes, 1 readability-only issue | bugs found, false alarms, out-of-scope findings, other citations |
@@ -97,7 +105,7 @@ output. One more run on Fable 5.2 checked the two weak points of the first run.
 
 | Measure | First run | Rerun with the new rule |
 |---|---|---|
-| designed issues found (scorer) | 6/7 | 7/7, but see the note below |
+| designed issues found (scorer) | 6/7 | 6/7 (the scorer first said 7/7, see below) |
 | "files read one by one" reported as a finding | no | no |
 | agentic leverage (band 10-70) | 72 | 73 |
 | overall score (bad session) | 62 | 62 |
@@ -105,10 +113,13 @@ output. One more run on Fable 5.2 checked the two weak points of the first run.
 
 What this run shows:
 
-- The scorer's 7/7 is a false match. The scorer looks for keywords, and the
-  report says the person gave requirements "one at a time". That sentence is
-  about the person's prompts, not about the agent reading files. No finding
-  says that the agent read three files one by one.
+- The scorer first reported 7/7, which was a false match. The scorer looks for
+  keywords, and the report says the person gave requirements "one at a time".
+  That sentence is about the person's prompts, not about the agent reading
+  files. No finding says that the agent read three files one by one. The
+  scorer is now fixed: "one by one" and "one at a time" count only in a
+  sentence that also has a word starting with "read" or "file". Re-scoring the saved
+  reports gives 6/7 for this run and changes no other run.
 - The reviewers did read the tool calls. The report now names the three files
   the agent read in turn 2 (`api/__init__.py`, `api/routes.py`,
   `api/orders.py`). The first report did not mention them. It files them under
@@ -119,5 +130,6 @@ What this run shows:
 - So the new rule removed a contradiction and the reviewers now cite tool
   calls, but one run shows no gain on the two measures it was meant to help.
   It cost about $1.20 more.
-- The run's transcript is not kept: the harness deletes the temporary project
-  folder for this skill. The statements above come from the saved report.
+- The transcript of this run was not kept: the harness deleted the temporary
+  project folder for this skill. The statements above come from the saved
+  report. Later runs keep the transcript in `<side>-<n>-transcripts/`.
