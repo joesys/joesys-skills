@@ -34,7 +34,7 @@ Read each file when its phase needs it:
 
 - `references/detection-defaults.md` - detection rules and the config file format (Phase 0).
 - `references/agent-prompts.md` - agent prompts and the path-substitution rule (before any dispatch).
-- `references/output-schemas.md` - output schemas and templates, and the `analysis` and `delta` flows (Phase 5 and those modes).
+- `references/output-schemas.md` - output schemas and templates, and the `analysis` and `delta` flows (the save before Phase 4, Phase 5, and those modes).
 
 ## Invocation
 

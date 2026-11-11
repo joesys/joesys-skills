@@ -292,3 +292,14 @@ def test_audit_author_reads_the_metrics_file_instead_of_receiving_a_copy() -> No
     assert "Choose this folder once" in skill
     schemas = compact(read("skills/codebase-audit/references/output-schemas.md"))
     assert "Choose the folder once per run" in schemas
+
+
+def test_audit_updates_the_saved_metrics_file_instead_of_typing_it_again() -> None:
+    # The file is saved before the report writer runs. Afterwards only the
+    # ranks, weights and overall grade change, so no step says "rewrite".
+    schemas = compact(read("skills/codebase-audit/references/output-schemas.md"))
+    assert "rewrite metrics.json" not in schemas.lower()
+    assert schemas.count("change only those fields") == 2
+    skill = compact(read("skills/codebase-audit/SKILL.md"))
+    assert "by changing only those fields" in skill
+    assert "the save before Phase 4, Phase 5, and those modes" in skill

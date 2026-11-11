@@ -113,7 +113,7 @@ Date-stamped directories. If today's directory exists from an earlier run, appen
 - `confidence` per criterion: `"high"`, `"medium"`, or `"low"`.
 - `by_language` inside metric objects is present only for polyglot repos. For single-language repos, omit it.
 - `audit_scope` captures what was measured and how — used for delta comparability checks.
-- After Phase 4 completes: **rewrite metrics.json and metrics.md** with final ranks, weights, and adjusted overall grade.
+- After Phase 4 completes: update `metrics.json` with the final ranks, weights, and adjusted overall grade (change only those fields), then write `metrics.md` from it.
 - `story_readability` criterion uses dimension-specific metrics: `narrative_flow`, `naming_as_intent`, `cognitive_chunking`, `abstraction_consistency`, `function_focus`, `structural_clarity`, `documentation_quality`, `no_clever_tricks` — each with `value` (1-10), `weight` (percentage), and `assessment`. The `weighted_score` field holds the composite 0-100 score.
 
 ---
@@ -226,7 +226,7 @@ Last updated: {DATE}
 3. Parse metrics.json
 4. Run Phase 3 (user context)
 5. Run Phase 4 (analysis writing)
-6. Rewrite metrics.json and metrics.md with final ranks/weights
+6. Update metrics.json with the final ranks and weights (change only those fields), then write metrics.md from it
 7. Write analysis.md into the same directory
 
 ### `$codebase-audit delta`
