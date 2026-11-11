@@ -312,3 +312,23 @@ def test_audit_prompts_say_how_to_write_several_source_folders() -> None:
     assert "`{source_paths}` is every source folder, separated by spaces" in prompts
     assert "do not run a helper once per folder" in prompts
     assert "`{exclude_patterns}` is one quoted string of glob patterns separated by commas" in prompts
+
+
+BIOME_WARNING = (
+    "> ⚠️ **DANGER: auto-modifies** — `--write` and `--fix` rewrite source files, "
+    "in both `biome format` and `biome lint`. `biome lint --suppress` writes comments "
+    "into source files, and `--unsafe` widens what `--write` changes. **NEVER** pass "
+    "`--write`, `--fix`, `--unsafe`, or `--suppress`. Biome has no `--no-write` flag: "
+    "a report-only run is a run without these flags."
+)
+
+
+def test_biome_notes_name_the_flags_that_really_write_files() -> None:
+    # One file said `biome format` writes unless `--no-write` is passed. Biome
+    # has no such flag, and it also left out that `biome lint --write` writes.
+    # Checked against https://biomejs.dev/reference/cli/ in November 2026.
+    for relative in ("shared/tooling/typescript.md", "shared/tooling/javascript.md"):
+        text = read(relative)
+        assert BIOME_WARNING in text, relative
+        assert "unless `--no-write`" not in text, relative
+        assert "format only" not in text, relative

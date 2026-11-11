@@ -25,6 +25,8 @@ Per-language static analysis tools for JavaScript projects. Read this file along
 
 ### Biome
 
+> ⚠️ **DANGER: auto-modifies** — `--write` and `--fix` rewrite source files, in both `biome format` and `biome lint`. `biome lint --suppress` writes comments into source files, and `--unsafe` widens what `--write` changes. **NEVER** pass `--write`, `--fix`, `--unsafe`, or `--suppress`. Biome has no `--no-write` flag: a report-only run is a run without these flags.
+
 | Field | Value |
 |:--|:--|
 | **Category** | Linter + Formatter |
@@ -43,8 +45,6 @@ npx @biomejs/biome lint --no-errors-on-unmatched {source_paths}
 ```
 
 **Format check (report-only):**
-
-> ⚠️ **DANGER: auto-modifies** — Biome's `--write` flag rewrites source files in place. NEVER pass `--write`. Always use `--no-errors-on-unmatched` without `--write` for report-only format checking.
 
 ```
 npx @biomejs/biome format --no-errors-on-unmatched {source_paths}

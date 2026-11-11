@@ -42,7 +42,7 @@ Tools specific to TypeScript/JavaScript projects. Read this alongside `shared/to
 
 ### Biome
 
-> ⚠️ **DANGER (format only): auto-modifies** — `biome format` writes files unless `--no-write` / no `--write` is passed. The `lint` subcommand is read-only by default.
+> ⚠️ **DANGER: auto-modifies** — `--write` and `--fix` rewrite source files, in both `biome format` and `biome lint`. `biome lint --suppress` writes comments into source files, and `--unsafe` widens what `--write` changes. **NEVER** pass `--write`, `--fix`, `--unsafe`, or `--suppress`. Biome has no `--no-write` flag: a report-only run is a run without these flags.
 
 | Field | Value |
 |:--|:--|
@@ -50,7 +50,7 @@ Tools specific to TypeScript/JavaScript projects. Read this alongside `shared/to
 | **Tier** | 2–3 (Tier 2 as linter, Tier 3 as formatter) |
 | **Detection** | `biome.json`, `biome.jsonc` |
 | **Availability** | `which biome` (Unix) / `where biome` (Windows), or `npx @biomejs/biome --version` |
-| **Report-only invocation** | Lint: `npx @biomejs/biome lint --no-errors-on-unmatched {source_paths}` — read-only by default. Format check: `npx @biomejs/biome format --no-errors-on-unmatched {source_paths}` — **NEVER** pass `--write`. |
+| **Report-only invocation** | Lint: `npx @biomejs/biome lint --no-errors-on-unmatched {source_paths}`. Format check: `npx @biomejs/biome format --no-errors-on-unmatched {source_paths}`. Both only report when run without the flags named above. |
 | **Scope-to-files** | Pass file or directory paths as positional arguments after the subcommand. |
 | **Output format** | Default: human-readable diagnostics to stderr, exit code signals outcome. With `--reporter=json`: JSON object containing a `diagnostics` array with `category`, `severity`, `description`, and `location` (file, span). |
 | **Recommendation** | Popular OSS alternative to the eslint + prettier combination. Fast (Rust-based), zero config to start, unified lint+format in one tool. Smaller rule ecosystem than eslint. Good choice for greenfield projects or repos replacing both eslint and prettier. |
