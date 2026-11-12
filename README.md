@@ -1,6 +1,6 @@
 # joesys-skills
 
-A collection of 23 agent skills for Claude Code and Codex: turn rough ideas
+A collection of 24 agent skills for Claude Code and Codex: turn rough ideas
 into reusable prompts, consult other AI models, review code,
 understand projects, improve engineering workflows, and preserve or publish
 development work.
@@ -59,6 +59,7 @@ codex plugin marketplace upgrade
 | Verify | [`create-formal-verification-skill`](#create-formal-verification-skill) | Check one promise of the code for every case in a stated scope |
 | Work | [`joesys-mode`](#joesys-mode) | Work on a coding task by 32 engineering principles and a step list |
 | Understand | [`explain`](#explain) | Explain a project, file, symbol, or feature in layers |
+| Understand | [`why`](#why) | Find why code is built the way it is, from the project's own record |
 | Understand | [`huh`](#huh) | Re-explain the last answer in plain language with options, confidence, and unasked questions |
 | Improve | [`retrospective`](#retrospective) | Facilitate an evidence-based development retrospective |
 | Improve | [`interaction-review`](#interaction-review) | Grade human-AI collaboration and coach improvements |
@@ -356,6 +357,30 @@ external dependencies, and health and risk. The report progresses from a
 /explain --save
 /explain src/api/ --save --path docs/
 ```
+
+### why
+
+Find out why code is built the way it is: the reason for a design, a limit, a
+guard, or a rule. Code shows what it does, not why it exists. The skill
+builds an anchor from `git blame` and the commit messages. Then it searches
+two sources every time: the version control history, and the project's own
+written record (comments, tests, specs, devlog scraps, handoff files, and
+saved council answers). The answer comes first. Every claim has a citation
+and one of five confidence tiers: Stated, Supported, Inferred, Guess, or
+Unknown.
+
+```text
+/why does the retry stop after 3 attempts?
+/why src/auth/session.py:40-72
+/why
+```
+
+The skill only reads. It never cites code as the reason for itself, and it
+reports each search that found nothing. It searches an outside source, such
+as tickets or team chat, only when the host already has a connector for it.
+No run has used a connector yet.
+
+Adapted from pstack by Lauren Tan (MIT License).
 
 ### huh
 

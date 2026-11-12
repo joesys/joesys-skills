@@ -208,3 +208,22 @@ interfaces, update all callers listed below.
   is soft — breaking it won't cause errors, just lost functionality.
 - If a caller depends on the result, the interface is hard — breaking
   it will cause visible failures.
+
+## Why Interface
+
+**Invocation:** `/why [<question, file, symbol, or line range>]`
+
+**Behavior contract:**
+- Answers why code is built the way it is, with a citation and one of five
+  confidence tiers (Stated, Supported, Inferred, Guess, Unknown) on every
+  claim. The answer comes first.
+- Always searches two sources: the version control history, and the
+  project's own written record. Searches an outside source only when the
+  host already has a connector for it.
+- Reports each search that found nothing, including a repository without
+  pull requests.
+- Reads only. Changes no file in the project and never writes to an outside
+  service.
+
+**Callers:**
+- None currently — this skill is user-invoked only

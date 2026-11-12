@@ -1,6 +1,6 @@
 ---
 name: explain
-description: "Use when the user invokes /explain to analyze a codebase, directory, file, symbol, or feature and produce a layered explanation report."
+description: "Use when the user invokes /explain to analyze a codebase, directory, file, symbol, or feature and produce a layered explanation report. SKIP if the user asks why code was built the way it is — that's /why."
 ---
 
 # Explain Skill

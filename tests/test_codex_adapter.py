@@ -38,6 +38,7 @@ EXPECTED_SKILLS = {
     "restructure-commit",
     "retrospective",
     "ss",
+    "why",
 }
 
 SAME_PLATFORM_SUBAGENT_SKILLS = {
@@ -50,6 +51,7 @@ SAME_PLATFORM_SUBAGENT_SKILLS = {
     "quick-review",
     "readability-review",
     "retrospective",
+    "why",
 }
 
 PINNED_SUBAGENT_MODEL = re.compile(
@@ -384,12 +386,12 @@ def test_generated_docs_have_no_cross_host_path_contradictions(tmp_path):
     assert "`.claude/` directory doesn't exist" not in combined
 
 
-def test_generated_manifest_publishes_release_20_0_with_23_skills(tmp_path):
+def test_generated_manifest_publishes_release_20_0_with_24_skills(tmp_path):
     output = tmp_path / "joesys-skills"
     manifest = codex_adapter.build_collection(REPO_ROOT, output)
 
     assert manifest["source_version"] == "20.0.0"
-    assert len(manifest["installed_skills"]) == 23
+    assert len(manifest["installed_skills"]) == 24
     assert "prompt" in manifest["installed_skills"]
 
 
