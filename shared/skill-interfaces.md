@@ -245,3 +245,23 @@ interfaces, update all callers listed below.
 
 **Callers:**
 - None currently — this skill is user-invoked only
+
+## Benchmark Checklist Interface
+
+**Invocation:** `/benchmark-checklist [<claim, script, or two options>]`
+
+**Behavior contract:**
+- Tests a measured performance number with seven questions, each answered
+  from a run: the limit, the tuning, the arithmetic, the errors, the
+  repeat runs, the share of the whole, and whether the work ran at all.
+- The verdict is one of four words: faster, slower, no measurable
+  difference, or inconclusive. Every number carries its run count and its
+  range.
+- A rough number needs one run, and still answers the questions about
+  errors and about whether the work ran.
+- Changes no product code. Asks before it installs a tool, and before it
+  puts load on a shared or paid service.
+
+**Callers:**
+- None currently — this skill is user-invoked, or loaded when a measured
+  number is about to be reported

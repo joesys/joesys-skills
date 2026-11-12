@@ -1,6 +1,6 @@
 # joesys-skills
 
-A collection of 25 agent skills for Claude Code and Codex: turn rough ideas
+A collection of 26 agent skills for Claude Code and Codex: turn rough ideas
 into reusable prompts, consult other AI models, review code,
 understand projects, improve engineering workflows, and preserve or publish
 development work.
@@ -58,6 +58,7 @@ codex plugin marketplace upgrade
 | Review | [`blast-radius`](#blast-radius) | Find what a change could break elsewhere, and prove the one fact that makes it safe |
 | Verify | [`create-verification-skill`](#create-verification-skill) | Generate a project skill that proves features in the running app |
 | Verify | [`create-formal-verification-skill`](#create-formal-verification-skill) | Check one promise of the code for every case in a stated scope |
+| Verify | [`benchmark-checklist`](#benchmark-checklist) | Test a performance number with seven questions before you report it |
 | Work | [`joesys-mode`](#joesys-mode) | Work on a coding task by 32 engineering principles and a step list |
 | Understand | [`explain`](#explain) | Explain a project, file, symbol, or feature in layers |
 | Understand | [`why`](#why) | Find why code is built the way it is, from the project's own record |
@@ -336,6 +337,33 @@ the model and not the code. Before it reports, the skill breaks the real code
 on purpose, confirms that the generated skill catches the break, and restores
 the code. It asks before it installs a tool, and it never changes product
 code unless asked.
+
+Adapted from pstack by Lauren Tan (MIT License).
+
+### benchmark-checklist
+
+Test a performance number before anyone reports it or acts on it. A number
+can measure the load tool, a cache, an error path, or work that never ran.
+The skill asks seven questions, and each answer must come from a run:
+
+| # | Question | What it catches |
+|---|---|---|
+| 1 | Why not double? | A number with no known limit |
+| 2 | Was it tuned? | Two configurations compared as two implementations |
+| 3 | Did it break limits? | A result that the disk, the network, or the cores cannot give |
+| 4 | Did it error? | Fast failures counted as fast work |
+| 5 | Does it reproduce? | A gap smaller than the variation between runs |
+| 6 | Does it matter? | A small part that is a tiny share of the whole |
+| 7 | Did it even happen? | Work that never ran inside the timed region |
+
+```text
+/benchmark-checklist
+/benchmark-checklist export is 30% faster on the large data set
+```
+
+The verdict is one of four words: faster, slower, no measurable difference,
+or inconclusive. Every number carries its run count and its range. The skill
+changes no product code and asks before it installs a tool.
 
 Adapted from pstack by Lauren Tan (MIT License).
 
