@@ -117,3 +117,25 @@ def test_readme_and_interfaces_list_the_skill() -> None:
 
     interfaces = read(REPO_ROOT / "shared" / "skill-interfaces.md")
     assert "## Benchmark Checklist Interface" in interfaces
+
+
+# --- First live run, in this repository, 2026-11-12 --------------------------
+# Each test below pins one gap that the run showed in the skill text.
+
+
+def test_report_says_when_the_runs_contradict_the_claim() -> None:
+    # The claim written before the measurement said "not measurably slower".
+    # Seven runs on each side showed 17% slower.
+    for skill in skills():
+        normalized = compact(skill)
+        assert "When the runs contradict the claim" in normalized
+        assert "Report what the runs show" in normalized
+
+
+def test_both_sides_use_the_kind_of_disk_that_production_uses() -> None:
+    # The scratch folder was on a memory disk. The real build writes to a
+    # normal disk, so a timing taken there would have been too good.
+    for skill in skills():
+        normalized = compact(skill)
+        assert "the same kind of disk" in normalized
+        assert "a memory disk" in normalized

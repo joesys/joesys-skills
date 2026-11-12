@@ -71,8 +71,9 @@ options is never a rough number.
    first, you measured the load tool. If a change did not move the number,
    the limit explains why. Find it before you call the change useless.
 2. **Was it tuned?** Run each side the way production runs it: a release
-   build, the production settings, the same versions and data, and caches as
-   warm or as cold as production has them. If one side runs on defaults, you
+   build, the production settings, the same versions and data, the same kind
+   of disk, and caches as warm or as cold as production has them. A scratch
+   folder is often on a memory disk, which is much faster than a real one. If one side runs on defaults, you
    compared two configurations, not two implementations. When the limit is a
    setting, such as a debug build, one commit for each row, or a missing
    index, that side is untuned. Tune it and measure again before you choose
@@ -105,6 +106,8 @@ options is never a rough number.
 
 - Start with the verdict: faster, slower, no measurable difference, or
   inconclusive.
+- When the runs contradict the claim that you wrote down, say so in the
+  next sentence. Report what the runs show, not what you expected.
 - Give one main number first, with its unit, the run count, the range, and
   what limits it. Example: "The median went from 41 ms to 33 ms, over 7 runs
   on each side. The range after the change is 32 to 35 ms. JSON parsing on
