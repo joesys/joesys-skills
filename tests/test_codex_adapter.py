@@ -22,6 +22,7 @@ EXPECTED_SKILLS = {
     "codereview",
     "codex",
     "commit",
+    "create-verification-skill",
     "devlog",
     "explain",
     "grok",
@@ -381,12 +382,12 @@ def test_generated_docs_have_no_cross_host_path_contradictions(tmp_path):
     assert "`.claude/` directory doesn't exist" not in combined
 
 
-def test_generated_manifest_publishes_release_19_2_with_20_skills(tmp_path):
+def test_generated_manifest_publishes_release_19_2_with_21_skills(tmp_path):
     output = tmp_path / "joesys-skills"
     manifest = codex_adapter.build_collection(REPO_ROOT, output)
 
     assert manifest["source_version"] == "19.2.0"
-    assert len(manifest["installed_skills"]) == 20
+    assert len(manifest["installed_skills"]) == 21
     assert "prompt" in manifest["installed_skills"]
 
 
@@ -415,6 +416,21 @@ def test_generated_grok_command_keeps_its_permission_rules(tmp_path):
     )
     assert "Run it with shell." in adapted
     assert "`Bash(rm *)`" in adapted
+
+
+def test_project_skill_folder_becomes_the_codex_one():
+    # Claude Code reads project skills from `.claude/skills/`. Codex reads
+    # them from `.agents/skills/` in the repository. A skill that writes a
+    # project skill must name the folder its own host reads.
+    adapted = codex_adapter.adapt_skill_markdown(
+        '---\nname: x\ndescription: "d"\n---\n\n'
+        "Write it to `.claude/skills/verify-<app>/SKILL.md`. "
+        "Read `.claude/skill-context/x.md`.\n",
+        ["x"],
+    )
+    assert "`.agents/skills/verify-<app>/SKILL.md`" in adapted
+    assert ".claude/skills/" not in adapted
+    assert "`.codex/skill-context/x.md`" in adapted
 
 
 def test_committed_codex_skills_match_fresh_build(tmp_path):

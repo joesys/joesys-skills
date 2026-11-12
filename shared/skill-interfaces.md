@@ -145,6 +145,23 @@ interfaces, update all callers listed below.
 **Callers:**
 - None currently — this skill is user-invoked only
 
+## Create Verification Skill Interface
+
+**Invocation:** `/create-verification-skill [<app or folder>]`
+
+**Behavior contract:**
+- Writes one project-local skill, `verify-<app>`, to the project skill folder
+  that the running host reads.
+- The generated skill has six sections (Launch, Doctor, Drive, Evidence,
+  Cleanup, Helpers) and a feature map under `features/`.
+- Runs the generated skill once before it reports. Without that run, it
+  reports a draft.
+- Labels every proof `live` or `fake` for each outside service.
+- Never reads secrets, never changes product code, and never commits or pushes.
+
+**Callers:**
+- None currently — this skill is user-invoked only
+
 ---
 
 **Rules:**

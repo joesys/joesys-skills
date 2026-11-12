@@ -270,6 +270,8 @@ def _adapt_text(
     adapted = adapted.replace("Agent tool", "Codex agent workflow")
     adapted = adapted.replace("Task tool", "Codex agent workflow")
     adapted = adapted.replace(".claude/skill-context", ".codex/skill-context")
+    # Codex reads project skills from `.agents/skills/` in the repository.
+    adapted = adapted.replace(".claude/skills/", ".agents/skills/")
     adapted = adapted.replace(".claude/audit.yaml", ".codex/audit.yaml")
     adapted = adapted.replace(".claude/audit.yml", ".codex/audit.yml")
 

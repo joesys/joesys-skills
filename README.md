@@ -1,6 +1,6 @@
 # joesys-skills
 
-A collection of 20 agent skills for Claude Code and Codex: turn rough ideas
+A collection of 21 agent skills for Claude Code and Codex: turn rough ideas
 into reusable prompts, consult other AI models, review code,
 understand projects, improve engineering workflows, and preserve or publish
 development work.
@@ -55,6 +55,7 @@ codex plugin marketplace upgrade
 | Review | [`readability-review`](#readability-review) | Grade how well code reads as a story |
 | Review | [`human-review-guide`](#human-review-guide) | Build a decision-focused human reading order |
 | Review | [`codebase-audit`](#codebase-audit) | Grade whole-codebase quality and velocity |
+| Verify | [`create-verification-skill`](#create-verification-skill) | Generate a project skill that proves features in the running app |
 | Understand | [`explain`](#explain) | Explain a project, file, symbol, or feature in layers |
 | Understand | [`huh`](#huh) | Re-explain the last answer in plain language with options, confidence, and unasked questions |
 | Improve | [`retrospective`](#retrospective) | Facilitate an evidence-based development retrospective |
@@ -265,6 +266,28 @@ metrics, industry benchmarks, letter grades, and actionable recommendations.
 /codebase-audit maintainability performance
 /codebase-audit --static-only
 ```
+
+## Verify Running Apps
+
+### create-verification-skill
+
+Generate a project-local skill, `verify-<app>`, that tells an agent how to
+start the real app, use a feature the way a user does, and capture evidence.
+The generated skill has six sections (Launch, Doctor, Drive, Evidence,
+Cleanup, Helpers) and a feature map with one file per user-facing feature.
+
+```text
+/create-verification-skill
+/create-verification-skill <app or folder>
+```
+
+The skill runs the generated skill once before it reports. Without that run,
+it reports a draft. Every proof says `live` or `fake` for each outside
+service it touched. The skill never reads secrets, never changes product
+code, and never commits. In Claude Code the generated skill goes to
+`.claude/skills/`; in Codex it goes to `.agents/skills/`.
+
+Adapted from pstack by Lauren Tan (MIT License).
 
 ## Understand Projects
 
