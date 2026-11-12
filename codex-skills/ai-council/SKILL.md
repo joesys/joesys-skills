@@ -1,11 +1,11 @@
 ---
 name: ai-council
-description: "Use when the user invokes $ai-council to consult three frontier AI models (Claude, GPT, Antigravity) in parallel and synthesize their responses into a consensus analysis"
+description: "Use when the user invokes $ai-council to consult four frontier AI models (Claude, GPT, Antigravity, Grok) in parallel and synthesize their responses into a consensus analysis"
 ---
 
 # AI Council Skill
 
-Send the same question to three frontier AI models (Claude, GPT via Codex, Antigravity) in parallel. Then combine their answers into one analysis that shows where they agree and where they differ.
+Send the same question to four frontier AI models (Claude, GPT via Codex, Antigravity, Grok) in parallel. Then combine their answers into one analysis that shows where they agree and where they differ.
 
 ## Collection Root
 
@@ -17,9 +17,9 @@ Write everything a person reads in plain English for a reader who uses English a
 
 ## Ground Rules
 
-- A **leg** is one model's dispatch and response (Claude leg, Codex leg, Antigravity leg). The **council** is all three.
+- A **leg** is one model's dispatch and response (Claude leg, Codex leg, Antigravity leg, Grok leg). The **council** is all four.
 - Dispatch the question to the council. Do not answer it yourself instead.
-- Treat the three legs as peers. Do not tilt the synthesis toward the host model; dissent from any leg gets equal weight.
+- Treat the four legs as peers. Do not tilt the synthesis toward the host model; dissent from any leg gets equal weight.
 - Never drop a leg silently. If a leg fails, name the missing model in the synthesis and offer a retry.
 - Write nothing to the project except the council output folder.
 - Read `../shared/delegation-common.md` for prompt delivery, critical evaluation, and failure reporting, and `../shared/model-defaults.md` for the current CLI command templates.
@@ -36,13 +36,13 @@ Read `.codex/skill-context/preferences.md` if present. Apply its communication s
 
 ## Phase 1: Gather Context
 
-Gather the facts the legs need before you dispatch; this needs no approval. For a project question, read the relevant files and git state. For a general technology question, search the web for recent facts if you can. Give all three legs the same context bundle, and summarize it if it is large. If some context cannot be gathered, continue with what you have.
+Gather the facts the legs need before you dispatch; this needs no approval. For a project question, read the relevant files and git state. For a general technology question, search the web for recent facts if you can. Give all four legs the same context bundle, and summarize it if it is large. If some context cannot be gathered, continue with what you have.
 
 ## Phase 2: Build the Prompts
 
 Each leg gets a four-part prompt:
 
-1. **Role preamble (per leg):** "You are the [Claude/GPT/Antigravity] representative on a multi-model AI council. Give your independent analysis. Be explicit about your confidence level and reasoning. State your position clearly."
+1. **Role preamble (per leg):** "You are the [Claude/GPT/Antigravity/Grok] representative on a multi-model AI council. Give your independent analysis. Be explicit about your confidence level and reasoning. State your position clearly."
 2. **Context bundle** (same for all legs).
 3. **Refined question** (same for all legs): the user's question restated clearly, with the goals, constraints, and scope that the context implies. Clarify; do not change the user's intent. When in doubt, keep the original wording.
 4. **Original question** (same for all legs): "Original question from the user: [verbatim user input]"
@@ -54,29 +54,34 @@ mktemp -d "${TMPDIR:-/tmp}/council-XXXXXX"
 ```
 
 ```bash
-cat > <RUN_DIR>$codex.txt << 'PROMPT_EOF'
+cat > <RUN_DIR>/codex.txt << 'PROMPT_EOF'
 <four-part prompt with the GPT preamble>
 PROMPT_EOF
-cat > <RUN_DIR>$antigravity.txt << 'PROMPT_EOF'
+cat > <RUN_DIR>/antigravity.txt << 'PROMPT_EOF'
 <four-part prompt with the Antigravity preamble>
 PROMPT_EOF
-cat > <RUN_DIR>$claude.txt << 'PROMPT_EOF'
+cat > <RUN_DIR>/claude.txt << 'PROMPT_EOF'
 <four-part prompt with the Claude preamble>
 PROMPT_EOF
+cat > <RUN_DIR>/grok.txt << 'PROMPT_EOF'
+<four-part prompt with the Grok preamble>
+PROMPT_EOF
 ```
+
+Keep the role preamble as the first line of every prompt file. Grok reads a prompt that starts with `/` as one of its own commands and does not send it to the model.
 
 After all legs finish, delete the folder: `rm -rf <RUN_DIR>`.
 
 ## Phase 3: Parallel Dispatch
 
-Launch all three legs in a single response, as three parallel tool calls. Use a 600000 ms timeout on each shell call.
+Launch all four legs in a single response, as parallel tool calls. Use a 600000 ms timeout on each shell call.
 
 ### Codex Leg
 
-Replace `<CODEX_CMD>` with the template from `../shared/model-defaults.md` Section Codex, but change its trailing `2>/dev/null` to `2><RUN_DIR>$codex.log`. Codex prints its `session id:` line on stderr. Read that line from the log after the run; the ID makes the later resume offer reliable.
+Replace `<CODEX_CMD>` with the template from `../shared/model-defaults.md` Section Codex, but change its trailing `2>/dev/null` to `2><RUN_DIR>/codex.log`. Codex prints its `session id:` line on stderr. Read that line from the log after the run; the ID makes the later resume offer reliable.
 
 ```bash
-cat <RUN_DIR>$codex.txt | <CODEX_CMD>
+cat <RUN_DIR>/codex.txt | <CODEX_CMD>
 ```
 
 ### Antigravity Leg
@@ -84,7 +89,7 @@ cat <RUN_DIR>$codex.txt | <CODEX_CMD>
 Replace `<AGY_CMD>` with the template from `../shared/model-defaults.md` Section Antigravity. The adapter reads the prompt from stdin; do not add `-p` or format flags.
 
 ```bash
-cat <RUN_DIR>$antigravity.txt | <AGY_CMD>
+cat <RUN_DIR>/antigravity.txt | <AGY_CMD>
 ```
 
 ### Claude Leg
@@ -94,17 +99,32 @@ cat <RUN_DIR>$antigravity.txt | <AGY_CMD>
 **Use CLI** when the parent is not Claude Code, or when the question points to files or code paths that Phase 1 could not fully resolve and the Claude leg needs tool access to explore. Replace `<CLAUDE_CMD>` with the template from `../shared/model-defaults.md` Section Claude CLI (it runs Fable) and append `--name` so it can be resumed:
 
 ```bash
-cat <RUN_DIR>$claude.txt | <CLAUDE_CMD> --name "council-<topic>"
+cat <RUN_DIR>/claude.txt | <CLAUDE_CMD> --name "council-<topic>"
 ```
+
+### Grok Leg
+
+Replace `<GROK_CMD>` with the template from `../shared/model-defaults.md` Section Grok. Do not change the template: its flags keep Grok read-only. Grok does not read the prompt from stdin, so the first line points the template at this run's prompt file. Create the session ID in the same call, because a shell variable is gone by the next call. Run the ID line with `python3`, or `python` on Windows.
+
+```bash
+PROMPT_FILE=<RUN_DIR>/grok.txt
+SESSION_ID=$(python3 -c 'import uuid; print(uuid.uuid4())')
+<GROK_CMD> --session-id "$SESSION_ID" 2><RUN_DIR>/grok.log
+echo "session id: $SESSION_ID"
+echo "grok stderr:"
+cat <RUN_DIR>/grok.log
+```
+
+Never discard Grok's stderr. When Grok tries something that needs approval, the run stops early: the exit code is still 0, and the answer is cut short. The only sign is a stderr line that starts with `permission required:`. Then that leg is partial: say so in the synthesis and quote the line. Any other stderr line that is not an error message is a note, not a failure. Grok prints short progress notes directly before its answer, with no line break. Keep the output as printed.
 
 ### When Legs Fail
 
-Continue with the legs that answered. Name each missing leg in the synthesis and offer a retry; if two legs failed, warn that the council is degraded. If all three fail, report the failures as `../shared/delegation-common.md` Section Failures describes. When a retry succeeds, update the synthesis and the saved files.
+Continue with the legs that answered. Name each missing leg in the synthesis and offer a retry; if two or more legs failed, warn that the council is degraded. If all four fail, report the failures as `../shared/delegation-common.md` Section Failures describes. When a retry succeeds, update the synthesis and the saved files.
 
 ## Phase 4: Synthesis
 
 1. **Summary** - 2-3 sentences: what the council was asked and the overall direction of the answers.
-2. **Confidence Matrix** - include it when the legs covered several dimensions. Rows are the themes the legs addressed; columns are Claude, GPT, and Antigravity. Each cell is **High**, **Medium**, or **Low** (judged from stated certainty and hedging), or **Not addressed**.
+2. **Confidence Matrix** - include it when the legs covered several dimensions. Rows are the themes the legs addressed; columns are Claude, GPT, Antigravity, and Grok. Each cell is **High**, **Medium**, or **Low** (judged from stated certainty and hedging), or **Not addressed**.
 3. **Consensus Points** - where all responding legs agree, with the reasoning.
 4. **Tensions & Disagreements** - where the legs differ. State each position fairly and explain the nature of the disagreement (for example, "Claude and GPT favor X for reason A, while Antigravity argues Y because of B").
 5. **Synthesized Recommendation** - your own recommendation, informed by all legs. Weigh the quality of reasoning, not the vote count.
@@ -112,7 +132,7 @@ Continue with the legs that answered. Name each missing leg in the synthesis and
 ## Post-Synthesis Options
 
 Offer the next steps and wait for the user's answer:
-- Resume commands for the legs that used a CLI: `$codex resume <SESSION_ID>`, `$antigravity resume`, `$claude resume council-<topic>`. A subagent Claude leg cannot be resumed. A resume does not update this synthesis; the user can run `$ai-council` again with a refined question.
+- Resume commands for the legs that used a CLI: `$codex resume <SESSION_ID>`, `$antigravity resume`, `$claude resume council-<topic>`, `$grok resume <SESSION_ID>`. A subagent Claude leg cannot be resumed. A resume does not update this synthesis; the user can run `$ai-council` again with a refined question.
 - A retry for any failed leg.
 - A devlog scrap (`$devlog scrap --from-context`) only when something surprising came up, such as an unexpected disagreement or a recommendation against common practice.
 
@@ -125,6 +145,7 @@ docs/ai-council/20260325-postgresql-vs-mongodb/
 +-- claude.md
 +-- codex.md
 +-- antigravity.md
++-- grok.md
 +-- synthesis.md
 ```
 

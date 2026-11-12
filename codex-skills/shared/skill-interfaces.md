@@ -28,8 +28,7 @@ interfaces, update all callers listed below.
 **Grok resume:** `$grok resume [prompt]` or `$grok resume <SESSION_ID> [prompt]`
 
 **Callers:**
-- `../ai-council/SKILL.md` — Post-Synthesis Options, item 1 (Codex, Antigravity, and Claude only)
-- Grok resume has no caller — `$grok` is user-invoked only
+- `../ai-council/SKILL.md` — Post-Synthesis Options, item 1 (Codex, Antigravity, Claude, and Grok)
 
 
 ## Review Principles Interface
