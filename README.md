@@ -1,6 +1,6 @@
 # joesys-skills
 
-A collection of 23 agent skills for Claude Code and Codex: turn rough ideas
+A collection of 28 agent skills for Claude Code and Codex: turn rough ideas
 into reusable prompts, consult other AI models, review code,
 understand projects, improve engineering workflows, and preserve or publish
 development work.
@@ -55,10 +55,15 @@ codex plugin marketplace upgrade
 | Review | [`readability-review`](#readability-review) | Grade how well code reads as a story |
 | Review | [`human-review-guide`](#human-review-guide) | Build a decision-focused human reading order |
 | Review | [`codebase-audit`](#codebase-audit) | Grade whole-codebase quality and velocity |
+| Review | [`blast-radius`](#blast-radius) | Find what a change could break elsewhere, and prove the one fact that makes it safe |
 | Verify | [`create-verification-skill`](#create-verification-skill) | Generate a project skill that proves features in the running app |
+| Verify | [`maintain-verification-skill`](#maintain-verification-skill) | Bring a `verify-<app>` skill and its feature map back in line with the app |
 | Verify | [`create-formal-verification-skill`](#create-formal-verification-skill) | Check one promise of the code for every case in a stated scope |
+| Verify | [`benchmark-checklist`](#benchmark-checklist) | Test a performance number with seven questions before you report it |
+| Design | [`architect`](#architect) | Design the shape of new code from several candidates, then stop |
 | Work | [`joesys-mode`](#joesys-mode) | Work on a coding task by 32 engineering principles and a step list |
 | Understand | [`explain`](#explain) | Explain a project, file, symbol, or feature in layers |
+| Understand | [`why`](#why) | Find why code is built the way it is, from the project's own record |
 | Understand | [`huh`](#huh) | Re-explain the last answer in plain language with options, confidence, and unasked questions |
 | Improve | [`retrospective`](#retrospective) | Facilitate an evidence-based development retrospective |
 | Improve | [`interaction-review`](#interaction-review) | Grade human-AI collaboration and coach improvements |
@@ -269,6 +274,29 @@ metrics, industry benchmarks, letter grades, and actionable recommendations.
 /codebase-audit --static-only
 ```
 
+### blast-radius
+
+Find what a change could break somewhere else, before it ships. A list of
+callers is not the answer, because a search finds those in a second. The
+skill looks where a search stops: the source of a library at its pinned
+version, the moment when each piece runs, a database column, a file format,
+a feature flag, generated copies of a file. Then it finds the one fact that
+the change is safe because of, and proves it with a script that runs the
+real code.
+
+```text
+/blast-radius                     # Current branch and uncommitted changes
+/blast-radius --commit abc123     # One commit
+/blast-radius --pr 123            # One pull request
+/blast-radius drop the retry cap  # A change that is only planned
+```
+
+Every fact gets one of five proof levels: Said, Pointed, Walked, Ran, or
+Reproduced. A reply without a run says `unproven`. The skill never changes
+product code and never commits.
+
+Adapted from pstack by Lauren Tan (MIT License).
+
 ## Verify Running Apps
 
 ### create-verification-skill
@@ -288,6 +316,27 @@ it reports a draft. Every proof says `live` or `fake` for each outside
 service it touched. The skill never reads secrets, never changes product
 code, and never commits. In Claude Code the generated skill goes to
 `.claude/skills/`; in Codex it goes to `.agents/skills/`.
+
+Adapted from pstack by Lauren Tan (MIT License).
+
+### maintain-verification-skill
+
+Bring a `verify-<app>` skill and its feature map back in line with the app.
+A feature map goes stale as soon as the app changes. The pass reads the
+source of every feature, with one read-only helper agent for each feature
+file. Then it drives every feature once in the real app, and it corrects
+only what a run proved.
+
+```text
+/maintain-verification-skill
+/maintain-verification-skill <skill name or folder>
+```
+
+The pass ends with one of three outcomes: `clean`, `changed`, or `blocked`.
+It says how many features it drove out of how many. It edits only the
+verification skill's own folder. A broken app is reported, never hidden in
+the map. The corrections stay uncommitted. The skill asks once, before the
+live pass, for every call that costs money.
 
 Adapted from pstack by Lauren Tan (MIT License).
 
@@ -311,6 +360,59 @@ the model and not the code. Before it reports, the skill breaks the real code
 on purpose, confirms that the generated skill catches the break, and restores
 the code. It asks before it installs a tool, and it never changes product
 code unless asked.
+
+Adapted from pstack by Lauren Tan (MIT License).
+
+### benchmark-checklist
+
+Test a performance number before anyone reports it or acts on it. A number
+can measure the load tool, a cache, an error path, or work that never ran.
+The skill asks seven questions, and each answer must come from a run:
+
+| # | Question | What it catches |
+|---|---|---|
+| 1 | Why not double? | A number with no known limit |
+| 2 | Was it tuned? | Two configurations compared as two implementations |
+| 3 | Did it break limits? | A result that the disk, the network, or the cores cannot give |
+| 4 | Did it error? | Fast failures counted as fast work |
+| 5 | Does it reproduce? | A gap smaller than the variation between runs |
+| 6 | Does it matter? | A small part that is a tiny share of the whole |
+| 7 | Did it even happen? | Work that never ran inside the timed region |
+
+```text
+/benchmark-checklist
+/benchmark-checklist export is 30% faster on the large data set
+```
+
+The verdict is one of four words: faster, slower, no measurable difference,
+or inconclusive. Every number carries its run count and its range. The skill
+changes no product code and asks before it installs a tool.
+
+Adapted from pstack by Lauren Tan (MIT License).
+
+## Design Before Code
+
+### architect
+
+Design the shape of new code before anyone writes it: how a caller uses it,
+the types, the function signatures, and the module boundaries. The first
+design that comes to mind is rarely the best one. So the skill gets at least
+two candidates that differ in their whole shape. One comes from a helper
+agent of the host, and the others come from other models, called read-only
+the way `/codereview` calls them. Each candidate works alone and writes the
+caller's usage first. The skill checks each one against eight design red
+flags, picks a base, and merges the best parts of the others into it.
+
+```text
+/architect a retry queue for failed webhook deliveries
+/architect --local a plugin loader for report formats
+/architect --save a cache for exchange rates
+```
+
+The result is a design package with nine sections, from the problem to the
+first step to build. Then the skill stops. It writes no code file in the
+project, and approval of a design is not approval to build it. `--local`
+keeps every candidate on the host and calls no other model.
 
 Adapted from pstack by Lauren Tan (MIT License).
 
@@ -356,6 +458,30 @@ external dependencies, and health and risk. The report progresses from a
 /explain --save
 /explain src/api/ --save --path docs/
 ```
+
+### why
+
+Find out why code is built the way it is: the reason for a design, a limit, a
+guard, or a rule. Code shows what it does, not why it exists. The skill
+builds an anchor from `git blame` and the commit messages. Then it searches
+two sources every time: the version control history, and the project's own
+written record (comments, tests, specs, devlog scraps, handoff files, and
+saved council answers). The answer comes first. Every claim has a citation
+and one of five confidence tiers: Stated, Supported, Inferred, Guess, or
+Unknown.
+
+```text
+/why does the retry stop after 3 attempts?
+/why src/auth/session.py:40-72
+/why
+```
+
+The skill only reads. It never cites code as the reason for itself, and it
+reports each search that found nothing. It searches an outside source, such
+as tickets or team chat, only when the host already has a connector for it.
+No run has used a connector yet.
+
+Adapted from pstack by Lauren Tan (MIT License).
 
 ### huh
 

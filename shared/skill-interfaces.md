@@ -208,3 +208,102 @@ interfaces, update all callers listed below.
   is soft — breaking it won't cause errors, just lost functionality.
 - If a caller depends on the result, the interface is hard — breaking
   it will cause visible failures.
+
+## Why Interface
+
+**Invocation:** `/why [<question, file, symbol, or line range>]`
+
+**Behavior contract:**
+- Answers why code is built the way it is, with a citation and one of five
+  confidence tiers (Stated, Supported, Inferred, Guess, Unknown) on every
+  claim. The answer comes first.
+- Always searches two sources: the version control history, and the
+  project's own written record. Searches an outside source only when the
+  host already has a connector for it.
+- Reports each search that found nothing, including a repository without
+  pull requests.
+- Reads only. Changes no file in the project and never writes to an outside
+  service.
+
+**Callers:**
+- None currently — this skill is user-invoked only
+
+## Blast Radius Interface
+
+**Invocation:** `/blast-radius [--commit <hash> | --pr <number> | <description>]`
+
+**Behavior contract:**
+- Finds what a change could break outside its own diff, and the one fact
+  that the change is safe because of.
+- Proves that fact with a script or a test that runs the real code, or
+  writes `unproven`. Every fact carries one of five proof levels: Said,
+  Pointed, Walked, Ran, Reproduced.
+- Names `/why`, `/codex`, `/antigravity` and `/ai-council` as options. It
+  runs none of them by itself.
+- Changes no product code. Leaves its proof script uncommitted and names it
+  in the reply. Never commits or pushes.
+
+**Callers:**
+- None currently — this skill is user-invoked only
+
+## Benchmark Checklist Interface
+
+**Invocation:** `/benchmark-checklist [<claim, script, or two options>]`
+
+**Behavior contract:**
+- Tests a measured performance number with seven questions, each answered
+  from a run: the limit, the tuning, the arithmetic, the errors, the
+  repeat runs, the share of the whole, and whether the work ran at all.
+- The verdict is one of four words: faster, slower, no measurable
+  difference, or inconclusive. Every number carries its run count and its
+  range.
+- A rough number needs one run, and still answers the questions about
+  errors and about whether the work ran.
+- Changes no product code. Asks before it installs a tool, and before it
+  puts load on a shared or paid service.
+
+**Callers:**
+- None currently — this skill is user-invoked, or loaded when a measured
+  number is about to be reported
+
+## Maintain Verification Skill Interface
+
+**Invocation:** `/maintain-verification-skill [<skill name or folder>]`
+
+**Behavior contract:**
+- Works on a project-local `verify-<app>` skill that
+  `/create-verification-skill` wrote, or on any project skill with launch
+  and drive sections and a feature map. Without one, it stops and points to
+  `/create-verification-skill`.
+- Reads the source of every feature and drives every feature once in the
+  real app. Corrects only what a run proved.
+- Ends with one outcome: `clean`, `changed`, or `blocked`, and says how
+  many features it drove out of how many.
+- Updates the `run` and `not run` marks in the feature map index.
+- Edits only the verification skill's own folder. Never edits product
+  code, and never commits or pushes.
+
+**Callers:**
+- `skills/create-verification-skill/SKILL.md` — Step 5 report (a pointer
+  only; it does not run this skill)
+
+## Architect Interface
+
+**Invocation:** `/architect [--local] [--save [--path <folder>]] <what to design>`
+
+**Behavior contract:**
+- Produces one design package for new code: the caller's usage, a type
+  sketch with `not implemented` bodies, the module map, and the reasons.
+  The package has the nine sections of
+  `skills/architect/references/design-package.md`.
+- Compares at least two candidates that differ in their whole shape. One
+  comes from a subagent of the host. The others come from other models
+  through `shared/cross-model-dispatch.md`, unless `--local` is set.
+- Designs and stops. Writes no code file in the project, and never
+  implements, commits, or pushes. `--save` writes the package to
+  `docs/architect/<short-name>.md`.
+- Names `/explain`, `/why`, `/codex`, `/antigravity` and `/ai-council` as
+  options. It runs none of them by itself.
+
+**Callers:**
+- None currently — this skill is user-invoked only

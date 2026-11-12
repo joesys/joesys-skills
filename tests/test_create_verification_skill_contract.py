@@ -108,13 +108,13 @@ def test_every_proof_says_whether_a_service_was_live_or_fake() -> None:
 
 
 def test_skill_points_at_nothing_this_collection_lacks() -> None:
-    # The source skill names a maintenance skill and a Cursor folder. Neither
-    # exists here, so a pointer to them would send the reader nowhere.
+    # The source skill names a Cursor folder. No such folder exists here, so
+    # a pointer to it would send the reader nowhere. The maintenance skill
+    # that the source also names exists since 2026-11-12: see
+    # tests/test_maintain_verification_skill_contract.py.
     for folder in (CANONICAL_DIR, CODEX_DIR):
         for path in sorted(folder.rglob("*.md")):
-            text = read(path)
-            assert "maintain-verification-skill" not in text, path
-            assert ".cursor" not in text, path
+            assert ".cursor" not in read(path), path
 
 
 def test_skill_carries_the_license_notice_of_its_source() -> None:

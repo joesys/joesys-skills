@@ -183,6 +183,8 @@ Reply in the conversation with these parts:
 - **What you created.** Every new file. All of them are uncommitted.
 - **What you need from the user.** For example a secret, or approval for a
   live call or an install.
+- **How to keep it true.** `$maintain-verification-skill` brings the skill
+  and its map back in line after the app changes.
 
 ## Edge Cases
 

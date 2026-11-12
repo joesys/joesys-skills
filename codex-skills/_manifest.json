@@ -4,6 +4,9 @@
   "installed_skills": [
     "ai-council",
     "antigravity",
+    "architect",
+    "benchmark-checklist",
+    "blast-radius",
     "claude",
     "codebase-audit",
     "codereview",
@@ -19,16 +22,21 @@
     "human-review-guide",
     "interaction-review",
     "joesys-mode",
+    "maintain-verification-skill",
     "prompt",
     "quick-review",
     "readability-review",
     "restructure-commit",
     "retrospective",
-    "ss"
+    "ss",
+    "why"
   ],
   "skill_mentions": [
     "$ai-council",
     "$antigravity",
+    "$architect",
+    "$benchmark-checklist",
+    "$blast-radius",
     "$claude",
     "$codebase-audit",
     "$codereview",
@@ -44,12 +52,14 @@
     "$human-review-guide",
     "$interaction-review",
     "$joesys-mode",
+    "$maintain-verification-skill",
     "$prompt",
     "$quick-review",
     "$readability-review",
     "$restructure-commit",
     "$retrospective",
-    "$ss"
+    "$ss",
+    "$why"
   ],
   "adapter_version": "2.0.0"
 }
