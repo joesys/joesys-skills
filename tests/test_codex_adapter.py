@@ -455,3 +455,44 @@ def test_committed_codex_skills_match_fresh_build(tmp_path):
     assert _tree_snapshot(committed) == _tree_snapshot(fresh), (
         "codex-skills/ is stale — run: python scripts/codex_adapter.py codex-skills --force"
     )
+
+
+def test_a_file_name_is_not_a_skill_command():
+    # The Codex copy of /ai-council said `<RUN_DIR>$codex.txt` where the
+    # source says `<RUN_DIR>/codex.txt`. A shell reads `$codex` as an empty
+    # variable, so the three prompt files of a council became one file.
+    adapted = codex_adapter.adapt_skill_markdown(
+        '---\nname: x\ndescription: "d"\n---\n\n'
+        "cat > <RUN_DIR>/codex.txt << 'PROMPT_EOF'\n"
+        "run 2><RUN_DIR>/codex.log\n"
+        "Run /codex.\n"
+        "Then `/codex`, or /codex resume.\n",
+        ["codex"],
+    )
+    assert "cat > <RUN_DIR>/codex.txt << 'PROMPT_EOF'" in adapted
+    assert "run 2><RUN_DIR>/codex.log" in adapted
+    # A command at the end of a sentence is still a command.
+    assert "Run $codex.\n" in adapted
+    assert "Then `$codex`, or $codex resume." in adapted
+
+
+def test_no_generated_file_turns_a_file_name_into_a_skill_mention(tmp_path):
+    # The test that compares the committed copy with a fresh build cannot
+    # see this kind of mistake: both sides come from the same rule, so both
+    # hold the same wrong text.
+    output = tmp_path / "joesys-skills"
+    manifest = codex_adapter.build_collection(REPO_ROOT, output)
+    names = sorted(manifest["installed_skills"], key=len, reverse=True)
+    file_name = re.compile(
+        r"\$(?:" + "|".join(re.escape(name) for name in names) + r")\.[A-Za-z]"
+    )
+
+    markdown_files = sorted(output.rglob("*.md"))
+    assert markdown_files
+    for markdown in markdown_files:
+        found = file_name.search(markdown.read_text(encoding="utf-8"))
+        assert not found, (markdown.relative_to(output), found and found.group(0))
+
+    council = (output / "ai-council" / "SKILL.md").read_text(encoding="utf-8")
+    assert "cat > <RUN_DIR>/codex.txt" in council
+    assert "<RUN_DIR>$" not in council

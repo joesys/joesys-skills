@@ -54,13 +54,13 @@ mktemp -d "${TMPDIR:-/tmp}/council-XXXXXX"
 ```
 
 ```bash
-cat > <RUN_DIR>$codex.txt << 'PROMPT_EOF'
+cat > <RUN_DIR>/codex.txt << 'PROMPT_EOF'
 <four-part prompt with the GPT preamble>
 PROMPT_EOF
-cat > <RUN_DIR>$antigravity.txt << 'PROMPT_EOF'
+cat > <RUN_DIR>/antigravity.txt << 'PROMPT_EOF'
 <four-part prompt with the Antigravity preamble>
 PROMPT_EOF
-cat > <RUN_DIR>$claude.txt << 'PROMPT_EOF'
+cat > <RUN_DIR>/claude.txt << 'PROMPT_EOF'
 <four-part prompt with the Claude preamble>
 PROMPT_EOF
 ```
@@ -73,10 +73,10 @@ Launch all three legs in a single response, as three parallel tool calls. Use a 
 
 ### Codex Leg
 
-Replace `<CODEX_CMD>` with the template from `../shared/model-defaults.md` Section Codex, but change its trailing `2>/dev/null` to `2><RUN_DIR>$codex.log`. Codex prints its `session id:` line on stderr. Read that line from the log after the run; the ID makes the later resume offer reliable.
+Replace `<CODEX_CMD>` with the template from `../shared/model-defaults.md` Section Codex, but change its trailing `2>/dev/null` to `2><RUN_DIR>/codex.log`. Codex prints its `session id:` line on stderr. Read that line from the log after the run; the ID makes the later resume offer reliable.
 
 ```bash
-cat <RUN_DIR>$codex.txt | <CODEX_CMD>
+cat <RUN_DIR>/codex.txt | <CODEX_CMD>
 ```
 
 ### Antigravity Leg
@@ -84,7 +84,7 @@ cat <RUN_DIR>$codex.txt | <CODEX_CMD>
 Replace `<AGY_CMD>` with the template from `../shared/model-defaults.md` Section Antigravity. The adapter reads the prompt from stdin; do not add `-p` or format flags.
 
 ```bash
-cat <RUN_DIR>$antigravity.txt | <AGY_CMD>
+cat <RUN_DIR>/antigravity.txt | <AGY_CMD>
 ```
 
 ### Claude Leg
@@ -94,7 +94,7 @@ cat <RUN_DIR>$antigravity.txt | <AGY_CMD>
 **Use CLI** when the parent is not Claude Code, or when the question points to files or code paths that Phase 1 could not fully resolve and the Claude leg needs tool access to explore. Replace `<CLAUDE_CMD>` with the template from `../shared/model-defaults.md` Section Claude CLI (it runs Fable) and append `--name` so it can be resumed:
 
 ```bash
-cat <RUN_DIR>$claude.txt | <CLAUDE_CMD> --name "council-<topic>"
+cat <RUN_DIR>/claude.txt | <CLAUDE_CMD> --name "council-<topic>"
 ```
 
 ### When Legs Fail

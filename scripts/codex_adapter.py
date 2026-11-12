@@ -254,9 +254,13 @@ def _adapt_text(
     adapted = text
     # Codex has no slash commands for skills — explicit invocation is a
     # `$name` mention in the composer.
+    # A dot ends a command only when no letter or digit follows it: `/codex.`
+    # ends a sentence, but `<RUN_DIR>/codex.txt` is a file name. Rewriting the
+    # file name gave `<RUN_DIR>$codex.txt`, which a shell reads as an empty
+    # variable.
     for skill_name in sorted(skill_names, key=len, reverse=True):
         adapted = re.sub(
-            rf"(?<![\w/-])/{re.escape(skill_name)}(?=($|[\s`'\"\])>.,;:|]))",
+            rf"(?<![\w/-])/{re.escape(skill_name)}(?=($|[\s`'\"\])>,;:|]|\.(?!\w)))",
             f"${skill_name}",
             adapted,
         )
