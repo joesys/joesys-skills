@@ -30,6 +30,12 @@ def grok_block(skill: str) -> str:
     return found[0]
 
 
+# First live council with four members: 2026-11-12, in Claude Code, with
+# grok 1.0.77, on a general question and with `--no-save`. All four legs
+# answered. Grok's error output was empty, and its session ID was printed.
+# The tests below pin the text that this run followed.
+
+
 def test_council_has_four_members() -> None:
     # joesys decision (2026-11-12): Grok joins Claude, GPT and Antigravity.
     for skill in skills():
