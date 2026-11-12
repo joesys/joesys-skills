@@ -32,7 +32,8 @@ still shows.
 Which candidate became the base, and why. What was taken from each other
 candidate. What was rejected, and why. Say which model produced each
 candidate, and which candidates failed or were left out. When the candidates
-agreed on one shape, say so.
+agreed on one shape, say so, and say whether they came from one model family
+or from several.
 
 ## Trade-offs accepted
 

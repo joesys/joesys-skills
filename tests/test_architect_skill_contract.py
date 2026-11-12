@@ -175,3 +175,37 @@ def test_readme_and_interfaces_list_the_skill() -> None:
 
     interfaces = read(REPO_ROOT / "shared" / "skill-interfaces.md")
     assert "## Architect Interface" in interfaces
+
+
+# --- First run, with host candidates only, in this repository, 2026-11-12 ----
+# Each test below pins one gap that the run showed in the skill text.
+
+
+def test_a_bug_in_existing_code_is_reported_above_the_package() -> None:
+    # Both candidates opened with a bug that is live in the generated Codex
+    # copy. The package had no place for a finding that is not a design.
+    for skill in skills():
+        normalized = compact(skill)
+        assert "a problem in the code that exists" in normalized
+        assert "above the package" in normalized
+
+
+def test_main_agent_checks_the_facts_that_a_design_rests_on() -> None:
+    # The merged design rested on what the candidates said about the code:
+    # seven broken lines and two timings. A candidate can be wrong.
+    for skill in skills():
+        normalized = compact(skill)
+        assert "Check the facts that a design rests on" in normalized
+        assert "A candidate can be wrong about the code" in normalized
+
+
+def test_agreement_inside_one_model_family_is_weaker_evidence() -> None:
+    # Two candidates of one model, with the two example constraints, chose
+    # the same whole shape. That is not the agreement of two models.
+    for skill in skills():
+        normalized = compact(skill)
+        assert "Agreement between candidates of one model family is weaker" in normalized
+
+    for folder in (CANONICAL_DIR, CODEX_DIR):
+        package = compact(read(folder / DESIGN_PACKAGE))
+        assert "whether they came from one model family" in package

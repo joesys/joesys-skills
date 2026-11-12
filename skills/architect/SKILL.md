@@ -112,7 +112,10 @@ candidates that you have.
 
 ### Step 3: Screen and compare
 
-1. Read every candidate from start to end.
+1. Read every candidate from start to end. Check the facts that a design
+   rests on, such as "these seven lines are wrong" or "this step takes 200
+   ms". Open the file or run the command. A candidate can be wrong about the
+   code.
 2. Check each one against `references/design-red-flags.md`. A red flag is a
    reason to change a shape or to reject it.
 3. Score each one against the rubric, criterion by criterion, and not by
@@ -134,7 +137,9 @@ That is usually one or two things, not most of it. Work each one into the
 base by hand, so that the result still reads as one design.
 
 - When the candidates agree on one shape, that is a strong sign. Say so. No
-  merge is needed.
+  merge is needed. Agreement between candidates of one model family is
+  weaker than agreement between different models, because they share blind
+  spots. Say which one it was.
 - When they differ wildly, the task was not clear enough. Tighten the
   grounding note and run Step 2 once more. If they still differ, show the
   split to the user and ask.
@@ -144,6 +149,10 @@ base by hand, so that the result still reads as one design.
 Write the package with the sections of `references/design-package.md`, in
 that order. Show it in the conversation. With `--save`, also write it to the
 file, and create the folder if it does not exist.
+
+When a candidate found a problem in the code that exists, such as a bug,
+report it above the package, after you checked it. It is a finding, not a
+part of the design, and the user may want it fixed first.
 
 Then stop. Do not start to build. The last section of the package names the
 first step, for the request that follows.
