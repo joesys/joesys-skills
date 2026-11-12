@@ -58,6 +58,7 @@ interfaces, update all callers listed below.
 - `skills/devlog/references/write-mode.md` — publishing a post
 - `skills/restructure-commit/SKILL.md` — reads the commit message format and the
   OneFlow Option 3 merge rules from `skills/commit/SKILL.md`
+- `skills/joesys-mode/SKILL.md` — Ask First: every commit that the mode makes
 
 ## Restructure Commit Interface
 
@@ -158,6 +159,23 @@ interfaces, update all callers listed below.
   reports a draft.
 - Labels every proof `live` or `fake` for each outside service.
 - Never reads secrets, never changes product code, and never commits or pushes.
+
+**Callers:**
+- None currently — this skill is user-invoked only
+
+## Joesys Mode Interface
+
+**Invocation:** `/joesys-mode [<task>]`
+
+**Behavior contract:**
+- Restates the user's goal first, then follows one of four step lists
+  (Investigation, Bug fix, Feature, Refactoring). Each list ends with a check.
+- Holds 32 principles in three phases. They come before the step lists.
+- The project's own rules and the user's current message win over the mode.
+- Never pushes and never opens a pull request without approval in the current
+  message.
+- Runs `/commit` for every commit. Names `/explain` and
+  `/create-verification-skill` as options and never runs them.
 
 **Callers:**
 - None currently — this skill is user-invoked only

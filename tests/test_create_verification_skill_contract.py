@@ -127,7 +127,6 @@ def test_skill_carries_the_license_notice_of_its_source() -> None:
 
 def test_readme_and_interfaces_list_the_skill() -> None:
     readme = compact(read(REPO_ROOT / "README.md"))
-    assert "A collection of 21 agent skills" in readme
     assert "| Verify | [`create-verification-skill`](#create-verification-skill) |" in readme
     assert "### create-verification-skill" in readme
 

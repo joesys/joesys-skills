@@ -1,6 +1,6 @@
 # joesys-skills
 
-A collection of 21 agent skills for Claude Code and Codex: turn rough ideas
+A collection of 22 agent skills for Claude Code and Codex: turn rough ideas
 into reusable prompts, consult other AI models, review code,
 understand projects, improve engineering workflows, and preserve or publish
 development work.
@@ -56,6 +56,7 @@ codex plugin marketplace upgrade
 | Review | [`human-review-guide`](#human-review-guide) | Build a decision-focused human reading order |
 | Review | [`codebase-audit`](#codebase-audit) | Grade whole-codebase quality and velocity |
 | Verify | [`create-verification-skill`](#create-verification-skill) | Generate a project skill that proves features in the running app |
+| Work | [`joesys-mode`](#joesys-mode) | Work on a coding task by 32 engineering principles and a step list |
 | Understand | [`explain`](#explain) | Explain a project, file, symbol, or feature in layers |
 | Understand | [`huh`](#huh) | Re-explain the last answer in plain language with options, confidence, and unasked questions |
 | Improve | [`retrospective`](#retrospective) | Facilitate an evidence-based development retrospective |
@@ -288,6 +289,31 @@ code, and never commits. In Claude Code the generated skill goes to
 `.claude/skills/`; in Codex it goes to `.agents/skills/`.
 
 Adapted from pstack by Lauren Tan (MIT License).
+
+## Work by Principles
+
+### joesys-mode
+
+A way of working for coding tasks. The agent restates the goal, follows a
+short step list for the task (investigation, bug fix, feature, or
+refactoring), and applies 32 engineering principles in three phases: first
+make it work, then make it right, and practice. Every step list ends with a
+check on the real thing. The reply names each principle that changed a
+decision.
+
+```text
+/joesys-mode users get two notifications after a retry. reproduce it first, then fix it.
+/joesys-mode
+```
+
+The mode never pushes and never opens a pull request without approval in the
+current message. The project's own rules and the user's current message win
+over the mode. It names sibling skills as options, and runs only `/commit` by
+itself. Three quality tools (`crapper`, `dryer`, and `mutator`) are optional:
+the mode uses a tool when it is installed and says when it skipped one.
+
+The principles come from poteto-mode in pstack by Lauren Tan and from ub-mode
+by Robert C. Martin (both MIT License).
 
 ## Understand Projects
 

@@ -30,6 +30,7 @@ EXPECTED_SKILLS = {
     "huh",
     "human-review-guide",
     "interaction-review",
+    "joesys-mode",
     "prompt",
     "quick-review",
     "readability-review",
@@ -382,12 +383,12 @@ def test_generated_docs_have_no_cross_host_path_contradictions(tmp_path):
     assert "`.claude/` directory doesn't exist" not in combined
 
 
-def test_generated_manifest_publishes_release_19_2_with_21_skills(tmp_path):
+def test_generated_manifest_publishes_release_19_2_with_22_skills(tmp_path):
     output = tmp_path / "joesys-skills"
     manifest = codex_adapter.build_collection(REPO_ROOT, output)
 
     assert manifest["source_version"] == "19.2.0"
-    assert len(manifest["installed_skills"]) == 21
+    assert len(manifest["installed_skills"]) == 22
     assert "prompt" in manifest["installed_skills"]
 
 
