@@ -286,3 +286,24 @@ interfaces, update all callers listed below.
 **Callers:**
 - `../create-verification-skill/SKILL.md` — Step 5 report (a pointer
   only; it does not run this skill)
+
+## Architect Interface
+
+**Invocation:** `$architect [--local] [--save [--path <folder>]] <what to design>`
+
+**Behavior contract:**
+- Produces one design package for new code: the caller's usage, a type
+  sketch with `not implemented` bodies, the module map, and the reasons.
+  The package has the nine sections of
+  `../architect/references/design-package.md`.
+- Compares at least two candidates that differ in their whole shape. One
+  comes from a subagent of the host. The others come from other models
+  through `./cross-model-dispatch.md`, unless `--local` is set.
+- Designs and stops. Writes no code file in the project, and never
+  implements, commits, or pushes. `--save` writes the package to
+  `docs/architect/<short-name>.md`.
+- Names `$explain`, `$why`, `$codex`, `$antigravity` and `$ai-council` as
+  options. It runs none of them by itself.
+
+**Callers:**
+- None currently — this skill is user-invoked only

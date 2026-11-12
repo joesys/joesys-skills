@@ -1,6 +1,6 @@
 # joesys-skills
 
-A collection of 27 agent skills for Claude Code and Codex: turn rough ideas
+A collection of 28 agent skills for Claude Code and Codex: turn rough ideas
 into reusable prompts, consult other AI models, review code,
 understand projects, improve engineering workflows, and preserve or publish
 development work.
@@ -60,6 +60,7 @@ codex plugin marketplace upgrade
 | Verify | [`maintain-verification-skill`](#maintain-verification-skill) | Bring a `verify-<app>` skill and its feature map back in line with the app |
 | Verify | [`create-formal-verification-skill`](#create-formal-verification-skill) | Check one promise of the code for every case in a stated scope |
 | Verify | [`benchmark-checklist`](#benchmark-checklist) | Test a performance number with seven questions before you report it |
+| Design | [`architect`](#architect) | Design the shape of new code from several candidates, then stop |
 | Work | [`joesys-mode`](#joesys-mode) | Work on a coding task by 32 engineering principles and a step list |
 | Understand | [`explain`](#explain) | Explain a project, file, symbol, or feature in layers |
 | Understand | [`why`](#why) | Find why code is built the way it is, from the project's own record |
@@ -386,6 +387,32 @@ The skill asks seven questions, and each answer must come from a run:
 The verdict is one of four words: faster, slower, no measurable difference,
 or inconclusive. Every number carries its run count and its range. The skill
 changes no product code and asks before it installs a tool.
+
+Adapted from pstack by Lauren Tan (MIT License).
+
+## Design Before Code
+
+### architect
+
+Design the shape of new code before anyone writes it: how a caller uses it,
+the types, the function signatures, and the module boundaries. The first
+design that comes to mind is rarely the best one. So the skill gets at least
+two candidates that differ in their whole shape. One comes from a helper
+agent of the host, and the others come from other models, called read-only
+the way `/codereview` calls them. Each candidate works alone and writes the
+caller's usage first. The skill checks each one against eight design red
+flags, picks a base, and merges the best parts of the others into it.
+
+```text
+/architect a retry queue for failed webhook deliveries
+/architect --local a plugin loader for report formats
+/architect --save a cache for exchange rates
+```
+
+The result is a design package with nine sections, from the problem to the
+first step to build. Then the skill stops. It writes no code file in the
+project, and approval of a design is not approval to build it. `--local`
+keeps every candidate on the host and calls no other model.
 
 Adapted from pstack by Lauren Tan (MIT License).
 

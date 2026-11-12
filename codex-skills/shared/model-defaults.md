@@ -2,7 +2,7 @@
 
 Single source of truth for default model identifiers and CLI flags used across skills. When a model version changes, update this file — all skills that reference it will pick up the new defaults.
 
-**Consumers:** all skills that spawn same-platform subagents, plus codex, antigravity, claude, grok, ai-council, codereview, and quick-review
+**Consumers:** all skills that spawn same-platform subagents, plus codex, antigravity, claude, grok, ai-council, codereview, quick-review, and architect
 
 ---
 
@@ -10,8 +10,8 @@ Single source of truth for default model identifiers and CLI flags used across s
 
 | Provider | Model ID | Used In |
 |---|---|---|
-| OpenAI (Codex CLI) | `gpt-6.1-sol` | `$codex`, `$ai-council`, `$codereview` |
-| Google (Antigravity CLI) | *(managed by agy)* | `$antigravity`, `$ai-council`, `$codereview` |
+| OpenAI (Codex CLI) | `gpt-6.1-sol` | `$codex`, `$ai-council`, `$codereview`, `$architect` |
+| Google (Antigravity CLI) | *(managed by agy)* | `$antigravity`, `$ai-council`, `$codereview`, `$architect` |
 | Anthropic (Claude CLI) | `fable` | `$claude`, `$ai-council` (Claude leg) |
 | xAI (Grok CLI) | *(managed by grok)* | `$grok` |
 

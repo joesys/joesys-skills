@@ -4,6 +4,7 @@
   "installed_skills": [
     "ai-council",
     "antigravity",
+    "architect",
     "benchmark-checklist",
     "blast-radius",
     "claude",
@@ -33,6 +34,7 @@
   "skill_mentions": [
     "$ai-council",
     "$antigravity",
+    "$architect",
     "$benchmark-checklist",
     "$blast-radius",
     "$claude",
