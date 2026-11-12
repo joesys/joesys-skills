@@ -1,6 +1,6 @@
 # joesys-skills
 
-A collection of 22 agent skills for Claude Code and Codex: turn rough ideas
+A collection of 23 agent skills for Claude Code and Codex: turn rough ideas
 into reusable prompts, consult other AI models, review code,
 understand projects, improve engineering workflows, and preserve or publish
 development work.
@@ -56,6 +56,7 @@ codex plugin marketplace upgrade
 | Review | [`human-review-guide`](#human-review-guide) | Build a decision-focused human reading order |
 | Review | [`codebase-audit`](#codebase-audit) | Grade whole-codebase quality and velocity |
 | Verify | [`create-verification-skill`](#create-verification-skill) | Generate a project skill that proves features in the running app |
+| Verify | [`create-formal-verification-skill`](#create-formal-verification-skill) | Check one promise of the code for every case in a stated scope |
 | Work | [`joesys-mode`](#joesys-mode) | Work on a coding task by 32 engineering principles and a step list |
 | Understand | [`explain`](#explain) | Explain a project, file, symbol, or feature in layers |
 | Understand | [`huh`](#huh) | Re-explain the last answer in plain language with options, confidence, and unasked questions |
@@ -287,6 +288,29 @@ it reports a draft. Every proof says `live` or `fake` for each outside
 service it touched. The skill never reads secrets, never changes product
 code, and never commits. In Claude Code the generated skill goes to
 `.claude/skills/`; in Codex it goes to `.agents/skills/`.
+
+Adapted from pstack by Lauren Tan (MIT License).
+
+### create-formal-verification-skill
+
+Check one promise of the code for every case in a stated scope, with a model
+checker, a prover, or another verifier. A test checks the cases that someone
+thought to write. This skill picks the place where a bug costs much and tests
+rarely reach it: concurrency, retries, state machines, parsers, or unsafe
+code. It verifies one property there and writes a project-local skill,
+`formal-<area>`, that reruns the check when the code changes.
+
+```text
+/create-formal-verification-skill
+/create-formal-verification-skill <area, file, or bug>
+```
+
+Each property must be seen to fail on a broken variant of the code. The check
+command fails when the covered code changes, because a model checker reads
+the model and not the code. Before it reports, the skill breaks the real code
+on purpose, confirms that the generated skill catches the break, and restores
+the code. It asks before it installs a tool, and it never changes product
+code unless asked.
 
 Adapted from pstack by Lauren Tan (MIT License).
 

@@ -116,7 +116,7 @@ def test_prompt_skill_handles_edge_cases_and_checks_its_work() -> None:
 def test_readme_documents_prompt_rewriting_and_teaching() -> None:
     readme = compact(read(README))
 
-    assert "A collection of 22 agent skills" in readme
+    assert "A collection of 23 agent skills" in readme
     assert "| Write prompts | [`prompt`](#prompt) |" in readme
     assert "### prompt" in readme
     assert "/prompt" in readme

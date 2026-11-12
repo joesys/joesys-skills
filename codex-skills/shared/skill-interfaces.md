@@ -163,6 +163,26 @@ interfaces, update all callers listed below.
 **Callers:**
 - None currently — this skill is user-invoked only
 
+## Create Formal Verification Skill Interface
+
+**Invocation:** `$create-formal-verification-skill [<area, file, or bug>]`
+
+**Behavior contract:**
+- Verifies one property of the code with a model checker, a prover, or
+  another verifier, and writes one project-local skill, `formal-<area>`, to
+  the project skill folder that the running host reads.
+- The `formal-` prefix keeps its output apart from the `verify-<app>` skills
+  that `$create-verification-skill` writes.
+- The generated check command fails when the covered code differs from the
+  code at the recorded sync commit.
+- Breaks the real code on purpose once, to show that the generated skill
+  catches the break, and then restores the code.
+- Asks before it installs a tool. Never changes product code unless asked,
+  and never commits or pushes.
+
+**Callers:**
+- None currently — this skill is user-invoked only
+
 ## Joesys Mode Interface
 
 **Invocation:** `$joesys-mode [<task>]`

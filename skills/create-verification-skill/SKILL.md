@@ -1,6 +1,6 @@
 ---
 name: create-verification-skill
-description: "Use when the user invokes /create-verification-skill to generate a project-local skill that starts the real app, uses it the way a user does, and captures proof that a feature works — for a web page, a command-line tool, a service, a desktop or mobile app, or a library. Also use when the user asks for a scripted way to prove behavior in the running app because the project has none."
+description: "Use when the user invokes /create-verification-skill to generate a project-local skill that starts the real app, uses it the way a user does, and captures proof that a feature works — for a web page, a command-line tool, a service, a desktop or mobile app, or a library. Also use when the user asks for a scripted way to prove behavior in the running app because the project has none. SKIP if the user wants a rule checked for every case with a model checker or a prover — that's /create-formal-verification-skill."
 ---
 
 # Create Verification Skill
