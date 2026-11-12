@@ -156,3 +156,26 @@ def test_readme_and_interfaces_list_the_skill() -> None:
 
     interfaces = read(REPO_ROOT / "shared" / "skill-interfaces.md")
     assert "## Maintain Verification Skill Interface" in interfaces
+
+
+# --- Sample run, on an app made for the run, 2026-11-12 ----------------------
+# Each test below pins one gap that the run showed in the skill text.
+
+
+def test_a_feature_without_a_file_gets_one() -> None:
+    # The sample app had a command that the map did not list. The text said
+    # how to recognise a missing feature, and not what to do with it.
+    for skill in skills():
+        normalized = compact(skill)
+        assert "| A user-facing feature has no file |" in normalized
+        assert "Drive it first" in normalized
+        assert "add it to the index" in normalized
+
+
+def test_mark_says_when_a_drive_hit_a_product_problem() -> None:
+    # One feature was driven and one of its steps failed because the app was
+    # wrong. A bare `run` mark would have read as "works".
+    for skill in skills():
+        normalized = compact(skill)
+        assert "name the step that fails in the mark" in normalized
+        assert "The recipe itself stays as it is" in normalized

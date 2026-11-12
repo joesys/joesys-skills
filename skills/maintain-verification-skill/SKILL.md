@@ -133,13 +133,17 @@ precondition, the file is stale.
 | Finding | What it is | What to do |
 |---|---|---|
 | The file describes the feature wrongly, or leaves a part out | A stale map | Correct the file. |
+| A user-facing feature has no file | A stale map | Drive it first. Then write its file in the shape of the others, and add it to the index. |
 | The feature works, but the recipe or a helper cannot drive it | A gap in the harness | Fix the recipe or the helper, and drive it again before the fix stays. A helper is executable, and the skill body shows how to call it. |
 | The app itself is broken | A product problem | Report it to the user. Keep it out of the corrections. |
 
 ### Step 7: Update the marks and report
 
 In the index, mark each feature `run` with today's date, or `not run` with
-the reason. Read every file that you changed once more. Then stop the app,
+the reason. When a drive hit a product problem, name the step that fails in
+the mark, so that a bare `run` does not read as "works". The recipe itself
+stays as it is: it describes what the app should do. Read every file that
+you changed once more. Then stop the app,
 after the last drive, so that nothing outlives the pass. The evidence
 stays.
 
