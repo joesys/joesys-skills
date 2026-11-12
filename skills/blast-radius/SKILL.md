@@ -41,7 +41,10 @@ says.
 
 1. **Leave product code alone.** Put the proof script in a scratch folder
    outside the project when it can run from there. If it must sit inside the
-   project to run, leave it uncommitted and name it in the reply.
+   project to run, leave it uncommitted and name it in the reply. Do not
+   switch branches or check out another commit in the user's working folder.
+   To run an older version, export it to the scratch folder:
+   `git archive <commit> | tar -x -C <scratch folder>`.
 2. **Never read secrets.** Do not open, print, or copy a `.env` file, a
    credential file, or a secret value.
 3. **Ask before a live call that costs money or acts on the outside world.**
@@ -104,8 +107,10 @@ separately.
 ### Step 5: Prove the one fact
 
 Write a script or a test that runs the real code. Run it, and paste the
-output. If you cannot run it, write `unproven`, say which level you reached,
-and say what would prove it.
+output. A proof that cannot fail proves nothing, so see it fail once: run it
+on one case where the fact is false, and paste that output too. If you
+cannot run it, write `unproven`, say which level you reached, and say what
+would prove it.
 
 ### Step 6: Reply
 

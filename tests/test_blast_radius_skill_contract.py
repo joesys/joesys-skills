@@ -115,3 +115,25 @@ def test_readme_and_interfaces_list_the_skill() -> None:
 
     interfaces = read(REPO_ROOT / "shared" / "skill-interfaces.md")
     assert "## Blast Radius Interface" in interfaces
+
+
+# --- First live run, in this repository, 2026-11-12 --------------------------
+# Each test below pins one gap that the run showed in the skill text.
+
+
+def test_proof_is_seen_to_fail_once() -> None:
+    # The proof script passed on its first run. Only a control case, where
+    # the fact is false, showed that the script could fail at all.
+    for skill in skills():
+        normalized = compact(skill)
+        assert "A proof that cannot fail proves nothing" in normalized
+        assert "where the fact is false" in normalized
+
+
+def test_older_code_is_exported_not_checked_out() -> None:
+    # The proof needed the code at the parent commit. A checkout in the
+    # user's working folder would disturb their uncommitted work.
+    for skill in skills():
+        normalized = compact(skill)
+        assert "Do not switch branches or check out another commit" in normalized
+        assert "git archive <commit>" in skill
