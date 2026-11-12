@@ -13,7 +13,7 @@ Single source of truth for default model identifiers and CLI flags used across s
 | OpenAI (Codex CLI) | `gpt-6.1-sol` | `/codex`, `/ai-council`, `/codereview`, `/architect` |
 | Google (Antigravity CLI) | *(managed by agy)* | `/antigravity`, `/ai-council`, `/codereview`, `/architect` |
 | Anthropic (Claude CLI) | `fable` | `/claude`, `/ai-council` (Claude leg) |
-| xAI (Grok CLI) | *(managed by grok)* | `/grok` |
+| xAI (Grok CLI) | *(managed by grok)* | `/grok`, `/ai-council` |
 
 ## Review Model Routing
 

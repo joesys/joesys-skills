@@ -45,7 +45,7 @@ codex plugin marketplace upgrade
 | Goal | Skill | What it does |
 |---|---|---|
 | Write prompts | [`prompt`](#prompt) | Turn rough thoughts into a copy-ready prompt and explain the improvements |
-| Consult models | [`ai-council`](#ai-council) | Ask Claude, Codex, and Antigravity, then synthesize their views |
+| Consult models | [`ai-council`](#ai-council) | Ask Claude, Codex, Antigravity, and Grok, then synthesize their views |
 | Consult models | [`claude`](#claude) | Delegate a prompt to a separate Claude CLI session |
 | Consult models | [`codex`](#codex) | Delegate a prompt to a separate Codex CLI session |
 | Consult models | [`antigravity`](#antigravity) | Delegate a prompt to Google's Antigravity CLI |
@@ -97,9 +97,9 @@ Default model identifiers and CLI flags are centralized in
 
 ### ai-council
 
-Consult Claude, Codex, and Antigravity in parallel on the same question, then
-synthesize consensus, disagreements, and confidence. Results are saved by
-default.
+Consult Claude, Codex, Antigravity, and Grok in parallel on the same question,
+then synthesize consensus, disagreements, and confidence. Results are saved
+by default. Grok runs read-only, with the model from your own Grok settings.
 
 ```text
 /ai-council "Should we use PostgreSQL or MongoDB for user data?"
