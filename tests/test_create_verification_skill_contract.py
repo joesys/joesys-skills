@@ -133,3 +133,45 @@ def test_readme_and_interfaces_list_the_skill() -> None:
 
     interfaces = read(REPO_ROOT / "shared" / "skill-interfaces.md")
     assert "## Create Verification Skill Interface" in interfaces
+
+
+# --- First live run, on a real project, 2026-11-12 ---------------------------
+# Each test below pins one gap that the run showed in the skill text.
+
+
+def test_skill_asks_which_outside_services_each_feature_calls() -> None:
+    # One command of the target app called four paid services. The docs named
+    # only one of them up front, so an approval for that one was not enough.
+    for skill in skills():
+        normalized = compact(skill)
+        assert "| **Services** |" in skill
+        assert "one command can call several" in normalized
+        assert "names every outside service that the feature calls" in normalized
+
+
+def test_feature_map_says_which_recipes_were_run() -> None:
+    # A recipe written from the docs looks the same as a recipe that was run.
+    for skill in skills():
+        assert "`run` with the date, or `not run`" in compact(skill)
+
+    for folder in (CANONICAL_DIR, CODEX_DIR):
+        example = read(folder / FEATURE_MAP_EXAMPLE)
+        assert "Status: `run`" in example
+        assert "Status: `not run`" in example
+        assert "Outside services: none" in example
+
+
+def test_skill_handles_an_app_that_cannot_isolate_its_data() -> None:
+    # The target app keeps its database inside the project folder and has no
+    # setting for a second one, so a run changes the user's own data.
+    for skill in skills():
+        normalized = compact(skill)
+        assert "cannot use a separate data folder" in normalized
+        assert "what a run changes in the user's data" in normalized
+
+
+def test_evidence_is_checked_for_secret_values() -> None:
+    # A copied log can hold a key or a token.
+    for skill in skills():
+        normalized = compact(skill)
+        assert "Check every log and transcript for secret values" in normalized

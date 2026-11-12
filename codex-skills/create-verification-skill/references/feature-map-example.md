@@ -34,7 +34,9 @@ feature you need.
 ## Features
 
 - [Add an expense](./add-expense.md): add, reject bad input, read back.
+  Status: `run` 2026-01-15.
 - [Monthly report](./monthly-report.md): totals by category, empty month.
+  Status: `not run`.
 ```
 
 ## One feature: `features/add-expense.md`
@@ -60,6 +62,7 @@ expense then appears in the list and in the monthly report.
 
 Preconditions:
 
+- Outside services: none.
 - `helpers/doctor.sh` exits with 0.
 - The data folder holds the two seeded expenses.
 

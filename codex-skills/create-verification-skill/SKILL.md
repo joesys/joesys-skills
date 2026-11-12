@@ -81,6 +81,7 @@ you cannot observe.
 |---|---|
 | **Surface** | What does a user touch? A web page, a command-line or terminal app, a desktop app, a service, a mobile app, or a library. A repository can have several. Pick the main one and note the rest. |
 | **Run** | How does the app start locally? Prefer the project's own documented command: a package script, a Makefile target, the README quick start. Note the ports, the names of the environment variables, the seed data, and the sign-in. |
+| **Services** | Which outside services does each feature call: data providers, model tools, payment, email, messaging? For each service, find out whether a call costs money and whether the project has a fake or a test mode for it. Read past the first service you find, because one command can call several. |
 | **Drive** | How can an agent use the app from a script? Look for existing harnesses first: browser test specs, terminal scripts, endpoints that accept a plain request, a debug port. Only then choose a general recipe: a browser driver for a web or Electron app, a terminal session for a command-line or terminal app, plain HTTP for a service, a small script on the public interface for a library. |
 | **Observe** | What evidence can be captured? Screenshots, terminal transcripts, response bodies, logs, exit codes, stored data. |
 | **Isolate** | Can two instances run side by side, with their own ports, data folders, and profiles? |
@@ -99,7 +100,7 @@ Then write these sections. Each one uses what Step 1 found.
 
 | Section | What it must hold |
 |---|---|
-| **Launch** | The exact command that starts the app for verification, and the sign that it is ready, such as a log line or a prompt. Launch must reach a usable state from an empty data folder, including migrations and seed data. Ready means usable, not only that a process answers: a database health check can pass while its setup scripts still run. Say how to stop the app. A short-lived command-line tool has no server to keep alive: build it once, then run each drive in its own isolated terminal session. |
+| **Launch** | The exact command that starts the app for verification, and the sign that it is ready, such as a log line or a prompt. Launch must reach a usable state from an empty data folder, including migrations and seed data. Ready means usable, not only that a process answers: a database health check can pass while its setup scripts still run. Say how to stop the app. If the app cannot use a separate data folder, say so, and say what a run changes in the user's data. A short-lived command-line tool has no server to keep alive: build it once, then run each drive in its own isolated terminal session. |
 | **Doctor** | One read-only check that answers "is this instance worth driving?": the process is up, the version or build is the right one, this run owns the port, the sign-in is valid. The reader runs it first whenever something looks wrong. |
 | **Drive** | The recipe, with real selectors and commands from this project, not examples. Prefer stable handles (accessible labels, data attributes, prompt strings, route paths) over screen coordinates and tab order. |
 | **Evidence** | What to capture for a proof, where it goes, and the proof standards below. |
@@ -114,6 +115,8 @@ Write these proof standards into the Evidence section:
 - Check side effects (files written, rows stored, messages sent) as well as
   what is visible.
 - Say `live` or `fake` for each outside service, as rule 3 requires.
+- Check every log and transcript for secret values before you keep or
+  quote it. Count the matches. Do not print the matching lines.
 - When the safe path is a dry run or a test mode, observe what it really
   skips: files, network calls, version-control refs. Do not trust its name.
   Some dry runs still use the network or open a browser.
@@ -130,8 +133,13 @@ sees. Then it has exactly these four sections, in this order:
 1. `Sub-features`: short IDs, with one line for each behavior.
 2. `How to get to it (user POV)`: every way a user reaches the feature.
 3. `Driving it with <harness>`: the preconditions, then each user action
-   paired with the exact command and the result to observe.
+   paired with the exact command and the result to observe. The first
+   precondition names every outside service that the feature calls, and
+   says for each one whether a call costs money.
 4. `Gotchas`: traps that waste or spoil a verification run.
+
+In the index, mark each feature `run` with the date, or `not run`. A recipe
+that you wrote from the docs and never ran is `not run`.
 
 `references/feature-map-example.md` shows the index file and one feature file.
 
