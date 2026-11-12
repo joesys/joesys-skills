@@ -163,11 +163,11 @@ for this task, show it, and end it with a check.
    Root Causes). Use the project's `verify-*` skill if it has one.
 2. Find the cause. Rule out the candidates with evidence from a run, and add
    logging instead of guessing. After two failed fixes, Attack the Premise.
-3. Write a failing test that shows the bug (TDD).
+3. Write a failing test that shows the bug, and commit it before the fix
+   (TDD, Sequence Work into Verifiable Units).
 4. Make the smallest fix at the cause (Laziness Protocol).
 5. **Check.** The reproduction from step 1 now passes on the same surface
    (Prove It Works). "Could not tell" is not a pass.
-6. Commit the failing test, then the fix (Sequence Work into Verifiable Units).
 
 ### Feature
 

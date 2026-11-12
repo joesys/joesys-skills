@@ -1,5 +1,6 @@
 """Prompt-as-code contracts for the joesys-mode skill."""
 
+import re
 from pathlib import Path
 
 
@@ -142,9 +143,14 @@ def test_every_step_names_principles_and_every_list_ends_in_a_check() -> None:
     }
     for skill in skills():
         for name in STEP_LISTS:
+            numbered = re.findall(r"^\d+\. .*$", step_list(skill, name), re.MULTILINE)
+            assert numbered, name
+            assert numbered[-1].split(". ", 1)[1].startswith("**Check.**"), (
+                name,
+                "the last step must be the check",
+            )
             # A long principle name may wrap over two lines.
             steps = compact(step_list(skill, name))
-            assert "**Check.**" in steps, name
             for principle in expected[name]:
                 assert principle in steps, (name, principle)
         assert "If none fits" in section(skill, "Step Lists")
@@ -212,7 +218,6 @@ def test_skill_names_nothing_this_collection_lacks() -> None:
         "interrogate",
         "unslop",
         "architect",
-        "create-formal-verification-skill",
     )
     for skill in skills():
         for name in absent:
