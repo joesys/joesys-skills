@@ -24,6 +24,7 @@ EXPECTED_SKILLS = {
     "commit",
     "devlog",
     "explain",
+    "grok",
     "handoff",
     "huh",
     "human-review-guide",
@@ -380,13 +381,40 @@ def test_generated_docs_have_no_cross_host_path_contradictions(tmp_path):
     assert "`.claude/` directory doesn't exist" not in combined
 
 
-def test_generated_manifest_publishes_release_19_2_with_19_skills(tmp_path):
+def test_generated_manifest_publishes_release_19_2_with_20_skills(tmp_path):
     output = tmp_path / "joesys-skills"
     manifest = codex_adapter.build_collection(REPO_ROOT, output)
 
     assert manifest["source_version"] == "19.2.0"
-    assert len(manifest["installed_skills"]) == 19
+    assert len(manifest["installed_skills"]) == 20
     assert "prompt" in manifest["installed_skills"]
+
+
+def test_generated_grok_command_keeps_its_permission_rules(tmp_path):
+    # `Bash(...)` in a CLI permission rule is the CLI's own syntax, not the
+    # name of the Claude Code tool. A rewritten rule is one Grok does not
+    # honor, so `touch` and `mkdir` would run again in the Codex copy.
+    output = tmp_path / "joesys-skills"
+    codex_adapter.build_collection(REPO_ROOT, output)
+
+    def grok_command(path: Path) -> str:
+        lines = path.read_text(encoding="utf-8").splitlines()
+        commands = [line for line in lines if line.startswith("grok ")]
+        assert len(commands) == 1, path
+        return commands[0]
+
+    source = grok_command(REPO_ROOT / "shared" / "model-defaults.md")
+    generated = grok_command(output / "shared" / "model-defaults.md")
+    assert generated == source
+    assert '--deny "Bash(touch *)" --deny "Bash(mkdir *)"' in generated
+
+    adapted = codex_adapter.adapt_skill_markdown(
+        '---\nname: x\ndescription: "d"\n---\n\n'
+        "Run it with Bash. Deny rule: `Bash(rm *)`.\n",
+        ["x"],
+    )
+    assert "Run it with shell." in adapted
+    assert "`Bash(rm *)`" in adapted
 
 
 def test_committed_codex_skills_match_fresh_build(tmp_path):

@@ -1,6 +1,6 @@
 # joesys-skills
 
-A collection of 19 agent skills for Claude Code and Codex: turn rough ideas
+A collection of 20 agent skills for Claude Code and Codex: turn rough ideas
 into reusable prompts, consult other AI models, review code,
 understand projects, improve engineering workflows, and preserve or publish
 development work.
@@ -49,6 +49,7 @@ codex plugin marketplace upgrade
 | Consult models | [`claude`](#claude) | Delegate a prompt to a separate Claude CLI session |
 | Consult models | [`codex`](#codex) | Delegate a prompt to a separate Codex CLI session |
 | Consult models | [`antigravity`](#antigravity) | Delegate a prompt to Google's Antigravity CLI |
+| Consult models | [`grok`](#grok) | Delegate a prompt to xAI's Grok CLI |
 | Review | [`codereview`](#codereview) | Run a comprehensive multi-domain code review |
 | Review | [`quick-review`](#quick-review) | Scan quickly for P0-P1 correctness and security bugs |
 | Review | [`readability-review`](#readability-review) | Grade how well code reads as a story |
@@ -139,6 +140,22 @@ and retains compatibility recovery for affected older releases.
 /antigravity "explain the auth flow in this repo"
 /antigravity resume "follow up on the latest session"
 /antigravity resume <ID> "continue this specific session"
+```
+
+### grok
+
+Delegate prompts to xAI's Grok CLI (`grok`) and critically evaluate the
+result. Grok runs read-only in plan mode and uses the default model from
+your own Grok settings. The skill chooses the session identifier before
+the run, so resume is reliable, and it reports an answer that Grok cut
+short.
+
+```text
+/grok "explain the auth flow in this repo"
+/grok --model grok-4.7-build-fast "analyze this function"
+/grok --effort high "review this design"
+/grok resume "follow up on the last session"
+/grok resume <SESSION_ID> "continue this specific session"
 ```
 
 ## Review Code

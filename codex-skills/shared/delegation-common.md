@@ -1,6 +1,6 @@
 # Shared Delegation Flow
 
-Read this file before running `$codex`, `$claude`, `$antigravity`, or `$ai-council`. It is the one home for the shared flow: prompt delivery, presenting the answer, critical evaluation, and failures. Each skill file keeps only its own CLI commands and quirks. Current CLI command templates live in `./model-defaults.md`.
+Read this file before running `$codex`, `$claude`, `$antigravity`, `$grok`, or `$ai-council`. It is the one home for the shared flow: prompt delivery, presenting the answer, critical evaluation, and failures. Each skill file keeps only its own CLI commands and quirks. Current CLI command templates live in `./model-defaults.md`.
 
 ---
 
@@ -32,8 +32,9 @@ rm -f "$PROMPT_FILE"
 ```
 
 - **Why a temp file:** the quoted heredoc stops the shell from expanding `$`, backticks, and `!`. Long prompts passed as arguments break on these characters.
-- **Why `2>/dev/null` in the templates:** CLIs write progress bars and color codes to stderr, which pollute the captured answer. Exception: Codex prints its `session id:` line on stderr, so capture stderr to a file when resume matters.
-- **Short resume prompts:** a plain follow-up with no quotes, code, or special characters may go inline (`-p "<text>"` for Claude, a positional prompt for Codex). When in doubt, use the temp file. Antigravity always takes the prompt on stdin.
+- **Why `2>/dev/null` in the templates:** CLIs write progress bars and color codes to stderr, which pollute the captured answer. Exceptions: Codex prints its `session id:` line on stderr, so capture stderr to a file when resume matters. Grok reports an answer that was cut short only on stderr, so always capture its stderr to a file and show it.
+- **Grok does not read stdin:** pass the same temp file with `--prompt-file "$PROMPT_FILE"` instead of the pipe.
+- **Short resume prompts:** a plain follow-up with no quotes, code, or special characters may go inline (`-p "<text>"` for Claude, a positional prompt for Codex). When in doubt, use the temp file. Antigravity always takes the prompt on stdin, and Grok always takes the temp file.
 
 ---
 

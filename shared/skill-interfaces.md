@@ -25,9 +25,11 @@ interfaces, update all callers listed below.
 **Codex resume:** `/codex resume [prompt]` or `/codex resume <SESSION_ID> [prompt]`
 **Antigravity resume:** `/antigravity resume [prompt]` or `/antigravity resume <ID> [prompt]`
 **Claude resume:** `/claude resume [prompt]` or `/claude resume <name> [prompt]`
+**Grok resume:** `/grok resume [prompt]` or `/grok resume <SESSION_ID> [prompt]`
 
 **Callers:**
-- `skills/ai-council/SKILL.md` — Post-Synthesis Options, item 1
+- `skills/ai-council/SKILL.md` — Post-Synthesis Options, item 1 (Codex, Antigravity, and Claude only)
+- Grok resume has no caller — `/grok` is user-invoked only
 
 
 ## Review Principles Interface

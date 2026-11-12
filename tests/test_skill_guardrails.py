@@ -254,6 +254,63 @@ def test_claude_delegation_defaults_to_fable() -> None:
     assert "--model opus" not in council
 
 
+def grok_section_lines() -> list[str]:
+    defaults = read("shared/model-defaults.md")
+    section = re.search(r"^### Grok\n(.*?)(?=^##{1,2} |\Z)", defaults, re.S | re.M)
+    assert section, "shared/model-defaults.md has no Grok section"
+    return section.group(1).splitlines()
+
+
+def test_the_one_grok_command_is_read_only_and_every_resume_is_built_from_it() -> None:
+    # Checked with live runs of grok 1.0.77 on 2026-11-12.
+    lines = grok_section_lines()
+    commands = [line for line in lines if line.startswith("grok ")]
+    assert len(commands) == 1
+    template = commands[0]
+
+    # Grok follows the user's own Grok settings unless the command sets the
+    # mode. With `permission_mode = "always-approve"` in those settings, a new
+    # run wrote a file, and so did a resumed run that left the flag out.
+    assert "--permission-mode plan" in template
+    # Plan mode still ran `touch` and `mkdir` without approval.
+    assert '--deny "Bash(touch *)"' in template
+    assert '--deny "Bash(mkdir *)"' in template
+    # Grok does not read the prompt from stdin.
+    assert '--prompt-file "$PROMPT_FILE"' in template
+    # `--sandbox read-only` refused to start on the test machine.
+    assert "--sandbox" not in template
+    # stderr is the only place Grok reports an answer that was cut short.
+    assert "2>/dev/null" not in template
+
+    # A resume is the template plus one flag, so it cannot lose a safety flag.
+    resumes = [line for line in lines if line.startswith("<GROK_CMD> ")]
+    assert [line.split("#")[0].strip() for line in resumes] == [
+        "<GROK_CMD> --resume <SESSION_ID>",
+        "<GROK_CMD> -c",
+    ]
+
+
+def test_grok_skill_keeps_stderr_to_catch_an_answer_that_was_cut_short() -> None:
+    # Checked with live runs of grok 1.0.77 on 2026-11-12.
+    # When Grok needs an approval that nobody can give, the run stops early
+    # with exit code 0. One stderr line is the only sign, so stderr is kept
+    # on the first run and on a resume.
+    lines = read("skills/grok/SKILL.md").splitlines()
+    runs = [line for line in lines if line.startswith("<GROK_CMD> ")]
+    assert runs == [
+        # The ID is chosen before the run, so a resume does not depend on
+        # which Grok session is the newest one in the folder.
+        '<GROK_CMD> --session-id "$SESSION_ID" 2>"$GROK_LOG"',
+        '<GROK_CMD> --resume <SESSION_ID> 2>"$GROK_LOG"',
+    ]
+    assert any(line.startswith('cat "$GROK_LOG"') for line in lines)
+    assert any("`permission required:`" in line for line in lines)
+
+    # The skill takes its command from shared/model-defaults.md and never
+    # carries a second copy that could lose a safety flag.
+    assert not [line for line in lines if line.startswith("grok ")]
+
+
 def test_review_rules_are_pasted_for_a_reason_that_is_true() -> None:
     # Helper agents can open plugin files by absolute path, so "cannot open
     # that file" was false. The block is still pasted, because it is short and

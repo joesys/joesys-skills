@@ -264,7 +264,9 @@ def _adapt_text(
     adapted = adapted.replace("AskUserQuestion", "ask the user directly")
     adapted = adapted.replace("WebSearch", "web search")
     adapted = adapted.replace("Bash tool", "shell command tool")
-    adapted = adapted.replace("Bash", "shell")
+    # `Bash(...)` is the permission rule syntax of a CLI such as Grok, not
+    # the name of the Claude Code tool. A rewritten rule is not honored.
+    adapted = re.sub(r"Bash(?!\()", "shell", adapted)
     adapted = adapted.replace("Agent tool", "Codex agent workflow")
     adapted = adapted.replace("Task tool", "Codex agent workflow")
     adapted = adapted.replace(".claude/skill-context", ".codex/skill-context")

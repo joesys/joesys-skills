@@ -2,7 +2,7 @@
 
 Single source of truth for default model identifiers and CLI flags used across skills. When a model version changes, update this file — all skills that reference it will pick up the new defaults.
 
-**Consumers:** all skills that spawn same-platform subagents, plus codex, antigravity, claude, ai-council, codereview, and quick-review
+**Consumers:** all skills that spawn same-platform subagents, plus codex, antigravity, claude, grok, ai-council, codereview, and quick-review
 
 ---
 
@@ -13,6 +13,7 @@ Single source of truth for default model identifiers and CLI flags used across s
 | OpenAI (Codex CLI) | `gpt-6.1-sol` | `$codex`, `$ai-council`, `$codereview` |
 | Google (Antigravity CLI) | *(managed by agy)* | `$antigravity`, `$ai-council`, `$codereview` |
 | Anthropic (Claude CLI) | `fable` | `$claude`, `$ai-council` (Claude leg) |
+| xAI (Grok CLI) | *(managed by grok)* | `$grok` |
 
 ## Review Model Routing
 
@@ -114,6 +115,45 @@ claude --model fable --effort high --permission-mode plan -p "" 2>/dev/null
 claude -c -p "<PROMPT>" 2>/dev/null                  # most recent session
 claude --resume "<NAME>" -p "<PROMPT>" 2>/dev/null   # named session (set at dispatch via --name)
 ```
+
+### Grok
+
+```bash
+grok --permission-mode plan --deny "Bash(touch *)" --deny "Bash(mkdir *)" --prompt-file "$PROMPT_FILE"
+```
+
+| Flag | Purpose |
+|---|---|
+| `--permission-mode plan` | Safety: read-only. A non-interactive plan run refuses file edits. It also cannot approve anything else that needs approval, such as a command that changes something or a subagent, so those do not run. The flag replaces the permission mode from the user's own Grok settings |
+| `--deny "Bash(touch *)" --deny "Bash(mkdir *)"` | Safety: Grok counts `touch` and `mkdir` as read-only and runs them without approval, even in plan mode. These two rules refuse them |
+| `--prompt-file "$PROMPT_FILE"` | Non-interactive mode, with the prompt read from the temp file. Grok does not read the prompt from stdin |
+
+This safety is a set of permission rules, not a sandbox. It depends on Grok asking for approval before a command that changes something, so never combine it with `--always-approve`. Grok's own guide says that its list of read-only commands is not a security boundary. Read-only commands such as `git log` still run. When Grok does need approval, it stops the run there: the exit code is still 0, the answer is cut short, and stderr has one line that starts with `permission required:`.
+
+Three things are left out of the template on purpose:
+
+- **Model and reasoning effort.** Grok uses the defaults from the user's own Grok settings. Pass `--model <MODEL>` or `--effort <LEVEL>` only when the user asks. The command `grok models` lists the model IDs.
+- **`--sandbox read-only`.** In a live test on one Linux machine, grok 1.0.77 refused to start with this flag. Do not add it without a new live test.
+- **`2>/dev/null`.** stderr is the only place where Grok reports an answer that was cut short. Send stderr to a file and show it. Only a `permission required:` line or an error message means trouble. Any other line is a note, such as `Session ... found locally` on a resume from another folder.
+
+Plan mode may save a `plan.md` under `~/.grok/sessions/`. That is Grok's own data folder, not the project.
+
+#### Grok Resume
+
+A resume is the whole template above plus one flag, so it keeps every safety flag. `<GROK_CMD>` is that template.
+
+```bash
+<GROK_CMD> --resume <SESSION_ID>   # by session ID (preferred)
+<GROK_CMD> -c                      # newest session in this folder
+```
+
+| Rule | Detail |
+|---|---|
+| Session ID | Chosen before the first run: pass `--session-id <UUID>` with a new UUID. A resume takes that ID with `--resume`. `--session-id` only names a new session |
+| Safety flags on resume | Never shorten the template. A resumed session without `--permission-mode plan` follows the user's own Grok settings. In a live test with `always-approve` in those settings, it approved its own plan and wrote a file |
+| `-c` | Continues the newest Grok session started in the current folder. That may be the user's own session, not this skill's |
+
+These commands and rules were checked with live runs of grok 1.0.77 on 2026-11-12.
 
 ## Same-Platform Subagent Defaults
 
