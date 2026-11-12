@@ -227,3 +227,21 @@ interfaces, update all callers listed below.
 
 **Callers:**
 - None currently — this skill is user-invoked only
+
+## Blast Radius Interface
+
+**Invocation:** `$blast-radius [--commit <hash> | --pr <number> | <description>]`
+
+**Behavior contract:**
+- Finds what a change could break outside its own diff, and the one fact
+  that the change is safe because of.
+- Proves that fact with a script or a test that runs the real code, or
+  writes `unproven`. Every fact carries one of five proof levels: Said,
+  Pointed, Walked, Ran, Reproduced.
+- Names `$why`, `$codex`, `$antigravity` and `$ai-council` as options. It
+  runs none of them by itself.
+- Changes no product code. Leaves its proof script uncommitted and names it
+  in the reply. Never commits or pushes.
+
+**Callers:**
+- None currently — this skill is user-invoked only

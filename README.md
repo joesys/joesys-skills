@@ -1,6 +1,6 @@
 # joesys-skills
 
-A collection of 24 agent skills for Claude Code and Codex: turn rough ideas
+A collection of 25 agent skills for Claude Code and Codex: turn rough ideas
 into reusable prompts, consult other AI models, review code,
 understand projects, improve engineering workflows, and preserve or publish
 development work.
@@ -55,6 +55,7 @@ codex plugin marketplace upgrade
 | Review | [`readability-review`](#readability-review) | Grade how well code reads as a story |
 | Review | [`human-review-guide`](#human-review-guide) | Build a decision-focused human reading order |
 | Review | [`codebase-audit`](#codebase-audit) | Grade whole-codebase quality and velocity |
+| Review | [`blast-radius`](#blast-radius) | Find what a change could break elsewhere, and prove the one fact that makes it safe |
 | Verify | [`create-verification-skill`](#create-verification-skill) | Generate a project skill that proves features in the running app |
 | Verify | [`create-formal-verification-skill`](#create-formal-verification-skill) | Check one promise of the code for every case in a stated scope |
 | Work | [`joesys-mode`](#joesys-mode) | Work on a coding task by 32 engineering principles and a step list |
@@ -269,6 +270,29 @@ metrics, industry benchmarks, letter grades, and actionable recommendations.
 /codebase-audit maintainability performance
 /codebase-audit --static-only
 ```
+
+### blast-radius
+
+Find what a change could break somewhere else, before it ships. A list of
+callers is not the answer, because a search finds those in a second. The
+skill looks where a search stops: the source of a library at its pinned
+version, the moment when each piece runs, a database column, a file format,
+a feature flag, generated copies of a file. Then it finds the one fact that
+the change is safe because of, and proves it with a script that runs the
+real code.
+
+```text
+/blast-radius                     # Current branch and uncommitted changes
+/blast-radius --commit abc123     # One commit
+/blast-radius --pr 123            # One pull request
+/blast-radius drop the retry cap  # A change that is only planned
+```
+
+Every fact gets one of five proof levels: Said, Pointed, Walked, Ran, or
+Reproduced. A reply without a run says `unproven`. The skill never changes
+product code and never commits.
+
+Adapted from pstack by Lauren Tan (MIT License).
 
 ## Verify Running Apps
 
