@@ -153,3 +153,47 @@ def test_readme_and_interfaces_list_the_skill() -> None:
 
     interfaces = read(REPO_ROOT / "shared" / "skill-interfaces.md")
     assert "## Why Interface" in interfaces
+
+
+# --- First live run, in this repository, 2026-11-12 --------------------------
+# Each test below pins one gap that the run showed in the skill text.
+
+
+def test_anchor_lists_every_commit_that_changed_the_target_lines() -> None:
+    # Blame named two commits for a three-line target. Four commits had
+    # changed those lines, and the one that wrote the current wording was
+    # not among the two.
+    for skill in skills():
+        normalized = compact(skill)
+        assert "git log -L <start>,<end>:<file>" in skill
+        assert "names only the last commit on each line" in normalized
+
+    for folder in (CANONICAL_DIR, CODEX_DIR):
+        assert "git log -L <start>,<end>:<file>" in read(folder / INVESTIGATOR_BRIEF)
+
+
+def test_small_target_is_counted_in_lines_not_in_the_file() -> None:
+    # The file had 21 commits and the target lines had 4. Counting the file
+    # sent two helper agents after a three-line question.
+    for skill in skills():
+        assert "commits changed the target lines" in compact(skill)
+
+
+def test_personal_services_are_not_searched_unless_the_user_names_them() -> None:
+    # The session listed connectors for a mailbox, a calendar, and personal
+    # documents. "Connected" does not mean "holds this project's record".
+    for skill in skills():
+        normalized = compact(skill)
+        assert "Do not search a personal service" in normalized
+        assert "unless the user names it" in normalized
+        assert "List every connected service" in normalized
+
+
+def test_evidence_that_only_this_machine_has_is_marked() -> None:
+    # One investigator cited the reflog and commits that no branch reaches.
+    # A reader on another machine cannot open those.
+    for skill in skills():
+        assert "exists only on this machine" in compact(skill)
+
+    for folder in (CANONICAL_DIR, CODEX_DIR):
+        assert "exists only on this machine" in compact(read(folder / INVESTIGATOR_BRIEF))

@@ -66,14 +66,17 @@ looks dead.
 Collect these before any search. Every later search starts from them.
 
 - The file paths and line ranges of the target, and its key symbols.
-- The commits that last touched those lines, with their full messages.
+- Every commit that changed those lines, with its full message.
 - Each pull request number and ticket ID that those messages name.
 
 ```bash
-git blame -L <start>,<end> <file>
-git log --follow --oneline -20 -- <file>
+git log -L <start>,<end>:<file> -s --format='%h %ad %s' --date=short
 git log -1 --format=%B <commit>
 ```
+
+Do not build the anchor from `git blame`. It names only the last commit on
+each line, so it hides the commit that wrote the rule when a later commit
+reworded it.
 
 Then check once whether the repository has pull requests, with the tool of
 its forge (for GitHub, `gh pr list --state all --limit 1`). If it has none,
@@ -99,14 +102,19 @@ its one source, and the **absolute path** to
 that tells the investigator to read that file first. Do not copy the file
 into the prompt.
 
-When fewer than about ten commits touch the target, or your host has no
-subagents, skip the investigators. Read `references/investigator-brief.md`
+When fewer than about ten commits changed the target lines, or your host
+has no subagents, skip the investigators. Count the lines of the target, not
+the whole file. Read `references/investigator-brief.md`
 and do the searches yourself, one source at a time.
 
 **Outside sources.** A connector is a tool that lets you read an outside
 service, such as an MCP server. List the connectors that your host has in
-this session. Give each connected service its own investigator. A kind of
-source with no connector is a gap: list it under Sources searched as "not
+this session. Search a service only when it can hold the record of this
+project: its tickets, its documents, its team chat, its monitoring. Give
+each such service its own investigator. Do not search a personal service,
+such as a mailbox or a calendar, unless the user names it. List every
+connected service under Sources searched, with what was searched or why it
+was not. A kind of source with no connector is a gap: list it as "not
 searched: no connector". Never install or set up a connector, and never ask
 the user for a password or a token.
 
@@ -119,6 +127,8 @@ You write the answer. The investigators only gather.
 2. Give every claim one tier from `references/confidence.md`: Stated,
    Supported, Inferred, Guess, or Unknown. The tier decides the wording.
 3. When two items disagree, show both. Do not choose one in silence.
+   Mark evidence that exists only on this machine, such as the reflog or an
+   untracked file. The reader may not be able to open it.
 4. Trace back. The newest commit is often not the one that explains the
    shape. The present code can be the sum of several earlier decisions.
 
