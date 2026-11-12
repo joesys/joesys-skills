@@ -34,6 +34,7 @@ EXPECTED_SKILLS = {
     "human-review-guide",
     "interaction-review",
     "joesys-mode",
+    "maintain-verification-skill",
     "prompt",
     "quick-review",
     "readability-review",
@@ -50,6 +51,7 @@ SAME_PLATFORM_SUBAGENT_SKILLS = {
     "explain",
     "human-review-guide",
     "interaction-review",
+    "maintain-verification-skill",
     "quick-review",
     "readability-review",
     "retrospective",
@@ -388,12 +390,12 @@ def test_generated_docs_have_no_cross_host_path_contradictions(tmp_path):
     assert "`.claude/` directory doesn't exist" not in combined
 
 
-def test_generated_manifest_publishes_release_20_0_with_26_skills(tmp_path):
+def test_generated_manifest_publishes_release_20_0_with_27_skills(tmp_path):
     output = tmp_path / "joesys-skills"
     manifest = codex_adapter.build_collection(REPO_ROOT, output)
 
     assert manifest["source_version"] == "20.0.0"
-    assert len(manifest["installed_skills"]) == 26
+    assert len(manifest["installed_skills"]) == 27
     assert "prompt" in manifest["installed_skills"]
 
 

@@ -68,6 +68,7 @@
     "sprint",
     "verification",
     "create-verification-skill",
+    "maintain-verification-skill",
     "create-formal-verification-skill",
     "formal-verification",
     "model-checking",

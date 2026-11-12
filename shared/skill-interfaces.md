@@ -265,3 +265,24 @@ interfaces, update all callers listed below.
 **Callers:**
 - None currently — this skill is user-invoked, or loaded when a measured
   number is about to be reported
+
+## Maintain Verification Skill Interface
+
+**Invocation:** `/maintain-verification-skill [<skill name or folder>]`
+
+**Behavior contract:**
+- Works on a project-local `verify-<app>` skill that
+  `/create-verification-skill` wrote, or on any project skill with launch
+  and drive sections and a feature map. Without one, it stops and points to
+  `/create-verification-skill`.
+- Reads the source of every feature and drives every feature once in the
+  real app. Corrects only what a run proved.
+- Ends with one outcome: `clean`, `changed`, or `blocked`, and says how
+  many features it drove out of how many.
+- Updates the `run` and `not run` marks in the feature map index.
+- Edits only the verification skill's own folder. Never edits product
+  code, and never commits or pushes.
+
+**Callers:**
+- `skills/create-verification-skill/SKILL.md` — Step 5 report (a pointer
+  only; it does not run this skill)

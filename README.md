@@ -1,6 +1,6 @@
 # joesys-skills
 
-A collection of 26 agent skills for Claude Code and Codex: turn rough ideas
+A collection of 27 agent skills for Claude Code and Codex: turn rough ideas
 into reusable prompts, consult other AI models, review code,
 understand projects, improve engineering workflows, and preserve or publish
 development work.
@@ -57,6 +57,7 @@ codex plugin marketplace upgrade
 | Review | [`codebase-audit`](#codebase-audit) | Grade whole-codebase quality and velocity |
 | Review | [`blast-radius`](#blast-radius) | Find what a change could break elsewhere, and prove the one fact that makes it safe |
 | Verify | [`create-verification-skill`](#create-verification-skill) | Generate a project skill that proves features in the running app |
+| Verify | [`maintain-verification-skill`](#maintain-verification-skill) | Bring a `verify-<app>` skill and its feature map back in line with the app |
 | Verify | [`create-formal-verification-skill`](#create-formal-verification-skill) | Check one promise of the code for every case in a stated scope |
 | Verify | [`benchmark-checklist`](#benchmark-checklist) | Test a performance number with seven questions before you report it |
 | Work | [`joesys-mode`](#joesys-mode) | Work on a coding task by 32 engineering principles and a step list |
@@ -314,6 +315,27 @@ it reports a draft. Every proof says `live` or `fake` for each outside
 service it touched. The skill never reads secrets, never changes product
 code, and never commits. In Claude Code the generated skill goes to
 `.claude/skills/`; in Codex it goes to `.agents/skills/`.
+
+Adapted from pstack by Lauren Tan (MIT License).
+
+### maintain-verification-skill
+
+Bring a `verify-<app>` skill and its feature map back in line with the app.
+A feature map goes stale as soon as the app changes. The pass reads the
+source of every feature, with one read-only helper agent for each feature
+file. Then it drives every feature once in the real app, and it corrects
+only what a run proved.
+
+```text
+/maintain-verification-skill
+/maintain-verification-skill <skill name or folder>
+```
+
+The pass ends with one of three outcomes: `clean`, `changed`, or `blocked`.
+It says how many features it drove out of how many. It edits only the
+verification skill's own folder. A broken app is reported, never hidden in
+the map. The corrections stay uncommitted. The skill asks once, before the
+live pass, for every call that costs money.
 
 Adapted from pstack by Lauren Tan (MIT License).
 
