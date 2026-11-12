@@ -156,3 +156,33 @@ def test_readme_and_interfaces_list_the_skill() -> None:
 
     interfaces = read(REPO_ROOT / "shared" / "skill-interfaces.md")
     assert "## Create Formal Verification Skill Interface" in interfaces
+
+
+# --- First live run, on a real project, 2026-11-12 ---------------------------
+# Each test below pins one gap that the run showed in the skill text.
+
+
+def test_check_can_run_the_verification_alone_during_an_update() -> None:
+    # The check fails as soon as the covered code changes. So during an
+    # intended change, the second run could never reach the counterexample.
+    for skill in skills():
+        normalized = compact(skill)
+        assert "a way to run the verification alone" in normalized
+        assert "Use it only during an update" in normalized
+        assert "Run the verification alone. It fails with a counterexample" in normalized
+
+
+def test_tool_and_its_output_stay_out_of_version_control() -> None:
+    # The model checker writes state folders and copies of its standard
+    # modules. The downloaded tool itself is a 2 MB file.
+    for skill in skills():
+        normalized = compact(skill)
+        assert "in its own folder that version control ignores" in normalized
+        assert "The tool's own output files go to an ignored folder" in normalized
+
+
+def test_one_promise_may_need_several_properties() -> None:
+    # The first target made one promise in its doc comment. Checking it took
+    # three rules.
+    for skill in skills():
+        assert "verifies one promise there, as one or more properties" in compact(skill)

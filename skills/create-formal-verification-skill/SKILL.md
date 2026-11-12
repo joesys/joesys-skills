@@ -10,9 +10,9 @@ description: "Use when the user invokes /create-formal-verification-skill to che
 A test checks the cases that someone thought to write. Formal verification
 checks every case inside a stated scope: every order of steps in a model,
 every input up to a bound, or every input. This skill finds the place in the
-project where that matters most, verifies one property there, and writes a
-project-local skill, `formal-<area>`. With that skill, the next agent can
-check a change against the property.
+project where that matters most, verifies one promise there, as one or more
+properties, and writes a project-local skill, `formal-<area>`. With that
+skill, the next agent can check a change against the promise.
 
 Four terms, used the same way everywhere below:
 
@@ -64,7 +64,8 @@ names where to start.
 4. **Ask before you install a tool.** Name the tool, the version, and the
    folder it goes to. Prefer a tool that the project's developers can install
    and run. Record the exact version and a checksum, so that the next run
-   uses the same tool.
+   uses the same tool. Put a downloaded tool in its own folder that version
+   control ignores.
 5. **Never read secrets.** Do not open, print, or copy a `.env` file, a
    credential file, or a secret value.
 
@@ -115,13 +116,17 @@ A good verification has these seven qualities:
   the harm in another. Tell a counterexample as a short sequence of steps in
   the code's words.
 - **Cheap to rerun.** One command, a pinned tool version, and a run short
-  enough that the next agent uses it on every relevant change.
+  enough that the next agent uses it on every relevant change. The tool's
+  own output files go to an ignored folder. After one failing run, look at
+  the version-control status to be sure.
 - **Kept in step with the code.** Record which files and functions each check
   covers, and the commit at which you last confirmed that the verification
   describes them. That commit is the sync commit. The check command itself
   fails when the covered code differs from the code at the sync commit. A
   tool that reads a model does not read the code, so without this rule a
-  changed function still passes.
+  changed function still passes. Give the check command a way to run the
+  verification alone, without that comparison. Use it only during an
+  update.
 
 ### Step 4: Write the skill
 
@@ -157,7 +162,8 @@ in the real code. It must catch the break:
 2. Make one small scratch change that breaks the property.
 3. Run the check. It fails, because the covered code changed.
 4. Update the verification to describe the changed code, as the Update
-   section says. Run the check again. It fails with a counterexample.
+   section says. Run the verification alone. It fails with a
+   counterexample.
 5. Remove the scratch change with version control, and undo the update. Run
    the check once more. It is back where it started: passing, or failing only
    on the findings that you will report.
