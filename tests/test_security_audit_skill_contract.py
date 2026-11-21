@@ -401,3 +401,41 @@ def test_the_guide_says_that_the_script_checks_whether_a_diff_applies() -> None:
     for skill in skills():
         assert "every diff with line numbers applies to the code" in compact(skill)
 
+
+# --- Second stage of the first run: the whole codebase, 2026-11-21 ------------
+# Host: Claude Code with Claude Fable 5.2. Tools: Claude Code 2.1.330 and
+# codex-cli 0.171.0. The codebase is private: a Django application with 705
+# tracked files and about 38,000 lines of Python outside the migrations. An
+# earlier audit of the same commit, made by hand with two frontier models,
+# had 26 entries. It served as the answer key.
+#
+# Finder 1 (Claude Opus 5.5, high effort, read-only): 21 minutes, 25
+# candidates, three helper agents of its own, about 20 US dollars. Its
+# longest time without output was 228 seconds, so the idle limit of 15
+# minutes never fired. Matched by file and line against the answer key:
+#   - the five most serious entries (one Critical, four High): all 5 found;
+#   - the other 19 entries that come from reading the code: 12 found,
+#     2 found in part, 5 missed;
+#   - the 2 entries that match a library version against a public notice:
+#     not found. No dependency scanner was installed for the run.
+#   - 6 candidates were not in the answer key. Nobody checked them.
+# The finder gave the top entry the label High. The answer key says Critical.
+#
+# Finder 2 (gpt-6.2-sol, xhigh effort): the provider's safety filter stopped
+# it after four commands. It was not retried. On the small folder of the
+# first stage, the same model with the same instructions had answered.
+#
+# Not done: the writer did not check these 25 candidates, no report was
+# written for the whole codebase, and no reviewer read one. The writer had
+# read the answer key, so its check would not have been independent.
+
+
+def test_the_start_notice_gives_measured_times_and_calls_them_a_guess() -> None:
+    # The first text said "about two hours for each finder". That number came
+    # from two interactive sessions. The first runs measured minutes.
+    for skill in skills():
+        normalized = compact(skill)
+        assert "about two hours for each finder" not in normalized
+        assert "about 20 minutes for a codebase of 38,000 lines" in normalized
+        assert "say that this is a guess" in normalized
+

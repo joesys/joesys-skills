@@ -268,3 +268,26 @@ def test_an_answer_that_ends_in_a_refusal_says_so(tmp_path: Path) -> None:
 
     assert "refus" in run["detail"]
 
+
+def test_a_late_heartbeat_gets_a_second_look_before_the_run_counts_as_crashed(tmp_path: Path) -> None:
+    # After a laptop wakes from sleep, the heartbeat is old for a moment
+    # although the runner is alive. A run that is called crashed too early
+    # would be started a second time, and two finders would run at once.
+    record = {
+        "name": "finder-a", "cwd": str(tmp_path), "command": ["x"], "prompt": "p",
+        "stream_result": False, "started": time.time() - 3600, "pid": 999999,
+    }
+    (tmp_path / "finder-a.run.json").write_text(json.dumps(record), encoding="utf-8")
+    (tmp_path / "finder-a.log").write_text("{}\n", encoding="utf-8")  # it wrote output just now
+    beat = tmp_path / "finder-a.beat"
+    beat.touch()
+    old = time.time() - 600
+    os.utime(beat, (old, old))
+    # The runner "wakes up" and touches its heartbeat a moment later.
+    waker = subprocess.Popen([sys.executable, "-c", f"import time, pathlib; time.sleep(0.05); pathlib.Path({str(beat)!r}).touch()"])
+
+    run = states(tmp_path)["finder-a"]
+    waker.wait()
+
+    assert run["state"] == "running"
+

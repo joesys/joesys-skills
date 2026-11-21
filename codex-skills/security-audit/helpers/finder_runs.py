@@ -177,13 +177,29 @@ def describe_run(run_dir: Path, name: str, idle_seconds: float) -> dict:
         ended = json.loads(paths.exit.read_text(encoding="utf-8"))
         run["exit_code"] = ended.get("code")
         run["state"], run["detail"] = ended_state(ended, paths)
-    elif now - max(record["started"], mtime(paths.beat)) > STALE_SECONDS:
+    elif heartbeat_stopped(record, paths):
         run["state"] = "crashed"
         run["detail"] = "the run stopped without an exit record (its process is gone)"
     elif quiet > idle_seconds:
         run["state"] = "idle"
         run["detail"] = f"alive, but no output for {age(quiet)}"
     return run
+
+
+def heartbeat_stopped(record: dict, paths: RunPaths) -> bool:
+    """True when the runner no longer touches its heartbeat file.
+
+    An old heartbeat gets a second look after a short wait. When a computer
+    wakes from sleep, the heartbeat is old for a moment although the runner
+    is alive. A run that is called crashed too early would be started twice.
+    """
+    def is_old() -> bool:
+        return time.time() - max(record["started"], mtime(paths.beat)) > STALE_SECONDS
+
+    if not is_old():
+        return False
+    time.sleep(BEAT_SECONDS * 2)
+    return is_old() and not paths.exit.exists()
 
 
 def ended_state(ended: dict, paths: RunPaths) -> tuple[str, str]:

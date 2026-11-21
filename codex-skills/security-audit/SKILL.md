@@ -97,8 +97,12 @@ Show one notice, then ask one question. The notice says:
   changes are included;
 - which four models take part and in which role, and that **the source code
   goes to both model providers**;
-- that the run has no time limit, and a rough time: about two hours for each
-  finder on a codebase of 25,000 lines, more for a larger one;
+- that the run has no time limit, and a rough time. In the first runs, a
+  finder needed 6 to 8 minutes for a folder of 400 lines and about 20
+  minutes for a codebase of 38,000 lines, and the reviewer needed about 15
+  minutes for a report of ten findings. Your own work takes the longest:
+  checking every candidate and writing the report. Plan one to three hours
+  for a codebase of that size, and say that this is a guess;
 - for each scanner tool: installed or not, and what it sends out of the
   machine (see `references/tools.md`);
 - where the report will be saved.
