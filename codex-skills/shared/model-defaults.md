@@ -15,6 +15,7 @@ Single source of truth for default model identifiers and CLI flags used across s
 | Anthropic (Claude CLI) | `fable` | `$claude`, `$ai-council` (Claude leg) |
 | xAI (Grok CLI) | *(managed by grok)* | `$grok`, `$ai-council` |
 
+
 ## Review Model Routing
 
 Skills that let the user select one review model resolve the provider through
@@ -51,17 +52,23 @@ codex exec --model gpt-6.1-sol -c model_reasoning_effort="xhigh" \
 #### Codex Resume
 
 ```bash
-codex exec resume <SESSION_ID> --skip-git-repo-check "<PROMPT>" 2>/dev/null   # by session id (preferred)
-codex exec resume --last --skip-git-repo-check "<PROMPT>" 2>/dev/null         # most recent session
+# by session id (preferred)
+codex exec resume <SESSION_ID> --model gpt-6.1-sol -c model_reasoning_effort="xhigh" \
+  -c sandbox_mode="read-only" --skip-git-repo-check "<PROMPT>" 2>/dev/null
+# most recent session
+codex exec resume --last --model gpt-6.1-sol -c model_reasoning_effort="xhigh" \
+  -c sandbox_mode="read-only" --skip-git-repo-check "<PROMPT>" 2>/dev/null
 ```
 
 | Rule | Detail |
 |---|---|
-| Session ID capture | `codex exec` prints `session id: <UUID>` on **stderr** — dispatch with `2>"$CODEX_LOG"` and `grep -m1 "session id:"` it; a discarded banner leaves only `--last` resume |
+| Session ID capture | `codex exec` prints `session id: <UUID>` on **stderr** — dispatch with `2>"$CODEX_LOG"` and `grep -m1 "session id:"` it; a discarded banner leaves only `--last` resume. With `--json`, the first event on stdout carries it as `thread_id` |
 | Flag order | `--skip-git-repo-check` goes after `resume`, not between `exec` and `resume` |
-| Not accepted on resume | `--sandbox`, `--full-auto` |
-| Write access on resume | `-c sandbox_mode="workspace-write"` |
-| Inheritance | Resumed sessions keep model, reasoning effort, and sandbox from the original run |
+| Not accepted on resume | `--sandbox`, `--full-auto`. Set the sandbox with `-c sandbox_mode="read-only"` |
+| Nothing is kept | A resumed session takes its model, its reasoning effort and its sandbox from the user's own Codex settings, not from the first run. Give all three again on every resume. Use the model and the effort of the first run |
+| Write access on resume | `-c sandbox_mode="workspace-write"` in place of the read-only value, and only when the user asks for it |
+
+Why "nothing is kept": in a live test with codex-cli 0.171.0 on 2026-11-21, a session was started with `--sandbox read-only` and one model. Resumed without flags, it ran with the model and the reasoning effort of the user's settings, with write access to the folder, and it wrote a file. Resumed with `-c sandbox_mode="read-only"`, it refused the write.
 
 ### Antigravity
 
@@ -112,9 +119,11 @@ claude --model fable --effort high --permission-mode plan -p "" 2>/dev/null
 #### Claude CLI Resume
 
 ```bash
-claude -c -p "<PROMPT>" 2>/dev/null                  # most recent session
-claude --resume "<NAME>" -p "<PROMPT>" 2>/dev/null   # named session (set at dispatch via --name)
+claude -c --permission-mode plan -p "<PROMPT>" 2>/dev/null                  # most recent session
+claude --resume "<NAME>" --permission-mode plan -p "<PROMPT>" 2>/dev/null   # named session (set at dispatch via --name)
 ```
+
+A resumed session does not keep its permission mode. Give `--permission-mode plan` again on every resume. In a live test with Claude Code 2.1.330 on 2026-11-21, a session that was started in plan mode and resumed without the flag ran in the mode `default`. It kept its model. The reasoning effort was not tested, so give `--effort` again when it matters.
 
 ### Grok
 

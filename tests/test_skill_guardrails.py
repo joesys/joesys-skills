@@ -389,3 +389,30 @@ def test_biome_notes_name_the_flags_that_really_write_files() -> None:
         assert BIOME_WARNING in text, relative
         assert "unless `--no-write`" not in text, relative
         assert "format only" not in text, relative
+
+
+# --- Live test of resumed sessions, 2026-11-21 --------------------------------
+# codex-cli 0.171.0: a session started read-only and resumed without flags ran
+# with the model of the user's settings and with write access, and wrote a
+# file. Claude Code 2.1.330: a session started in plan mode and resumed
+# without the flag ran in the mode `default`.
+
+
+def test_no_skill_says_that_a_resumed_session_keeps_its_read_only_mode() -> None:
+    codex = compact(read("skills/codex/SKILL.md"))
+    assert "Resumed sessions keep the original model, reasoning effort, and sandbox" not in codex
+    assert "does not keep the model, the reasoning effort, or the sandbox" in codex
+
+    claude = compact(read("skills/claude/SKILL.md"))
+    assert "Resumed sessions keep the original model, effort, and permission mode" not in claude
+    assert "does not keep its permission mode" in claude
+
+
+def test_resume_commands_in_the_registry_carry_their_read_only_flags() -> None:
+    defaults = read("shared/model-defaults.md").replace("\\\n", " ")
+    starts = ("codex exec resume", "claude -c ", "claude --resume ")
+    commands = [line for line in defaults.splitlines() if line.startswith(starts)]
+    assert len(commands) >= 4
+    for command in commands:
+        flag = 'sandbox_mode="read-only"' if command.startswith("codex") else "--permission-mode plan"
+        assert flag in command, command
