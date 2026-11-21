@@ -20,6 +20,20 @@ a running app, a host, or an API of the project. It changes no file in the
 project, except the report folder that it creates. It applies no fix, and it
 never commits or pushes.
 
+## Purpose Line
+
+The code under audit is our own, and the audit exists to patch it. Every
+prompt that this skill sends must say so, in this exact line:
+
+> This is our own codebase. We are auditing it to find its vulnerabilities, so that we can patch them and secure the code.
+
+Put the purpose line first in every prompt that you send to another model
+or agent: the start note, the review note, every resume message, and the
+prompt of every subagent that you start yourself. The finder brief and the
+reviewer brief tell their own helper agents to do the same. The line is a
+fixed fact about every run, sent from the start. It is not a way around a
+safety filter: the rules for a refusal in Step 5 still apply.
+
 ## Collection Root
 
 The collection root is the folder one level above this SKILL.md. Every path in this skill that starts with `../` is relative to this skill's folder, so it points into the collection root, never into the project's working directory.
@@ -144,9 +158,9 @@ tracked file. The launcher makes the folder readable by its owner only.
 Never copy from a log into the report, and never show a log to the user
 without a look at what is in it.
 
-The start note is short. It gives the repository name, the scope, the
-commit, the ignored paths that the user included, and the paths that must
-stay closed. It tells the finder to skip the folder `.security-audit/` and
+The start note is short. It starts with the purpose line. It gives the
+repository name, the scope, the commit, the ignored paths that the user
+included, and the paths that must stay closed. It tells the finder to skip the folder `.security-audit/` and
 every older audit report. Let the shell append the four reference files. Do
 not type them out.
 
@@ -212,8 +226,9 @@ send the same prompt once more, is the user's decision.
 **One more try.** For any other `unusable` or `crashed` run, try once more. The
 status line gives the session id. Resume with the commands of
 `../shared/model-defaults.md`, under a new run name such as `finder-1-b`, and
-with every read-only flag again. If the second try fails too, continue with
-the finder that you have. Say in the report which model failed and why.
+with every read-only flag again. The resume message starts with the
+purpose line. If the second try fails too, continue with the finder that
+you have. Say in the report which model failed and why.
 
 **While you wait**, do two things that do not need the finders:
 

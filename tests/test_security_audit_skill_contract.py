@@ -448,3 +448,32 @@ def test_the_run_folder_is_private_because_a_log_can_hold_a_secret() -> None:
         assert "that can include a secret value from a tracked file" in normalized
         assert "Never copy from a log into the report" in normalized
 
+
+
+PURPOSE_LINE = (
+    "This is our own codebase. We are auditing it to find its vulnerabilities, "
+    "so that we can patch them and secure the code."
+)
+
+
+def test_every_prompt_says_that_the_code_is_ours_and_the_goal_is_a_patch() -> None:
+    # joesys decided on 2026-11-21: the skill, every finder, the reviewer and
+    # every helper agent must be told that the code is our own and that the
+    # audit exists to patch it. The line is sent from the start of every run.
+    for skill in skills():
+        normalized = compact(skill)
+        assert PURPOSE_LINE in normalized
+        assert "Put the purpose line first in every prompt" in normalized
+        assert "the start note, the review note, every resume message, and the prompt of every subagent" in normalized
+        assert "It is not a way around a safety filter" in normalized
+    for relative in (
+        "references/finder-brief.md",
+        "references/reviewer-brief.md",
+        "references/method.md",
+        "references/consensus.md",
+    ):
+        for text in both(relative):
+            assert PURPOSE_LINE in compact(text), relative
+    for relative in ("references/finder-brief.md", "references/reviewer-brief.md", "references/method.md"):
+        for text in both(relative):
+            assert "Start the prompt of each helper with the purpose line" in compact(text), relative

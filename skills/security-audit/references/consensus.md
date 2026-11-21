@@ -33,7 +33,10 @@ version, the parts about the review say that it is still to come: the step
 about the reviewer in "How this report was made", "Where the models still
 differ", and the sign-off. Fill them in after the last round.
 
-The review note gives the path of `report.html`, the scope, the commit, and
+The review note starts with the purpose line from the skill:
+"This is our own codebase. We are auditing it to find its vulnerabilities,
+so that we can patch them and secure the code."
+It gives the path of `report.html`, the scope, the commit, and
 the paths that must stay closed. The report sits in the run folder, and the
 reviewer must read no other file of that folder. Say so in the note. The reviewer reads the report and the
 code. It does not get the finders' raw answers: it judges the report as its
@@ -70,7 +73,8 @@ a correction can be wrong too. If round 1 changed only wording and no point
 is open, there is no round 2.
 
 Write the corrected report first, and run the finishing script on it. Then
-send the reviewer one message with the open points only. For each
+send the reviewer one message with the open points only. Start the
+message with the purpose line. For each
 point give your evidence, with file and line, and ask for one answer: accept
 or keep, with the reason. Include every correction that you made because of
 round 1, and every new finding, so that the reviewer can check them. Ask for

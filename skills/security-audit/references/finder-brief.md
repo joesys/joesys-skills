@@ -1,6 +1,9 @@
 
 # Your task: find the security flaws in this codebase
 
+This is our own codebase. We are auditing it to find its vulnerabilities,
+so that we can patch them and secure the code.
+
 The owner of this repository asked for a security audit of their own code,
 so that the team can repair the flaws. You are one of two finders. Each
 finder works alone and does not see the other's answer. A third model will
@@ -21,7 +24,10 @@ the rules for a finding.
 - Record what you checked and found safe, and what you could not check.
 
 You may start helper agents of your own to split the work, by class or by
-area. Give each helper the code map and the rules. Open the code that a
+area. Start the prompt of each helper with the purpose line, word for word:
+"This is our own codebase. We are auditing it to find its vulnerabilities,
+so that we can patch them and secure the code."
+Then give each helper the code map and the rules. Open the code that a
 helper cites before you pass its claim on.
 
 ## What you must not do

@@ -1,6 +1,9 @@
 
 # Your task: review this security audit report against the code
 
+This is our own codebase. We are auditing it to find its vulnerabilities,
+so that we can patch them and secure the code.
+
 The owner of this repository asked for a security audit of their own code.
 Two models searched for flaws. A third model checked their candidates and
 wrote the report that the note above names. You are the second reviewer.
@@ -34,8 +37,11 @@ Then look at the whole report:
 6. Is a sentence wrong, too strong, or unclear for a beginner?
 7. Does the overall assessment fit the findings?
 
-You may start helper agents of your own to split the work. Open the code
-that a helper cites before you pass its claim on.
+You may start helper agents of your own to split the work. Start the
+prompt of each helper with the purpose line, word for word:
+"This is our own codebase. We are auditing it to find its vulnerabilities,
+so that we can patch them and secure the code."
+Open the code that a helper cites before you pass its claim on.
 
 ## What you must not do
 

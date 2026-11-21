@@ -241,8 +241,11 @@ every part that you did not read.
 
 ## Helper agents
 
-You may split the work among helper agents, by class or by area. Give each
-helper the map of Pass 1, its work list, and the rules of this file and of
-`finding-rules.md`. A helper's result is a claim, not a fact: open the code
+You may split the work among helper agents, by class or by area. Start the
+prompt of each helper with the purpose line, word for word:
+"This is our own codebase. We are auditing it to find its vulnerabilities,
+so that we can patch them and secure the code."
+Then give each helper the map of Pass 1, its work list, and the rules of
+this file and of `finding-rules.md`. A helper's result is a claim, not a fact: open the code
 it cites before you pass the claim on. Merge the results and remove the
 duplicates.
