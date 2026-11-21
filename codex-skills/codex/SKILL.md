@@ -49,7 +49,7 @@ Commands and flag rules are in `../shared/model-defaults.md` Section Codex Resum
 - `$codex resume <SESSION_ID> <PROMPT>` - resume a specific session by ID.
 
 Rules:
-- Resumed sessions keep the original model, reasoning effort, and sandbox. Pass `--model` only when the user asks for it.
+- A resumed session does not keep the model, the reasoning effort, or the sandbox of the first run. It takes them from the user's own Codex settings. Give all three again on every resume, as Section Codex Resume shows. Use the model and the effort of the first run, unless the user asks for others.
 - Write access on resume needs the config override listed in Section Codex Resume. Do not guess flags.
 - Never use `--ephemeral` on the first run, or there will be no session to resume.
 - `--last` resumes the newest Codex session, which may not be this one. If the session ID was not captured and other Codex commands have run since, warn the user before a `--last` resume.

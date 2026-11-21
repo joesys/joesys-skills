@@ -48,7 +48,7 @@ Commands are in `../shared/model-defaults.md` Section Claude CLI Resume.
 - `$claude resume <PROMPT>` - continue the most recent session (`claude -c`).
 - `$claude resume <NAME> <PROMPT>` - resume a named session (`claude --resume "<NAME>"`).
 
-Resumed sessions keep the original model, effort, and permission mode. Override `--model`, `--effort`, `--permission-mode`, or `--bare` only when the user asks. After a resume, use the same output flow.
+A resumed session keeps its model, but it does not keep its permission mode. Give `--permission-mode plan` again on every resume, as Section Claude CLI Resume shows. Override `--model`, `--effort`, or `--bare` only when the user asks, and leave plan mode only when the user asks. After a resume, use the same output flow.
 
 ## Same-Family Evaluation
 

@@ -28,6 +28,7 @@
     "readability-review",
     "restructure-commit",
     "retrospective",
+    "security-audit",
     "ss",
     "why"
   ],
@@ -58,6 +59,7 @@
     "$readability-review",
     "$restructure-commit",
     "$retrospective",
+    "$security-audit",
     "$ss",
     "$why"
   ],
