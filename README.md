@@ -312,6 +312,7 @@ views.
 /security-audit                          # The whole repository
 /security-audit src/payments             # One folder
 /security-audit --include config/local   # Also read a path that git ignores
+/security-audit --out ~/audits/shop      # Save the run folder somewhere else
 ```
 
 The result is one HTML file that works on a desktop and on a phone, with no
@@ -319,13 +320,18 @@ script. It is written for a beginner programmer who uses English as a
 second language: an overall assessment, the main themes, a list by
 priority, and for each finding the code, the explanation, the steps to
 reproduce it, the fix as a diff, and how to avoid the mistake next time. A
-script adds the code colours and checks that every code quote matches the
-file it names.
+script adds the code colours. It also checks that every code quote matches
+the file it names, and that every diff with line numbers applies to the
+code.
 
 The skill only reads source. It sends no request to a running app, changes
 no file in the project, and never opens a secret file. The other models run
 in the background with no time limit, and a watch reports whether each one
-is still working. Three scanner tools (Semgrep, Gitleaks, OSV-Scanner) are
+is still working. A provider's safety filter can stop a model, and a model
+can refuse the task. The skill then shows the message and does not retry by
+itself. It continues with the other models, and the report names the model
+that is missing. When both finders fail, the skill stops and writes no
+report. Three scanner tools (Semgrep, Gitleaks, OSV-Scanner) are
 used when they are installed. The skill shows how to install them and never
 installs one. The report folder `.security-audit/` is kept out of git,
 because it shows where the app is weak.
