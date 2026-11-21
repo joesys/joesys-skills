@@ -125,6 +125,10 @@ for part in finder-brief method coverage finding-rules; do
 done
 ```
 
+If that run folder exists already, add `-2`, `-3` and so on to its name.
+Every run gets a folder of its own, because the launcher refuses a run name
+that is already used in a folder.
+
 The report shows how to attack the app. The `.gitignore` file with one `*`
 keeps the folder out of every commit. With `--out`, use that folder and
 check that git ignores it.
@@ -180,13 +184,21 @@ call itself a limit a little above the timeout.
 | `running` | The run is alive and wrote output a short time ago. | Wait again. |
 | `idle` | The run is alive, but it wrote no output for 15 minutes. | Read the last lines of its log. A model that thinks for a long time looks like this. Wait again. After 30 minutes without output, tell the user and let the user decide. |
 | `finished` | The run ended and its answer has the end marker. | Read the answer. |
-| `unusable` | The run ended, but the answer has no end marker. It was cut short, or a safety filter stopped it. | Resume the session once and ask for the whole answer again. See below. |
-| `crashed` | The run ended with an error, or its process is gone. | Read the error line. Start it once more under a new name. |
+| `unusable` | The run ended, but the answer has no end marker. It was cut short, or the model stopped. | Read the detail of the status line. If it names a safety filter or a refusal, see below. Otherwise resume the session once and ask for the whole answer again. |
+| `crashed` | The run ended with an error, or its process is gone. | Read the detail of the status line. If it names a safety filter or a refusal, see below. Otherwise start it once more under a new name. |
 
 The watch never stops a run. Only `finder_runs.py stop` does, and you use it
 only when the user asks.
 
-**One more try.** For an `unusable` or `crashed` run, try once more. The
+**A safety filter is not an error.** A provider can stop a run because its
+safety filter flagged the task, and a model can refuse it. The status line
+then shows the provider's message. Do not start the run again, and do not
+reword the prompt to get past the filter. Show the user the message, word
+for word, and continue with the runs that you have. A provider may offer an
+access program for authorized security work. Whether to apply for it, or to
+send the same prompt once more, is the user's decision.
+
+**One more try.** For any other `unusable` or `crashed` run, try once more. The
 status line gives the session id. Resume with the commands of
 `shared/model-defaults.md`, under a new run name such as `finder-1-b`, and
 with every read-only flag again. If the second try fails too, continue with
@@ -225,8 +237,9 @@ python3 "<SKILL_DIR>/helpers/report_tools.py" finish "$RUN_DIR/report.html" --re
 
 Repair what the script reports and run it again, until it reports no
 problem. It checks that the page has no script and no outside resource, that
-every link works, that every finding has every part, and that every code
-quote matches the file it names.
+every link works, that every finding has every part, that every code quote
+matches the file it names, and that every diff with line numbers applies to
+the code. The checks change no file of the project.
 
 ### Step 8: Review by the other frontier model, and consensus
 
@@ -260,7 +273,7 @@ Then stop. Do not start to fix. A fix is a new request.
 | One finder fails twice | Continue with one finder. Name the model that failed in the report header, under "What was not checked", and under "How this report was made". |
 | Both finders fail | Stop and tell the user. Do not write a report from your own search alone and call it an audit. |
 | The reviewer fails twice | Deliver the report with a clear line at the top: no second model reviewed it. |
-| A model refuses the task | Show its answer to the user. Do not reword the task to get around the refusal. |
+| A model refuses the task, or a provider's safety filter stops it | Show the message to the user, word for word. Do not retry by yourself, and do not reword the task to get around it. Continue with the other runs, and name the model in the report. |
 | The project is not a git repository | Run without the commit. Use the folder and the date in the report. |
 
 ## Credits

@@ -89,7 +89,8 @@ Rules for the label:
   both can be argued, choose the lower one.
 - The reason must not contain the argument why the flaw does not matter. If
   it does, the label is too high.
-- A harm that needs a second flaw belongs to that second flaw.
+- Do not count the harm of another, separate finding into this one. A chain
+  is the exception: see "One flaw, one finding".
 - **A finding that was only read from the code can be Critical.** The
   method that this skill builds on never gives Critical without a live
   proof. This skill reads source only, so it would never warn loudly enough.
@@ -133,6 +134,12 @@ doubt.
 - The same place with the same missing defence is one finding, even when
   two classes describe it.
 - A different place with a different missing defence is a different finding.
+- **A chain is one finding.** When an attacker must use several flaws one
+  after the other to reach one harm, write one finding for the chain. List
+  every link with its place. Rate the chain by the harm of the whole chain
+  and by what the attacker needs for the first link. The fix must break the
+  chain, and it is best to break it at every link. If a link is harmful by
+  itself too, say what it gives alone.
 - The title names the defect and where it is, in plain words. It does not
   name the consequence, and it does not hedge.
 
@@ -145,7 +152,9 @@ they match. Never quote from a secret file.
 
 ## Steps to reproduce
 
-Write them as a check that a developer runs on a local or test copy.
+Write them as a check that a developer runs on a local or test copy. The
+steps show the flaw in the code as it is today. A check of the fixed code
+is a test idea, and it belongs under "how to avoid this next time".
 
 - Use test accounts and made-up data: `admin@a.test`, `victim@b.test`.
 - Use harmless test values that only show that the flaw exists: a bold tag

@@ -116,7 +116,8 @@ compares each quoted line with the file, so:
 - A note stands at the end of a line, after the comment sign of the
   language, and starts with `PROBLEM:`, `OK:` or `NEW:`. The script ignores
   the note when it compares.
-- Where you leave lines out, write `...` alone on a line.
+- Where you leave a few lines out, write `...` alone on a line. When two
+  parts are far apart, make two quotes, each with its own range.
 - `data-lines` is the range in the file that holds all quoted lines.
 - A code block with no `data-file` is an example or a fix. The script does
   not compare it. Every finding needs at least one real quote.
@@ -126,15 +127,35 @@ compares each quoted line with the file, so:
 
 Show the change as a diff in a `language-diff` block: a line that starts
 with `-` goes away, a line that starts with `+` is new. Keep two or three
-lines around the change, so the reader finds the place. Then say why it
+lines around the change, so the reader finds the place.
+
+Prefer a real diff, with the line numbers in its `@@` lines. The finishing
+script asks git whether such a diff applies to the code, and reports it when
+it does not. A diff with no line numbers in its `@@` lines is a sketch. The
+script does not check a sketch, so check its names and its lines yourself. Then say why it
 works, in the words of the explanation above it. Under "What the fix
 changes for users", say what a normal user will notice, or that nothing
 changes.
 
+Some findings have no small code change, such as one that needs a new flow
+or a decision by the team. Then say so, describe the change in words, and
+delete the diff block. Do not invent a diff to fill the place. A diff must
+fit the code as it is: use only names that exist in the project.
+
 ### The labels on a finding
 
 In the title line: the severity, the confidence, the kind of evidence, and
-who found it. Add "Verify first" and "Two views" where they apply. In the
+who found it. Add "Verify first" and "Two views" where they apply.
+
+A finding that is added after the review has started gets the next free
+number, and it stands at the place of its severity. So the numbers need not
+be in order. The number of a finding that was removed is not used again.
+
+When the two frontier models still differ on the severity, the finding is
+sorted and counted under the higher label, so that nobody overlooks it. Set
+`data-severity` to the higher label. In the title line and in the list, show
+both labels, the higher one first, each with the name of its role, such as
+"Reviewer: Low" and "Writer: Info". In the
 line at the foot of the finding, give the CWE number and name, and who
 found it.
 

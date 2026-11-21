@@ -28,8 +28,14 @@ python3 "<SKILL_DIR>/helpers/finder_runs.py" start --run-dir "$RUN_DIR" --name r
 `<STREAM_FLAG>` is `--stream-result` for the Claude command and nothing for
 the Codex command, as the registry says.
 
+The reviewer reads the report before the review exists. So in the first
+version, the parts about the review say that it is still to come: the step
+about the reviewer in "How this report was made", "Where the models still
+differ", and the sign-off. Fill them in after the last round.
+
 The review note gives the path of `report.html`, the scope, the commit, and
-the paths that must stay closed. The reviewer reads the report and the
+the paths that must stay closed. The report sits in the run folder, and the
+reviewer must read no other file of that folder. Say so in the note. The reviewer reads the report and the
 code. It does not get the finders' raw answers: it judges the report as its
 reader will see it.
 
@@ -58,9 +64,13 @@ The code decides. When the code does not decide, the point stays open.
 
 ## Round 2: the open points
 
-If no point is open after round 1, there is no round 2.
+Round 2 takes place when a point is open, or when round 1 led to a new
+finding or to a changed fix. The reviewer must see what its review produced:
+a correction can be wrong too. If round 1 changed only wording and no point
+is open, there is no round 2.
 
-Otherwise send the reviewer one message with the open points only. For each
+Write the corrected report first, and run the finishing script on it. Then
+send the reviewer one message with the open points only. For each
 point give your evidence, with file and line, and ask for one answer: accept
 or keep, with the reason. Include every correction that you made because of
 round 1, and every new finding, so that the reviewer can check them. Ask for
@@ -81,6 +91,22 @@ If the session cannot be resumed, start a new run. Put the reviewer's own
 round 1 answer for the open points into the prompt, so that it can stand by
 its words.
 
+Ask for the answer of round 2 in this structure, with the same end marker
+as every other run:
+
+```text
+# Open points
+P1: ACCEPT or KEEP. The reason in one to three sentences.
+
+# Corrections
+One line for each thing that is still wrong in the corrected report.
+"None" when there is none.
+
+# What I read in this round
+
+# Closing statement
+```
+
 ## After round 2: what is still open stays open
 
 The models exchange at most two rounds. After the second round, do not try
@@ -91,8 +117,9 @@ finding:
   title line and to the list.
 - Give each view in that model's own words, as a short quote with the
   model's name. Do not shorten a view in a way that weakens it.
-- When the models differ on the label, show both labels. Sort the finding
-  by the higher label, so that nobody overlooks it.
+- When the models differ on the label, show both labels. Sort and count the
+  finding under the higher label, so that nobody overlooks it. The report
+  guide says how to write the two labels.
 - List every open point under "Where the models still differ", with a link.
 
 A difference between two careful models is useful to the reader. It marks

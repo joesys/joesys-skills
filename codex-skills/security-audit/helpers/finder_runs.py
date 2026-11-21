@@ -43,6 +43,7 @@ POLL_SECONDS = float(os.environ.get("FINDER_RUNS_POLL_SECONDS", "5"))
 STALE_SECONDS = max(BEAT_SECONDS * 6, 3.0)
 ENDED_STATES = {"finished", "unusable", "crashed", "stopped"}
 SESSION_ID = re.compile(r'"(?:thread_id|session_id)"\s*:\s*"([^"]+)"')
+REFUSAL = re.compile(r'"stop_reason"\s*:\s*"refusal"')
 
 
 # --- start -------------------------------------------------------------------
@@ -190,14 +191,50 @@ def ended_state(ended: dict, paths: RunPaths) -> tuple[str, str]:
         return "stopped", "stopped on request"
     if ended.get("error"):
         return "crashed", ended["error"]
+    said = stream_error(paths.log)
     if ended.get("code") != 0:
-        return "crashed", f"exit code {ended.get('code')}. Last error line: {last_line(paths.err) or 'none'}"
+        reason = f"The tool said: {said}" if said else f"Last error line: {last_line(paths.err) or 'none'}"
+        return "crashed", f"exit code {ended.get('code')}. {reason}"
     answer = paths.final.read_text(encoding="utf-8", errors="replace") if paths.final.exists() else ""
     if END_MARKER in answer:
         return "finished", f"answer in {paths.final}"
+    why = f" The tool said: {said}" if said else ""
     if not answer.strip():
-        return "unusable", "it ended with exit code 0 but left no answer, so there is no end marker"
-    return "unusable", "the answer has no end marker, so it was cut short"
+        return "unusable", "it ended with exit code 0 but left no answer, so there is no end marker." + why
+    return "unusable", "the answer has no end marker, so it was cut short." + why
+
+
+def stream_error(log: Path) -> str:
+    """What the tool's own event stream says about a failure or a refusal.
+
+    A provider's safety filter ends a run this way: the reason is an event on
+    stdout, and stderr says nothing useful.
+    """
+    message, refused = "", False
+    try:
+        with open(log, encoding="utf-8", errors="replace") as lines:
+            for line in lines:
+                refused = refused or bool(REFUSAL.search(line))
+                if '"error"' not in line:
+                    continue
+                try:
+                    event = json.loads(line)
+                except ValueError:
+                    continue
+                if not isinstance(event, dict):
+                    continue
+                kind = event.get("type")
+                if kind == "error" and isinstance(event.get("message"), str):
+                    message = event["message"]
+                elif kind == "turn.failed" and isinstance(event.get("error"), dict):
+                    message = str(event["error"].get("message", message))
+                elif kind == "result" and event.get("is_error") and isinstance(event.get("result"), str):
+                    message = event["result"]
+    except OSError:
+        return ""
+    if refused and not message:
+        message = "the model refused to continue (stop reason: refusal)"
+    return message[:400]
 
 
 def mtime(path: Path) -> float:

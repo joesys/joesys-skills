@@ -23,6 +23,11 @@ write down who found it: both finders, the first, the second, or a tool.
 Do not merge two flaws that only share a class. Two missing owner checks in
 two views are one finding only when one fix closes both.
 
+Look for chains. A finder may report two links of one chain as two
+candidates, each with a lower label than the chain deserves. Or one finder
+reports only one link. When several flaws give one harm only together, make
+them one finding, as `finding-rules.md` says, and rate the whole chain.
+
 ## 3. Check each candidate against the code
 
 For each candidate, in this order:
@@ -33,11 +38,14 @@ For each candidate, in this order:
 2. **Walk the path yourself**, from the entry point to the faulty line.
    Judge from the code, not from the finder's reasoning. A finder can be
    wrong about the code, and it can be right for the wrong reason.
-3. **Try to prove it wrong** with the nine questions of `finding-rules.md`.
+3. **Open what the claim rests on.** When a candidate says what a page
+   shows or hides, open the template. When it says what a setting is, open
+   the settings file. A finder can describe a page that it never read.
+4. **Try to prove it wrong** with the nine questions of `finding-rules.md`.
    Look for the guard in the middleware, the decorators, the base classes
    and the settings before you believe that it is missing.
-4. **Search for the same flaw in other places**, if the finder did not.
-5. **Decide:**
+5. **Search for the same flaw in other places**, if the finder did not.
+6. **Decide:**
 
    | Verdict | When |
    |---|---|
@@ -65,7 +73,9 @@ flaw because a part of it is unknown.
 Set severity and confidence by `finding-rules.md`, in writing: the four
 answers for the severity, and what was read for the confidence. Use your
 own judgment, not the finder's label. When two finders gave different
-labels, the code decides, and the finding says why.
+labels, the code decides, and the finding says why. When your label differs
+from the label of both finders, say that too in the finding, with your
+reason. The reviewer will weigh it.
 
 Then put the confirmed and the verify-first findings in order: by severity
 first, and inside one severity by how urgent the repair is. Number them
@@ -77,6 +87,10 @@ For each finding, check the suggested fix against the present code:
 
 - Does it close the flaw at every place that the finding lists?
 - Does it fit the code as it is now, with the real names and imports?
+- Does it fit the code around it? When a fix writes data, find the code
+  that reads this data, and use the shape that it expects. When a fix shows
+  fewer choices in a form, check what saving the form does to the choices
+  that are no longer shown.
 - What does it change for normal users? A fix can remove a feature or end
   a login. Write that down for the report.
 

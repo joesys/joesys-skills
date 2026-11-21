@@ -58,6 +58,11 @@ semgrep scan --config p/default --metrics=off --no-autofix --quiet \
 | macOS with Homebrew | `brew install semgrep` |
 | Windows (beta) | Install Python, then `pipx install semgrep` or `uv tool install semgrep`. See the Semgrep documents for the one environment setting that Windows needs. |
 
+If the install stops while it builds a package, the default Python of the
+system is too new for Semgrep. Name an older one:
+`uv tool install --python 3.13 semgrep`. This happened in a test on
+2026-11-21, where the default Python was 3.14.
+
 ## Gitleaks: secrets in files and in the git history
 
 Finds keys, tokens and passwords, also in old commits.
@@ -144,4 +149,6 @@ version, and how many of its results became findings. Under "What was not
 checked", name each tool that did not run and what it would have covered.
 
 These commands and facts were checked against the documents of the three
-tools on 2026-11-21. None of the three tools was run for this check.
+tools on 2026-11-21. The Semgrep command was also run that day, with Semgrep
+1.186.0: it worked with metrics off, wrote the result file, and changed no
+file. Gitleaks and OSV-Scanner were not run for this check.

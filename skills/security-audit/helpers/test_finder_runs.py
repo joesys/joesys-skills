@@ -231,3 +231,40 @@ def test_the_status_text_names_every_run_and_its_state(tmp_path: Path) -> None:
     assert "finder-a" in text
     assert "finished" in text
     assert "finder-a.final.md" in text
+
+
+# --- Live run, 2026-11-21 ----------------------------------------------------
+# A provider's safety filter stopped one finder after four commands. The tool
+# ended with exit code 1, and the reason stood only in its event stream. The
+# status line showed the last line of stderr, which said nothing.
+
+FLAGGED = "This content was flagged for possible cybersecurity risk."
+
+
+def test_a_crash_shows_the_error_event_of_the_stream(tmp_path: Path) -> None:
+    code = (
+        "import json, sys; print(json.dumps({'type': 'thread.started', 'thread_id': 'abc'})); "
+        "print(json.dumps({'type': 'error', 'message': %r})); "
+        "print(json.dumps({'type': 'turn.failed', 'error': {'message': %r}})); "
+        "sys.stderr.write('Reading prompt from stdin...\\n'); sys.exit(1)" % (FLAGGED, FLAGGED)
+    )
+    start(tmp_path, "finder-b", code)
+
+    run = wait_for(tmp_path, "finder-b", "crashed")
+
+    assert FLAGGED in run["detail"]
+    assert run["exit_code"] == 1
+
+
+def test_an_answer_that_ends_in_a_refusal_says_so(tmp_path: Path) -> None:
+    code = (
+        "import json; "
+        "print(json.dumps({'type': 'assistant', 'message': {'stop_reason': 'refusal', 'content': []}})); "
+        "print(json.dumps({'type': 'result', 'is_error': False, 'result': 'I cannot continue.'}))"
+    )
+    start(tmp_path, "finder-a", code, "--stream-result")
+
+    run = wait_for(tmp_path, "finder-a", "unusable")
+
+    assert "refus" in run["detail"]
+

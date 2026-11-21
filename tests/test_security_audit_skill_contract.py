@@ -276,3 +276,128 @@ def test_readme_and_interfaces_list_the_skill() -> None:
 
     interfaces = read(REPO_ROOT / "shared" / "skill-interfaces.md")
     assert "## Security Audit Interface" in interfaces
+
+
+# --- First run, on one folder of a private codebase, 2026-11-21 ---------------
+# Each test below pins one gap that the run showed in the skill text.
+
+
+def test_a_chain_of_flaws_is_one_finding_rated_as_a_whole() -> None:
+    # Both finders rated the two links of an account takeover separately, as
+    # High and Medium. One finder reported only one link. The chain as a
+    # whole gives control of any account.
+    for rules in both("references/finding-rules.md"):
+        normalized = compact(rules)
+        assert "A chain is one finding" in normalized
+        assert "Rate the chain by the harm of the whole chain" in normalized
+        assert "A harm that needs a second flaw belongs to that second flaw" not in normalized
+
+    for verify in both("references/verify.md"):
+        assert "Look for chains" in compact(verify)
+
+
+def test_steps_to_reproduce_show_the_flaw_in_the_present_code() -> None:
+    # One finder wrote steps that test the fixed code ("on the patched copy")
+    # for every candidate. Such steps do not show the reader the flaw.
+    for brief in both("references/finder-brief.md"):
+        normalized = compact(brief)
+        assert "show the flaw in the code as it is today, before any fix" in normalized
+        assert "Steps that only test the fixed code do not belong here" in normalized
+
+
+def test_a_finding_without_a_small_code_change_gets_no_invented_diff() -> None:
+    # One finding of the run needed a new flow, not a changed line.
+    for guide in both("references/report-guide.md"):
+        normalized = compact(guide)
+        assert "Do not invent a diff to fill the place" in normalized
+        assert "use only names that exist in the project" in normalized
+
+
+def test_every_run_gets_a_folder_of_its_own() -> None:
+    # A second run on the same day and commit would have used the same folder,
+    # and the launcher refuses a run name that exists.
+    for skill in skills():
+        assert "If that run folder exists already, add `-2`, `-3` and so on" in compact(skill)
+
+
+def test_the_writer_says_when_its_label_differs_from_both_finders() -> None:
+    # The writer rated the chain Critical where both finders said High.
+    for verify in both("references/verify.md"):
+        assert "When your label differs from the label of both finders, say that too" in compact(verify)
+
+
+def test_the_first_version_of_the_report_says_that_the_review_is_still_to_come() -> None:
+    for consensus in both("references/consensus.md"):
+        normalized = compact(consensus)
+        assert "The reviewer reads the report before the review exists" in normalized
+        assert "the reviewer must read no other file of that folder" in normalized
+
+
+def test_the_tool_guide_names_the_python_that_semgrep_needs() -> None:
+    # `uv tool install semgrep` failed on a machine whose default Python was
+    # 3.14: one package did not build. With Python 3.13 it worked.
+    for tools in both("references/tools.md"):
+        assert "uv tool install --python 3.13 semgrep" in tools
+
+
+def test_a_safety_filter_is_not_retried_and_not_worked_around() -> None:
+    # In the second stage of the first run, a provider's safety filter stopped
+    # one finder. The skill text had told the writer to resume such a run.
+    for skill in skills():
+        normalized = compact(skill)
+        assert "A safety filter is not an error" in normalized
+        assert "Do not start the run again, and do not reword the prompt to get past the filter" in normalized
+        assert "is the user's decision" in normalized
+        assert "or a safety filter stopped it. | Resume" not in normalized
+
+
+def test_the_writer_opens_the_page_before_it_believes_a_claim_about_the_page() -> None:
+    # A finding said that a page hid a button. No template read the value.
+    # The reviewer found it. The writer had not opened the template.
+    for verify in both("references/verify.md"):
+        normalized = compact(verify)
+        assert "When a candidate says what a page shows or hides, open the template" in normalized
+        # A suggested log entry had a shape that the log page could not read.
+        assert "find the code that reads this data, and use the shape that it expects" in normalized
+
+
+def test_the_reviewer_sees_what_its_review_produced() -> None:
+    # Round 1 of the first run led to four new findings and three changed
+    # fixes. The first text of the skill gave round 2 only to open points.
+    for consensus in both("references/consensus.md"):
+        normalized = compact(consensus)
+        assert "or when round 1 led to a new finding or to a changed fix" in normalized
+        assert "a correction can be wrong too" in normalized
+        assert "P1: ACCEPT or KEEP" in consensus
+
+
+def test_the_reader_and_the_reviewer_know_that_a_note_in_a_quote_is_not_in_the_file() -> None:
+    # The reviewer reported that no quote matched its file literally, because
+    # of the notes that the report adds for a beginner.
+    for brief in both("references/reviewer-brief.md"):
+        assert "are the report's own and are not an error" in compact(brief)
+    for folder in (CANONICAL_DIR, CODEX_DIR):
+        template = compact(read(folder / "references" / "report-template.html"))
+        assert "was added by this report. It is not in the file." in template
+
+
+def test_a_finding_with_two_labels_is_sorted_under_the_higher_one() -> None:
+    # After two rounds the reviewer kept Low for two findings that the writer
+    # rated Info. The first text did not say where such a finding stands.
+    for guide in both("references/report-guide.md"):
+        normalized = compact(guide)
+        assert "sorted and counted under the higher label" in normalized
+        assert "Set `data-severity` to the higher label" in normalized
+        assert "gets the next free number" in normalized
+
+
+def test_the_guide_says_that_the_script_checks_whether_a_diff_applies() -> None:
+    # The reviewer ran `git apply --check` by hand and found a diff of the
+    # report that did not apply. The finishing script now does this.
+    for guide in both("references/report-guide.md"):
+        normalized = compact(guide)
+        assert "asks git whether such a diff applies to the code" in normalized
+        assert "is a sketch" in normalized
+    for skill in skills():
+        assert "every diff with line numbers applies to the code" in compact(skill)
+

@@ -17,7 +17,10 @@ the source code in the current folder.
 For every finding:
 
 1. Open the cited files. Do the quoted lines exist and say what the report
-   claims?
+   claims? Two things in a code quote are the report's own and are not an
+   error: a note at the end of a line that starts with `PROBLEM:`, `OK:` or
+   `NEW:` after a comment sign, and missing spaces at the start of the
+   lines. A script has compared the rest of each quoted line with the file.
 2. Walk the path from the entry point to the faulty line yourself. Try to
    prove the finding wrong, with the questions in the rules below.
 3. Check the severity and the confidence against the rules below.

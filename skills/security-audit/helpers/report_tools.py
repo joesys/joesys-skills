@@ -10,7 +10,8 @@ script does the two jobs that a model does badly by hand:
    needs no script.
 2. It checks the page: no script, no outside resource, no broken link, the
    fixed sections, every part of every finding, and, with --repo, that every
-   code quote matches the file it names.
+   code quote matches the file it names and that every diff with line
+   numbers applies to the code. The checks change no file of the project.
 
 The exit code is 0 when the page has no problem, and 1 when it has.
 """
@@ -716,6 +717,48 @@ def compare_quote(where: str, quoted: list[str], source: list[str], first: int, 
 
 
 # =============================================================================
+# Part 4: diff checks
+# =============================================================================
+
+DIFF_BLOCK = re.compile(
+    r"<pre\b[^>]*>\s*<code\b[^>]*\blanguage-(?:diff|patch)\b[^>]*>(.*?)</code>\s*</pre>", re.DOTALL
+)
+FINDING_START = re.compile(r'<details\b[^>]*\bid="(F-\d+)"')
+HUNK_HEADER = re.compile(r"^@@.*$", re.MULTILINE)
+NUMBERED_HUNK = re.compile(r"@@ -\d+(?:,\d+)? \+\d+(?:,\d+)? @@")
+
+
+def check_diffs(page: str, repo: Path) -> list[str]:
+    """Ask git whether each suggested diff fits the code. Nothing is changed.
+
+    Only a diff whose hunks all carry line numbers is checked. A diff without
+    them is a sketch for the reader, and git cannot apply it.
+    """
+    if not (repo / ".git").exists():
+        return []
+    problems = []
+    for block in DIFF_BLOCK.finditer(page):
+        diff = html.unescape(without_colours(block.group(1)))
+        hunks = HUNK_HEADER.findall(diff)
+        if not hunks or not all(NUMBERED_HUNK.match(hunk) for hunk in hunks):
+            continue
+        result = subprocess.run(
+            ["git", "-C", str(repo), "apply", "--check", "-"],
+            input=diff + "\n", capture_output=True, text=True, check=False,
+        )
+        if result.returncode != 0:
+            findings = FINDING_START.findall(page[: block.start()])
+            where = findings[-1] if findings else "the page"
+            reason = (result.stderr.strip().splitlines() or ["no message"])[0]
+            problems.append(
+                f"The diff in {where} does not apply to the code (git says: {reason}). "
+                "Repair the lines and the line numbers of the diff, or take the line numbers out of its "
+                "@@ lines to mark it as a sketch."
+            )
+    return problems
+
+
+# =============================================================================
 # The command
 # =============================================================================
 
@@ -732,6 +775,8 @@ def finish(args: argparse.Namespace) -> int:
     problems = check_page(page)
     if args.repo:
         problems += check_quotes(page, Path(args.repo), args.commit)
+        if not args.commit:  # a diff is checked against the folder as it is
+            problems += check_diffs(page, Path(args.repo))
     else:
         print("Note: the code quotes were not checked. Give --repo to check them.")
 

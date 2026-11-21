@@ -327,3 +327,69 @@ def test_check_only_does_not_change_the_file(repo: Path) -> None:
     report_tools.main(["finish", str(report), "--check-only"])
 
     assert report.read_text(encoding="utf-8") == filled()
+
+
+# --- diff checks -------------------------------------------------------------
+# First live run, 2026-11-21: the reviewer ran `git apply --check` on the
+# diffs by hand, and one diff of the report did not apply.
+
+
+@pytest.fixture
+def git_repo(repo: Path) -> Path:
+    for args in (["init", "-q"], ["add", "app.py"],
+                 ["-c", "commit.gpgsign=false", "-c", "user.name=t", "-c", "user.email=t@example.invalid", "commit", "-q", "-m", "first"]):
+        subprocess.run(["git", *args], cwd=repo, check=True, capture_output=True)
+    return repo
+
+
+def finding_with_diff(diff: str) -> str:
+    return f'<details class="finding" id="F-03"><pre><code class="language-diff">{diff}</code></pre></details>'
+
+
+GOOD_DIFF = """--- a/app.py
++++ b/app.py
+@@ -1,3 +1,3 @@
+ def load(email):
+-    user = find(email)
++    user = find(email, owner)
+     return user"""
+
+
+def test_a_diff_with_line_numbers_that_applies_passes(git_repo: Path) -> None:
+    page = report_tools.colour_code_blocks(finding_with_diff(GOOD_DIFF))
+
+    assert report_tools.check_diffs(page, git_repo) == []
+    assert (git_repo / "app.py").read_text(encoding="utf-8") == SOURCE  # the check changes no file
+
+
+def test_a_diff_with_line_numbers_that_does_not_apply_is_reported(git_repo: Path) -> None:
+    wrong = GOOD_DIFF.replace("-    user = find(email)", "-    user = lookup(email)")
+
+    problems = report_tools.check_diffs(finding_with_diff(wrong), git_repo)
+
+    assert len(problems) == 1
+    assert "F-03" in problems[0] and "does not apply" in problems[0]
+
+
+def test_a_diff_without_line_numbers_is_a_sketch_and_is_not_checked(git_repo: Path) -> None:
+    sketch = "--- a/app.py\n+++ b/app.py\n@@ def load\n-    user = find(email)\n+    user = find(email, owner)"
+
+    assert report_tools.check_diffs(finding_with_diff(sketch), git_repo) == []
+
+
+def test_diffs_are_not_checked_outside_a_git_repository(repo: Path) -> None:
+    wrong = GOOD_DIFF.replace("-    user = find(email)", "-    user = lookup(email)")
+
+    assert report_tools.check_diffs(finding_with_diff(wrong), repo) == []
+
+
+def test_finish_reports_a_diff_that_does_not_apply(git_repo: Path, capsys) -> None:
+    report = git_repo / "report.html"
+    bad = filled().replace("-    user = find(email)", "-    user = lookup(email)").replace("@@ -2 +2 @@", "@@ -2,1 +2,1 @@")
+    report.write_text(bad, encoding="utf-8")
+
+    code = report_tools.main(["finish", str(report), "--repo", str(git_repo)])
+
+    assert code == 1
+    assert "does not apply" in capsys.readouterr().out
+

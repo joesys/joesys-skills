@@ -78,8 +78,11 @@ The path from the entry point to the faulty line, step by step with file
 and line. Then the defence that is missing, too late, or wrong.
 
 ### How to check it on a local copy
-Numbered steps with test accounts and harmless values. What the reader will
-see. What a safe system would do.
+Numbered steps that show the flaw in the code as it is today, before any
+fix. Use test accounts and harmless values. Say what the reader will see at
+the step that shows the flaw, and what a safe system would do there. These
+are the steps that a developer turns into a failing test. Steps that only
+test the fixed code do not belong here.
 
 ### What the attacker gains
 The real data or ability in this app. The answers to the four severity
