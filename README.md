@@ -128,11 +128,11 @@ supports latest or named-session resume.
 Delegate code analysis, refactoring, or automated editing to OpenAI's Codex
 CLI. The skill captures the session identifier when available, evaluates the
 response, and supports reliable session resume. The current default model is
-`gpt-6.1-sol`.
+`gpt-6.2-sol`.
 
 ```text
 /codex "explain the auth flow in this repo"
-/codex --model gpt-6.1-sol "analyze this function"
+/codex --model gpt-6.2-sol "analyze this function"
 /codex --sandbox workspace-write "fix the lint errors"
 /codex resume "follow up on the latest session"
 /codex resume <SESSION_ID> "continue this specific session"

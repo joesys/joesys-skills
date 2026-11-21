@@ -10,11 +10,12 @@ Single source of truth for default model identifiers and CLI flags used across s
 
 | Provider | Model ID | Used In |
 |---|---|---|
-| OpenAI (Codex CLI) | `gpt-6.1-sol` | `$codex`, `$ai-council`, `$codereview`, `$architect` |
+| OpenAI (Codex CLI) | `gpt-6.2-sol` | `$codex`, `$ai-council`, `$codereview`, `$architect` |
 | Google (Antigravity CLI) | *(managed by agy)* | `$antigravity`, `$ai-council`, `$codereview`, `$architect` |
 | Anthropic (Claude CLI) | `fable` | `$claude`, `$ai-council` (Claude leg) |
 | xAI (Grok CLI) | *(managed by grok)* | `$grok`, `$ai-council` |
 
+`fable` is a name that the Claude CLI resolves to its newest model of that line. The Codex CLI has no such names, so its identifiers are updated here by hand. The Codex identifiers were checked against the model list of the Codex CLI and with a live call on 2026-11-21.
 
 ## Review Model Routing
 
@@ -23,7 +24,7 @@ this registry:
 
 | Model identifier | Provider | Command source |
 |---|---|---|
-| `gpt-6.1-sol` | Codex CLI | Codex template below |
+| `gpt-6.2-sol` | Codex CLI | Codex template below |
 | `fable` | Claude CLI | Claude template below |
 
 A known unique bare identifier routes to its registered provider. Custom or
@@ -37,13 +38,13 @@ unavailable.
 ### Codex
 
 ```bash
-codex exec --model gpt-6.1-sol -c model_reasoning_effort="xhigh" \
+codex exec --model gpt-6.2-sol -c model_reasoning_effort="xhigh" \
   --sandbox read-only --skip-git-repo-check 2>/dev/null
 ```
 
 | Flag | Purpose |
 |---|---|
-| `--model gpt-6.1-sol` | Model selection |
+| `--model gpt-6.2-sol` | Model selection |
 | `-c model_reasoning_effort="xhigh"` | Maximum reasoning depth |
 | `--sandbox read-only` | Safety: no file writes |
 | `--skip-git-repo-check` | Required for piped input |
@@ -53,10 +54,10 @@ codex exec --model gpt-6.1-sol -c model_reasoning_effort="xhigh" \
 
 ```bash
 # by session id (preferred)
-codex exec resume <SESSION_ID> --model gpt-6.1-sol -c model_reasoning_effort="xhigh" \
+codex exec resume <SESSION_ID> --model gpt-6.2-sol -c model_reasoning_effort="xhigh" \
   -c sandbox_mode="read-only" --skip-git-repo-check "<PROMPT>" 2>/dev/null
 # most recent session
-codex exec resume --last --model gpt-6.1-sol -c model_reasoning_effort="xhigh" \
+codex exec resume --last --model gpt-6.2-sol -c model_reasoning_effort="xhigh" \
   -c sandbox_mode="read-only" --skip-git-repo-check "<PROMPT>" 2>/dev/null
 ```
 
