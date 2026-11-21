@@ -306,3 +306,33 @@ interfaces, update all callers listed below.
 
 **Callers:**
 - None currently — this skill is user-invoked only
+
+## Security Audit Interface
+
+**Invocation:** `$security-audit [<path>] [--include <ignored path>] [--out <folder>]`
+
+**Behavior contract:**
+- Audits a codebase for security flaws by reading its source. It sends no
+  request to a running app, changes no file in the project, applies no fix,
+  and never commits or pushes.
+- Uses four models in the roles of `./model-defaults.md` § Security
+  Audit Roles: two finders that work alone, the host as the writer that
+  checks every candidate against the code, and a reviewer from the other
+  provider. Writer and reviewer exchange at most two rounds. What is still
+  open is printed as two views.
+- Runs the other models in the background with no time limit, through
+  `../security-audit/helpers/finder_runs.py`, which also reports
+  whether each run is working, idle, crashed, or ended without a complete
+  answer.
+- Writes one self-contained HTML report with no script into
+  `.security-audit/<date>-<commit>/report.html`, from
+  `../security-audit/references/report-template.html`. The folder holds
+  a `.gitignore` file so that git ignores it.
+  `../security-audit/helpers/report_tools.py` colours the code blocks
+  and checks the page and every code quote.
+- Never opens a secret file and never prints a secret value. Offers three
+  scanner tools and never installs one.
+
+**Callers:**
+- None currently — this skill is user-invoked only
+

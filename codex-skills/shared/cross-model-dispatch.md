@@ -1,6 +1,6 @@
 # Cross-Model Dispatch Protocol
 
-How to send a prompt to a different AI model through its CLI. `$codereview` uses it to get an independent second opinion from a model outside the host. `$architect` uses it to get design candidates from other models.
+How to send a prompt to a different AI model through its CLI. `$codereview` uses it to get an independent second opinion from a model outside the host. `$architect` uses it to get design candidates from other models. `$security-audit` calls other models too, but its runs take hours, so it has its own launcher with no time limit (`../security-audit/helpers/finder_runs.py`) and its own commands (`./model-defaults.md` § Security Audit Roles).
 
 Current model identifiers and CLI command templates are in `./model-defaults.md`.
 

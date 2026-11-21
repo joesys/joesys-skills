@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{PROJECT}} security audit, {{DATE}}</title>
+<style>
+:root {
+  color-scheme: light dark;
+  --bg: #faf9f6; --panel: #ffffff; --ink: #1b2a2e; --muted: #53646a; --line: #d3dad7; --soft: #eef2ef;
+  --accent: #0f5a5e; --link: #0b5fd0; --code-bg: #f3f5f4;
+  --crit: #a40e26; --high: #b4420c; --med: #7d5a00; --low: #1a6e3c; --info: #4b5563;
+  --note-bg: #eef4ff; --good-bg: #e9f7ee; --bad-bg: #fdeeee; --warn-bg: #fff5dc; --view-bg: #f4f0fb; --view-line: #7a5bb5;
+  --add-bg: #e4f4e8; --del-bg: #fcece9; --hunk-bg: #e8eef4; --add-ink: #14552c; --del-ink: #842726;
+  --tok-c: #5f6b76; --tok-s: #0a6640; --tok-k: #7a2a96; --tok-n: #8a5a00; --tok-d: #0054b3; --tok-t: #b31d28;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1315; --panel: #161b1e; --ink: #e6e9ea; --muted: #9aa7ab; --line: #2c3539; --soft: #1b2226;
+    --accent: #6fc4c8; --link: #7ab3ff; --code-bg: #1a2024;
+    --crit: #ff7b8f; --high: #ff9e6b; --med: #e8c15a; --low: #6fd49a; --info: #a8b1bc;
+    --note-bg: #141f33; --good-bg: #12261a; --bad-bg: #2b1518; --warn-bg: #2b2412; --view-bg: #1f1a2c; --view-line: #a58be0;
+    --add-bg: #12301c; --del-bg: #3a1a1a; --hunk-bg: #1a2634; --add-ink: #7ee787; --del-ink: #ff9a94;
+    --tok-c: #9aa4af; --tok-s: #7ee787; --tok-k: #d2a8ff; --tok-n: #ffa657; --tok-d: #79c0ff; --tok-t: #ff7b72;
+  }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; scroll-behavior: smooth; }
+body { margin: 0; background: var(--bg); color: var(--ink);
+       font: 17px/1.62 system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif; overflow-wrap: break-word; }
+.wrap { max-width: 1000px; margin: 0 auto; padding: 0 16px; }
+a { color: var(--link); text-underline-offset: .16em; }
+a:focus-visible, summary:focus-visible, input:focus-visible + label { outline: 3px solid var(--accent); outline-offset: 3px; }
+h1 { font-size: clamp(1.7rem, 5vw, 2.5rem); line-height: 1.2; margin: 0 0 8px; }
+h2 { font-size: clamp(1.3rem, 3.6vw, 1.6rem); line-height: 1.25; margin: 44px 0 10px; padding-top: 14px; border-top: 2px solid var(--line); }
+h3 { font-size: 1.15rem; line-height: 1.35; margin: 26px 0 6px; }
+h4 { font-size: 1rem; margin: 22px 0 5px; }
+p { margin: 8px 0; }
+ol, ul { padding-left: 22px; margin: 8px 0; }
+li { margin: 5px 0; }
+dt { font-weight: 650; margin-top: 10px; }
+dd { margin: 2px 0 0 0; }
+[id] { scroll-margin-top: 12px; }
+code { font: .88em ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+       background: var(--code-bg); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px; padding: 11px 13px; margin: 8px 0;
+      overflow-x: auto; tab-size: 4; white-space: pre-wrap; overflow-wrap: anywhere;
+      font: .82rem/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+pre code { background: none; padding: 0; font: inherit; white-space: pre-wrap; overflow-wrap: anywhere; }
+.small { font-size: .9rem; color: var(--muted); }
+
+/* top bar and title */
+.top { background: #12363a; color: #f4f7f3; }
+.top .wrap { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 18px; padding-top: 10px; padding-bottom: 10px; }
+.top .brand { font-weight: 700; }
+.top .brand span { font-weight: 400; color: #d0e3de; }
+.top nav { display: flex; flex-wrap: wrap; gap: 2px 16px; }
+.top nav a { color: inherit; text-decoration: none; font-size: .92rem; padding: 8px 0; display: inline-block; }
+.top nav a:hover { text-decoration: underline; }
+.hero { padding: 26px 0 8px; }
+.hero .lead { color: var(--muted); font-size: 1.05rem; max-width: 62ch; }
+.meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 8px 22px; margin: 16px 0 0; padding: 12px 0 0; border-top: 1px solid var(--line); }
+.meta div { min-width: 0; }
+.meta dt { color: var(--muted); font-size: .82rem; font-weight: 400; margin: 0; }
+.meta dd { margin: 0; font-weight: 600; font-size: .95rem; overflow-wrap: anywhere; }
+
+/* boxes */
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin: 14px 0; }
+.card > h3:first-child { margin-top: 0; }
+.short { background: var(--note-bg); border-left: 4px solid var(--link); border-radius: 6px; padding: 10px 14px; margin: 10px 0; }
+.rule { background: var(--good-bg); border-left: 4px solid var(--low); border-radius: 6px; padding: 10px 14px; margin: 12px 0; }
+.warn { background: var(--bad-bg); border-left: 4px solid var(--crit); border-radius: 6px; padding: 10px 14px; margin: 12px 0; }
+.changes { background: var(--warn-bg); border-left: 4px solid var(--med); border-radius: 6px; padding: 10px 14px; margin: 12px 0; }
+.views { background: var(--view-bg); border-left: 4px solid var(--view-line); border-radius: 6px; padding: 10px 14px; margin: 12px 0; }
+.verify { background: var(--note-bg); border-left: 4px solid var(--link); border-radius: 6px; padding: 10px 14px; margin: 12px 0; }
+.views h4, .verify h4, .rule h4, .changes h4 { margin-top: 2px; }
+.assessment { background: var(--soft); border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 6px; padding: 16px 18px; }
+.assessment .verdict { font-size: 1.12rem; font-weight: 650; line-height: 1.45; margin: 0 0 6px; }
+
+/* tables */
+.tablewrap { overflow-x: auto; margin: 10px 0; }
+table { border-collapse: collapse; width: 100%; font-size: .93rem; }
+th, td { border: 1px solid var(--line); padding: 7px 9px; text-align: left; vertical-align: top; }
+th { background: var(--soft); }
+
+/* labels */
+.sev, .chip { display: inline-block; font-size: .76rem; font-weight: 700; line-height: 1.5; padding: 1px 9px; border-radius: 999px;
+              border: 1.5px solid currentColor; white-space: nowrap; }
+.sev.critical { color: var(--crit); } .sev.high { color: var(--high); } .sev.medium { color: var(--med); }
+.sev.low { color: var(--low); } .sev.info { color: var(--info); }
+.chip { font-weight: 600; color: var(--muted); border-width: 1px; }
+.chip.verify-first { color: var(--link); } .chip.differ { color: var(--view-line); }
+
+/* the list of all findings */
+.overview { list-style: none; padding: 0; margin: 12px 0; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--panel); }
+.overview li { margin: 0; border-top: 1px solid var(--line); }
+.overview li:first-child { border-top: 0; }
+.overview a { display: grid; grid-template-columns: 3.1rem minmax(0, 1fr); gap: 2px 8px; padding: 10px 12px; color: inherit; text-decoration: none; min-height: 48px; }
+.overview a:hover { background: var(--soft); }
+.overview .num { font: 600 .9rem ui-monospace, monospace; color: var(--accent); padding-top: 2px; }
+.overview .t { font-weight: 600; line-height: 1.35; }
+.overview .chips { grid-column: 2; display: flex; flex-wrap: wrap; gap: 4px 6px; margin-top: 3px; }
+
+/* one finding */
+.group-head { margin: 30px 0 8px; padding-top: 10px; border-top: 3px solid var(--g, var(--accent)); }
+.group-head h3 { margin: 0; color: var(--g, var(--accent)); }
+.group-head p { margin: 2px 0 0; color: var(--muted); font-size: .93rem; }
+.g-critical { --g: var(--crit); } .g-high { --g: var(--high); } .g-medium { --g: var(--med); } .g-low { --g: var(--low); } .g-info { --g: var(--info); }
+details.finding { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; margin: 10px 0; }
+details.finding > summary { cursor: pointer; list-style: none; display: grid; grid-template-columns: 3.1rem minmax(0, 1fr) 1.3rem; gap: 2px 8px;
+                            align-items: start; padding: 12px 12px; min-height: 52px; border-radius: 10px; }
+details.finding > summary::-webkit-details-marker { display: none; }
+details.finding > summary::after { content: "+"; font-size: 1.5rem; line-height: 1.1; color: var(--accent); text-align: center; grid-column: 3; grid-row: 1; }
+details.finding[open] > summary::after { content: "\2212"; }
+details.finding > summary:hover { background: var(--soft); }
+details.finding[open] > summary { background: var(--soft); border-bottom: 1px solid var(--line); border-radius: 10px 10px 0 0; }
+.finding .num { font: 600 .92rem ui-monospace, monospace; color: var(--accent); padding-top: 2px; }
+.finding .t { font-weight: 650; font-size: 1.04rem; line-height: 1.35; }
+.finding .chips { grid-column: 2; display: flex; flex-wrap: wrap; gap: 4px 6px; margin-top: 4px; }
+.finding .body { padding: 6px 16px 18px; }
+.finding .src { color: var(--muted); font-size: .86rem; margin: 14px 0 0; }
+.back { font-size: .9rem; margin-top: 12px; }
+details.more { margin: 12px 0; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+details.more > summary { cursor: pointer; padding: 11px 13px; font-weight: 650; min-height: 46px; }
+details.more > .inner { padding: 0 13px 12px; }
+
+/* "show all findings": works without script where the browser supports it */
+.showall { display: none; align-items: center; gap: 8px; margin: 12px 0; min-height: 44px; }
+.showall input { width: 20px; height: 20px; }
+@supports selector(::details-content) {
+  .showall { display: flex; }
+  body:has(#showall:checked) details.finding::details-content { content-visibility: visible; display: block; height: auto; }
+  body:has(#showall:checked) details.finding > summary { background: var(--soft); border-bottom: 1px solid var(--line); border-radius: 10px 10px 0 0; }
+  body:has(#showall:checked) details.finding > summary::after { content: ""; }
+}
+
+/* a link that is always on screen, back to the list */
+.to-list { position: fixed; right: 12px; bottom: 12px; background: #12363a; color: #f4f7f3; text-decoration: none;
+           font-size: .88rem; font-weight: 600; padding: 9px 14px; border-radius: 999px; box-shadow: 0 2px 8px rgba(0, 0, 0, .3); }
+
+/* code colours. The finishing script adds these classes; do not write them by hand. */
+.tok-c { color: var(--tok-c); font-style: italic; }
+.tok-s { color: var(--tok-s); }
+.tok-k { color: var(--tok-k); font-weight: 600; }
+.tok-n { color: var(--tok-n); }
+.tok-d { color: var(--tok-d); }
+.tok-t { color: var(--tok-t); }
+.tok-problem { color: var(--crit); background: var(--bad-bg); font-style: normal; font-weight: 700; border-radius: 3px; padding: 0 3px; }
+.tok-ok { color: var(--low); font-style: normal; font-weight: 700; }
+.tok-new { color: var(--link); font-style: normal; font-weight: 700; }
+.diff-line { display: block; min-height: 1.5em; margin: 0 -13px; padding: 0 13px; }
+.diff-line.add { background: var(--add-bg); color: var(--add-ink); }
+.diff-line.del { background: var(--del-bg); color: var(--del-ink); }
+.diff-line.hunk { background: var(--hunk-bg); color: var(--muted); }
+.diff-line.file { font-weight: 700; color: var(--muted); }
+
+.foot { color: var(--muted); font-size: .88rem; border-top: 1px solid var(--line); margin-top: 44px; padding: 14px 0 64px; }
+
+@media (max-width: 640px) {
+  body { font-size: 16px; }
+  .wrap { padding: 0 12px; }
+  pre { font-size: .76rem; padding: 9px 10px; }
+  .diff-line { margin: 0 -10px; padding: 0 10px; }
+  .finding .body { padding: 4px 12px 16px; }
+  details.finding > summary { grid-template-columns: 2.7rem minmax(0, 1fr) 1.1rem; }
+  .overview a { grid-template-columns: 2.7rem minmax(0, 1fr); }
+  table { font-size: .86rem; } th, td { padding: 6px 7px; }
+  ol, ul { padding-left: 20px; }
+}
+@media print {
+  body { background: #fff; color: #000; font: 10pt/1.4 serif; }
+  .top, .showall, .back, .to-list { display: none !important; }
+  details.finding { border: 0; border-top: 1px solid #bbb; border-radius: 0; }
+  details.finding > summary::after { display: none; }
+  details.finding::details-content, details.more::details-content { content-visibility: visible; display: block; height: auto; }
+  pre { font-size: 8pt; }
+  a { color: #000; }
+}
+</style>
+</head>
+<body>
+<!-- GUIDE: How to use this template.
+     1. Copy this file to the run folder as report.html. Keep the <style> block and the order of the sections.
+     2. Replace every placeholder in double curly brackets with real text.
+     3. A block marked "repeat" is written once for each item. A block marked "optional" is deleted when it does not apply.
+     4. Delete every GUIDE comment, this one too.
+     5. Inside <pre><code>, write & as &amp;, < as &lt; and > as &gt;. Write no colour tags; the finishing script adds them.
+     6. Then run the finishing script. It adds the code colours and checks the page. -->
+<header class="top"><div class="wrap">
+  <div class="brand">{{PROJECT}} <span>&middot; security audit</span></div>
+  <nav aria-label="Sections">
+    <a href="#assessment">Assessment</a>
+    <a href="#themes">Themes</a>
+    <a href="#today">Do first</a>
+    <a href="#triage">List</a>
+    <a href="#findings">Findings</a>
+    <a href="#basics">Basics</a>
+  </nav>
+</div></header>
+
+<main class="wrap">
+
+<section class="hero">
+  <h1>{{PROJECT}} security audit</h1>
+  <p class="lead">{{ONE_SENTENCE_RESULT}}</p>
+  <dl class="meta">
+    <div><dt>Date</dt><dd>{{DATE}}</dd></div>
+    <div><dt>Code</dt><dd>{{BRANCH_AND_COMMIT}}</dd></div>
+    <div><dt>Scope</dt><dd>{{SCOPE}}</dd></div>
+    <div><dt>Finders</dt><dd>{{FINDER_MODELS}}</dd></div>
+    <div><dt>Writer</dt><dd>{{WRITER_MODEL}}</dd></div>
+    <div><dt>Reviewer</dt><dd>{{REVIEWER_MODEL}}</dd></div>
+    <div><dt>Method</dt><dd>Reading the source code. The method builds on ideas from Shannon (Keygraph).</dd></div>
+  </dl>
+</section>
+
+<section id="read-first" class="warn">
+  <p><strong>Please read this first.</strong></p>
+  <p>The models found these problems by reading the code. Nobody attacked a running copy of the app. So each finding says what the code will do. It does not say what somebody saw happen.</p>
+  <p>Try the steps only on your own computer or on a test server, with test accounts. Never on the live system.</p>
+  <p>New to security? Read <a href="#basics">The basics</a> first. It is short.</p>
+</section>
+
+<section id="assessment">
+  <h2>1. Overall assessment</h2>
+  <!-- GUIDE: The verdict is one sentence: the risk level and the main reason. Then two to four short paragraphs:
+       what the app does, where it is strong, where it is weak, and how hard the repairs are. -->
+  <div class="assessment">
+    <p class="verdict">{{VERDICT}}</p>
+    {{ASSESSMENT_PARAGRAPHS}}
+  </div>
+  <div class="tablewrap"><table>
+    <tr><th>Severity</th><th>How many</th><th>Findings</th></tr>
+    <tr><td><span class="sev critical">Critical</span></td><td data-count="critical">{{N_CRITICAL}}</td><td>{{IDS_CRITICAL}}</td></tr>
+    <tr><td><span class="sev high">High</span></td><td data-count="high">{{N_HIGH}}</td><td>{{IDS_HIGH}}</td></tr>
+    <tr><td><span class="sev medium">Medium</span></td><td data-count="medium">{{N_MEDIUM}}</td><td>{{IDS_MEDIUM}}</td></tr>
+    <tr><td><span class="sev low">Low</span></td><td data-count="low">{{N_LOW}}</td><td>{{IDS_LOW}}</td></tr>
+    <tr><td><span class="sev info">Info</span></td><td data-count="info">{{N_INFO}}</td><td>{{IDS_INFO}}</td></tr>
+  </table></div>
+  <h3>What is good</h3>
+  <!-- GUIDE: The protections that the code already has. Name the file or the setting. A reader must learn what to keep. -->
+  <ul>{{GOOD_POINTS}}</ul>
+</section>
+
+<section id="themes">
+  <h2>2. The main themes</h2>
+  <p>A theme is one cause that explains several findings. When the team fixes the cause, the same mistake stops coming back.</p>
+  <!-- GUIDE: repeat. Two to five themes. A theme names a habit or a design choice, not a bug class. -->
+  <div class="card">
+    <h3>{{THEME_TITLE}}</h3>
+    <p>{{THEME_EXPLANATION}}</p>
+    <p class="small">Findings: {{THEME_FINDING_LINKS}}</p>
+    <div class="rule"><strong>The habit that prevents it:</strong> {{THEME_HABIT}}</div>
+  </div>
+</section>
+
+<section id="today">
+  <h2>3. What to do first</h2>
+  <h3>Checks to do today</h3>
+  <p>These need no code change. Each one answers a question that the code cannot answer.</p>
+  <!-- GUIDE: Every "Verify first" finding gives one check here. Write the exact command or the exact question, and what each answer means. -->
+  <ol>{{CHECKS_TODAY}}</ol>
+  <h3>Then repair in this order</h3>
+  <!-- GUIDE: Group the findings into a few steps. A cheap fix with a clear gain can stand before a harder one of the same severity. -->
+  <ol>{{REPAIR_ORDER}}</ol>
+</section>
+
+<section id="triage-section">
+  <h2>4. All findings, by priority</h2>
+  <p>Tap a line to jump to the finding. Then tap its title to open it.</p>
+  <ol class="overview" id="triage">
+    <!-- GUIDE: repeat. One line for each finding, in the same order as section 5. Use the same labels as the finding itself. -->
+    <li><a href="#{{F_ID}}"><span class="num">{{F_ID}}</span><span class="t">{{F_TITLE}}</span><span class="chips"><span class="sev {{F_SEVERITY}}">{{F_SEVERITY_LABEL}}</span><span class="chip">Confidence: {{F_CONFIDENCE}}</span><span class="chip">{{F_EVIDENCE_LABEL}}</span><span class="chip">{{F_FOUND_BY}}</span></span></a></li>
+  </ol>
+</section>
+
+<section id="findings">
+  <h2>5. The findings in detail</h2>
+  <p>Each finding is closed at first. Tap or click a title to open it.</p>
+  <p class="showall"><input type="checkbox" id="showall"><label for="showall">Show the text of all findings (for reading or searching the whole page)</label></p>
+
+  <!-- GUIDE: Order: Critical, High, Medium, Low, Info. Inside one severity: the most urgent first.
+       Write one group heading for each severity that has findings. The class is g-critical, g-high, g-medium, g-low or g-info. -->
+  <div class="group-head g-{{F_SEVERITY}}">
+    <h3>{{F_SEVERITY_LABEL}}</h3>
+    <p>{{GROUP_SUMMARY}}</p>
+  </div>
+
+  <!-- GUIDE: repeat, from here to the closing </details>. One block for each finding.
+       id: F-01, F-02 and so on, in the order of this section. Never reuse or renumber an id after the review has started.
+       data-severity: critical, high, medium, low or info. data-confidence: high, medium or low. -->
+  <details class="finding" id="{{F_ID}}" data-severity="{{F_SEVERITY}}" data-confidence="{{F_CONFIDENCE}}">
+    <summary><span class="num">{{F_ID}}</span><span class="t">{{F_TITLE}}</span><span class="chips"><span class="sev {{F_SEVERITY}}">{{F_SEVERITY_LABEL}}</span><span class="chip">Confidence: {{F_CONFIDENCE}}</span><span class="chip">{{F_EVIDENCE_LABEL}}</span><span class="chip">{{F_FOUND_BY}}</span><!-- GUIDE: optional chips: <span class="chip verify-first">Verify first</span> <span class="chip differ">Two views</span> --></span></summary>
+    <div class="body">
+
+      <div class="short" data-part="short"><strong>In short:</strong> {{F_SHORT}}</div>
+
+      <section data-part="context">
+        <h4>Background</h4>
+        <!-- GUIDE: What this part of the app does, and who uses it. Two to five sentences. A new team member must be able to follow the rest. -->
+        {{F_CONTEXT}}
+      </section>
+
+      <section data-part="code">
+        <h4>The code</h4>
+        <!-- GUIDE: repeat the <p> and the <pre> for each place. Quote the real lines, without changes.
+             data-file is the path from the repository root. data-lines is the range in that file, like 44-48.
+             Add a short note at the end of a line, after the comment sign of the language:
+             PROBLEM: for the faulty line, OK: for a correct line that you compare it with.
+             Write "..." alone on a line where you leave lines out. -->
+        <p>File <code>{{FILE}}</code>, lines {{LINES}}:</p>
+        <pre class="quote" data-file="{{FILE}}" data-lines="{{LINES}}"><code class="language-{{LANGUAGE}}">{{QUOTED_CODE}}</code></pre>
+      </section>
+
+      <section data-part="explanation">
+        <h4>What is wrong</h4>
+        <!-- GUIDE: The idea behind the bug, in plain words. Say which check is there and which check is missing.
+             Explain every security word the first time, or link it to The basics. -->
+        {{F_EXPLANATION}}
+      </section>
+
+      <section data-part="reproduce">
+        <h4>Steps to reproduce (local or test copy, test accounts only)</h4>
+        <!-- GUIDE: Numbered steps that a beginner can follow. After a step that shows the bug, write "You will see: ...".
+             Use harmless test values. End with what a safe system would do. -->
+        <ol>{{F_STEPS}}</ol>
+        <p class="small">What should happen in a safe system: {{F_SAFE_BEHAVIOUR}}</p>
+      </section>
+
+      <section data-part="priority">
+        <h4>Why this priority</h4>
+        <!-- GUIDE: Start with the severity in bold. Give the reason for the severity: what the attacker gets and what the attacker needs first.
+             Then give the reason for the confidence: what was read, and what was not. -->
+        {{F_PRIORITY_REASON}}
+      </section>
+
+      <!-- GUIDE: optional. Keep this part when a fact outside the code decides the real risk. -->
+      <section class="verify" data-part="verify">
+        <h4>Verify first</h4>
+        {{F_FACT_TO_CHECK}}
+      </section>
+
+      <section data-part="consequences">
+        <h4>What can happen if we do not fix it</h4>
+        <ul>{{F_CONSEQUENCES}}</ul>
+      </section>
+
+      <!-- GUIDE: optional. Keep this part for Critical and High findings where old misuse can still be seen in data or logs. Read-only checks only. -->
+      <section data-part="used">
+        <h4>First: check if someone already used this hole</h4>
+        {{F_ALREADY_USED_CHECK}}
+      </section>
+
+      <section data-part="fix">
+        <h4>The fix</h4>
+        <!-- GUIDE: First the fix in words. Then the change as a diff. Then why it works.
+             The diff is a suggestion. Nobody applied it and nobody ran the tests on it. -->
+        {{F_FIX_IN_WORDS}}
+        <pre><code class="language-diff">{{F_FIX_DIFF}}</code></pre>
+        <h4>Why the fix works</h4>
+        {{F_WHY_FIX_WORKS}}
+        <div class="changes"><strong>What the fix changes for users:</strong> {{F_BEHAVIOUR_CHANGE}}</div>
+      </section>
+
+      <section data-part="prevent">
+        <h4>How to avoid this mistake next time</h4>
+        <div class="rule"><strong>Rule to remember:</strong> {{F_RULE}}</div>
+        <p><strong>What to look for in a code review:</strong> {{F_REVIEW_HINT}}</p>
+        <p><strong>Test to write first:</strong> {{F_TEST_IDEA}}</p>
+      </section>
+
+      <!-- GUIDE: optional. Keep this part when the models still differ after two rounds. Print each view in the words of its model. -->
+      <section class="views" data-part="views">
+        <h4>The models do not fully agree here. Both views:</h4>
+        {{F_BOTH_VIEWS}}
+      </section>
+
+      <p class="src">{{F_SOURCE_LINE}}</p>
+      <p class="back"><a href="#triage">Back to the list</a></p>
+    </div>
+  </details>
+</section>
+
+<section id="before-fix">
+  <h2>6. Before you apply a fix</h2>
+  <ul>
+    <li>Every code change in this report is a suggestion. Nobody applied it, and nobody ran the tests of the project on it.</li>
+    <li>Some fixes change how the app works for its users. Each finding says so under &ldquo;What the fix changes for users&rdquo;.</li>
+    <li>Write the test first. It must fail before the fix and pass after it.</li>
+    <li>Apply one fix at a time, and run the whole test suite after each one.</li>
+    {{MORE_FIX_NOTES}}
+  </ul>
+</section>
+
+<section id="safe">
+  <h2>7. What was checked and found safe</h2>
+  <p>A check with a good result is useful too. It shows what the team already does right, and what nobody must check again.</p>
+  <div class="tablewrap"><table>
+    <tr><th>Area</th><th>What was checked</th><th>Why it is safe</th></tr>
+    <!-- GUIDE: repeat. Name the file or the setting that gives the protection. -->
+    <tr><td>{{SAFE_AREA}}</td><td>{{SAFE_CHECK}}</td><td>{{SAFE_REASON}}</td></tr>
+  </table></div>
+</section>
+
+<section id="not-checked">
+  <h2>8. What was not checked</h2>
+  <p>No audit covers everything. This list says what stays unknown.</p>
+  <!-- GUIDE: Always include: that nobody attacked a running app; the files that git ignores and that were not opened;
+       every kind of flaw that no finder looked at; every scanner that did not run; any model that failed. -->
+  <ul>{{NOT_CHECKED_ITEMS}}</ul>
+</section>
+
+<section id="rejected">
+  <h2>9. Candidates that were rejected</h2>
+  <p>A finder reported each of these. The check against the code did not confirm it. The reason is given, so that nobody reports it again.</p>
+  <div class="tablewrap"><table>
+    <tr><th>Candidate</th><th>Reported by</th><th>Why it was rejected</th></tr>
+    <!-- GUIDE: repeat. When no candidate was rejected, write one row that says so. -->
+    <tr><td>{{REJECTED_CANDIDATE}}</td><td>{{REJECTED_FOUND_BY}}</td><td>{{REJECTED_REASON}}</td></tr>
+  </table></div>
+</section>
+
+<section id="method">
+  <h2>10. How this report was made</h2>
+  <ol>
+    <li><strong>Two finders, alone.</strong> {{METHOD_FINDERS}}</li>
+    <li><strong>Every candidate was checked.</strong> {{METHOD_VERIFY}}</li>
+    <li><strong>A second frontier model reviewed the report.</strong> {{METHOD_REVIEW}}</li>
+  </ol>
+  <div class="tablewrap"><table>
+    <tr><th>Found by</th><th>Findings</th></tr>
+    <!-- GUIDE: rows: both finders, the first finder only, the second finder only, a scanner, the writer or the reviewer. -->
+    <tr><td>{{FOUND_BY_GROUP}}</td><td>{{FOUND_BY_IDS}}</td></tr>
+  </table></div>
+  <h3>The scale</h3>
+  <div class="tablewrap"><table>
+    <tr><th>Label</th><th>Meaning</th></tr>
+    <tr><td><span class="sev critical">Critical</span></td><td>Wide and direct harm with little or no access needed: control of accounts, of the system, or of the main data of many users.</td></tr>
+    <tr><td><span class="sev high">High</span></td><td>Serious harm to real users or data, and the attacker needs only what a normal user can get.</td></tr>
+    <tr><td><span class="sev medium">Medium</span></td><td>Real harm, but limited: it stays inside one account or one group, or it needs a strong condition first.</td></tr>
+    <tr><td><span class="sev low">Low</span></td><td>A real defect with a small effect, or one that needs unusual conditions.</td></tr>
+    <tr><td><span class="sev info">Info</span></td><td>No direct harm. A weak habit or a missing safety net that is worth knowing.</td></tr>
+    <tr><td><span class="chip">Confidence</span></td><td>How sure the models are that the finding is real. High: the whole path was read in the code. Medium: one part was not read or depends on a condition. Low: likely, but the story has a gap.</td></tr>
+    <tr><td><span class="chip verify-first">Verify first</span></td><td>A fact outside the code decides the real risk. The finding says which fact, and what to do for each answer.</td></tr>
+    <tr><td><span class="chip differ">Two views</span></td><td>The models do not fully agree. Both views are printed inside the finding.</td></tr>
+  </table></div>
+  <h3>Where the models still differ</h3>
+  <!-- GUIDE: One line for each open difference, with a link to the finding. When there is none, say so. -->
+  <ul>{{OPEN_DIFFERENCES}}</ul>
+  <h3>Sign-off</h3>
+  <!-- GUIDE: The reviewer's closing statement, word for word, in quotation marks. Then one line by the writer. -->
+  {{SIGN_OFF}}
+  <h3>Tools</h3>
+  <!-- GUIDE: Each scanner: ran or did not run, its version, and how many of its results became findings. -->
+  <ul>{{TOOLS_USED}}</ul>
+</section>
+
+<section id="basics">
+  <h2>11. The basics</h2>
+  <h3>Ideas you need first</h3>
+  <!-- GUIDE: Only the ideas that the findings of this report use, each in two to four sentences with an example from this codebase.
+       Number them, so that a finding can say "see idea 3". -->
+  <ol>{{BASIC_IDEAS}}</ol>
+  <h3>Word list</h3>
+  <!-- GUIDE: Every security word of this report, in alphabetical order: <dt>word</dt><dd>plain meaning</dd> -->
+  <dl>{{WORD_LIST}}</dl>
+</section>
+
+<p class="foot">{{FOOTER_LINE}}</p>
+</main>
+<a class="to-list" href="#triage">List &uarr;</a>
+</body>
+</html>

@@ -1,6 +1,6 @@
 # joesys-skills
 
-A collection of 28 agent skills for Claude Code and Codex: turn rough ideas
+A collection of 29 agent skills for Claude Code and Codex: turn rough ideas
 into reusable prompts, consult other AI models, review code,
 understand projects, improve engineering workflows, and preserve or publish
 development work.
@@ -56,6 +56,7 @@ codex plugin marketplace upgrade
 | Review | [`human-review-guide`](#human-review-guide) | Build a decision-focused human reading order |
 | Review | [`codebase-audit`](#codebase-audit) | Grade whole-codebase quality and velocity |
 | Review | [`blast-radius`](#blast-radius) | Find what a change could break elsewhere, and prove the one fact that makes it safe |
+| Review | [`security-audit`](#security-audit) | Find security flaws by reading the source, with four models, and teach the fix in one HTML report |
 | Verify | [`create-verification-skill`](#create-verification-skill) | Generate a project skill that proves features in the running app |
 | Verify | [`maintain-verification-skill`](#maintain-verification-skill) | Bring a `verify-<app>` skill and its feature map back in line with the app |
 | Verify | [`create-formal-verification-skill`](#create-formal-verification-skill) | Check one promise of the code for every case in a stated scope |
@@ -296,6 +297,41 @@ Reproduced. A reply without a run says `unproven`. The skill never changes
 product code and never commits.
 
 Adapted from pstack by Lauren Tan (MIT License).
+
+### security-audit
+
+Find the security flaws of a codebase by reading its source, and teach the
+team how to stop making them. Four models take part. Two finders search
+alone, and each may start helper agents of its own. The running model
+checks every candidate against the code and writes the report. The other
+frontier model reviews the report, and the two settle on a joint consensus
+in at most two rounds. Where they still differ, the report prints both
+views.
+
+```text
+/security-audit                          # The whole repository
+/security-audit src/payments             # One folder
+/security-audit --include config/local   # Also read a path that git ignores
+```
+
+The result is one HTML file that works on a desktop and on a phone, with no
+script. It is written for a beginner programmer who uses English as a
+second language: an overall assessment, the main themes, a list by
+priority, and for each finding the code, the explanation, the steps to
+reproduce it, the fix as a diff, and how to avoid the mistake next time. A
+script adds the code colours and checks that every code quote matches the
+file it names.
+
+The skill only reads source. It sends no request to a running app, changes
+no file in the project, and never opens a secret file. The other models run
+in the background with no time limit, and a watch reports whether each one
+is still working. Three scanner tools (Semgrep, Gitleaks, OSV-Scanner) are
+used when they are installed. The skill shows how to install them and never
+installs one. The report folder `.security-audit/` is kept out of git,
+because it shows where the app is weak.
+
+The method builds on ideas from Shannon by Keygraph. No text of Shannon is
+copied.
 
 ## Verify Running Apps
 
