@@ -52,6 +52,10 @@ REFUSAL = re.compile(r'"stop_reason"\s*:\s*"refusal"')
 def start(args: argparse.Namespace) -> int:
     run_dir = Path(args.run_dir).resolve()
     run_dir.mkdir(parents=True, exist_ok=True)
+    if os.name != "nt":
+        # A log holds everything that a model read, also a secret value from a
+        # tracked file. So only the owner may read the run folder.
+        os.chmod(run_dir, 0o700)
     if not re.fullmatch(r"[a-z0-9][a-z0-9-]*", args.name):
         return fail(f"The name '{args.name}' must use only a-z, 0-9 and '-'.")
     if not args.command:

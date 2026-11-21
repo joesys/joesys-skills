@@ -99,8 +99,9 @@ Show one notice, then ask one question. The notice says:
   goes to both model providers**;
 - that the run has no time limit, and a rough time. In the first runs, a
   finder needed 6 to 8 minutes for a folder of 400 lines and about 20
-  minutes for a codebase of 38,000 lines, and the reviewer needed about 15
-  minutes for a report of ten findings. Your own work takes the longest:
+  minutes for a codebase of 38,000 lines. The reviewer needed 11 minutes
+  for a report of six findings, and 4 more for the second round. Your own
+  work takes the longest:
   checking every candidate and writing the report. Plan one to three hours
   for a codebase of that size, and say that this is a guess;
 - for each scanner tool: installed or not, and what it sends out of the
@@ -136,6 +137,12 @@ that is already used in a folder.
 The report shows how to attack the app. The `.gitignore` file with one `*`
 keeps the folder out of every commit. With `--out`, use that folder and
 check that git ignores it.
+
+The run folder also holds the raw logs of the other models. A log holds
+everything that a model read, and that can include a secret value from a
+tracked file. The launcher makes the folder readable by its owner only.
+Never copy from a log into the report, and never show a log to the user
+without a look at what is in it.
 
 The start note is short. It gives the repository name, the scope, the
 commit, the ignored paths that the user included, and the paths that must

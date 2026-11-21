@@ -439,3 +439,12 @@ def test_the_start_notice_gives_measured_times_and_calls_them_a_guess() -> None:
         assert "about 20 minutes for a codebase of 38,000 lines" in normalized
         assert "say that this is a guess" in normalized
 
+
+def test_the_run_folder_is_private_because_a_log_can_hold_a_secret() -> None:
+    # One finder of the first run read a tracked settings file. It kept the
+    # secret value out of its answer, but the value was in its log.
+    for skill in skills():
+        normalized = compact(skill)
+        assert "that can include a secret value from a tracked file" in normalized
+        assert "Never copy from a log into the report" in normalized
+

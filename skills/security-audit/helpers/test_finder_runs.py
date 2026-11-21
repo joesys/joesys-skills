@@ -291,3 +291,14 @@ def test_a_late_heartbeat_gets_a_second_look_before_the_run_counts_as_crashed(tm
 
     assert run["state"] == "running"
 
+
+@pytest.mark.skipif(os.name == "nt", reason="file modes of this kind exist on POSIX only")
+def test_the_run_folder_is_readable_by_its_owner_only(tmp_path: Path) -> None:
+    # A log holds everything that a model read. In the first run, one finder
+    # read a tracked settings file, and a secret value went into its log.
+    run_dir = tmp_path / "run"
+    run_dir.mkdir(mode=0o755)
+    start(run_dir, "finder-a", WRITES_FINAL % MARKER)
+
+    assert run_dir.stat().st_mode & 0o077 == 0
+
