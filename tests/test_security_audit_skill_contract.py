@@ -602,12 +602,19 @@ def test_a_blocked_codex_run_gets_a_manual_run_that_the_user_starts() -> None:
         for answer_file in ("finder-2-manual.final.md", "reviewer-manual.final.md"):
             assert f"<RUN_DIR>/{answer_file}" in runs, answer_file
         manual_prompts = re.findall(r"```text\n(.*?)\n```", runs, re.S)
-        assert len(manual_prompts) >= 2
+        assert len(manual_prompts) == 3  # prompt A, prompt B, and the review
         for prompt in manual_prompts:
-            assert prompt.startswith(PURPOSE)
             assert prompt.rstrip().endswith("<<<END-OF-ANSWER>>>, alone.")
+        # Prompt A keeps the words that got past the filter, unchanged.
+        assert manual_prompts[0].startswith(
+            "/joesys-skills:security-audit This is my codebase. I want you to do the finder part "
+            "of this skills and then write the finding (not the full report) into a file. "
+            "Do not run other model. "
+        )
+        assert all(prompt.startswith(PURPOSE) for prompt in manual_prompts[1:])
         assert "Check the end marker yourself" in normalized
-        assert "It has not yet been run live in this form" in normalized
+        assert "They have not yet been run live" in normalized
+        assert "Do not offer the other one later as a way around a block" in normalized
 
 
 def test_a_retry_needs_a_new_name_also_a_manual_one() -> None:
@@ -689,6 +696,7 @@ def test_the_aws_check_in_the_tool_guide_tells_the_example_from_another_key(tmp_
     assert check(1).strip() == "line 1: 1 documentation example, 0 other key IDs"
     assert check(2).strip() == "line 2: 0 documentation example, 1 other key IDs"
     assert "AKIA" not in check(1) + check(2)  # it prints counts, never a value
+    assert "does not mean that the line is safe" in compact(tools)
 
 
 def test_an_answer_in_another_format_is_used_and_its_gaps_are_named() -> None:

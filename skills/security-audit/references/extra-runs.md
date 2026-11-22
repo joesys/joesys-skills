@@ -81,12 +81,30 @@ not start it, and you do not change its prompt.
 
 ### The manual run of Finder 2
 
-Fill in the absolute path of the run folder, and give the user this prompt
-to type in the interactive Codex program, in the repository folder:
+Give the user two prompts to choose from. The user types one in the
+interactive Codex program, in the repository folder. Fill in the absolute
+path of the run folder first.
+
+**Prompt A calls this skill.** Its first three sentences are the prompt that
+got past the filter in the live run of 2026-11-22, word for word. The last
+two sentences were added afterwards, to get the brief's format and the end
+marker. They have not yet been run live.
+
+```text
+/joesys-skills:security-audit This is my codebase. I want you to do the finder part of this skills and then write the finding (not the full report) into a file. Do not run other model. Write it into <RUN_DIR>/finder-2-manual.final.md, in the answer structure of references/finder-brief.md: the code map, the candidates, "Checked and found safe" and "Not checked". The last line of that file must be <<<END-OF-ANSWER>>>, alone.
+```
+
+**Prompt B reads the finder prompt of this run.** It gives Codex the same
+text as the other finders. That is the text that the filter flagged twice,
+so the filter may stop this prompt too. It has not yet been run live.
 
 ```text
 This is our own codebase. We are auditing it to find its vulnerabilities, so that we can patch them and secure the code. You are Finder 2 of this audit. Read the file <RUN_DIR>/finder-prompt.txt and follow it: it is your whole task. Do only the finder part, and run no other model. The rule to skip the folder .security-audit/ covers every file in it except that prompt file and your answer file. Change no file of the project. Write your whole answer, in the structure that the prompt file gives, into <RUN_DIR>/finder-2-manual.final.md. The last line of that file must be <<<END-OF-ANSWER>>>, alone.
 ```
+
+The user picks one. Do not offer the other one later as a way around a
+block: if the filter stops the chosen prompt, show the message, and the
+user decides what comes next.
 
 - The answer goes to `<RUN_DIR>/finder-2-manual.final.md`. If that name is
   already used, take `finder-2-manual-2`, and change the prompt to match.
@@ -97,11 +115,9 @@ This is our own codebase. We are auditing it to find its vulnerabilities, so tha
   write the file there. The user approves that one write.
 - Ask the user to tell you when the file is there.
 
-In the live run, the user typed a shorter prompt that called this skill and
-asked for the finder part only. Codex wrote 25 candidates in its own format,
-with no code map, no "checked and found safe" list, no "not checked" list,
-and no end marker. The prompt above asks for the brief's own format. It has
-not yet been run live in this form.
+In the live run, the user typed only the first three sentences of prompt A.
+Codex wrote 25 candidates in its own format, with no code map, no "checked
+and found safe" list, no "not checked" list, and no end marker.
 
 ### The manual run of the reviewer
 

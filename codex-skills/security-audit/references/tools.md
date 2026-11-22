@@ -142,6 +142,9 @@ rm -rf "$EXPORT"
   `<FILE>` is the tracked file in `<REPO>`. For a hit in the history, give
   the file of that commit with `<(git -C <REPO> show "<COMMIT>:<PATH>")` in
   place of `"<FILE>"`.
+  A count of 0 and 0 means that the line holds no key ID: the hit is of
+  another kind, such as a secret access key. It does not mean that the line
+  is safe.
 - **The scan is not optional when the tool is installed.** A finder may
   write that it found no secret in the history. In the live run, one finder
   did, and Gitleaks found a key pair. Run the scan whatever the finders say.
