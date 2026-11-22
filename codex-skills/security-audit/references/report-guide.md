@@ -56,16 +56,21 @@ Follow `../shared/report-style.md`. On top of it:
 
 1. **Overall assessment.** One verdict sentence with the risk level and the
    main reason. Then what the app does, where it is strong, and where it is
-   weak. Fill the table with the count for each severity. Under "What is
-   good", name the protections that the code already has, with the file or
-   the setting. A beginner must learn what to keep.
+   weak. Fill the table with the count for each severity. In `data-areas`
+   of "Where the problems are", list the parts of the app in its own
+   words, separated by `|`, such as `Merchant API|Merchant dashboard|Public
+   website|Settings and build`. Four to eight parts are enough. Under "What
+   is good", name the protections that the code already has, with the file
+   or the setting. A beginner must learn what to keep.
 2. **The main themes.** Two to five themes. A theme is one cause behind
    several findings, such as "the code checks the permission but not the
    owner". Name the habit that prevents it. This section is where the
-   reader learns the most, so write it with care.
+   reader learns the most, so write it with care. List the ids of its
+   findings in `data-findings`, such as `F-01 F-03 F-10`.
 3. **What to do first.** The checks that need no code change, each with the
    exact command or question and what each answer means. Then the repair
-   order, in a few steps.
+   order, in a few steps. Each step ends with an empty element that lists
+   its findings in `data-findings`, as the template shows.
 4. **The findings, by priority.** One block for each finding. Its title
    line is the line of the list: the reader sees all titles first and
    opens one. See the next part.
@@ -108,10 +113,11 @@ value of `data-part` in the template.
 | `fix` | The fix in words, the change as a diff, why the fix works, and what the fix changes for users. |
 | `prevent` | How to avoid this mistake next time: one rule to remember, what to look for in a code review, and a test to write first. |
 
-Three more parts are used only when they apply:
+Four more parts are used only when they apply:
 
 | Part | When |
 |---|---|
+| `path` | Required for a Critical or High finding, and welcome for the others. The path through the code as three to six boxes: the way in, the steps, the check that is missing or wrong, and the result. Mark exactly that check with `data-step="missing"`. A box may end with the file and the line. It stands right after "In short", so that the reader sees the whole flaw before the long text. |
 | `verify` | A fact outside the code decides the real risk. Give the fact, the check, and what to do for each answer. |
 | `used` | For a Critical or High finding whose past misuse would leave traces. Give read-only checks of data or logs. A fix does not undo an old break-in. |
 | `views` | The two frontier models still differ after two rounds. Print each view in that model's own words. |
@@ -155,6 +161,19 @@ fit the code as it is: use only names that exist in the project.
 
 In the title line: the severity, the confidence, the kind of evidence, and
 who found it. Add "Verify first" and "Two views" where they apply.
+
+The `details` tag of a finding carries five more labels. The script draws
+the pictures of the report from them: the fact strip of the finding, "At a
+glance" and "Where the problems are". The checker reports a label that is
+missing or wrong.
+
+| Label | Value |
+|---|---|
+| `data-area` | One part of the app from `data-areas`, where the way in is. |
+| `data-reach` | The lowest access that is enough to reach the flaw: `anyone` (no login), `user` (a logged-in user), `partner` (a partner system or a token holder), `admin` (an admin of one tenant), or `insider` (access to servers, logs or the code). These are the attackers of the threat model in `method.md`. |
+| `data-reach-label` | The same in the app's own words, such as "One merchant API token". |
+| `data-fix-size` | `small` (a few lines in one place), `medium` (several places, or one new check), or `large` (a new flow, or a decision by the team). |
+| `data-found-by` | Who found it, separated by spaces: `finder-1`, `finder-2`, `writer`, `reviewer`, `scanner`. Use one more name for each extra finder. |
 
 A finding that is added after the review has started gets the next free
 number, and it stands at the place of its severity. So the numbers need not

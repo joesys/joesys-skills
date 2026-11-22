@@ -535,3 +535,20 @@ def test_severity_colours_are_not_reused_for_good_and_bad_boxes() -> None:
         for rule in (".rule {", ".warn {", ".changes {", ".tok-ok {", ".tok-problem {"):
             line = next(line for line in style.splitlines() if line.startswith(rule))
             assert "--s-" not in line, rule
+
+
+def test_the_report_draws_six_pictures_from_labels_that_the_writer_sets() -> None:
+    # joesys chose all six pictures of the mockup on 2026-11-22. The script
+    # draws them, so that every number in a picture matches the findings.
+    for folder in (CANONICAL_DIR, CODEX_DIR):
+        template = read(folder / "references" / "report-template.html")
+        for slot in ("glance", "areas", "chips", "facts"):
+            assert f'data-gen="{slot}"' in template, slot
+        assert 'data-part="path"' in template
+        for label in ("data-area=", "data-reach=", "data-reach-label=", "data-fix-size=", "data-found-by="):
+            assert label in template, label
+    for guide in both("references/report-guide.md"):
+        normalized = compact(guide)
+        assert "Required for a Critical or High finding" in normalized
+        for label in ("`data-areas`", "`data-reach`", "`data-fix-size`", "`data-found-by`", "`data-findings`"):
+            assert label in guide, label

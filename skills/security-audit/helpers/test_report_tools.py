@@ -24,6 +24,13 @@ VALUES = {
     "QUOTED_CODE": "user = find(email)   # PROBLEM: searches all users\nreturn user",
     "F_FIX_DIFF": "--- a/app.py\n+++ b/app.py\n@@ -2 +2 @@\n-    user = find(email)\n+    user = find(email, owner)",
     "N_CRITICAL": "0", "N_HIGH": "1", "N_MEDIUM": "0", "N_LOW": "0", "N_INFO": "0",
+    "AREAS": "Web pages|API|Settings",
+    "F_AREA": "API",
+    "F_REACH": "user",
+    "F_REACH_LABEL": "A logged-in member",
+    "F_FIX_SIZE": "small",
+    "F_FOUND_BY_ROLES": "finder-1 finder-2",
+    "THEME_FINDING_IDS": "F-01",
 }
 FINDING = re.compile(r'<details class="finding".*?</details>', re.DOTALL)
 
@@ -38,7 +45,8 @@ def filled() -> str:
 def with_second_finding(text: str, severity: str) -> str:
     """Add finding F-02 with the given severity after F-01."""
     def clone(block: str) -> str:
-        return block.replace("F-01", "F-02").replace('"high"', f'"{severity}"').replace("sev high", f"sev {severity}")
+        return (block.replace("F-01", "F-02").replace('"high"', f'"{severity}"').replace("sev high", f"sev {severity}")
+                .replace('data-area="API"', 'data-area="Web pages"').replace('data-found-by="finder-1 finder-2"', 'data-found-by="reviewer"'))
 
     first = FINDING.search(text).group(0)
     heading = f'<div class="group-head g-{severity}"><h3>text</h3><p>text</p></div>'
@@ -164,6 +172,7 @@ def test_the_empty_template_fails_only_on_placeholders_and_guide_comments() -> N
 
 def test_a_report_with_no_finding_is_valid() -> None:
     text = FINDING.sub("", filled()).replace('data-count="high">1<', 'data-count="high">0<')
+    text = text.replace('data-findings="F-01"', 'data-findings=""')
     text = re.sub(r'<div class="group-head.*?</div>', "", text, flags=re.DOTALL)
 
     assert report_tools.check_page(text) == []
@@ -193,6 +202,17 @@ BROKEN = [
     ("a wrong count", lambda t: t.replace('data-count="high">1<', 'data-count="high">3<'), "count"),
     ("a finding without its jump bar", lambda t: t.replace(' data-gen="jump"', ""), 'data-gen="jump"'),
     ("a finding without its links to the others", lambda t: t.replace(' data-gen="pager"', ""), 'data-gen="pager"'),
+    ("a finding without its fact strip", lambda t: t.replace(' data-gen="facts"', ""), 'data-gen="facts"'),
+    ("an area that is not in the list", lambda t: t.replace('data-area="API"', 'data-area="Backend"'), "Backend"),
+    ("no list of areas", lambda t: t.replace(' data-areas="Web pages|API|Settings"', ""), "data-areas"),
+    ("a wrong reach", lambda t: t.replace('data-reach="user"', 'data-reach="hacker"'), "data-reach"),
+    ("no reach label", lambda t: t.replace('data-reach-label="A logged-in member"', 'data-reach-label=""'), "data-reach-label"),
+    ("a wrong fix size", lambda t: t.replace('data-fix-size="small"', 'data-fix-size="tiny"'), "data-fix-size"),
+    ("no finder", lambda t: t.replace('data-found-by="finder-1 finder-2"', 'data-found-by=""'), "data-found-by"),
+    ("a theme with an unknown finding", lambda t: t.replace('data-findings="F-01"', 'data-findings="F-01 F-77"'), "F-77"),
+    ("a High finding with no path", lambda t: re.sub(r'<section data-part="path">.*?</section>', "", t, flags=re.DOTALL), "path"),
+    ("a path with no missing check", lambda t: t.replace('data-step="missing"', 'data-step="step"'), "missing"),
+    ("a wrong kind of step", lambda t: t.replace('data-step="result"', 'data-step="end"'), "data-step"),
     ("no quote", lambda t: t.replace(' data-file="app.py" data-lines="2-3"', ""), "quote"),
     ("a tag inside code", lambda t: t.replace("return user</code>", "<b>return</b> user</code>"), "inside a code block"),
     ("code with no language", lambda t: t.replace('<code class="language-diff">', "<code>"), "language"),
@@ -279,7 +299,54 @@ def test_a_closed_part_at_the_end_shows_how_many_entries_it_holds() -> None:
     assert re.search(r'id="not-checked">\s*<summary><h2>[^<]*<span class="count" data-gen="count"><!--gen-->none<', page)
 
 
-def test_generating_twice_changes_nothing() -> None:
+# --- the pictures ---------------------------------------------------------------
+# joesys chose all six pictures of the mockup on 2026-11-22: at a glance,
+# where the problems are, the finding boxes of themes and repair steps, the
+# path through the code, and the fact strip.
+
+
+def two_findings() -> str:
+    return finished(with_second_finding(filled(), "low"))
+
+
+def slot(page: str, name: str, nth: int = 0) -> str:
+    return re.findall(rf'data-gen="{name}"[^>]*><!--gen-->(.*?)<!--/gen-->', page, re.DOTALL)[nth]
+
+
+def test_at_a_glance_shows_one_bar_split_by_severity_and_three_counts() -> None:
+    glance = slot(two_findings(), "glance")
+
+    strip = re.search(r'class="strip".*?</div>', glance, re.DOTALL).group(0)
+    assert re.findall(r'<span class="(\w+)"', strip) == ["high", "low"]
+    assert re.search(r"<b>1</b><span>found by two or more", glance)  # F-01 by two finders, F-02 by the reviewer
+    assert re.search(r"<b>2</b><span>need a check outside the code", glance)  # the template keeps the optional part
+
+
+def test_where_the_problems_are_ranks_the_areas_and_splits_them_by_severity() -> None:
+    areas = slot(two_findings(), "areas")
+
+    # One finding in each area: the order of data-areas breaks the tie.
+    assert areas.index("Web pages") < areas.index("API")
+    assert "Settings" not in areas  # an area with no finding gets no bar
+    assert re.search(r'<span class="an">API</span><span class="ab"><span class="high"', areas)
+
+
+def test_a_theme_shows_its_findings_as_boxes_coloured_by_severity() -> None:
+    chips = slot(two_findings(), "chips")
+
+    assert re.fullmatch(r'<a class="fc high" href="#F-01" title="F-01, High: [^"]*">F-01</a>', chips)
+
+
+def test_the_fact_strip_shows_confidence_fix_size_reach_and_where() -> None:
+    facts = slot(two_findings(), "facts")
+
+    assert facts.count('<i class="on">') == 3 + 1 + 1  # three confidence dots, one fix bar, one reach step
+    assert "A few lines in one place" in facts
+    assert "A logged-in member" in facts
+    assert "API" in facts and "1 file" in facts
+
+
+
     once = finished(with_second_finding(filled(), "low"))
 
     assert report_tools.generate(once) == once

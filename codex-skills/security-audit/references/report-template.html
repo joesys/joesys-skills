@@ -13,6 +13,7 @@
      borders only. Text stays in --ink. Checked with a palette validator (ordered ramp, light and dark). */
   --s-critical: #6e0f12; --s-high: #b02a1c; --s-medium: #d4552e; --s-low: #ec8a52; --s-info: #a3a39b;
   --bad: #a40e26; --good: #1a6e3c; --caution: #7d5a00;
+  --on-critical: #fff; --on-high: #fff; --on-medium: #1b1410; --on-low: #1b1410; --on-info: #1b1410;
   --note-bg: #eef4ff; --good-bg: #e9f7ee; --bad-bg: #fdeeee; --warn-bg: #fff5dc; --view-bg: #f4f0fb; --view-line: #7a5bb5;
   --add-bg: #e4f4e8; --del-bg: #fcece9; --hunk-bg: #e8eef4; --add-ink: #14552c; --del-ink: #842726;
   --tok-c: #5f6b76; --tok-s: #0a6640; --tok-k: #7a2a96; --tok-n: #8a5a00; --tok-d: #0054b3; --tok-t: #b31d28;
@@ -23,6 +24,7 @@
     --accent: #6fc4c8; --link: #7ab3ff; --code-bg: #1a2024; --bar: #0b2427;
     --s-critical: #ffb3a6; --s-high: #e8774a; --s-medium: #b8501f; --s-low: #7a3a12; --s-info: #6b6b66;
     --bad: #ff7b8f; --good: #6fd49a; --caution: #e8c15a;
+    --on-critical: #1b1410; --on-high: #1b1410; --on-medium: #fff; --on-low: #fff; --on-info: #fff;
     --note-bg: #141f33; --good-bg: #12261a; --bad-bg: #2b1518; --warn-bg: #2b2412; --view-bg: #1f1a2c; --view-line: #a58be0;
     --add-bg: #12301c; --del-bg: #3a1a1a; --hunk-bg: #1a2634; --add-ink: #7ee787; --del-ink: #ff9a94;
     --tok-c: #9aa4af; --tok-s: #7ee787; --tok-k: #d2a8ff; --tok-n: #ffa657; --tok-d: #79c0ff; --tok-t: #ff7b72;
@@ -99,7 +101,8 @@ th { background: var(--soft); }
               border: 1.5px solid currentColor; white-space: nowrap; }
 .sev { color: var(--ink); border-color: var(--line); }
 .sev::before { content: ""; display: inline-block; width: .62em; height: .62em; border-radius: 2px; margin-right: 5px; background: var(--g); vertical-align: 0; }
-.critical { --g: var(--s-critical); } .high { --g: var(--s-high); } .medium { --g: var(--s-medium); } .low { --g: var(--s-low); } .info { --g: var(--s-info); }
+.critical { --g: var(--s-critical); --on: var(--on-critical); } .high { --g: var(--s-high); --on: var(--on-high); }
+.medium { --g: var(--s-medium); --on: var(--on-medium); } .low { --g: var(--s-low); --on: var(--on-low); } .info { --g: var(--s-info); --on: var(--on-info); }
 .chip { font-weight: 600; color: var(--muted); border-width: 1px; }
 .chip.verify-first { color: var(--link); } .chip.differ { color: var(--view-line); }
 
@@ -139,6 +142,58 @@ details.finding[open] > summary { background: var(--soft); border-bottom: 1px so
 details.more { margin: 12px 0; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
 details.more > summary { cursor: pointer; padding: 11px 13px; font-weight: 650; min-height: 46px; }
 details.more > .inner { padding: 0 13px 12px; }
+
+
+/* the pictures that the script draws: at a glance, where, finding boxes, the path, the fact strip */
+.glance { margin: 14px 0; }
+.strip { display: flex; gap: 2px; height: 22px; border-radius: 4px; overflow: hidden; margin: 0 0 8px; }
+.strip span { display: block; background: var(--g); min-width: 4px; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: .9rem; color: var(--muted); }
+.legend span::before { content: ""; display: inline-block; width: 12px; height: 12px; border-radius: 3px; background: var(--g); margin-right: 6px; vertical-align: -1px; }
+.legend b { color: var(--ink); margin-left: 4px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin-top: 12px; }
+.tile { border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; background: var(--panel); }
+.tile b { display: block; font-size: 1.6rem; line-height: 1.15; }
+.tile span { font-size: .84rem; color: var(--muted); }
+.areas { margin: 8px 0 14px; }
+.arow { display: grid; grid-template-columns: minmax(7rem, 12rem) minmax(0, 1fr) 2rem; gap: 10px; align-items: center; margin: 6px 0; }
+.arow .an { font-size: .9rem; text-align: right; color: var(--muted); }
+.arow .ab { display: flex; gap: 2px; height: 16px; }
+.arow .ab span { display: block; background: var(--g); }
+.arow .ab span:last-child { border-radius: 0 4px 4px 0; }
+.arow .av { font-size: .85rem; font-weight: 650; }
+.chiprow { display: flex; flex-wrap: wrap; gap: 4px; align-items: flex-start; margin: 8px 0 0; }
+.fc { font: 700 .74rem ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--on); background: var(--g); text-decoration: none;
+      padding: 3px 7px; border-radius: 4px; }
+.fc:hover, .fc:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
+ol.road { list-style: none; padding: 0; counter-reset: road; }
+ol.road > li { counter-increment: road; position: relative; padding: 8px 0 8px 2.6rem; border-top: 1px solid var(--line); margin: 0; }
+ol.road > li:first-child { border-top: 0; }
+ol.road > li::before { content: counter(road); position: absolute; left: 0; top: 8px; width: 1.8rem; height: 1.8rem; border-radius: 50%;
+                       background: var(--accent); color: var(--panel); display: grid; place-items: center; font-weight: 700; font-size: .85rem; }
+ol.path { list-style: none; padding: 0; margin: 8px 0; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 18px; }
+ol.path > li { position: relative; margin: 0; border: 1px solid var(--line); border-radius: 8px; padding: 8px 9px; font-size: .84rem; line-height: 1.35;
+               background: var(--soft); overflow-wrap: anywhere; }
+ol.path > li:not(:last-child)::after { content: "\2192"; position: absolute; right: -15px; top: 40%; color: var(--muted); font-weight: 700; }
+ol.path > li::before { display: block; font-size: .68rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 700; margin-bottom: 2px; }
+ol.path > li[data-step=way-in]::before { content: "Way in"; }
+ol.path > li[data-step=step]::before { content: "Step"; }
+ol.path > li[data-step=missing]::before { content: "Missing check"; color: var(--bad); }
+ol.path > li[data-step=result]::before { content: "Result"; }
+ol.path > li[data-step=missing] { border: 2px dashed var(--bad); background: transparent; }
+ol.path > li[data-step=result] { border-color: var(--g, var(--bad)); border-width: 2px; }
+ol.path code { display: block; margin-top: 4px; font-size: .72rem; background: none; padding: 0; color: var(--muted); }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px 16px; margin: 10px 0 4px; font-size: .86rem; }
+.facts small { display: block; font-size: .68rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 700; margin-bottom: 3px; }
+.facts .wide { grid-column: 1 / -1; }
+.dots i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid var(--ink); margin-right: 3px; vertical-align: -1px; }
+.dots i.on { background: var(--ink); }
+.meter { display: flex; gap: 2px; margin-bottom: 3px; }
+.meter i { flex: 1; height: 8px; background: var(--soft); border: 1px solid var(--line); }
+.meter i.on { background: var(--accent); border-color: var(--accent); }
+.ladder { display: flex; gap: 2px; margin-bottom: 3px; }
+.ladder i { flex: 1; font-style: normal; font-size: .7rem; text-align: center; padding: 3px 2px; background: var(--soft); color: var(--muted); line-height: 1.25; }
+.ladder i.on { background: var(--accent); color: var(--panel); font-weight: 700; }
 
 /* the closed parts at the end */
 details.appendix { margin: 14px 0; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
@@ -204,6 +259,9 @@ details.appendix > .inner { padding: 0 16px 12px; }
   :root { --bar-h: 46px; }
   .top .brand span, .sevbar { display: none; }
   details.finding { border-left-width: 5px; }
+  ol.path { grid-auto-flow: row; gap: 16px; }
+  ol.path > li:not(:last-child)::after { content: "\2193"; right: auto; left: 50%; top: auto; bottom: -16px; }
+  .arow { grid-template-columns: minmax(5rem, 8rem) minmax(0, 1fr) 1.6rem; }
   details.finding > summary { grid-template-columns: 2.7rem minmax(0, 1fr) 1.1rem; }
   table { font-size: .86rem; } th, td { padding: 6px 7px; }
   ol, ul { padding-left: 20px; }
@@ -226,8 +284,10 @@ details.appendix > .inner { padding: 0 16px 12px; }
      3. A block marked "repeat" is written once for each item. A block marked "optional" is deleted when it does not apply.
      4. Delete every GUIDE comment, this one too.
      5. Inside <pre><code>, write & as &amp;, < as &lt; and > as &gt;. Write no colour tags; the finishing script adds them.
-     6. Leave every element with a data-gen attribute empty. The finishing script fills it: the severity counts in the top bar,
-        the index of findings, and the jump bar and the links to the previous and next finding in each finding.
+     6. Leave every element with a data-gen attribute empty. The finishing script fills it from the labels of the findings:
+        the severity counts in the top bar, the index of findings, the pictures "at a glance" and "where the problems are",
+        the finding boxes of a theme or a repair step, and the jump bar, the fact strip and the links to the previous and
+        next finding in each finding.
      7. Then run the finishing script. It adds the code colours, fills the data-gen elements, and checks the page. -->
 <header class="top"><div class="wrap">
   <div class="brand">{{PROJECT}} <span>&middot; security audit</span></div>
@@ -269,6 +329,7 @@ details.appendix > .inner { padding: 0 16px 12px; }
   <h2>1. Overall assessment</h2>
   <!-- GUIDE: The verdict is one sentence: the risk level and the main reason. Then two to four short paragraphs:
        what the app does, where it is strong, where it is weak, and how hard the repairs are. -->
+  <div class="glance" data-gen="glance"></div>
   <div class="assessment">
     <p class="verdict">{{VERDICT}}</p>
     {{ASSESSMENT_PARAGRAPHS}}
@@ -281,6 +342,10 @@ details.appendix > .inner { padding: 0 16px 12px; }
     <tr><td><span class="sev low">Low</span></td><td data-count="low">{{N_LOW}}</td><td>{{IDS_LOW}}</td></tr>
     <tr><td><span class="sev info">Info</span></td><td data-count="info">{{N_INFO}}</td><td>{{IDS_INFO}}</td></tr>
   </table></div>
+  <h3>Where the problems are</h3>
+  <!-- GUIDE: data-areas lists the parts of the app, in the app's own words, separated by "|", for example
+       "Merchant API|Merchant dashboard|Public website|Settings and build". Every finding names one of them in data-area. -->
+  <div class="areas" data-gen="areas" data-areas="{{AREAS}}"></div>
   <h3>What is good</h3>
   <!-- GUIDE: The protections that the code already has. Name the file or the setting. A reader must learn what to keep. -->
   <ul>{{GOOD_POINTS}}</ul>
@@ -293,7 +358,8 @@ details.appendix > .inner { padding: 0 16px 12px; }
   <div class="card">
     <h3>{{THEME_TITLE}}</h3>
     <p>{{THEME_EXPLANATION}}</p>
-    <p class="small">Findings: {{THEME_FINDING_LINKS}}</p>
+    <!-- GUIDE: data-findings lists the ids of the findings of this theme, separated by spaces, for example "F-01 F-03". -->
+    <p class="chiprow" data-gen="chips" data-findings="{{THEME_FINDING_IDS}}"></p>
     <div class="rule"><strong>The habit that prevents it:</strong> {{THEME_HABIT}}</div>
   </div>
 </section>
@@ -305,8 +371,9 @@ details.appendix > .inner { padding: 0 16px 12px; }
   <!-- GUIDE: Every "Verify first" finding gives one check here. Write the exact command or the exact question, and what each answer means. -->
   <ol>{{CHECKS_TODAY}}</ol>
   <h3>Then repair in this order</h3>
-  <!-- GUIDE: Group the findings into a few steps. A cheap fix with a clear gain can stand before a harder one of the same severity. -->
-  <ol>{{REPAIR_ORDER}}</ol>
+  <!-- GUIDE: Group the findings into a few steps. A cheap fix with a clear gain can stand before a harder one of the same severity.
+       Write each step as <li><strong>The step</strong> One or two sentences. <span class="chiprow" data-gen="chips" data-findings="F-01 F-09"></span></li> -->
+  <ol class="road">{{REPAIR_ORDER}}</ol>
 </section>
 
 <section id="findings">
@@ -324,13 +391,33 @@ details.appendix > .inner { padding: 0 16px 12px; }
 
   <!-- GUIDE: repeat, from here to the closing </details>. One block for each finding.
        id: F-01, F-02 and so on, in the order of this section. Never reuse or renumber an id after the review has started.
-       data-severity: critical, high, medium, low or info. data-confidence: high, medium or low. -->
-  <details class="finding" id="{{F_ID}}" data-severity="{{F_SEVERITY}}" data-confidence="{{F_CONFIDENCE}}">
+       data-severity: critical, high, medium, low or info. data-confidence: high, medium or low.
+       data-area: one of the parts of the app in data-areas of "Where the problems are".
+       data-reach: who can reach the flaw, the lowest access that is enough: anyone (no login), user (a logged-in user),
+       partner (a partner system or a token holder), admin (an admin of one tenant), or insider (access to servers, logs or the code).
+       data-reach-label: the same in the app's own words, for example "One merchant API token".
+       data-fix-size: small (a few lines in one place), medium (several places, or one new check), or large (a new flow, or a decision by the team).
+       data-found-by: who found it, separated by spaces, for example "finder-1 finder-2", "reviewer", "writer" or "scanner". -->
+  <details class="finding" id="{{F_ID}}" data-severity="{{F_SEVERITY}}" data-confidence="{{F_CONFIDENCE}}" data-area="{{F_AREA}}" data-reach="{{F_REACH}}" data-reach-label="{{F_REACH_LABEL}}" data-fix-size="{{F_FIX_SIZE}}" data-found-by="{{F_FOUND_BY_ROLES}}">
     <summary><span class="num">{{F_ID}}</span><span class="t">{{F_TITLE}}</span><span class="chips"><span class="sev {{F_SEVERITY}}">{{F_SEVERITY_LABEL}}</span><span class="chip">Confidence: {{F_CONFIDENCE}}</span><span class="chip">{{F_EVIDENCE_LABEL}}</span><span class="chip">{{F_FOUND_BY}}</span><!-- GUIDE: optional chips: <span class="chip verify-first">Verify first</span> <span class="chip differ">Two views</span> --></span></summary>
     <div class="body">
       <nav class="jump" aria-label="Parts of this finding" data-gen="jump"></nav>
 
       <div class="short" data-part="short"><strong>In short:</strong> {{F_SHORT}}</div>
+      <div class="facts" data-gen="facts"></div>
+
+      <!-- GUIDE: required for a Critical or High finding, optional for the others. Three to six steps, from the way in to the result.
+           data-step is way-in, step, missing or result. Exactly the check that is missing or wrong gets "missing".
+           A step may end with <code>file:line</code>. Do not write the label of a step: the page shows it. -->
+      <section data-part="path">
+        <h4>The path through the code</h4>
+        <ol class="path">
+          <li data-step="way-in">{{F_PATH_WAY_IN}}</li>
+          <li data-step="step">{{F_PATH_STEP}} <code>{{FILE}}:{{LINE}}</code></li>
+          <li data-step="missing">{{F_PATH_MISSING}}</li>
+          <li data-step="result">{{F_PATH_RESULT}}</li>
+        </ol>
+      </section>
 
       <section data-part="context">
         <h4>Background</h4>

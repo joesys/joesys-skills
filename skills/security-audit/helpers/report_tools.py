@@ -34,7 +34,13 @@ from pathlib import Path
 SEVERITIES = ("critical", "high", "medium", "low", "info")
 CONFIDENCES = ("high", "medium", "low")
 REQUIRED_PARTS = ("short", "context", "code", "explanation", "reproduce", "priority", "consequences", "fix", "prevent")
-OPTIONAL_PARTS = ("verify", "used", "views")
+OPTIONAL_PARTS = ("path", "verify", "used", "views")
+REACH_LEVELS = {
+    "anyone": "Anyone, no login", "user": "A logged-in user", "partner": "A partner or token holder",
+    "admin": "An admin of one tenant", "insider": "Server, log or code access",
+}
+FIX_SIZES = {"small": "A few lines in one place", "medium": "Several places, or one new check", "large": "A new flow, or a team decision"}
+PATH_STEPS = ("way-in", "step", "missing", "result")
 REQUIRED_SECTIONS = (
     "read-first", "assessment", "themes", "today", "findings",
     "before-fix", "safe", "not-checked", "rejected", "method", "basics",
@@ -432,7 +438,10 @@ class Page(HTMLParser):
                 block = {
                     "kind": "finding", "id": attrs.get("id", ""), "severity": attrs.get("data-severity", ""),
                     "confidence": attrs.get("data-confidence", ""), "parts": [], "label": None,
-                    "quotes": 0, "line": line, "title": "", "slots": [],
+                    "quotes": 0, "line": line, "title": "", "slots": [], "files": [], "steps": [],
+                    "area": attrs.get("data-area"), "reach": attrs.get("data-reach"),
+                    "reach_label": attrs.get("data-reach-label"), "fix_size": attrs.get("data-fix-size"),
+                    "found_by": attrs.get("data-found-by"),
                 }
                 self.findings.append(block)
             elif "appendix" in classes:
@@ -449,7 +458,7 @@ class Page(HTMLParser):
             elif tag == "li":
                 appendix["items"] += 1
         if "data-gen" in attrs:
-            slot = {"name": attrs["data-gen"], "finding": finding, "appendix": appendix}
+            slot = {"name": attrs["data-gen"], "finding": finding, "appendix": appendix, "attrs": attrs, "line": line}
             self.slots.append(slot)
             if finding is not None:
                 finding["slots"].append(attrs["data-gen"])
@@ -470,6 +479,10 @@ class Page(HTMLParser):
             finding["parts"].append(attrs["data-part"])
         if tag == "pre" and attrs.get("data-file") and attrs.get("data-lines"):
             finding["quotes"] += 1
+            if attrs["data-file"] not in finding["files"]:
+                finding["files"].append(attrs["data-file"])
+        if "data-step" in attrs:
+            finding["steps"].append(attrs["data-step"])
 
     def handle_endtag(self, tag: str) -> None:
         if tag == "details" and self._details:
@@ -572,6 +585,7 @@ def check_page(page: str) -> list[str]:
 
     problems += check_sections(parsed)
     problems += check_findings(parsed)
+    problems += check_labels(parsed)
     return problems
 
 
@@ -647,6 +661,59 @@ def check_findings(parsed: Page) -> list[str]:
             problems.append(f'There is no group heading for the severity "{severity}" (class "group-head g-{severity}").')
         if severity in parsed.group_heads and severity not in used:
             problems.append(f'There is a group heading for "{severity}", but no finding has that severity. Delete the group heading.')
+    return problems
+
+
+def filled_in(value: str | None) -> bool:
+    """False for a value that is still a template placeholder: the placeholder check reports it."""
+    return value is None or "{{" not in value
+
+
+def declared_areas(parsed: Page) -> list[str] | None:
+    lists = [slot["attrs"].get("data-areas") for slot in parsed.slots if slot["name"] == "areas"]
+    lists = [value for value in lists if value is not None]
+    if not lists:
+        return None
+    return [area.strip() for area in lists[0].split("|") if area.strip()]
+
+
+def check_labels(parsed: Page) -> list[str]:
+    """The labels that the pictures are drawn from, and the finding ids that a picture names."""
+    problems: list[str] = []
+    areas = declared_areas(parsed)
+    if parsed.findings and areas is None:
+        problems.append(
+            'The picture "Where the problems are" has no data-areas. List the parts of the app there, separated by "|".'
+        )
+    for finding in parsed.findings:
+        name = finding["id"] or f"the finding at line {finding['line']}"
+        area = finding["area"]
+        if filled_in(area) and areas is not None and filled_in("|".join(areas)) and area not in areas:
+            problems.append(f'data-area of {name} is "{area}". Use one of the parts in data-areas: {", ".join(areas)}.')
+        if filled_in(finding["reach"]) and finding["reach"] not in REACH_LEVELS:
+            problems.append(f'data-reach of {name} is "{finding["reach"]}". Use one of: {", ".join(REACH_LEVELS)}.')
+        if filled_in(finding["reach_label"]) and not (finding["reach_label"] or "").strip():
+            problems.append(f"data-reach-label of {name} is empty. Say in the app's words who can reach the flaw.")
+        if filled_in(finding["fix_size"]) and finding["fix_size"] not in FIX_SIZES:
+            problems.append(f'data-fix-size of {name} is "{finding["fix_size"]}". Use one of: {", ".join(FIX_SIZES)}.')
+        if filled_in(finding["found_by"]) and not (finding["found_by"] or "").split():
+            problems.append(f'data-found-by of {name} is empty or missing. Name who found it, for example "finder-1 reviewer".')
+        if finding["severity"] in ("critical", "high") and "path" not in finding["parts"]:
+            problems.append(f'{name} is {finding["severity"]} and has no part "path" (data-part="path"). Draw the path through the code.')
+        if "path" in finding["parts"]:
+            wrong = [step for step in finding["steps"] if step not in PATH_STEPS]
+            if wrong:
+                problems.append(f'The path of {name} has the data-step "{wrong[0]}". Use one of: {", ".join(PATH_STEPS)}.')
+            if "missing" not in finding["steps"]:
+                problems.append(f'The path of {name} has no step with data-step="missing". Mark the check that is missing or wrong.')
+    known = {finding["id"] for finding in parsed.findings}
+    for slot in parsed.slots:
+        named = slot["attrs"].get("data-findings")
+        if not filled_in(named):
+            continue
+        for finding_id in (named or "").split():
+            if finding_id not in known:
+                problems.append(f'data-findings names {finding_id} (line {slot["line"]}), but the page has no such finding.')
     return problems
 
 
@@ -791,7 +858,7 @@ def check_diffs(page: str, repo: Path) -> list[str]:
 # The writer leaves each element with a data-gen attribute empty. This part
 # fills it between two markers, so that a second run replaces the first.
 
-FINDING_SLOTS = ("jump", "pager")
+FINDING_SLOTS = ("jump", "facts", "pager")
 SLOT_TAG = re.compile(r'<[A-Za-z][\w-]*\b[^>]*?\sdata-gen="([^"]*)"[^>]*>(?:<!--gen-->.*?<!--/gen-->)?', re.DOTALL)
 PART_TAG = re.compile(r'<[A-Za-z][\w-]*\b[^>]*?\sdata-part="([^"]*)"[^>]*>')
 COMMENT = re.compile(r"<!--.*?-->", re.DOTALL)
@@ -876,6 +943,13 @@ def slot_content(slot: dict, findings: list[dict], targets: list, parsed: Page) 
         return finding_index(findings, parsed)
     if name == "count" and slot["appendix"]:
         return entry_count(slot["appendix"])
+    if name == "glance":
+        return at_a_glance(findings)
+    if name == "areas":
+        return where_the_problems_are(findings, declared_areas(parsed) or [])
+    if name == "chips":
+        named = slot["attrs"].get("data-findings") or ""
+        return finding_boxes([finding for finding_id in named.split() for finding in findings if finding["id"] == finding_id])
     if finding is None or finding not in findings:
         return None
     if name == "jump":
@@ -884,6 +958,8 @@ def slot_content(slot: dict, findings: list[dict], targets: list, parsed: Page) 
             for owner, part, target in targets if owner is finding and target and part in PART_LABELS
         )
         return f'<b>{finding["id"]}</b>{links}'
+    if name == "facts":
+        return fact_strip(finding)
     if name == "pager":
         position = findings.index(finding)
         before = f'<a href="#{findings[position - 1]["id"]}">&larr; {findings[position - 1]["id"]}</a>' if position else "<span></span>"
@@ -919,6 +995,82 @@ def finding_index(findings: list[dict], parsed: Page) -> str:
         for severity, members in by_severity(findings)
     )
     return f"<div>{sections}</div>{groups}"
+
+
+
+# --- the pictures -------------------------------------------------------------
+# Each picture is drawn from the labels of the findings, so its numbers always
+# match the page. Every mark keeps a text label: colour is never the only sign.
+
+
+def at_a_glance(findings: list[dict]) -> str:
+    groups = by_severity(findings)
+    strip = "".join(
+        f'<span class="{severity}" style="flex: {len(members)}" title="{SEVERITY_LABELS[severity]}: {len(members)}"></span>'
+        for severity, members in groups
+    )
+    legend = "".join(f'<span class="{severity}">{SEVERITY_LABELS[severity]}<b>{len(members)}</b></span>' for severity, members in groups)
+    tiles = (
+        (sum("verify" in finding["parts"] for finding in findings), "need a check outside the code first"),
+        (sum(len(set((finding["found_by"] or "").split())) >= 2 for finding in findings), "found by two or more models or tools"),
+        (sum("views" in finding["parts"] for finding in findings), "where the two models still differ"),
+    )
+    tile_html = "".join(f'<div class="tile"><b>{count}</b><span>{text}</span></div>' for count, text in tiles)
+    label = ", ".join(f"{len(members)} {severity}" for severity, members in groups) or "no findings"
+    return (
+        f'<div class="strip" role="img" aria-label="{len(findings)} findings: {label}">{strip}</div>'
+        f'<div class="legend">{legend}</div><div class="tiles">{tile_html}</div>'
+    )
+
+
+def where_the_problems_are(findings: list[dict], areas: list[str]) -> str:
+    rows = [(area, [finding for finding in findings if finding["area"] == area]) for area in areas]
+    rows = sorted((row for row in rows if row[1]), key=lambda row: -len(row[1]))  # a stable sort keeps the order of data-areas
+    if not rows:
+        return '<p class="small">No finding yet.</p>'
+    most = max(len(members) for _, members in rows)
+    html_rows = []
+    for area, members in rows:
+        bars = "".join(
+            f'<span class="{severity}" style="width: {100 * len(group) / most:.2f}%" '
+            f'title="{html.escape(area)}, {SEVERITY_LABELS[severity]}: {len(group)}"></span>'
+            for severity, group in by_severity(members)
+        )
+        html_rows.append(
+            f'<div class="arow"><span class="an">{html.escape(area)}</span><span class="ab">{bars}</span>'
+            f'<span class="av">{len(members)}</span></div>'
+        )
+    return "".join(html_rows)
+
+
+def finding_boxes(findings: list[dict]) -> str:
+    return "".join(
+        f'<a class="fc {finding["severity"]}" href="#{finding["id"]}" '
+        f'title="{finding["id"]}, {SEVERITY_LABELS.get(finding["severity"], "")}: {html.escape(title(finding))}">{finding["id"]}</a>'
+        for finding in findings
+    )
+
+
+def fact_strip(finding: dict) -> str:
+    def marks(count: int, on: int) -> str:
+        return "".join('<i class="on"></i>' if number < on else "<i></i>" for number in range(count))
+
+    confidence = {"high": 3, "medium": 2, "low": 1}.get(finding["confidence"], 0)
+    sizes = list(FIX_SIZES)
+    size = sizes.index(finding["fix_size"]) + 1 if finding["fix_size"] in FIX_SIZES else 0
+    ladder = "".join(
+        f'<i class="on">{label}</i>' if level == finding["reach"] else f"<i>{label}</i>"
+        for level, label in REACH_LEVELS.items()
+    )
+    files = len(finding["files"])
+    where = f'{html.escape(finding["area"] or "")}, {files} file{"" if files == 1 else "s"}'
+    return (
+        f'<div><small>Confidence</small><span class="dots">{marks(3, confidence)}</span> {finding["confidence"].capitalize()}</div>'
+        f'<div><small>Size of the fix</small><span class="meter">{marks(3, size)}</span>{FIX_SIZES.get(finding["fix_size"], "")}</div>'
+        f"<div><small>Where</small>{where}</div>"
+        f'<div class="wide"><small>Who can reach it</small><span class="ladder">{ladder}</span>'
+        f'{html.escape(finding["reach_label"] or "")}</div>'
+    )
 
 
 def title(finding: dict) -> str:
