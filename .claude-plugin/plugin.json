@@ -1,7 +1,7 @@
 {
   "name": "joesys-skills",
   "description": "Custom Claude Code skills — prompt writing, plain-language answer re-explanation, multi-model AI delegation, structured git commits, cross-session handoffs, code review, quick review, readability review, human review guide, codebase explanation, codebase quality audit, devlog writing, retrospectives, interaction review, and screenshot analysis",
-  "version": "22.1.0",
+  "version": "22.2.0",
   "author": {
     "name": "joesys",
     "url": "https://github.com/joesys"
