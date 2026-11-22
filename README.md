@@ -334,8 +334,11 @@ in the background with no time limit, and a watch reports whether each one
 is still working. A provider's safety filter can stop a model, and a model
 can refuse the task. The skill then shows the message and does not retry by
 itself. It continues with the other models, and the report names the model
-that is missing. When both finders fail, the skill stops and writes no
-report. Three scanner tools (Semgrep, Gitleaks, OSV-Scanner) are
+that is missing. When the filter blocks a Codex run, the user may run that
+part by hand in the interactive Codex program, or, for the review, choose
+two fallback reviewers (a new Claude session and Antigravity). When the user
+asks, Grok joins as a third finder. When both finders fail, the skill stops
+and writes no report. Three scanner tools (Semgrep, Gitleaks, OSV-Scanner) are
 used when they are installed. The skill shows how to install them and never
 installs one. The report folder `.security-audit/` is kept out of git,
 because it shows where the app is weak.

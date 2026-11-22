@@ -13,6 +13,7 @@ Single source of truth for default model identifiers and CLI flags used across s
 | OpenAI (Codex CLI) | `gpt-6.2-sol` | `/codex`, `/ai-council`, `/codereview`, `/architect`, `/security-audit` (finder) |
 | OpenAI (Codex CLI) | `gpt-6.2-astra` | `/security-audit` (reviewer) |
 | Google (Antigravity CLI) | *(managed by agy)* | `/antigravity`, `/ai-council`, `/codereview`, `/architect` |
+| Google (Antigravity CLI) | `gemini-4-neon-xhigh` | `/security-audit` (fallback reviewer) |
 | Anthropic (Claude CLI) | `fable` | `/claude`, `/ai-council` (Claude leg), `/security-audit` (reviewer) |
 | xAI (Grok CLI) | *(managed by grok)* | `/grok`, `/ai-council` |
 
@@ -92,6 +93,16 @@ Plan mode may save an `implementation_plan.md` under
 `~/.gemini/antigravity-cli/brain/<conversation-id>/`. That is `agy`'s own data
 folder, not the project.
 
+In plan mode, `agy` may answer with a plan and ask for approval, in place of
+an answer. A prompt that says "Answer directly. Do not make a plan, and do not
+ask for approval" prevents this. In a live test on 2026-11-22 (agy 1.5.14), a
+short question without that sentence got a plan, and the same question with it
+got the answer.
+
+The template uses `agy`'s own default model. Add `--model <ID>` only when a
+skill or the user names a model; `agy models` lists the IDs. The adapter
+forwards the flag to `agy`.
+
 The prompt is delivered on **stdin** — the adapter forwards its own args to `agy`
 and appends `--input-format stream-json --output-format stream-json`, so callers
 must **not** pass `-p`, `--print`, or those format flags. For session resume, keep
@@ -166,6 +177,21 @@ A resume is the whole template above plus one flag, so it keeps every safety fla
 
 These commands and rules were checked with live runs of grok 1.0.77 on 2026-11-12.
 
+Three facts from live runs of grok 1.0.92 on 2026-11-22:
+
+- **A deny rule lets the run go on.** With `--deny "Bash(python3 *)"`, Grok
+  was refused the command, said so, and finished its answer. Without the
+  rule, the same command needed approval, so the run stopped there: exit
+  code 0, `permission required: Execute ... was not run, as a headless run
+  cannot ask for approval` on stderr, and stop reason `cancelled`.
+- **`--no-subagents`** turns off helper agents. In plan mode a helper agent
+  needs approval, so it would stop a non-interactive run.
+- **`--output-format streaming-json`** prints one JSON event per line:
+  `thought`, `text`, `tool_call`, `tool_call_update`, `usage`, and a last
+  `{"type":"end","stopReason":...,"sessionId":...}`. The answer is the `data`
+  of all `text` events, joined in order. Each `text` event holds only a small
+  piece of it.
+
 ## Same-Platform Subagent Defaults
 
 Skills that spawn subagents through the current host inherit the parent model and reasoning effort by default.
@@ -185,31 +211,56 @@ Do not pin a same-platform subagent to `fable`, `opus`, a GPT model, or any othe
 |---|---|---|---|
 | Finder 1 | Claude CLI | `opus` | high |
 | Finder 2 | Codex CLI | `gpt-6.2-sol` | xhigh |
+| Finder 3, optional, only when the user asks | Grok CLI | the user's own Grok default | the user's own Grok default |
 | Writer | the host | the model that runs the skill, usually `fable` or `gpt-6.2-astra` | as the user set it |
 | Reviewer, when the writer is a Claude model | Codex CLI | `gpt-6.2-astra` | xhigh |
 | Reviewer, when the writer is a GPT model | Claude CLI | `fable` | high |
+| Fallback reviewers, when the Codex reviewer is blocked and the user chooses them | Claude CLI and Antigravity CLI | `opus` and `gemini-4-neon-xhigh` | high, and the level in the identifier |
 
-`opus` and `fable` are names that the Claude CLI resolves to its newest model of that line. Finder 1 is the only place in this collection that asks for `opus`: the default for delegation to Claude stays `fable`.
+`opus` and `fable` are names that the Claude CLI resolves to its newest model of that line. Finder 1 and the fallback Claude reviewer are the only places in this collection that ask for `opus`: the default for delegation to Claude stays `fable`.
 
-The reviewer always comes from the other provider. When the writer is neither a Claude model nor a GPT model, use the Codex reviewer.
+The reviewer comes from the other provider. When the writer is neither a Claude model nor a GPT model, use the Codex reviewer. The one exception is the fallback pair: when the Codex reviewer is blocked, a fresh Claude session reviews, and Antigravity, from a third provider, reviews beside it. The report says that the Claude reviewer shares a provider with a Claude writer. "Neon" was resolved to `gemini-4-neon-xhigh`, the highest level of that model in `agy models` on 2026-11-22. `gemini-pro-orchestrator-neon` is a different model.
+
+In the report, `data-found-by` names each finder by its role: `finder-1`, `finder-2`, and `finder-3` for Grok. The run names follow the same pattern.
 
 Every role runs as its own session of a command-line tool, read-only, through `skills/security-audit/helpers/finder_runs.py`. That launcher sends the prompt on stdin and has no time limit. So these commands have no prompt argument and no `2>/dev/null`: the launcher keeps stdout and stderr in files.
 
 ```bash
-# Finder 1, and the Claude reviewer with its own identifier. Start it with --stream-result.
+# Finder 1, the Claude reviewer, and the fallback Claude reviewer, each with its own identifier.
+# Start it with --stream-result.
 claude --model <IDENTIFIER> --effort high --permission-mode plan -p --output-format stream-json --verbose
 
 # Finder 2, and the Codex reviewer with its own identifier. The launcher fills in {final}.
 codex exec --model <IDENTIFIER> -c model_reasoning_effort="xhigh" --sandbox read-only \
   --skip-git-repo-check --json -o {final}
+
+# Finder 3 (Grok). Start it with --grok-result. Grok reads the prompt file, not stdin.
+grok --permission-mode plan --no-subagents \
+  --deny "Bash(touch *)" --deny "Bash(mkdir *)" \
+  --deny "Bash(python *)" --deny "Bash(python3 *)" --deny "Bash(node *)" \
+  --output-format streaming-json --session-id <NEW_UUID> --prompt-file <PROMPT_FILE>
+
+# The fallback Antigravity reviewer. Start it with --stdout-result.
+python3 <ADAPTER> --mode plan --sandbox --model gemini-4-neon-xhigh
 ```
 
 | Part | Purpose |
 |---|---|
-| `--permission-mode plan`, `--sandbox read-only` | Safety: the model reads and cannot write |
-| `--output-format stream-json --verbose`, `--json` | The tool prints one event after another while it works. The watch reads this to tell a working run from a stuck one |
+| `--permission-mode plan`, `--sandbox read-only`, `--mode plan --sandbox` | Safety: the model reads and cannot write |
+| `--output-format stream-json --verbose`, `--json`, `--output-format streaming-json` | The tool prints one event after another while it works. The watch reads this to tell a working run from a stuck one |
 | `--stream-result` (launcher) | The Claude CLI gives its final answer as the last `result` event. The launcher copies it into the answer file |
 | `-o {final}` | The Codex CLI writes its final answer into that file |
+| `--grok-result` (launcher) | Grok gives its answer in many `text` events. The launcher joins them into the answer file |
+| `--no-subagents`, the `--deny` rules | Grok runs alone, and a refused command does not stop the run. See § Grok |
+| `--session-id <NEW_UUID>` | Grok's session id, chosen before the run, for a resume. The launcher reports it |
+| `--stdout-result` (launcher) | The Antigravity adapter prints only the final answer. The launcher copies the whole output into the answer file |
+| `<ADAPTER>` | The absolute path of `scripts/agy_adapter.py`, as § Antigravity says |
+
+**The Antigravity reviewer needs three more things.** Set `AGY_ADAPTER_TIMEOUT` before you call the launcher, for example `AGY_ADAPTER_TIMEOUT=14400`: otherwise the adapter ends the run after 600 seconds. The adapter prints nothing until the answer is complete, so the watch shows the run as `idle` after 15 minutes; that is expected. The adapter does not report a conversation id, so a second round is a new run that gets the reviewer's own first answer in its prompt.
+
+Only `python3` was tested live as a deny rule. The rules for `python` and `node` have the same form, but no live run has used them yet.
+
+**Codex may be blocked.** In a live run on 2026-11-22, the cyber safety filter of the Codex provider stopped Finder 2 after a few minutes, with exit code 1, although the prompt started with the purpose line. The same command, started by hand, was stopped again. The skill's references say what to do then: `references/extra-runs.md` in the skill's folder.
 
 To resume one of these sessions, add the resume part and keep every other flag:
 
@@ -217,8 +268,9 @@ To resume one of these sessions, add the resume part and keep every other flag:
 claude --resume <SESSION_ID> --model <IDENTIFIER> --effort high --permission-mode plan -p --output-format stream-json --verbose
 codex exec resume <SESSION_ID> --model <IDENTIFIER> -c model_reasoning_effort="xhigh" -c sandbox_mode="read-only" \
   --skip-git-repo-check --json -o {final} -
+<GROK_FINDER_CMD> --resume <SESSION_ID>   # the whole Grok command above, with a new --prompt-file and without --session-id
 ```
 
-The last `-` of the Codex command means "read the prompt from stdin". Without the model, the effort and the read-only flag, a resumed session falls back to the user's own settings (see § Codex Resume and § Claude CLI Resume).
+The last `-` of the Codex command means "read the prompt from stdin". Without the model, the effort and the read-only flag, a resumed session falls back to the user's own settings (see § Codex Resume, § Claude CLI Resume and § Grok Resume).
 
-These commands were checked with live runs on 2026-11-21 (Claude Code 2.1.330, codex-cli 0.171.0). In read-only mode both tools could start helper agents of their own, could read a file outside the project folder, and refused to write.
+These commands were checked with live runs on 2026-11-21 (Claude Code 2.1.330, codex-cli 0.171.0). In read-only mode both tools could start helper agents of their own, could read a file outside the project folder, and refused to write. The Grok and the Antigravity commands were run through the launcher with a short question on 2026-11-22 (grok 1.0.92, agy 1.5.14). Both answers reached the answer file with the end marker.

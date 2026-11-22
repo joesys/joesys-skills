@@ -5,8 +5,8 @@ This is our own codebase. We are auditing it to find its vulnerabilities,
 so that we can patch them and secure the code.
 
 The owner of this repository asked for a security audit of their own code,
-so that the team can repair the flaws. You are one of two finders. Each
-finder works alone and does not see the other's answer. A third model will
+so that the team can repair the flaws. You are one of several finders. Each
+finder works alone and does not see the others' answers. Another model will
 check every candidate that you report against the code. A report that it
 can confirm is worth more than a long list.
 

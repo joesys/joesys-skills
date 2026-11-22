@@ -302,3 +302,103 @@ def test_the_run_folder_is_readable_by_its_owner_only(tmp_path: Path) -> None:
 
     assert run_dir.stat().st_mode & 0o077 == 0
 
+
+
+# --- Live run, 2026-11-22 ----------------------------------------------------
+# Grok ran as a third finder. With `--output-format streaming-json` it prints
+# its answer as many small `text` events and writes no answer file. Its exit
+# code is 0 even when it stopped at a step that needs approval: the reason is
+# then a `permission required:` line on stderr and an `end` event with the
+# stop reason `cancelled`. The two event streams below copy the shape of real
+# grok 1.0.92 output.
+
+
+def start_command(run_dir: Path, name: str, command: list[str], *extra: str, check: bool = True):
+    prompt = run_dir / f"{name}.prompt.txt"
+    run_dir.mkdir(parents=True, exist_ok=True)
+    prompt.write_text("the prompt text\n", encoding="utf-8")
+    return run_helper(
+        "start", "--run-dir", str(run_dir), "--name", name, "--cwd", str(run_dir),
+        "--prompt", str(prompt), *extra, "--", *command, check=check,
+    )
+
+
+def grok_events(*events: dict) -> str:
+    lines = [json.dumps(event) for event in events]
+    return "import sys; sys.stdout.write(%r)" % ("\n".join(lines) + "\n")
+
+
+def text(data: str) -> dict:
+    return {"type": "text", "data": data}
+
+
+TOOL_CALL = {"type": "tool_call", "toolCallId": "call-1", "toolName": "run_terminal_command", "status": "pending"}
+USAGE = {"type": "usage", "usage": {"input_tokens": 10, "output_tokens": 5}}
+PERMISSION = (
+    "permission required: Execute `python3 -c \"print(1)\"` was not run, "
+    "as a headless run cannot ask for approval"
+)
+
+
+def test_grok_result_joins_the_text_events_into_the_answer(tmp_path: Path) -> None:
+    code = grok_events(
+        {"type": "thought", "data": "I should read the routes."},
+        text("# Code"), text(" map\n"), TOOL_CALL, USAGE,
+        text("C-01 ...\n"), text("<<<END-OF"), text("-ANSWER>>>"),
+        {"type": "end", "stopReason": "end_turn", "sessionId": "f64e8390-eecd"},
+    )
+    start_command(tmp_path, "finder-3", [sys.executable, "-c", code], "--grok-result")
+
+    run = wait_for(tmp_path, "finder-3", "finished")
+
+    answer = Path(run["final_file"]).read_text(encoding="utf-8")
+    assert answer == f"# Code map\nC-01 ...\n{MARKER}"
+    assert "I should read" not in answer  # thoughts are not the answer
+
+
+def test_a_grok_run_that_stopped_for_approval_says_why(tmp_path: Path) -> None:
+    code = grok_events(
+        text("I will check the "), text("routes."), TOOL_CALL,
+        {"type": "end", "stopReason": "cancelled", "sessionId": "f1112bac-d73f"},
+    ) + "; sys.stderr.write(%r)" % (PERMISSION + "\n")
+    start_command(tmp_path, "finder-3", [sys.executable, "-c", code], "--grok-result")
+
+    run = wait_for(tmp_path, "finder-3", "unusable")
+
+    assert run["exit_code"] == 0
+    assert "stop reason: cancelled" in run["detail"]
+    assert PERMISSION in run["detail"]
+
+
+def test_the_session_id_is_taken_from_the_command_when_the_output_has_none(tmp_path: Path) -> None:
+    # Grok names its session only in its last event. The id was chosen
+    # before the run, with --session-id, or is given again with --resume.
+    command = [sys.executable, "-c", "import sys; sys.stdout.write('x')", "--session-id", "5c1e-uuid"]
+    start_command(tmp_path, "finder-3", command)
+    resumed = [sys.executable, "-c", "import sys; sys.stdout.write('x')", "--resume", "5c1e-uuid"]
+    start_command(tmp_path, "finder-3-b", resumed)
+
+    assert wait_for(tmp_path, "finder-3", "unusable")["session"] == "5c1e-uuid"
+    assert wait_for(tmp_path, "finder-3-b", "unusable")["session"] == "5c1e-uuid"
+
+
+def test_stdout_result_saves_the_whole_output_as_the_answer(tmp_path: Path) -> None:
+    # The Antigravity adapter prints only the final answer, as plain text.
+    code = "print('F-01: AGREE'); print(%r)" % MARKER
+    start_command(tmp_path, "reviewer-agy", [sys.executable, "-c", code], "--stdout-result")
+
+    run = wait_for(tmp_path, "reviewer-agy", "finished")
+
+    assert Path(run["final_file"]).read_text(encoding="utf-8") == f"F-01: AGREE\n{MARKER}\n"
+
+
+def test_a_name_in_use_is_refused_with_the_next_free_name(tmp_path: Path) -> None:
+    # A retry under a name that a stopped run already holds was refused,
+    # and the message did not say which name to use.
+    start(tmp_path, "finder-2-manual", WRITES_FINAL % MARKER)
+    (tmp_path / "finder-2-manual-2.run.json").write_text("{}", encoding="utf-8")
+
+    again = start_command(tmp_path, "finder-2-manual", [sys.executable, "-c", "pass"], check=False)
+
+    assert again.returncode != 0
+    assert "finder-2-manual-3" in again.stderr

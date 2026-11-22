@@ -85,13 +85,18 @@ shows how many entries each one holds. A row or a list item that only says
    code that gives the protection.
 7. **What was not checked.** Always: that nobody attacked a running app;
    the ignored files that stayed closed; each class that no finder covered;
-   each scanner that did not run; each model that failed.
+   each scanner that did not run; each model that failed. Also a short
+   summary of the errors of each scanner, such as the files that Semgrep
+   could not parse or that took too long, by kind and count, and each
+   finder answer that had no "not checked" list.
 8. **Candidates that were rejected.** Each with who reported it and why it
    fell. This shows the reader how a claim is tested.
 9. **How this report was made.** The models and their roles, how the
    candidates were checked, the review rounds, who found what, where the
    models still differ, the reviewer's closing statement word for word,
-   and the tools that ran.
+   and the tools that ran. Name every run that a person started by hand,
+   every answer that came in another format and the parts it lacked, and
+   every fallback reviewer, as `extra-runs.md` says.
 10. **The basics.** The few ideas that the findings use, each in two to four
     sentences with an example from this codebase, numbered. Then the word
     list.
@@ -157,6 +162,30 @@ or a decision by the team. Then say so, describe the change in words, and
 delete the diff block. Do not invent a diff to fill the place. A diff must
 fit the code as it is: use only names that exist in the project.
 
+### A large report: a script of your own
+
+With three finders on a large codebase, the live run of 2026-11-22 had about
+65 candidates and about 40 findings. The writer built the HTML with a small
+script of its own, and it worked well. The pattern:
+
+- Keep the script in the run folder, never in the project.
+- Copy each quote from the file by its line range, so that the quote
+  matches the file.
+- Make each diff with a diff library, such as `difflib` in Python, from the
+  real lines and the changed lines. Then its `@@` lines have real line
+  numbers.
+- **Guard against secrets.** Before the script writes a line into the page,
+  it checks the line against known secret patterns: a private key header,
+  an AWS key ID, a token with a known prefix, a value given to a setting
+  whose name says password, secret, token or key. On a hit, it writes
+  nothing and stops. Check the quoted lines and also the `-` lines of a
+  diff: a fix that removes a secret from the code shows the secret on its
+  removed line. In a quote, leave such a line out with `...`. Make such a
+  diff a sketch, with no line numbers in its `@@` lines, and put a
+  placeholder such as `<the current value>` in place of the secret. Name
+  the setting in the text.
+- Run the finishing script on the result, as for a page written by hand.
+
 ### The labels on a finding
 
 In the title line: the severity, the confidence, the kind of evidence, and
@@ -173,7 +202,7 @@ them. The checker reports a label that is missing or wrong.
 | `data-reach` | The lowest access that is enough to reach the flaw: `anyone` (no login), `user` (a logged-in user), `partner` (a partner system or a token holder), `admin` (an admin of one tenant), or `insider` (access to servers, logs or the code). These are the attackers of the threat model in `method.md`. |
 | `data-reach-label` | The same in the app's own words, such as "One merchant API token". |
 | `data-fix-size` | `small` (a few lines in one place), `medium` (several places, or one new check), or `large` (a new flow, or a decision by the team). |
-| `data-found-by` | Who found it, separated by spaces: `finder-1`, `finder-2`, `writer`, `reviewer`, `scanner`. Use one more name for each extra finder. |
+| `data-found-by` | Who found it, separated by spaces: `finder-1`, `finder-2`, `writer`, `reviewer`, `scanner`. Use one more name for each extra finder: `finder-3` for Grok. |
 | `data-cwe` | The CWE numbers of the finding, the main one first, separated by spaces, such as `639 640`. The first one names the rule in `report.sarif`. |
 
 A finding that is added after the review has started gets the next free

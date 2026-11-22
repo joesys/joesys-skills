@@ -7,15 +7,21 @@ and `wait` then tell whether each run is still working, has gone quiet, has
 crashed, or has ended, and whether its answer is complete.
 
     finder_runs.py start  --run-dir DIR --name NAME --cwd REPO --prompt FILE
-                          [--stream-result] -- COMMAND [ARGS...]
+                          [--stream-result | --grok-result | --stdout-result]
+                          -- COMMAND [ARGS...]
     finder_runs.py status --run-dir DIR [--idle-seconds N] [--json]
     finder_runs.py wait   --run-dir DIR [--timeout N] [--idle-seconds N] [--json]
     finder_runs.py stop   --run-dir DIR --name NAME
 
 The command reads the prompt file on stdin. In its arguments, the text
 `{final}` is replaced by the path of the file that must hold the final answer.
-With `--stream-result` the final answer is taken from the last JSON line of
-the output whose `type` is `result`.
+When the command writes no such file, one option says where the answer is:
+
+    --stream-result  the last JSON line of the output whose `type` is `result`
+                     (the Claude CLI)
+    --grok-result    the `data` of every JSON line whose `type` is `text`,
+                     joined in order (the Grok CLI with streaming-json)
+    --stdout-result  the whole output (the Antigravity adapter)
 
 The watch never stops a run. Only `stop` does.
 
@@ -44,6 +50,9 @@ STALE_SECONDS = max(BEAT_SECONDS * 6, 3.0)
 ENDED_STATES = {"finished", "unusable", "crashed", "stopped"}
 SESSION_ID = re.compile(r'"(?:thread_id|session_id)"\s*:\s*"([^"]+)"')
 REFUSAL = re.compile(r'"stop_reason"\s*:\s*"refusal"')
+# Grok ends a run that stopped at a step that needs approval this way.
+CANCELLED = re.compile(r'"stopReason"\s*:\s*"cancelled"')
+PERMISSION_LINE = "permission required:"
 
 
 # --- start -------------------------------------------------------------------
@@ -62,14 +71,17 @@ def start(args: argparse.Namespace) -> int:
         return fail("Give the command after '--'.")
     record_file = run_dir / f"{args.name}.run.json"
     if record_file.exists():
-        return fail(f"A run named '{args.name}' already exists in {run_dir}. Use a new name.")
+        return fail(
+            f"A run named '{args.name}' already exists in {run_dir}. "
+            f"Every run, also a retry, needs a new name, such as '{next_free_name(run_dir, args.name)}'."
+        )
 
     record = {
         "name": args.name,
         "cwd": str(Path(args.cwd).resolve()),
         "command": args.command,
         "prompt": str(Path(args.prompt).resolve()),
-        "stream_result": args.stream_result,
+        "answer_from": args.answer_from,
         "started": time.time(),
         "pid": None,
     }
@@ -86,6 +98,13 @@ def start(args: argparse.Namespace) -> int:
     record_file.write_text(json.dumps(record, indent=2), encoding="utf-8")
     print(f"Started '{args.name}'. Output goes to {run_dir / (args.name + '.log')}")
     return 0
+
+
+def next_free_name(run_dir: Path, name: str) -> str:
+    number = 2
+    while (run_dir / f"{name}-{number}.run.json").exists() or (run_dir / f"{name}-{number}.final.md").exists():
+        number += 1
+    return f"{name}-{number}"
 
 
 def detached() -> dict:
@@ -113,8 +132,9 @@ def run_command(args: argparse.Namespace) -> int:
             paths.beat.touch()
             time.sleep(BEAT_SECONDS)
 
-    if record["stream_result"] and not paths.final.exists():
-        answer = result_event_text(paths.log)
+    answer_from = ANSWER_READERS.get(record.get("answer_from") or "")
+    if answer_from and not paths.final.exists():
+        answer = answer_from(paths.log)
         if answer is not None:
             paths.final.write_text(answer, encoding="utf-8")
     write_exit(paths, code=process.returncode)
@@ -135,6 +155,34 @@ def result_event_text(log: Path) -> str | None:
             if isinstance(event, dict) and event.get("type") == "result" and isinstance(event.get("result"), str):
                 answer = event["result"]
     return answer
+
+
+def grok_text(log: Path) -> str | None:
+    """The `data` of every JSON line whose `type` is `text`, joined in order.
+
+    Grok prints its answer in many small pieces. Its thoughts are `thought`
+    events and are not part of the answer.
+    """
+    pieces = []
+    with open(log, encoding="utf-8", errors="replace") as lines:
+        for line in lines:
+            if '"text"' not in line:
+                continue
+            try:
+                event = json.loads(line)
+            except ValueError:
+                continue
+            if isinstance(event, dict) and event.get("type") == "text" and isinstance(event.get("data"), str):
+                pieces.append(event["data"])
+    return "".join(pieces) if pieces else None
+
+
+def whole_output(log: Path) -> str | None:
+    answer = log.read_text(encoding="utf-8", errors="replace")
+    return answer if answer.strip() else None
+
+
+ANSWER_READERS = {"result-event": result_event_text, "grok-text": grok_text, "stdout": whole_output}
 
 
 def write_exit(paths: "RunPaths", **fields: object) -> None:
@@ -174,7 +222,7 @@ def describe_run(run_dir: Path, name: str, idle_seconds: float) -> dict:
         "exit_code": None,
         "final_file": str(paths.final),
         "log_file": str(paths.log),
-        "session": session_id(paths.log),
+        "session": session_id(paths.log) or session_in_command(record.get("command", [])),
     }
 
     if paths.exit.exists():
@@ -212,6 +260,9 @@ def ended_state(ended: dict, paths: RunPaths) -> tuple[str, str]:
     if ended.get("error"):
         return "crashed", ended["error"]
     said = stream_error(paths.log)
+    asked = permission_line(paths.err)
+    if asked:
+        said = f"{said}. {asked}" if said else asked
     if ended.get("code") != 0:
         reason = f"The tool said: {said}" if said else f"Last error line: {last_line(paths.err) or 'none'}"
         return "crashed", f"exit code {ended.get('code')}. {reason}"
@@ -230,11 +281,12 @@ def stream_error(log: Path) -> str:
     A provider's safety filter ends a run this way: the reason is an event on
     stdout, and stderr says nothing useful.
     """
-    message, refused = "", False
+    message, refused, cancelled = "", False, False
     try:
         with open(log, encoding="utf-8", errors="replace") as lines:
             for line in lines:
                 refused = refused or bool(REFUSAL.search(line))
+                cancelled = cancelled or bool(CANCELLED.search(line))
                 if '"error"' not in line:
                     continue
                 try:
@@ -254,7 +306,21 @@ def stream_error(log: Path) -> str:
         return ""
     if refused and not message:
         message = "the model refused to continue (stop reason: refusal)"
+    if cancelled and not message:
+        message = "the run ended early (stop reason: cancelled)"
     return message[:400]
+
+
+def permission_line(err: Path) -> str:
+    """Grok's line on stderr when it stopped at a step that nobody can approve."""
+    try:
+        lines = err.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        return ""
+    for line in lines:
+        if line.strip().startswith(PERMISSION_LINE):
+            return line.strip()[:400]
+    return ""
 
 
 def mtime(path: Path) -> float:
@@ -286,6 +352,14 @@ def session_id(log: Path) -> str | None:
                     return found.group(1)
     except OSError:
         pass
+    return None
+
+
+def session_in_command(command: list[str]) -> str | None:
+    """The session id that the command names itself, as Grok's command does."""
+    for flag, value in zip(command, command[1:]):
+        if flag in ("--session-id", "--resume"):
+            return value
     return None
 
 
@@ -382,8 +456,13 @@ def main(argv: list[str] | None = None) -> int:
     start_parser.add_argument("--name", required=True)
     start_parser.add_argument("--cwd", required=True, help="the folder the command runs in")
     start_parser.add_argument("--prompt", required=True, help="the file sent to the command on stdin")
-    start_parser.add_argument("--stream-result", action="store_true",
-                              help="take the final answer from the last 'result' JSON line of the output")
+    answer_from = start_parser.add_mutually_exclusive_group()
+    answer_from.add_argument("--stream-result", dest="answer_from", action="store_const", const="result-event",
+                             help="take the final answer from the last 'result' JSON line of the output")
+    answer_from.add_argument("--grok-result", dest="answer_from", action="store_const", const="grok-text",
+                             help="take the final answer from the 'text' JSON lines of the output, joined")
+    answer_from.add_argument("--stdout-result", dest="answer_from", action="store_const", const="stdout",
+                             help="take the whole output as the final answer")
     start_parser.add_argument("command", nargs=argparse.REMAINDER)
     start_parser.set_defaults(handler=start)
 

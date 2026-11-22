@@ -51,6 +51,11 @@ semgrep scan --config p/default --metrics=off --no-autofix --quiet \
   tool. Do not switch metrics on without asking.
 - Read `results[]`: `check_id`, `path`, `start.line`, `extra.severity`,
   `extra.message`.
+- Read `errors[]` too, and summarise them under "What was not checked", by
+  kind and count, with the main folders. In the live run of 2026-11-22,
+  `p/default` on a large repository gave 102 errors: `PartialParsing` on
+  `.mjs` files, and timeouts on large vendored JavaScript files. A file
+  with an error was checked in part or not at all.
 
 | System | Install command |
 |---|---|
@@ -70,22 +75,76 @@ Finds keys, tokens and passwords, also in old commits.
 ```bash
 gitleaks git --redact --no-banner --report-format json \
   --report-path "$RUN_DIR/gitleaks.json" <REPO>
-gitleaks dir --redact --no-banner --report-format json \
-  --report-path "$RUN_DIR/gitleaks-files.json" <SCOPE_PATH>
+EXPORT="$(mktemp -d)"
+git -C <REPO> archive HEAD -- <SCOPE_PATH> | tar -x -C "$EXPORT"
+(cd "$EXPORT" && gitleaks dir --redact --no-banner --report-format json \
+  --report-path "$RUN_DIR/gitleaks-files.json" .)
+rm -rf "$EXPORT"
 ```
 
-- `gitleaks git` reads the history. `gitleaks dir` reads the files as they
-  are now. Exit code 1 means that it found something, or that it failed:
+- `gitleaks git` reads the history. `gitleaks dir` reads the files of a
+  folder. Exit code 1 means that it found something, or that it failed:
   read the report file to tell which.
+- **Scan a clean copy of the commit, never the working folder.** `gitleaks
+  dir` also reads every file that git ignores. In the live run of
+  2026-11-22, a scan of the working folder read `.env` files, which breaks
+  the rule that a secret file stays closed, and about 1,200 hits came from
+  build output such as `cdk.out/` and `.next/`. `git archive` copies only
+  the tracked files of the commit into a temporary folder outside the
+  project. Delete that folder when the scan has ended. For the whole
+  repository, leave out `-- <SCOPE_PATH>`. The `File` of each hit is then
+  the path in the repository.
+- The copy holds the commit, not the uncommitted changes. When the working
+  folder has uncommitted changes, say under "What was not checked" that the
+  secret scan did not cover them.
 - **Leaves the machine:** nothing is documented. The scan reads local files
   and the local history.
-- **The report file may hold secret values.** `--redact` hides them in the
-  screen output. The Gitleaks documents do not promise the same for the
-  report file. So read only these fields: `RuleID`, `File`, `StartLine`,
-  `Commit`, `Date`. Never read, copy or print `Secret` or `Match`. Delete
-  both report files when the candidates are written down.
+- **Read only these fields of a report:** `RuleID`, `File`, `StartLine`,
+  `Commit`, `Date`. Never read, copy or print `Secret` or `Match`. With
+  gitleaks 8.30.1 on 2026-11-22, `--redact` replaced the value with
+  `REDACTED` in the report file too. The Gitleaks documents do not promise
+  that, so the rule stays. Delete both report files when the candidates are
+  written down.
 - A hit in the history means that the value was once committed. It may
   still be valid. The finding asks a person to check and to replace it.
+- **`gitleaks git` scans every branch and tag, not only the audited
+  commit.** In the live run, one hit was only on a pushed feature branch.
+  For each history hit, check where its commit is:
+
+  ```bash
+  git -C <REPO> merge-base --is-ancestor <COMMIT> <AUDITED_COMMIT> \
+    && echo "in the history of the audited commit" || echo "outside the audited commit"
+  git -C <REPO> branch -r --contains <COMMIT>   # the remote branches that hold it, as of the last fetch
+  ```
+
+  Label a hit outside the audited commit "outside the audited commit", and
+  name the branches. A value on a pushed branch is exposed like one on the
+  main branch.
+- **AWS key IDs: compare with the documentation example by hash only.**
+  AWS documents use the example key ID `AKIAIOSFODNN7EXAMPLE`. Gitleaks did
+  not report it in a test on 2026-11-22. But in the live run, one file held
+  both that example and a real-looking key ID with a secret key beside it.
+  So do not dismiss a file because it holds the example. Check each hit
+  line with this script. It prints counts, never a value:
+
+  ```bash
+  python3 - "<FILE>" <LINE> << 'PY'
+  import hashlib, re, sys
+  EXAMPLE = hashlib.sha256(b"AKIAIOSFODNN7EXAMPLE").hexdigest()
+  lines = open(sys.argv[1], encoding="utf-8", errors="replace").read().splitlines()
+  found = re.findall(r"(?:AKIA|ASIA)[A-Z0-9]{16}", lines[int(sys.argv[2]) - 1])
+  hashes = [hashlib.sha256(key.encode()).hexdigest() for key in found]
+  print(f"line {sys.argv[2]}: {hashes.count(EXAMPLE)} documentation example, "
+        f"{len(hashes) - hashes.count(EXAMPLE)} other key IDs")
+  PY
+  ```
+
+  `<FILE>` is the tracked file in `<REPO>`. For a hit in the history, give
+  the file of that commit with `<(git -C <REPO> show "<COMMIT>:<PATH>")` in
+  place of `"<FILE>"`.
+- **The scan is not optional when the tool is installed.** A finder may
+  write that it found no secret in the history. In the live run, one finder
+  did, and Gitleaks found a key pair. Run the scan whatever the finders say.
 - If your version does not know `git` and `dir`, it is older than 8.19:
   tell the user to update it.
 
@@ -151,4 +210,9 @@ checked", name each tool that did not run and what it would have covered.
 These commands and facts were checked against the documents of the three
 tools on 2026-11-21. The Semgrep command was also run that day, with Semgrep
 1.186.0: it worked with metrics off, wrote the result file, and changed no
-file. Gitleaks and OSV-Scanner were not run for this check.
+file. On 2026-11-22, Semgrep and Gitleaks ran in a live audit of a large
+repository. The Gitleaks export, the reachability check and the AWS script
+were also run that day on a test repository with a made-up key, with
+gitleaks 8.30.1: the export left out an ignored `.env` file, the check told
+a commit on another branch from one in the history, and the script told the
+example from the made-up key. OSV-Scanner was not run for this check.

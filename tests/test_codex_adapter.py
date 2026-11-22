@@ -410,10 +410,13 @@ def test_generated_grok_command_keeps_its_permission_rules(tmp_path):
     codex_adapter.build_collection(REPO_ROOT, output)
 
     def grok_command(path: Path) -> str:
-        lines = path.read_text(encoding="utf-8").splitlines()
-        commands = [line for line in lines if line.startswith("grok ")]
-        assert len(commands) == 1, path
-        return commands[0]
+        # The general template, and the Grok finder of /security-audit, whose
+        # deny rules continue on the next line.
+        text = path.read_text(encoding="utf-8").replace("\\\n", " ")
+        commands = [line for line in text.splitlines() if line.startswith("grok ")]
+        assert len(commands) == 2, path
+        assert all('--deny "Bash(touch *)"' in command for command in commands), commands
+        return "\n".join(commands)
 
     source = grok_command(REPO_ROOT / "shared" / "model-defaults.md")
     generated = grok_command(output / "shared" / "model-defaults.md")

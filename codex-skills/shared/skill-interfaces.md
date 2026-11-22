@@ -319,11 +319,16 @@ interfaces, update all callers listed below.
   Audit Roles: two finders that work alone, the host as the writer that
   checks every candidate against the code, and a reviewer from the other
   provider. Writer and reviewer exchange at most two rounds. What is still
-  open is printed as two views.
+  open is printed as two views. An optional third finder (Grok), a manual
+  run in the interactive Codex program, and two fallback reviewers are
+  described in `../security-audit/references/extra-runs.md`.
 - Runs the other models in the background with no time limit, through
   `../security-audit/helpers/finder_runs.py`, which also reports
   whether each run is working, idle, crashed, or ended without a complete
-  answer.
+  answer, and why: an error event, a refusal, or a step that needed
+  approval. It takes the answer from an answer file, from the last `result`
+  event (`--stream-result`), from Grok's `text` events (`--grok-result`), or
+  from the whole output (`--stdout-result`).
 - Writes one self-contained HTML report with no script into
   `.security-audit/<date>-<commit>/report.html`, from
   `../security-audit/references/report-template.html`. The folder holds
