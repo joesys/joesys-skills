@@ -127,6 +127,7 @@ details.finding[open] > summary { background: var(--soft); border-bottom: 1px so
 .finding .chips { grid-column: 2; display: flex; flex-wrap: wrap; gap: 4px 6px; margin-top: 4px; }
 .finding .body { padding: 6px 16px 18px; }
 .finding section[data-part] { border-top: 1px solid var(--line); margin-top: 18px; padding-top: 2px; }
+.finding [data-part] { scroll-margin-top: calc(var(--bar-h) + 56px); } /* below the top bar and the jump bar */
 .finding section[data-part] > h4:first-child { text-transform: uppercase; letter-spacing: .06em; font-size: .78rem; color: var(--accent); margin: 12px 0 6px; }
 .finding section[data-part=fix] { background: var(--good-bg); border: 1px solid var(--line); border-left: 4px solid var(--good); border-radius: 8px; padding: 2px 14px 10px; }
 .finding section[data-part=fix] pre { background: var(--panel); }

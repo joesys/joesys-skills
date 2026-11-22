@@ -317,12 +317,14 @@ views.
 
 The result is one HTML file that works on a desktop and on a phone, with no
 script. It is written for a beginner programmer who uses English as a
-second language: an overall assessment, the main themes, a list by
-priority, and for each finding the code, the explanation, the steps to
-reproduce it, the fix as a diff, and how to avoid the mistake next time. A
-script adds the code colours. It also checks that every code quote matches
-the file it names, and that every diff with line numbers applies to the
-code.
+second language: an overall assessment with a picture of the risk at a
+glance and of where the problems are, the main themes, and the findings by
+priority. Each finding has a fact strip, the path through the code, the
+code, the explanation, the steps to reproduce it, the fix as a diff, and
+how to avoid the mistake next time. A script adds the code colours, builds
+the navigation and the pictures from labels on each finding, and checks
+the page. It also checks that every code quote matches the file it names,
+and that every diff with line numbers applies to the code.
 
 The skill only reads source. It sends no request to a running app, changes
 no file in the project, and never opens a secret file. The other models run

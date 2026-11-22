@@ -586,6 +586,7 @@ def check_page(page: str) -> list[str]:
     problems += check_sections(parsed)
     problems += check_findings(parsed)
     problems += check_labels(parsed)
+    problems += unfilled_slots(page, parsed)
     return problems
 
 
@@ -859,8 +860,8 @@ def check_diffs(page: str, repo: Path) -> list[str]:
 # fills it between two markers, so that a second run replaces the first.
 
 FINDING_SLOTS = ("jump", "facts", "pager")
-SLOT_TAG = re.compile(r'<[A-Za-z][\w-]*\b[^>]*?\sdata-gen="([^"]*)"[^>]*>(?:<!--gen-->.*?<!--/gen-->)?', re.DOTALL)
-PART_TAG = re.compile(r'<[A-Za-z][\w-]*\b[^>]*?\sdata-part="([^"]*)"[^>]*>')
+SLOT_TAG = re.compile(r"""<[A-Za-z][\w-]*\b[^>]*?\sdata-gen=(?:"[^"]*"|'[^']*')[^>]*>(?:<!--gen-->.*?<!--/gen-->)?""", re.DOTALL)
+PART_TAG = re.compile(r"""<[A-Za-z][\w-]*\b[^>]*?\sdata-part=(?:"[^"]*"|'[^']*')[^>]*>""")
 COMMENT = re.compile(r"<!--.*?-->", re.DOTALL)
 GENERATED_PART_ID = re.compile(r'\sid="F-\d+-[a-z]+"')
 SEVERITY_LABELS = {severity: severity.capitalize() for severity in SEVERITIES}
@@ -905,13 +906,30 @@ def part_targets(parsed: Page) -> list[tuple[dict | None, str, str | None]]:
     return targets
 
 
+def outside_comments(pattern: re.Pattern, page: str) -> list[re.Match]:
+    comments = [match.span() for match in COMMENT.finditer(page)]
+    return [match for match in pattern.finditer(page) if not any(start <= match.start() < end for start, end in comments)]
+
+
+def unfilled_slots(page: str, parsed: Page) -> list[str]:
+    """The script fills nothing when it cannot match every slot or part. Say so."""
+    problems = []
+    if len(outside_comments(SLOT_TAG, page)) != len(parsed.slots):
+        problems.append(
+            "The script could not fill the data-gen elements, so the navigation and the pictures are empty. "
+            'Write each one as data-gen="name", with quotes, and leave it empty.'
+        )
+    if len(outside_comments(PART_TAG, page)) != len(parsed.part_tags):
+        problems.append(
+            "The script could not give the parts of the findings their ids, so the jump bars do not work. "
+            'Write each part as data-part="name", with quotes.'
+        )
+    return problems
+
+
 def replace_outside_comments(pattern: re.Pattern, page: str, values: list, replace) -> str:
     """Replace the n-th match outside a comment with values[n]. If the counts differ, change nothing."""
-    comments = [match.span() for match in COMMENT.finditer(page)]
-    matches = [
-        match for match in pattern.finditer(page)
-        if not any(start <= match.start() < end for start, end in comments)
-    ]
+    matches = outside_comments(pattern, page)
     if len(matches) != len(values):
         return page
     out, last = [], 0

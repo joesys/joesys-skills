@@ -328,8 +328,9 @@ interfaces, update all callers listed below.
   `.security-audit/<date>-<commit>/report.html`, from
   `skills/security-audit/references/report-template.html`. The folder holds
   a `.gitignore` file so that git ignores it.
-  `skills/security-audit/helpers/report_tools.py` colours the code blocks
-  and checks the page and every code quote.
+  `skills/security-audit/helpers/report_tools.py` colours the code blocks,
+  fills the navigation and the pictures from labels on each finding, and
+  checks the page and every code quote.
 - Never opens a secret file and never prints a secret value. Offers three
   scanner tools and never installs one.
 

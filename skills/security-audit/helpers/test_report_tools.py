@@ -346,7 +346,22 @@ def test_the_fact_strip_shows_confidence_fix_size_reach_and_where() -> None:
     assert "API" in facts and "1 file" in facts
 
 
+def test_a_slot_in_single_quotes_is_filled_too() -> None:
+    page = finished(filled().replace('data-gen="jump"', "data-gen='jump'"))
 
+    assert re.search(r"data-gen='jump'><!--gen--><b>F-01</b>", page)
+    assert report_tools.check_page(page) == []
+
+
+def test_a_slot_that_the_script_cannot_fill_is_reported() -> None:
+    # Advisor review, 2026-11-22: when the script could not match every slot,
+    # it filled none and still printed "No problems".
+    page = finished(filled().replace('data-gen="pager"', "data-gen=pager"))
+
+    assert any("could not fill" in problem for problem in report_tools.check_page(page))
+
+
+def test_generating_twice_changes_nothing() -> None:
     once = finished(with_second_finding(filled(), "low"))
 
     assert report_tools.generate(once) == once
