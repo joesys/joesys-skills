@@ -26,7 +26,6 @@ VALUES = {
     "N_CRITICAL": "0", "N_HIGH": "1", "N_MEDIUM": "0", "N_LOW": "0", "N_INFO": "0",
 }
 FINDING = re.compile(r'<details class="finding".*?</details>', re.DOTALL)
-TRIAGE_ITEM = re.compile(r'<li><a href="#F-\d+">.*?</li>', re.DOTALL)
 
 
 def filled() -> str:
@@ -37,16 +36,19 @@ def filled() -> str:
 
 
 def with_second_finding(text: str, severity: str) -> str:
-    """Add finding F-02 with the given severity after F-01, and list it."""
+    """Add finding F-02 with the given severity after F-01."""
     def clone(block: str) -> str:
         return block.replace("F-01", "F-02").replace('"high"', f'"{severity}"').replace("sev high", f"sev {severity}")
 
     first = FINDING.search(text).group(0)
-    item = TRIAGE_ITEM.search(text).group(0)
     heading = f'<div class="group-head g-{severity}"><h3>text</h3><p>text</p></div>'
     text = text.replace(first, first + "\n" + heading + "\n" + clone(first))
-    text = text.replace(item, item + "\n" + clone(item))
     return text.replace(f'data-count="{severity}">0<', f'data-count="{severity}">1<')
+
+
+def finished(text: str) -> str:
+    """What the finishing script makes of a page: colours, then the generated parts."""
+    return report_tools.generate(report_tools.colour_code_blocks(text))
 
 
 @pytest.fixture
@@ -145,7 +147,7 @@ def test_an_unknown_language_is_left_alone() -> None:
 
 
 def test_the_filled_template_passes_every_check(repo: Path) -> None:
-    text = report_tools.colour_code_blocks(filled())
+    text = finished(filled())
 
     assert report_tools.check_page(text) == []
     assert report_tools.check_quotes(text, repo) == []
@@ -161,15 +163,14 @@ def test_the_empty_template_fails_only_on_placeholders_and_guide_comments() -> N
 
 
 def test_a_report_with_no_finding_is_valid() -> None:
-    text = FINDING.sub("", filled())
-    text = TRIAGE_ITEM.sub("", text).replace('data-count="high">1<', 'data-count="high">0<')
+    text = FINDING.sub("", filled()).replace('data-count="high">1<', 'data-count="high">0<')
     text = re.sub(r'<div class="group-head.*?</div>', "", text, flags=re.DOTALL)
 
     assert report_tools.check_page(text) == []
 
 
 def test_two_findings_in_order_of_severity_pass() -> None:
-    assert report_tools.check_page(with_second_finding(filled(), "low")) == []
+    assert report_tools.check_page(finished(with_second_finding(filled(), "low"))) == []
 
 
 BROKEN = [
@@ -181,16 +182,17 @@ BROKEN = [
     ("an imported style sheet", lambda t: t.replace("<style>", "<style>@import url(https://example.com/a.css);"), "outside resource"),
     ("an iframe", lambda t: t.replace("</main>", '<iframe src="x.html"></iframe></main>'), "<iframe>"),
     ("a broken link", lambda t: t.replace('href="#basics"', 'href="#nowhere"'), "#nowhere"),
-    ("a double id", lambda t: t.replace('<section id="safe">', '<section id="rejected">'), "more than once"),
+    ("a double id", lambda t: t.replace('<details class="appendix" id="safe">', '<details class="appendix" id="rejected">'), "more than once"),
     ("no viewport", lambda t: t.replace('<meta name="viewport" content="width=device-width, initial-scale=1">', ""), "viewport"),
-    ("a missing section", lambda t: t.replace('<section id="rejected">', "<section>"), '"rejected"'),
+    ("a missing section", lambda t: t.replace('<details class="appendix" id="rejected">', '<details class="appendix">'), '"rejected"'),
     ("a missing part", lambda t: t.replace(' data-part="reproduce"', ""), "reproduce"),
     ("a wrong severity", lambda t: t.replace('data-severity="high"', 'data-severity="urgent"'), "data-severity"),
     ("a wrong confidence", lambda t: t.replace('data-confidence="high"', 'data-confidence="sure"'), "data-confidence"),
     ("a wrong id", lambda t: t.replace("F-01", "finding-one"), "F-NN"),
     ("a label that differs", lambda t: FINDING.sub(lambda m: m.group(0).replace("sev high", "sev low"), t), "label"),
     ("a wrong count", lambda t: t.replace('data-count="high">1<', 'data-count="high">3<'), "count"),
-    ("a finding that is not in the list", lambda t: TRIAGE_ITEM.sub("", t), "list"),
+    ("a finding without its jump bar", lambda t: t.replace(' data-gen="jump"', ""), 'data-gen="jump"'),
+    ("a finding without its links to the others", lambda t: t.replace(' data-gen="pager"', ""), 'data-gen="pager"'),
     ("no quote", lambda t: t.replace(' data-file="app.py" data-lines="2-3"', ""), "quote"),
     ("a tag inside code", lambda t: t.replace("return user</code>", "<b>return</b> user</code>"), "inside a code block"),
     ("code with no language", lambda t: t.replace('<code class="language-diff">', "<code>"), "language"),
@@ -224,12 +226,75 @@ def test_findings_out_of_severity_order_are_reported() -> None:
     assert any("order of severity" in problem for problem in report_tools.check_page(text))
 
 
-def test_a_list_in_another_order_than_the_findings_is_reported() -> None:
-    text = with_second_finding(filled(), "low")
-    items = TRIAGE_ITEM.findall(text)
-    text = text.replace(items[0], "@@").replace(items[1], items[0]).replace("@@", items[1])
+# --- generated navigation ------------------------------------------------------
+# joesys, 2026-11-22: the reports of 46 and 55 findings were hard to navigate.
+# The finishing script now builds the navigation, so that no model has to
+# write 50 links by hand.
 
-    assert any("list" in problem for problem in report_tools.check_page(text))
+
+def test_the_index_lists_every_finding_by_severity_in_page_order() -> None:
+    page = finished(with_second_finding(filled(), "low"))
+    index = re.search(r'data-gen="index">(.*?)</nav>', page, re.DOTALL).group(1)
+
+    assert index.index('href="#F-01"') < index.index('href="#F-02"')
+    assert "High" in index and "Low" in index
+    assert 'href="#assessment"' in index and 'href="#not-checked"' in index
+
+
+def test_the_top_bar_counts_each_severity_and_links_to_its_first_finding() -> None:
+    page = finished(with_second_finding(filled(), "low"))
+    bar = re.search(r'data-gen="sevbar">(.*?)</div>', page, re.DOTALL).group(1)
+
+    assert re.search(r'href="#F-01"[^>]*>1 High<', bar)
+    assert re.search(r'href="#F-02"[^>]*>1 Low<', bar)
+    assert "Critical" not in bar
+
+
+def test_each_part_gets_an_id_and_the_jump_bar_links_to_it() -> None:
+    page = finished(filled())
+    jump = re.search(r'data-gen="jump">(.*?)</nav>', page, re.DOTALL).group(1)
+
+    for part in ("code", "fix", "prevent"):
+        assert f'id="F-01-{part}"' in page
+        assert f'href="#F-01-{part}"' in jump
+    assert 'href="#F-01-short"' not in jump
+
+
+def test_each_finding_links_to_the_previous_and_the_next() -> None:
+    page = finished(with_second_finding(filled(), "low"))
+    pagers = re.findall(r'data-gen="pager">(.*?)</nav>', page, re.DOTALL)
+
+    assert 'href="#F-02"' in pagers[0] and 'href="#F-01"' not in pagers[0]
+    assert 'href="#F-01"' in pagers[1] and 'href="#F-02"' not in pagers[1]
+    assert all('href="#findings"' in pager for pager in pagers)
+
+
+def test_a_closed_part_at_the_end_shows_how_many_entries_it_holds() -> None:
+    text = filled().replace("<tr><td>text</td><td>text</td><td>text</td></tr>",
+                            "<tr><td>a</td><td>b</td><td>c</td></tr><tr><td>d</td><td>e</td><td>f</td></tr>", 1)
+    text = text.replace("<ul>text</ul>", '<ul><li class="none">Nothing</li></ul>', 1)
+    page = finished(text)
+
+    assert re.search(r'id="safe">\s*<summary><h2>[^<]*<span class="count" data-gen="count"><!--gen-->2 entries<', page)
+    assert re.search(r'id="not-checked">\s*<summary><h2>[^<]*<span class="count" data-gen="count"><!--gen-->none<', page)
+
+
+def test_generating_twice_changes_nothing() -> None:
+    once = finished(with_second_finding(filled(), "low"))
+
+    assert report_tools.generate(once) == once
+
+
+def test_generation_does_not_fail_on_a_half_written_page() -> None:
+    page = report_tools.generate(TEMPLATE.read_text(encoding="utf-8"))
+
+    assert "data-gen" in page
+
+
+def test_a_generated_slot_in_a_comment_is_left_alone() -> None:
+    text = filled().replace("</main>", '<!-- <nav data-gen="jump"></nav> --></main>')
+
+    assert '<!-- <nav data-gen="jump"></nav> -->' in finished(text)
 
 
 # --- quote checks ------------------------------------------------------------

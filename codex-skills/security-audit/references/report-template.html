@@ -8,8 +8,11 @@
 :root {
   color-scheme: light dark;
   --bg: #faf9f6; --panel: #ffffff; --ink: #1b2a2e; --muted: #53646a; --line: #d3dad7; --soft: #eef2ef;
-  --accent: #0f5a5e; --link: #0b5fd0; --code-bg: #f3f5f4;
-  --crit: #a40e26; --high: #b4420c; --med: #7d5a00; --low: #1a6e3c; --info: #4b5563;
+  --accent: #0f5a5e; --link: #0b5fd0; --code-bg: #f3f5f4; --bar: #12363a; --bar-h: 52px;
+  /* Severity: one warm colour from light to dark, so a darker mark is more serious. Use it for fills and
+     borders only. Text stays in --ink. Checked with a palette validator (ordered ramp, light and dark). */
+  --s-critical: #6e0f12; --s-high: #b02a1c; --s-medium: #d4552e; --s-low: #ec8a52; --s-info: #a3a39b;
+  --bad: #a40e26; --good: #1a6e3c; --caution: #7d5a00;
   --note-bg: #eef4ff; --good-bg: #e9f7ee; --bad-bg: #fdeeee; --warn-bg: #fff5dc; --view-bg: #f4f0fb; --view-line: #7a5bb5;
   --add-bg: #e4f4e8; --del-bg: #fcece9; --hunk-bg: #e8eef4; --add-ink: #14552c; --del-ink: #842726;
   --tok-c: #5f6b76; --tok-s: #0a6640; --tok-k: #7a2a96; --tok-n: #8a5a00; --tok-d: #0054b3; --tok-t: #b31d28;
@@ -17,8 +20,9 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #0f1315; --panel: #161b1e; --ink: #e6e9ea; --muted: #9aa7ab; --line: #2c3539; --soft: #1b2226;
-    --accent: #6fc4c8; --link: #7ab3ff; --code-bg: #1a2024;
-    --crit: #ff7b8f; --high: #ff9e6b; --med: #e8c15a; --low: #6fd49a; --info: #a8b1bc;
+    --accent: #6fc4c8; --link: #7ab3ff; --code-bg: #1a2024; --bar: #0b2427;
+    --s-critical: #ffb3a6; --s-high: #e8774a; --s-medium: #b8501f; --s-low: #7a3a12; --s-info: #6b6b66;
+    --bad: #ff7b8f; --good: #6fd49a; --caution: #e8c15a;
     --note-bg: #141f33; --good-bg: #12261a; --bad-bg: #2b1518; --warn-bg: #2b2412; --view-bg: #1f1a2c; --view-line: #a58be0;
     --add-bg: #12301c; --del-bg: #3a1a1a; --hunk-bg: #1a2634; --add-ink: #7ee787; --del-ink: #ff9a94;
     --tok-c: #9aa4af; --tok-s: #7ee787; --tok-k: #d2a8ff; --tok-n: #ffa657; --tok-d: #79c0ff; --tok-t: #ff7b72;
@@ -40,7 +44,7 @@ ol, ul { padding-left: 22px; margin: 8px 0; }
 li { margin: 5px 0; }
 dt { font-weight: 650; margin-top: 10px; }
 dd { margin: 2px 0 0 0; }
-[id] { scroll-margin-top: 12px; }
+[id] { scroll-margin-top: calc(var(--bar-h) + 12px); }
 code { font: .88em ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
        background: var(--code-bg); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
 pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px; padding: 11px 13px; margin: 8px 0;
@@ -50,27 +54,34 @@ pre code { background: none; padding: 0; font: inherit; white-space: pre-wrap; o
 .small { font-size: .9rem; color: var(--muted); }
 
 /* top bar and title */
-.top { background: #12363a; color: #f4f7f3; }
-.top .wrap { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 18px; padding-top: 10px; padding-bottom: 10px; }
-.top .brand { font-weight: 700; }
+.top { position: sticky; top: 0; z-index: 20; background: var(--bar); color: #f4f7f3; box-shadow: 0 1px 0 rgba(0, 0, 0, .25); }
+.top .wrap { display: flex; align-items: center; gap: 4px 18px; min-height: var(--bar-h); }
+.top .wrap { max-width: 1280px; }
+@media (max-width: 1180px) { .top .brand span { display: none; } }
+.top .brand { font-weight: 700; white-space: nowrap; }
 .top .brand span { font-weight: 400; color: #d0e3de; }
-.top nav { display: flex; flex-wrap: wrap; gap: 2px 16px; }
-.top nav a { color: inherit; text-decoration: none; font-size: .92rem; padding: 8px 0; display: inline-block; }
+.top nav { display: flex; gap: 2px 16px; overflow-x: auto; scrollbar-width: none; }
+.top nav a { color: inherit; text-decoration: none; font-size: .92rem; padding: 8px 0; display: inline-block; white-space: nowrap; }
 .top nav a:hover { text-decoration: underline; }
+.sevbar { display: flex; gap: 6px; margin-left: auto; }
+.sevbar a { display: inline-flex; align-items: center; gap: 5px; font-size: .78rem; font-weight: 700; text-decoration: none; color: #f4f7f3;
+            padding: 2px 9px; border: 1px solid rgba(255, 255, 255, .35); border-radius: 999px; white-space: nowrap; }
+.sevbar a::before { content: ""; width: .62em; height: .62em; border-radius: 2px; background: var(--g); box-shadow: 0 0 0 1px rgba(255, 255, 255, .7); }
+.sevbar a:hover { background: rgba(255, 255, 255, .12); }
 .hero { padding: 26px 0 8px; }
 .hero .lead { color: var(--muted); font-size: 1.05rem; max-width: 62ch; }
 .meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 8px 22px; margin: 16px 0 0; padding: 12px 0 0; border-top: 1px solid var(--line); }
 .meta div { min-width: 0; }
-.meta dt { color: var(--muted); font-size: .82rem; font-weight: 400; margin: 0; }
-.meta dd { margin: 0; font-weight: 600; font-size: .95rem; overflow-wrap: anywhere; }
+.meta dt { color: var(--muted); font-size: .72rem; font-weight: 600; margin: 0; text-transform: uppercase; letter-spacing: .04em; }
+.meta dd { margin: 0; font-size: .88rem; color: var(--muted); overflow-wrap: anywhere; }
 
 /* boxes */
 .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin: 14px 0; }
 .card > h3:first-child { margin-top: 0; }
 .short { background: var(--note-bg); border-left: 4px solid var(--link); border-radius: 6px; padding: 10px 14px; margin: 10px 0; }
-.rule { background: var(--good-bg); border-left: 4px solid var(--low); border-radius: 6px; padding: 10px 14px; margin: 12px 0; }
-.warn { background: var(--bad-bg); border-left: 4px solid var(--crit); border-radius: 6px; padding: 10px 14px; margin: 12px 0; }
-.changes { background: var(--warn-bg); border-left: 4px solid var(--med); border-radius: 6px; padding: 10px 14px; margin: 12px 0; }
+.rule { background: var(--good-bg); border-left: 4px solid var(--good); border-radius: 6px; padding: 10px 14px; margin: 12px 0; }
+.warn { background: var(--bad-bg); border-left: 4px solid var(--bad); border-radius: 6px; padding: 10px 14px; margin: 12px 0; }
+.changes { background: var(--warn-bg); border-left: 4px solid var(--caution); border-radius: 6px; padding: 10px 14px; margin: 12px 0; }
 .views { background: var(--view-bg); border-left: 4px solid var(--view-line); border-radius: 6px; padding: 10px 14px; margin: 12px 0; }
 .verify { background: var(--note-bg); border-left: 4px solid var(--link); border-radius: 6px; padding: 10px 14px; margin: 12px 0; }
 .views h4, .verify h4, .rule h4, .changes h4 { margin-top: 2px; }
@@ -86,27 +97,21 @@ th { background: var(--soft); }
 /* labels */
 .sev, .chip { display: inline-block; font-size: .76rem; font-weight: 700; line-height: 1.5; padding: 1px 9px; border-radius: 999px;
               border: 1.5px solid currentColor; white-space: nowrap; }
-.sev.critical { color: var(--crit); } .sev.high { color: var(--high); } .sev.medium { color: var(--med); }
-.sev.low { color: var(--low); } .sev.info { color: var(--info); }
+.sev { color: var(--ink); border-color: var(--line); }
+.sev::before { content: ""; display: inline-block; width: .62em; height: .62em; border-radius: 2px; margin-right: 5px; background: var(--g); vertical-align: 0; }
+.critical { --g: var(--s-critical); } .high { --g: var(--s-high); } .medium { --g: var(--s-medium); } .low { --g: var(--s-low); } .info { --g: var(--s-info); }
 .chip { font-weight: 600; color: var(--muted); border-width: 1px; }
 .chip.verify-first { color: var(--link); } .chip.differ { color: var(--view-line); }
 
-/* the list of all findings */
-.overview { list-style: none; padding: 0; margin: 12px 0; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--panel); }
-.overview li { margin: 0; border-top: 1px solid var(--line); }
-.overview li:first-child { border-top: 0; }
-.overview a { display: grid; grid-template-columns: 3.1rem minmax(0, 1fr); gap: 2px 8px; padding: 10px 12px; color: inherit; text-decoration: none; min-height: 48px; }
-.overview a:hover { background: var(--soft); }
-.overview .num { font: 600 .9rem ui-monospace, monospace; color: var(--accent); padding-top: 2px; }
-.overview .t { font-weight: 600; line-height: 1.35; }
-.overview .chips { grid-column: 2; display: flex; flex-wrap: wrap; gap: 4px 6px; margin-top: 3px; }
-
 /* one finding */
-.group-head { margin: 30px 0 8px; padding-top: 10px; border-top: 3px solid var(--g, var(--accent)); }
-.group-head h3 { margin: 0; color: var(--g, var(--accent)); }
+.group-head { margin: 30px 0 8px; padding: 10px 14px; background: var(--panel); border: 1px solid var(--line); border-top: 5px solid var(--g); border-radius: 8px; }
+.group-head h3 { margin: 0; }
 .group-head p { margin: 2px 0 0; color: var(--muted); font-size: .93rem; }
-.g-critical { --g: var(--crit); } .g-high { --g: var(--high); } .g-medium { --g: var(--med); } .g-low { --g: var(--low); } .g-info { --g: var(--info); }
-details.finding { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; margin: 10px 0; }
+.g-critical { --g: var(--s-critical); } .g-high { --g: var(--s-high); } .g-medium { --g: var(--s-medium); } .g-low { --g: var(--s-low); } .g-info { --g: var(--s-info); }
+details.finding { background: var(--panel); border: 1px solid var(--line); border-left: 6px solid var(--g, var(--line)); border-radius: 10px; margin: 8px 0; }
+details.finding[data-severity=critical] { --g: var(--s-critical); } details.finding[data-severity=high] { --g: var(--s-high); }
+details.finding[data-severity=medium] { --g: var(--s-medium); } details.finding[data-severity=low] { --g: var(--s-low); }
+details.finding[data-severity=info] { --g: var(--s-info); }
 details.finding > summary { cursor: pointer; list-style: none; display: grid; grid-template-columns: 3.1rem minmax(0, 1fr) 1.3rem; gap: 2px 8px;
                             align-items: start; padding: 12px 12px; min-height: 52px; border-radius: 10px; }
 details.finding > summary::-webkit-details-marker { display: none; }
@@ -118,11 +123,45 @@ details.finding[open] > summary { background: var(--soft); border-bottom: 1px so
 .finding .t { font-weight: 650; font-size: 1.04rem; line-height: 1.35; }
 .finding .chips { grid-column: 2; display: flex; flex-wrap: wrap; gap: 4px 6px; margin-top: 4px; }
 .finding .body { padding: 6px 16px 18px; }
+.finding section[data-part] { border-top: 1px solid var(--line); margin-top: 18px; padding-top: 2px; }
+.finding section[data-part] > h4:first-child { text-transform: uppercase; letter-spacing: .06em; font-size: .78rem; color: var(--accent); margin: 12px 0 6px; }
+.finding section[data-part=fix] { background: var(--good-bg); border: 1px solid var(--line); border-left: 4px solid var(--good); border-radius: 8px; padding: 2px 14px 10px; }
+.finding section[data-part=fix] pre { background: var(--panel); }
+.jump { position: sticky; top: var(--bar-h); z-index: 5; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none;
+        background: var(--panel); padding: 8px 0; margin: 0 0 6px; border-bottom: 1px solid var(--line); }
+.jump a { font-size: .82rem; font-weight: 600; text-decoration: none; white-space: nowrap; padding: 3px 10px; border: 1px solid var(--line); border-radius: 999px; color: var(--accent); }
+.jump a:hover { background: var(--soft); }
+.jump b { font: 700 .82rem ui-monospace, monospace; color: var(--muted); padding: 4px 4px 0 0; white-space: nowrap; }
+.pager { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-top: 16px; padding-top: 10px; border-top: 1px solid var(--line); }
+.pager a { text-decoration: none; font-weight: 600; font-size: .9rem; padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; }
+.pager a:hover { background: var(--soft); }
 .finding .src { color: var(--muted); font-size: .86rem; margin: 14px 0 0; }
-.back { font-size: .9rem; margin-top: 12px; }
 details.more { margin: 12px 0; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
 details.more > summary { cursor: pointer; padding: 11px 13px; font-weight: 650; min-height: 46px; }
 details.more > .inner { padding: 0 13px 12px; }
+
+/* the closed parts at the end */
+details.appendix { margin: 14px 0; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
+details.appendix > summary { cursor: pointer; list-style: none; padding: 4px 16px; border-radius: 10px; }
+details.appendix > summary::-webkit-details-marker { display: none; }
+details.appendix > summary h2 { margin: 10px 0; padding: 0; border: 0; display: flex; gap: 10px; align-items: baseline; }
+details.appendix > summary h2::after { content: "+"; margin-left: auto; color: var(--accent); }
+details.appendix[open] > summary h2::after { content: "\2212"; }
+details.appendix > summary:hover { background: var(--soft); }
+details.appendix .count { font-size: .9rem; font-weight: 400; color: var(--muted); }
+details.appendix > .inner { padding: 0 16px 12px; }
+
+/* the index of all findings, at the side of a wide screen */
+.side { display: none; }
+@media (min-width: 1400px) {
+  .side { display: block; position: fixed; top: calc(var(--bar-h) + 12px); bottom: 12px; width: 230px;
+          left: max(12px, calc(50% - 500px - 250px)); overflow-y: auto; font-size: .82rem; padding-right: 6px; }
+  .side h5 { margin: 12px 0 4px; font-size: .74rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+  .side a { display: block; color: var(--ink); text-decoration: none; padding: 3px 6px; border-left: 3px solid var(--g, var(--line));
+            margin: 2px 0; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .side a b { font: 700 .78rem ui-monospace, monospace; margin-right: 4px; }
+  .side a:hover { background: var(--soft); }
+}
 
 /* "show all findings": works without script where the browser supports it */
 .showall { display: none; align-items: center; gap: 8px; margin: 12px 0; min-height: 44px; }
@@ -135,7 +174,7 @@ details.more > .inner { padding: 0 13px 12px; }
 }
 
 /* a link that is always on screen, back to the list */
-.to-list { position: fixed; right: 12px; bottom: 12px; background: #12363a; color: #f4f7f3; text-decoration: none;
+.to-list { position: fixed; right: 12px; bottom: 12px; background: var(--bar); color: #f4f7f3; text-decoration: none;
            font-size: .88rem; font-weight: 600; padding: 9px 14px; border-radius: 999px; box-shadow: 0 2px 8px rgba(0, 0, 0, .3); }
 
 /* code colours. The finishing script adds these classes; do not write them by hand. */
@@ -145,8 +184,8 @@ details.more > .inner { padding: 0 13px 12px; }
 .tok-n { color: var(--tok-n); }
 .tok-d { color: var(--tok-d); }
 .tok-t { color: var(--tok-t); }
-.tok-problem { color: var(--crit); background: var(--bad-bg); font-style: normal; font-weight: 700; border-radius: 3px; padding: 0 3px; }
-.tok-ok { color: var(--low); font-style: normal; font-weight: 700; }
+.tok-problem { color: var(--bad); background: var(--bad-bg); font-style: normal; font-weight: 700; border-radius: 3px; padding: 0 3px; }
+.tok-ok { color: var(--good); font-style: normal; font-weight: 700; }
 .tok-new { color: var(--link); font-style: normal; font-weight: 700; }
 .diff-line { display: block; min-height: 1.5em; margin: 0 -13px; padding: 0 13px; }
 .diff-line.add { background: var(--add-bg); color: var(--add-ink); }
@@ -162,17 +201,19 @@ details.more > .inner { padding: 0 13px 12px; }
   pre { font-size: .76rem; padding: 9px 10px; }
   .diff-line { margin: 0 -10px; padding: 0 10px; }
   .finding .body { padding: 4px 12px 16px; }
+  :root { --bar-h: 46px; }
+  .top .brand span, .sevbar { display: none; }
+  details.finding { border-left-width: 5px; }
   details.finding > summary { grid-template-columns: 2.7rem minmax(0, 1fr) 1.1rem; }
-  .overview a { grid-template-columns: 2.7rem minmax(0, 1fr); }
   table { font-size: .86rem; } th, td { padding: 6px 7px; }
   ol, ul { padding-left: 20px; }
 }
 @media print {
   body { background: #fff; color: #000; font: 10pt/1.4 serif; }
-  .top, .showall, .back, .to-list { display: none !important; }
+  .top, .showall, .to-list, .side, .jump, .pager { display: none !important; }
   details.finding { border: 0; border-top: 1px solid #bbb; border-radius: 0; }
   details.finding > summary::after { display: none; }
-  details.finding::details-content, details.more::details-content { content-visibility: visible; display: block; height: auto; }
+  details.finding::details-content, details.more::details-content, details.appendix::details-content { content-visibility: visible; display: block; height: auto; }
   pre { font-size: 8pt; }
   a { color: #000; }
 }
@@ -185,18 +226,21 @@ details.more > .inner { padding: 0 13px 12px; }
      3. A block marked "repeat" is written once for each item. A block marked "optional" is deleted when it does not apply.
      4. Delete every GUIDE comment, this one too.
      5. Inside <pre><code>, write & as &amp;, < as &lt; and > as &gt;. Write no colour tags; the finishing script adds them.
-     6. Then run the finishing script. It adds the code colours and checks the page. -->
+     6. Leave every element with a data-gen attribute empty. The finishing script fills it: the severity counts in the top bar,
+        the index of findings, and the jump bar and the links to the previous and next finding in each finding.
+     7. Then run the finishing script. It adds the code colours, fills the data-gen elements, and checks the page. -->
 <header class="top"><div class="wrap">
   <div class="brand">{{PROJECT}} <span>&middot; security audit</span></div>
   <nav aria-label="Sections">
     <a href="#assessment">Assessment</a>
     <a href="#themes">Themes</a>
     <a href="#today">Do first</a>
-    <a href="#triage">List</a>
     <a href="#findings">Findings</a>
     <a href="#basics">Basics</a>
   </nav>
+  <div class="sevbar" data-gen="sevbar"></div>
 </div></header>
+<nav class="side" aria-label="Index of the report" data-gen="index"></nav>
 
 <main class="wrap">
 
@@ -214,7 +258,7 @@ details.more > .inner { padding: 0 13px 12px; }
   </dl>
 </section>
 
-<section id="read-first" class="warn">
+<section id="read-first" class="verify">
   <p><strong>Please read this first.</strong></p>
   <p>The models found these problems by reading the code. Nobody attacked a running copy of the app. So each finding says what the code will do. It does not say what somebody saw happen.</p>
   <p>Try the steps only on your own computer or on a test server, with test accounts. Never on the live system.</p>
@@ -265,18 +309,9 @@ details.more > .inner { padding: 0 13px 12px; }
   <ol>{{REPAIR_ORDER}}</ol>
 </section>
 
-<section id="triage-section">
-  <h2>4. All findings, by priority</h2>
-  <p>Tap a line to jump to the finding. Then tap its title to open it.</p>
-  <ol class="overview" id="triage">
-    <!-- GUIDE: repeat. One line for each finding, in the same order as section 5. Use the same labels as the finding itself. -->
-    <li><a href="#{{F_ID}}"><span class="num">{{F_ID}}</span><span class="t">{{F_TITLE}}</span><span class="chips"><span class="sev {{F_SEVERITY}}">{{F_SEVERITY_LABEL}}</span><span class="chip">Confidence: {{F_CONFIDENCE}}</span><span class="chip">{{F_EVIDENCE_LABEL}}</span><span class="chip">{{F_FOUND_BY}}</span></span></a></li>
-  </ol>
-</section>
-
 <section id="findings">
-  <h2>5. The findings in detail</h2>
-  <p>Each finding is closed at first. Tap or click a title to open it.</p>
+  <h2>4. The findings, by priority</h2>
+  <p>One line for each finding, the most serious first. The colour bar on the left shows the severity. Tap or click a line to open the finding.</p>
   <p>In a code block, a note that starts with <code>PROBLEM:</code>, <code>OK:</code> or <code>NEW:</code> was added by this report. It is not in the file. The spaces at the start of the lines may also be left out. A script compared the rest of every quoted line with the file.</p>
   <p class="showall"><input type="checkbox" id="showall"><label for="showall">Show the text of all findings (for reading or searching the whole page)</label></p>
 
@@ -293,6 +328,7 @@ details.more > .inner { padding: 0 13px 12px; }
   <details class="finding" id="{{F_ID}}" data-severity="{{F_SEVERITY}}" data-confidence="{{F_CONFIDENCE}}">
     <summary><span class="num">{{F_ID}}</span><span class="t">{{F_TITLE}}</span><span class="chips"><span class="sev {{F_SEVERITY}}">{{F_SEVERITY_LABEL}}</span><span class="chip">Confidence: {{F_CONFIDENCE}}</span><span class="chip">{{F_EVIDENCE_LABEL}}</span><span class="chip">{{F_FOUND_BY}}</span><!-- GUIDE: optional chips: <span class="chip verify-first">Verify first</span> <span class="chip differ">Two views</span> --></span></summary>
     <div class="body">
+      <nav class="jump" aria-label="Parts of this finding" data-gen="jump"></nav>
 
       <div class="short" data-part="short"><strong>In short:</strong> {{F_SHORT}}</div>
 
@@ -377,13 +413,13 @@ details.more > .inner { padding: 0 13px 12px; }
       </section>
 
       <p class="src">{{F_SOURCE_LINE}}</p>
-      <p class="back"><a href="#triage">Back to the list</a></p>
+      <nav class="pager" aria-label="Other findings" data-gen="pager"></nav>
     </div>
   </details>
 </section>
 
 <section id="before-fix">
-  <h2>6. Before you apply a fix</h2>
+  <h2>5. Before you apply a fix</h2>
   <ul>
     <li>Every code change in this report is a suggestion. Nobody applied it, and nobody ran the tests of the project on it.</li>
     <li>Some fixes change how the app works for its users. Each finding says so under &ldquo;What the fix changes for users&rdquo;.</li>
@@ -393,36 +429,43 @@ details.more > .inner { padding: 0 13px 12px; }
   </ul>
 </section>
 
-<section id="safe">
-  <h2>7. What was checked and found safe</h2>
+<details class="appendix" id="safe">
+  <summary><h2>6. What was checked and found safe <span class="count" data-gen="count"></span></h2></summary>
+  <div class="inner">
   <p>A check with a good result is useful too. It shows what the team already does right, and what nobody must check again.</p>
   <div class="tablewrap"><table>
     <tr><th>Area</th><th>What was checked</th><th>Why it is safe</th></tr>
     <!-- GUIDE: repeat. Name the file or the setting that gives the protection. -->
     <tr><td>{{SAFE_AREA}}</td><td>{{SAFE_CHECK}}</td><td>{{SAFE_REASON}}</td></tr>
   </table></div>
-</section>
+  </div>
+</details>
 
-<section id="not-checked">
-  <h2>8. What was not checked</h2>
+<details class="appendix" id="not-checked">
+  <summary><h2>7. What was not checked <span class="count" data-gen="count"></span></h2></summary>
+  <div class="inner">
   <p>No audit covers everything. This list says what stays unknown.</p>
   <!-- GUIDE: Always include: that nobody attacked a running app; the files that git ignores and that were not opened;
        every kind of flaw that no finder looked at; every scanner that did not run; any model that failed. -->
   <ul>{{NOT_CHECKED_ITEMS}}</ul>
-</section>
+  </div>
+</details>
 
-<section id="rejected">
-  <h2>9. Candidates that were rejected</h2>
+<details class="appendix" id="rejected">
+  <summary><h2>8. Candidates that were rejected <span class="count" data-gen="count"></span></h2></summary>
+  <div class="inner">
   <p>A finder reported each of these. The check against the code did not confirm it. The reason is given, so that nobody reports it again.</p>
   <div class="tablewrap"><table>
     <tr><th>Candidate</th><th>Reported by</th><th>Why it was rejected</th></tr>
     <!-- GUIDE: repeat. When no candidate was rejected, write one row that says so. -->
     <tr><td>{{REJECTED_CANDIDATE}}</td><td>{{REJECTED_FOUND_BY}}</td><td>{{REJECTED_REASON}}</td></tr>
   </table></div>
-</section>
+  </div>
+</details>
 
-<section id="method">
-  <h2>10. How this report was made</h2>
+<details class="appendix" id="method">
+  <summary><h2>9. How this report was made</h2></summary>
+  <div class="inner">
   <ol>
     <li><strong>Two finders, alone.</strong> {{METHOD_FINDERS}}</li>
     <li><strong>Every candidate was checked.</strong> {{METHOD_VERIFY}}</li>
@@ -454,10 +497,11 @@ details.more > .inner { padding: 0 13px 12px; }
   <h3>Tools</h3>
   <!-- GUIDE: Each scanner: ran or did not run, its version, and how many of its results became findings. -->
   <ul>{{TOOLS_USED}}</ul>
-</section>
+  </div>
+</details>
 
 <section id="basics">
-  <h2>11. The basics</h2>
+  <h2>10. The basics</h2>
   <h3>Ideas you need first</h3>
   <!-- GUIDE: Only the ideas that the findings of this report use, each in two to four sentences with an example from this codebase.
        Number them, so that a finding can say "see idea 3". -->
@@ -469,6 +513,6 @@ details.more > .inner { padding: 0 13px 12px; }
 
 <p class="foot">{{FOOTER_LINE}}</p>
 </main>
-<a class="to-list" href="#triage">List &uarr;</a>
+<a class="to-list" href="#findings">Findings &uarr;</a>
 </body>
 </html>

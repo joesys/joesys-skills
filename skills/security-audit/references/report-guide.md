@@ -44,8 +44,13 @@ Follow `shared/report-style.md`. On top of it:
   `language-javascript`, `language-html`, `language-sql`, `language-shell`,
   `language-diff` or `language-text`.
 - **Write no colour tags.** The script adds them.
+- **Leave every element with a `data-gen` attribute empty.** The script
+  fills it: the severity counts in the top bar, the index of findings at
+  the side, the jump bar and the links to the previous and next finding in
+  each finding, and the entry counts of the closed parts. Each finding
+  keeps its two empty elements from the template.
 - **Links to other parts of the page** use the ids: a finding is `#F-01`,
-  the basics are `#basics`.
+  the list of findings is `#findings`, the basics are `#basics`.
 
 ## Section by section
 
@@ -61,24 +66,28 @@ Follow `shared/report-style.md`. On top of it:
 3. **What to do first.** The checks that need no code change, each with the
    exact command or question and what each answer means. Then the repair
    order, in a few steps.
-4. **All findings, by priority.** One line for each finding, with the same
-   labels as in the finding.
-5. **The findings in detail.** One block for each finding. See the next
-   part.
-6. **Before you apply a fix.** The fixed warnings of the template, and any
+4. **The findings, by priority.** One block for each finding. Its title
+   line is the line of the list: the reader sees all titles first and
+   opens one. See the next part.
+5. **Before you apply a fix.** The fixed warnings of the template, and any
    warning that holds for several fixes of this audit.
-7. **What was checked and found safe.** The area, what was checked, and the
+
+Sections 6 to 9 are reference material. They start closed, and the script
+shows how many entries each one holds. A row or a list item that only says
+"none" gets `class="none"`, so that it is not counted.
+
+6. **What was checked and found safe.** The area, what was checked, and the
    code that gives the protection.
-8. **What was not checked.** Always: that nobody attacked a running app;
+7. **What was not checked.** Always: that nobody attacked a running app;
    the ignored files that stayed closed; each class that no finder covered;
    each scanner that did not run; each model that failed.
-9. **Candidates that were rejected.** Each with who reported it and why it
+8. **Candidates that were rejected.** Each with who reported it and why it
    fell. This shows the reader how a claim is tested.
-10. **How this report was made.** The models and their roles, how the
-    candidates were checked, the review rounds, who found what, where the
-    models still differ, the reviewer's closing statement word for word,
-    and the tools that ran.
-11. **The basics.** The few ideas that the findings use, each in two to four
+9. **How this report was made.** The models and their roles, how the
+   candidates were checked, the review rounds, who found what, where the
+   models still differ, the reviewer's closing statement word for word,
+   and the tools that ran.
+10. **The basics.** The few ideas that the findings use, each in two to four
     sentences with an example from this codebase, numbered. Then the word
     list.
 

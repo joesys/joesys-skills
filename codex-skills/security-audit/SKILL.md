@@ -257,7 +257,8 @@ Read `references/report-guide.md` and follow it.
 1. Copy `references/report-template.html` to `<RUN_DIR>/report.html`.
 2. Write the HTML yourself, inside the template. Keep its sections, its
    order and its style block, so that every report has the same structure.
-3. Run the finishing script. It adds the code colours and checks the page.
+3. Run the finishing script. It adds the code colours, builds the
+   navigation, and checks the page.
 
 ```bash
 python3 "<SKILL_DIR>/helpers/report_tools.py" finish "$RUN_DIR/report.html" --repo "<REPO>"

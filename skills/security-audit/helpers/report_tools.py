@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
-"""Finish a security-audit report: colour its code blocks and check the page.
+"""Finish a security-audit report: colour its code, build its navigation, check it.
 
     report_tools.py finish REPORT.html [--repo DIR] [--commit SHA] [--check-only]
 
 The report is one HTML file that a model wrote into the report template. This
-script does the two jobs that a model does badly by hand:
+script does the three jobs that a model does badly by hand:
 
 1. It adds the syntax colours to every code block, at build time, so the page
    needs no script.
-2. It checks the page: no script, no outside resource, no broken link, the
+2. It fills every element with a data-gen attribute: the severity counts in
+   the top bar, the index of findings, the jump bar and the links to the
+   previous and next finding in each finding, and the entry counts of the
+   closed parts. It gives each part of a finding an id for the jump bar.
+3. It checks the page: no script, no outside resource, no broken link, the
    fixed sections, every part of every finding, and, with --repo, that every
    code quote matches the file it names and that every diff with line
    numbers applies to the code. The checks change no file of the project.
@@ -32,7 +36,7 @@ CONFIDENCES = ("high", "medium", "low")
 REQUIRED_PARTS = ("short", "context", "code", "explanation", "reproduce", "priority", "consequences", "fix", "prevent")
 OPTIONAL_PARTS = ("verify", "used", "views")
 REQUIRED_SECTIONS = (
-    "read-first", "assessment", "themes", "today", "triage", "findings",
+    "read-first", "assessment", "themes", "today", "findings",
     "before-fix", "safe", "not-checked", "rejected", "method", "basics",
 )
 
@@ -378,7 +382,8 @@ class Page(HTMLParser):
         self.id_order: list[str] = []
         self.links: list[tuple[str, int]] = []
         self.findings: list[dict] = []
-        self.triage_links: list[str] = []
+        self.slots: list[dict] = []  # every data-gen element, in page order
+        self.part_tags: list[dict] = []  # every data-part element, in page order
         self.counts: dict[str, str] = {}
         self.group_heads: set[str] = set()
         self.has_viewport = self.has_charset = self.has_lang = False
@@ -386,7 +391,8 @@ class Page(HTMLParser):
         self.style = ""
         self._details: list[dict | None] = []  # one entry for each open <details>
         self._in_summary = False
-        self._triage: tuple[str, int] | None = None  # the tag of the list, and its depth
+        self._title_depth = 0  # the depth of open <span> tags inside the title of a finding
+        self._row: dict | None = None  # the table row that is open inside a closed part
         self._pre: dict | None = None
         self._capture: tuple[str, str] | None = None  # the tag and the target of text being collected
         self._text = ""
@@ -405,8 +411,6 @@ class Page(HTMLParser):
             self.id_order.append(attrs["id"])
         if tag == "a" and attrs.get("href", "").startswith("#"):
             self.links.append((attrs["href"][1:], line))
-            if self._triage:
-                self.triage_links.append(attrs["href"][1:])
 
         if tag == "html" and attrs.get("lang"):
             self.has_lang = True
@@ -422,26 +426,44 @@ class Page(HTMLParser):
         if "group-head" in classes:
             self.group_heads.update(name[2:] for name in classes if name.startswith("g-"))
 
-        if self._triage and tag == self._triage[0]:
-            self._triage = (tag, self._triage[1] + 1)
-        if attrs.get("id") == "triage":
-            self._triage = (tag, 1)
-
         if tag == "details":
-            finding = None
+            block = None
             if "finding" in classes:
-                finding = {
-                    "id": attrs.get("id", ""), "severity": attrs.get("data-severity", ""),
+                block = {
+                    "kind": "finding", "id": attrs.get("id", ""), "severity": attrs.get("data-severity", ""),
                     "confidence": attrs.get("data-confidence", ""), "parts": [], "label": None,
-                    "quotes": 0, "line": line,
+                    "quotes": 0, "line": line, "title": "", "slots": [],
                 }
-                self.findings.append(finding)
-            self._details.append(finding)
+                self.findings.append(block)
+            elif "appendix" in classes:
+                block = {"kind": "appendix", "id": attrs.get("id", ""), "rows": 0, "items": 0}
+            self._details.append(block)
         finding = self._finding()
+        appendix = self._open("appendix")
+        if appendix and "none" not in classes:
+            if tag == "tr":
+                self._row = appendix
+            elif tag == "td" and self._row is appendix:
+                appendix["rows"] += 1
+                self._row = None
+            elif tag == "li":
+                appendix["items"] += 1
+        if "data-gen" in attrs:
+            slot = {"name": attrs["data-gen"], "finding": finding, "appendix": appendix}
+            self.slots.append(slot)
+            if finding is not None:
+                finding["slots"].append(attrs["data-gen"])
+        if "data-part" in attrs:
+            self.part_tags.append({"finding": finding, "part": attrs["data-part"], "id": attrs.get("id", "")})
         if finding is None:
             return
         if tag == "summary":
             self._in_summary = True
+        if self._in_summary and tag == "span":
+            if self._title_depth:
+                self._title_depth += 1
+            elif "t" in classes and not finding["title"]:
+                self._title_depth = 1
         if self._in_summary and "sev" in classes and finding["label"] is None:
             finding["label"] = " ".join(name for name in classes if name != "sev")
         if "data-part" in attrs:
@@ -454,9 +476,11 @@ class Page(HTMLParser):
             self._details.pop()
         if tag == "summary":
             self._in_summary = False
-        if self._triage and tag == self._triage[0]:
-            depth = self._triage[1] - 1
-            self._triage = (tag, depth) if depth else None
+            self._title_depth = 0
+        if tag == "span" and self._title_depth:
+            self._title_depth -= 1
+        if tag == "tr":
+            self._row = None
         if tag == "pre" and self._pre:
             if not self._pre["language"]:
                 self.problems.append(
@@ -477,11 +501,16 @@ class Page(HTMLParser):
     def handle_data(self, data: str) -> None:
         if self._capture:
             self._text += data
+        if self._title_depth and (finding := self._finding()):
+            finding["title"] += data
 
     # --- helpers ---
 
     def _finding(self) -> dict | None:
-        return next((finding for finding in reversed(self._details) if finding), None)
+        return self._open("finding")
+
+    def _open(self, kind: str) -> dict | None:
+        return next((block for block in reversed(self._details) if block and block["kind"] == kind), None)
 
     def _check_safety(self, tag: str, attrs: dict[str, str], line: int) -> None:
         if tag in BANNED_TAGS:
@@ -583,6 +612,11 @@ def check_findings(parsed: Page) -> list[str]:
         if finding["confidence"] not in CONFIDENCES:
             problems.append(f'data-confidence of {name} is "{finding["confidence"]}". Use one of: {", ".join(CONFIDENCES)}.')
         problems += check_parts(name, finding["parts"])
+        for slot in FINDING_SLOTS:
+            if slot not in finding["slots"]:
+                problems.append(
+                    f'{name} has no empty element with data-gen="{slot}". Copy it from the template; the script fills it.'
+                )
         if finding["quotes"] == 0:
             problems.append(
                 f"{name} has no code quote. Give at least one <pre data-file=\"...\" data-lines=\"...\"> block with the real lines."
@@ -600,13 +634,6 @@ def check_findings(parsed: Page) -> list[str]:
                 f"{after} ({SEVERITIES[after_rank]}) stands after {before} ({SEVERITIES[before_rank]}). "
                 "The findings are not in the order of severity."
             )
-
-    found = [finding["id"] for finding in parsed.findings]
-    if parsed.triage_links != found:
-        problems.append(
-            f'The list of all findings (id "triage") does not match the findings. '
-            f"The list has: {', '.join(parsed.triage_links) or 'nothing'}. The findings are: {', '.join(found) or 'none'}."
-        )
 
     used = {SEVERITIES[rank] for _, rank in ranked}
     for severity in SEVERITIES:
@@ -759,18 +786,161 @@ def check_diffs(page: str, repo: Path) -> list[str]:
 
 
 # =============================================================================
+# Part 5: generated navigation
+# =============================================================================
+# The writer leaves each element with a data-gen attribute empty. This part
+# fills it between two markers, so that a second run replaces the first.
+
+FINDING_SLOTS = ("jump", "pager")
+SLOT_TAG = re.compile(r'<[A-Za-z][\w-]*\b[^>]*?\sdata-gen="([^"]*)"[^>]*>(?:<!--gen-->.*?<!--/gen-->)?', re.DOTALL)
+PART_TAG = re.compile(r'<[A-Za-z][\w-]*\b[^>]*?\sdata-part="([^"]*)"[^>]*>')
+COMMENT = re.compile(r"<!--.*?-->", re.DOTALL)
+GENERATED_PART_ID = re.compile(r'\sid="F-\d+-[a-z]+"')
+SEVERITY_LABELS = {severity: severity.capitalize() for severity in SEVERITIES}
+PART_LABELS = {
+    "context": "Background", "path": "Path", "code": "Code", "explanation": "What is wrong", "reproduce": "Steps",
+    "priority": "Priority", "verify": "Verify first", "consequences": "If not fixed", "used": "Past misuse",
+    "fix": "Fix", "prevent": "Prevent", "views": "Two views",
+}
+SECTION_LABELS = (
+    ("assessment", "Assessment"), ("themes", "Themes"), ("today", "What to do first"), ("findings", "All findings"),
+    ("before-fix", "Before you fix"), ("safe", "Found safe"), ("not-checked", "Not checked"),
+    ("rejected", "Rejected"), ("method", "How it was made"), ("basics", "The basics"),
+)
+
+
+def generate(page: str) -> str:
+    """Fill every data-gen element and give each part of a finding an id. Running it twice changes nothing."""
+    parsed = Page()
+    parsed.feed(page)
+    parsed.close()
+    findings = [finding for finding in parsed.findings if FINDING_ID.fullmatch(finding["id"])]
+    targets = part_targets(parsed)
+
+    contents = [slot_content(slot, findings, targets, parsed) for slot in parsed.slots]
+    page = replace_outside_comments(SLOT_TAG, page, contents, fill_slot)
+    ids = [target for _, _, target in targets]
+    return replace_outside_comments(PART_TAG, page, ids, set_part_id)
+
+
+def part_targets(parsed: Page) -> list[tuple[dict | None, str, str | None]]:
+    """For each data-part element: its finding, its part, and the id that the jump bar links to."""
+    targets = []
+    for tag in parsed.part_tags:
+        finding, own_id = tag["finding"], tag["id"]
+        if own_id and not GENERATED_PART_ID.fullmatch(f' id="{own_id}"'):
+            target = own_id
+        elif finding is not None and FINDING_ID.fullmatch(finding["id"]):
+            target = f'{finding["id"]}-{tag["part"]}'
+        else:
+            target = None
+        targets.append((finding, tag["part"], target))
+    return targets
+
+
+def replace_outside_comments(pattern: re.Pattern, page: str, values: list, replace) -> str:
+    """Replace the n-th match outside a comment with values[n]. If the counts differ, change nothing."""
+    comments = [match.span() for match in COMMENT.finditer(page)]
+    matches = [
+        match for match in pattern.finditer(page)
+        if not any(start <= match.start() < end for start, end in comments)
+    ]
+    if len(matches) != len(values):
+        return page
+    out, last = [], 0
+    for match, value in zip(matches, values):
+        out += [page[last:match.start()], replace(match, value)]
+        last = match.end()
+    return "".join(out) + page[last:]
+
+
+def fill_slot(match: re.Match, content: str | None) -> str:
+    opening = match.group(0).split("<!--gen-->", 1)[0]
+    return opening if content is None else f"{opening}<!--gen-->{content}<!--/gen-->"
+
+
+def set_part_id(match: re.Match, target: str | None) -> str:
+    tag = match.group(0)
+    if target is None or re.search(rf'\sid="{re.escape(target)}"', tag):
+        return tag
+    tag = GENERATED_PART_ID.sub("", tag)
+    name_end = re.match(r"<[A-Za-z][\w-]*", tag).end()
+    return f'{tag[:name_end]} id="{target}"{tag[name_end:]}'
+
+
+def slot_content(slot: dict, findings: list[dict], targets: list, parsed: Page) -> str | None:
+    name, finding = slot["name"], slot["finding"]
+    if name == "sevbar":
+        return severity_bar(findings)
+    if name == "index":
+        return finding_index(findings, parsed)
+    if name == "count" and slot["appendix"]:
+        return entry_count(slot["appendix"])
+    if finding is None or finding not in findings:
+        return None
+    if name == "jump":
+        links = "".join(
+            f'<a href="#{target}">{PART_LABELS[part]}</a>'
+            for owner, part, target in targets if owner is finding and target and part in PART_LABELS
+        )
+        return f'<b>{finding["id"]}</b>{links}'
+    if name == "pager":
+        position = findings.index(finding)
+        before = f'<a href="#{findings[position - 1]["id"]}">&larr; {findings[position - 1]["id"]}</a>' if position else "<span></span>"
+        after = (
+            f'<a href="#{findings[position + 1]["id"]}">{findings[position + 1]["id"]} &rarr;</a>'
+            if position + 1 < len(findings) else "<span></span>"
+        )
+        return f'{before}<a href="#findings">All findings</a>{after}'
+    return None
+
+
+def by_severity(findings: list[dict]) -> list[tuple[str, list[dict]]]:
+    groups = [(severity, [finding for finding in findings if finding["severity"] == severity]) for severity in SEVERITIES]
+    return [(severity, members) for severity, members in groups if members]
+
+
+def severity_bar(findings: list[dict]) -> str:
+    return "".join(
+        f'<a class="{severity}" href="#{members[0]["id"]}">{len(members)} {SEVERITY_LABELS[severity]}</a>'
+        for severity, members in by_severity(findings)
+    )
+
+
+def finding_index(findings: list[dict], parsed: Page) -> str:
+    sections = "".join(f'<a href="#{target}">{label}</a>' for target, label in SECTION_LABELS if target in parsed.ids)
+    groups = "".join(
+        f"<h5>{SEVERITY_LABELS[severity]} &middot; {len(members)}</h5>"
+        + "".join(
+            f'<a class="{severity}" href="#{finding["id"]}" title="{html.escape(title(finding))}">'
+            f'<b>{finding["id"]}</b> {html.escape(title(finding))}</a>'
+            for finding in members
+        )
+        for severity, members in by_severity(findings)
+    )
+    return f"<div>{sections}</div>{groups}"
+
+
+def title(finding: dict) -> str:
+    return " ".join(finding["title"].split())
+
+
+def entry_count(appendix: dict) -> str:
+    count = appendix["rows"] or appendix["items"]
+    return "none" if count == 0 else f"{count} entr{'y' if count == 1 else 'ies'}"
+
+
+# =============================================================================
 # The command
 # =============================================================================
 
 
 def finish(args: argparse.Namespace) -> int:
     report = Path(args.report)
-    page = report.read_text(encoding="utf-8")
-    if not args.check_only:
-        coloured = colour_code_blocks(page)
-        if coloured != page:
-            report.write_text(coloured, encoding="utf-8")
-            page = coloured
+    written = report.read_text(encoding="utf-8")
+    page = generate(colour_code_blocks(written))
+    if not args.check_only and page != written:
+        report.write_text(page, encoding="utf-8")
 
     problems = check_page(page)
     if args.repo:
@@ -792,7 +962,7 @@ def finish(args: argparse.Namespace) -> int:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     commands = parser.add_subparsers(dest="action", required=True)
-    finish_parser = commands.add_parser("finish", help="colour the code blocks, then check the page")
+    finish_parser = commands.add_parser("finish", help="colour the code, build the navigation, then check the page")
     finish_parser.add_argument("report")
     finish_parser.add_argument("--repo", help="the audited repository, to check the code quotes against it")
     finish_parser.add_argument("--commit", help="read the quoted files from this commit, not from the folder")
