@@ -324,7 +324,9 @@ code, the explanation, the steps to reproduce it, the fix as a diff, and
 how to avoid the mistake next time. A script adds the code colours, builds
 the navigation and the pictures from labels on each finding, and checks
 the page. It also checks that every code quote matches the file it names,
-and that every diff with line numbers applies to the code.
+and that every diff with line numbers applies to the code. Next to the page it
+writes `report.sarif`, the findings in the format that GitHub code scanning
+reads. The skill never uploads it.
 
 The skill only reads source. It sends no request to a running app, changes
 no file in the project, and never opens a secret file. The other models run

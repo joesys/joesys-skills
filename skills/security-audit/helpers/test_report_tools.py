@@ -31,6 +31,7 @@ VALUES = {
     "F_FIX_SIZE": "small",
     "F_FOUND_BY_ROLES": "finder-1 finder-2",
     "THEME_FINDING_IDS": "F-01",
+    "F_CWE_IDS": "639",
 }
 FINDING = re.compile(r'<details class="finding".*?</details>', re.DOTALL)
 
@@ -209,6 +210,8 @@ BROKEN = [
     ("no reach label", lambda t: t.replace('data-reach-label="A logged-in member"', 'data-reach-label=""'), "data-reach-label"),
     ("a wrong fix size", lambda t: t.replace('data-fix-size="small"', 'data-fix-size="tiny"'), "data-fix-size"),
     ("no finder", lambda t: t.replace('data-found-by="finder-1 finder-2"', 'data-found-by=""'), "data-found-by"),
+    ("no CWE", lambda t: t.replace(' data-cwe="639"', ""), "data-cwe"),
+    ("a CWE that is not a number", lambda t: t.replace('data-cwe="639"', 'data-cwe="CWE-639"'), "data-cwe"),
     ("a theme with an unknown finding", lambda t: t.replace('data-findings="F-01"', 'data-findings="F-01 F-77"'), "F-77"),
     ("a High finding with no path", lambda t: re.sub(r'<section data-part="path">.*?</section>', "", t, flags=re.DOTALL), "path"),
     ("a path with no missing check", lambda t: t.replace('data-step="missing"', 'data-step="step"'), "missing"),
@@ -539,4 +542,71 @@ def test_finish_reports_a_diff_that_does_not_apply(git_repo: Path, capsys) -> No
 
     assert code == 1
     assert "does not apply" in capsys.readouterr().out
+
+
+# --- SARIF for GitHub code scanning ----------------------------------------------
+# joesys, 2026-11-22: export the findings as SARIF, mainly for GitHub code
+# scanning. GitHub reads the severity score and the precision from the rule.
+
+
+def sarif_of(text: str) -> dict:
+    return report_tools.build_sarif(finished(text))
+
+
+def test_sarif_has_one_result_for_each_finding_with_its_place() -> None:
+    sarif = sarif_of(with_second_finding(filled(), "low"))
+    run = sarif["runs"][0]
+
+    assert sarif["version"] == "2.1.0"
+    assert [result["properties"]["finding"] for result in run["results"]] == ["F-01", "F-02"]
+    location = run["results"][0]["locations"][0]["physicalLocation"]
+    assert location["artifactLocation"] == {"uri": "app.py", "uriBaseId": "%SRCROOT%"}
+    assert location["region"] == {"startLine": 2, "endLine": 3}
+    assert run["automationDetails"]["id"].startswith("security-audit/")
+
+
+def test_sarif_rule_is_one_cwe_at_one_severity_with_the_github_properties() -> None:
+    run = sarif_of(with_second_finding(filled(), "low"))["runs"][0]
+    rules = {rule["id"]: rule for rule in run["tool"]["driver"]["rules"]}
+
+    assert set(rules) == {"CWE-639-high", "CWE-639-low"}
+    high = rules["CWE-639-high"]["properties"]
+    assert high["security-severity"] == "8.0"
+    assert high["precision"] == "high"
+    assert "security" in high["tags"] and "external/cwe/cwe-639" in high["tags"]
+    assert rules["CWE-639-high"]["helpUri"] == "https://cwe.mitre.org/data/definitions/639.html"
+    levels = {result["properties"]["finding"]: result["level"] for result in run["results"]}
+    assert levels == {"F-01": "error", "F-02": "note"}
+    assert all(run["tool"]["driver"]["rules"][result["ruleIndex"]]["id"] == result["ruleId"] for result in run["results"])
+
+
+def test_sarif_holds_the_labels_and_no_code() -> None:
+    sarif = sarif_of(filled())
+    result = sarif["runs"][0]["results"][0]
+
+    assert result["properties"]["reach"] == "user"
+    assert result["properties"]["area"] == "API"
+    assert result["partialFingerprints"]["securityAudit/v1"]
+    assert "find(email)" not in report_tools.json.dumps(sarif)
+
+
+def test_sarif_is_the_same_for_the_same_page() -> None:
+    assert sarif_of(filled()) == sarif_of(filled())
+
+
+def test_finish_writes_the_sarif_file_only_for_a_good_page(repo: Path) -> None:
+    report = repo / "report.html"
+    report.write_text(filled(), encoding="utf-8")
+
+    report_tools.main(["finish", str(report), "--repo", str(repo), "--check-only"])
+    assert not (repo / "report.sarif").exists()
+
+    assert report_tools.main(["finish", str(report), "--repo", str(repo)]) == 0
+    sarif = report_tools.json.loads((repo / "report.sarif").read_text(encoding="utf-8"))
+    assert sarif["runs"][0]["results"][0]["ruleId"] == "CWE-639-high"
+
+    (repo / "report.sarif").unlink()
+    report.write_text(filled().replace("return user</code>", "return nobody</code>"), encoding="utf-8")
+    assert report_tools.main(["finish", str(report), "--repo", str(repo)]) == 1
+    assert not (repo / "report.sarif").exists()
 

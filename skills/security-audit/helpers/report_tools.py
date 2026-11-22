@@ -17,13 +17,19 @@ script does the three jobs that a model does badly by hand:
    code quote matches the file it names and that every diff with line
    numbers applies to the code. The checks change no file of the project.
 
+When the page has no problem, it also writes the findings as SARIF 2.1.0,
+for GitHub code scanning, next to the page: report.sarif. It never uploads
+the file.
+
 The exit code is 0 when the page has no problem, and 1 when it has.
 """
 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import html
+import json
 import re
 import subprocess
 import sys
@@ -399,6 +405,7 @@ class Page(HTMLParser):
         self._in_summary = False
         self._title_depth = 0  # the depth of open <span> tags inside the title of a finding
         self._row: dict | None = None  # the table row that is open inside a closed part
+        self._short: list = []  # the tag of the "In short" part of a finding, and its depth
         self._pre: dict | None = None
         self._capture: tuple[str, str] | None = None  # the tag and the target of text being collected
         self._text = ""
@@ -441,7 +448,8 @@ class Page(HTMLParser):
                     "quotes": 0, "line": line, "title": "", "slots": [], "files": [], "steps": [],
                     "area": attrs.get("data-area"), "reach": attrs.get("data-reach"),
                     "reach_label": attrs.get("data-reach-label"), "fix_size": attrs.get("data-fix-size"),
-                    "found_by": attrs.get("data-found-by"),
+                    "found_by": attrs.get("data-found-by"), "cwe": attrs.get("data-cwe"),
+                    "places": [], "short": "",
                 }
                 self.findings.append(block)
             elif "appendix" in classes:
@@ -481,6 +489,11 @@ class Page(HTMLParser):
             finding["quotes"] += 1
             if attrs["data-file"] not in finding["files"]:
                 finding["files"].append(attrs["data-file"])
+            finding["places"].append((attrs["data-file"], attrs["data-lines"]))
+        if self._short and tag == self._short[0]:
+            self._short[1] += 1
+        if attrs.get("data-part") == "short" and not self._short:
+            self._short = [tag, 1]
         if "data-step" in attrs:
             finding["steps"].append(attrs["data-step"])
 
@@ -494,6 +507,10 @@ class Page(HTMLParser):
             self._title_depth -= 1
         if tag == "tr":
             self._row = None
+        if self._short and tag == self._short[0]:
+            self._short[1] -= 1
+            if not self._short[1]:
+                self._short = []
         if tag == "pre" and self._pre:
             if not self._pre["language"]:
                 self.problems.append(
@@ -516,6 +533,8 @@ class Page(HTMLParser):
             self._text += data
         if self._title_depth and (finding := self._finding()):
             finding["title"] += data
+        if self._short and (finding := self._finding()):
+            finding["short"] += data
 
     # --- helpers ---
 
@@ -697,6 +716,8 @@ def check_labels(parsed: Page) -> list[str]:
             problems.append(f"data-reach-label of {name} is empty. Say in the app's words who can reach the flaw.")
         if filled_in(finding["fix_size"]) and finding["fix_size"] not in FIX_SIZES:
             problems.append(f'data-fix-size of {name} is "{finding["fix_size"]}". Use one of: {", ".join(FIX_SIZES)}.')
+        if filled_in(finding["cwe"]) and not re.fullmatch(r"\d+(?: \d+)*", (finding["cwe"] or "").strip()):
+            problems.append(f'data-cwe of {name} is "{finding["cwe"] or ""}". Give the CWE numbers only, the main one first, such as "639 640".')
         if filled_in(finding["found_by"]) and not (finding["found_by"] or "").split():
             problems.append(f'data-found-by of {name} is empty or missing. Name who found it, for example "finder-1 reviewer".')
         if finding["severity"] in ("critical", "high") and "path" not in finding["parts"]:
@@ -1100,6 +1121,121 @@ def entry_count(appendix: dict) -> str:
     return "none" if count == 0 else f"{count} entr{'y' if count == 1 else 'ies'}"
 
 
+
+# =============================================================================
+# Part 6: SARIF for GitHub code scanning
+# =============================================================================
+# One result for each finding. GitHub reads the severity score and the
+# precision from the rule, so a rule is one CWE at one severity. The file holds
+# places and labels, and no line of code.
+
+SARIF_SCHEMA = "https://json.schemastore.org/sarif-2.1.0.json"
+SECURITY_SEVERITY = {"critical": "9.5", "high": "8.0", "medium": "5.5", "low": "2.0"}
+SARIF_LEVEL = {"critical": "error", "high": "error", "medium": "warning", "low": "note", "info": "note"}
+PRECISION_ORDER = ("low", "medium", "high")
+
+
+def build_sarif(page: str) -> dict:
+    parsed = Page()
+    parsed.feed(page)
+    parsed.close()
+    findings = [finding for finding in parsed.findings if FINDING_ID.fullmatch(finding["id"])]
+
+    rules: list[dict] = []
+    rule_index: dict[str, int] = {}
+    results = []
+    for finding in findings:
+        cwes = (finding["cwe"] or "").split()
+        main_cwe = cwes[0] if cwes else "0"
+        rule_id = f"CWE-{main_cwe}-{finding['severity']}"
+        if rule_id not in rule_index:
+            rule_index[rule_id] = len(rules)
+            rules.append(sarif_rule(rule_id, main_cwe, finding["severity"]))
+        rule = rules[rule_index[rule_id]]
+        rule["properties"]["precision"] = min(
+            (rule["properties"].get("precision", "high"), finding["confidence"]),
+            key=lambda value: PRECISION_ORDER.index(value) if value in PRECISION_ORDER else 0,
+        )
+        rule["help"]["markdown"] += f"\n- {finding['id']}: {title(finding)}"
+        results.append(sarif_result(finding, rule_id, rule_index[rule_id], cwes))
+
+    for rule in rules:
+        rule["help"]["markdown"] += (
+            "\n\nThe security-audit report (report.html) explains each finding: the path through the code, "
+            "the steps to reproduce it on a test copy, the fix, and a test to write first."
+        )
+        rule["help"]["text"] = rule["help"]["markdown"].replace("**", "").replace("\n- ", "\n")
+    return {
+        "$schema": SARIF_SCHEMA,
+        "version": "2.1.0",
+        "runs": [{
+            "tool": {"driver": {
+                "name": "security-audit",
+                "informationUri": "https://cwe.mitre.org/",
+                "rules": rules,
+            }},
+            "automationDetails": {"id": "security-audit/"},
+            "results": results,
+        }],
+    }
+
+
+def sarif_rule(rule_id: str, cwe: str, severity: str) -> dict:
+    label = SEVERITY_LABELS.get(severity, severity)
+    properties: dict = {"tags": ["security", f"external/cwe/cwe-{cwe}"]}
+    if severity in SECURITY_SEVERITY:
+        properties["security-severity"] = SECURITY_SEVERITY[severity]
+    return {
+        "id": rule_id,
+        "name": f"Cwe{cwe}{label}",
+        "shortDescription": {"text": f"CWE-{cwe}, severity {label}"},
+        "fullDescription": {"text": f"Findings of the security audit with the main weakness CWE-{cwe} and the severity {label}."},
+        "helpUri": f"https://cwe.mitre.org/data/definitions/{cwe}.html",
+        "help": {"text": "", "markdown": f"**CWE-{cwe}, severity {label}.** Findings of this audit:\n"},
+        "defaultConfiguration": {"level": SARIF_LEVEL.get(severity, "warning")},
+        "properties": properties,
+    }
+
+
+def sarif_result(finding: dict, rule_id: str, index: int, cwes: list[str]) -> dict:
+    places = [sarif_location(file, lines) for file, lines in finding["places"]]
+    places = [place for place in places if place]
+    short = " ".join(finding["short"].split()).removeprefix("In short:").strip()
+    fingerprint = "|".join([rule_id.rsplit("-", 1)[0], *sorted(finding["files"]), title(finding).lower()])
+    result = {
+        "ruleId": rule_id,
+        "ruleIndex": index,
+        "level": SARIF_LEVEL.get(finding["severity"], "warning"),
+        "message": {"text": f"{finding['id']}: {title(finding).rstrip('.')}. {short} See {finding['id']} in report.html."},
+        "locations": places[:1],
+        "partialFingerprints": {"securityAudit/v1": hashlib.sha256(fingerprint.encode()).hexdigest()[:32]},
+        "properties": {
+            "finding": finding["id"], "severity": finding["severity"], "confidence": finding["confidence"],
+            "cwe": [f"CWE-{cwe}" for cwe in cwes], "area": finding["area"], "reach": finding["reach"],
+            "reachLabel": finding["reach_label"], "fixSize": finding["fix_size"],
+            "foundBy": (finding["found_by"] or "").split(),
+            "verifyFirst": "verify" in finding["parts"], "twoViews": "views" in finding["parts"],
+        },
+    }
+    if len(places) > 1:
+        result["relatedLocations"] = [
+            {"id": number, **place, "message": {"text": "Another place of this finding."}}
+            for number, place in enumerate(places[1:], 1)
+        ]
+    return result
+
+
+def sarif_location(file: str, lines: str) -> dict | None:
+    span_of_lines = LINE_RANGE.fullmatch(lines or "")
+    if not span_of_lines or Path(file).is_absolute() or ".." in Path(file).parts:
+        return None
+    first = int(span_of_lines.group(1))
+    return {"physicalLocation": {
+        "artifactLocation": {"uri": file, "uriBaseId": "%SRCROOT%"},
+        "region": {"startLine": first, "endLine": int(span_of_lines.group(2) or first)},
+    }}
+
+
 # =============================================================================
 # The command
 # =============================================================================
@@ -1120,9 +1256,15 @@ def finish(args: argparse.Namespace) -> int:
     else:
         print("Note: the code quotes were not checked. Give --repo to check them.")
 
+    sarif_file = report.with_suffix(".sarif")
     if not problems:
+        if not args.check_only:
+            sarif_file.write_text(json.dumps(build_sarif(page), indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+            print(f"Wrote the findings for GitHub code scanning: {sarif_file}")
         print(f"No problems. The report is ready: {report}")
         return 0
+    if not args.check_only and sarif_file.exists():
+        sarif_file.unlink()  # an old file would not match the page any more
     print(f"{len(problems)} problem(s) in {report}:")
     for number, problem in enumerate(problems, 1):
         print(f"{number}. {problem}")

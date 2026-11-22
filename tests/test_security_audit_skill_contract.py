@@ -552,3 +552,18 @@ def test_the_report_draws_six_pictures_from_labels_that_the_writer_sets() -> Non
         assert "Required for a Critical or High finding" in normalized
         for label in ("`data-areas`", "`data-reach`", "`data-fix-size`", "`data-found-by`", "`data-findings`"):
             assert label in guide, label
+
+
+def test_the_findings_are_exported_as_sarif_and_never_uploaded_by_the_skill() -> None:
+    # joesys, 2026-11-22: export the findings as SARIF, mainly for GitHub code
+    # scanning. An upload publishes a map of the app's weak points, so it is
+    # the user's decision every time.
+    for skill in skills():
+        normalized = compact(skill)
+        assert "report.sarif" in skill
+        assert "The skill never uploads the SARIF file" in normalized
+        assert "code-scanning/sarifs" in skill
+    for guide in both("references/report-guide.md"):
+        assert "`data-cwe`" in guide
+    for folder in (CANONICAL_DIR, CODEX_DIR):
+        assert 'data-cwe="' in read(folder / "references" / "report-template.html")

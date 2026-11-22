@@ -398,8 +398,9 @@ details.appendix > .inner { padding: 0 16px 12px; }
        partner (a partner system or a token holder), admin (an admin of one tenant), or insider (access to servers, logs or the code).
        data-reach-label: the same in the app's own words, for example "One merchant API token".
        data-fix-size: small (a few lines in one place), medium (several places, or one new check), or large (a new flow, or a decision by the team).
-       data-found-by: who found it, separated by spaces, for example "finder-1 finder-2", "reviewer", "writer" or "scanner". -->
-  <details class="finding" id="{{F_ID}}" data-severity="{{F_SEVERITY}}" data-confidence="{{F_CONFIDENCE}}" data-area="{{F_AREA}}" data-reach="{{F_REACH}}" data-reach-label="{{F_REACH_LABEL}}" data-fix-size="{{F_FIX_SIZE}}" data-found-by="{{F_FOUND_BY_ROLES}}">
+       data-found-by: who found it, separated by spaces, for example "finder-1 finder-2", "reviewer", "writer" or "scanner".
+       data-cwe: the CWE numbers of the finding, the main one first, separated by spaces, for example "639 640". -->
+  <details class="finding" id="{{F_ID}}" data-severity="{{F_SEVERITY}}" data-confidence="{{F_CONFIDENCE}}" data-area="{{F_AREA}}" data-reach="{{F_REACH}}" data-reach-label="{{F_REACH_LABEL}}" data-fix-size="{{F_FIX_SIZE}}" data-found-by="{{F_FOUND_BY_ROLES}}" data-cwe="{{F_CWE_IDS}}">
     <summary><span class="num">{{F_ID}}</span><span class="t">{{F_TITLE}}</span><span class="chips"><span class="sev {{F_SEVERITY}}">{{F_SEVERITY_LABEL}}</span><span class="chip">Confidence: {{F_CONFIDENCE}}</span><span class="chip">{{F_EVIDENCE_LABEL}}</span><span class="chip">{{F_FOUND_BY}}</span><!-- GUIDE: optional chips: <span class="chip verify-first">Verify first</span> <span class="chip differ">Two views</span> --></span></summary>
     <div class="body">
       <nav class="jump" aria-label="Parts of this finding" data-gen="jump"></nav>

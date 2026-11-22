@@ -162,10 +162,10 @@ fit the code as it is: use only names that exist in the project.
 In the title line: the severity, the confidence, the kind of evidence, and
 who found it. Add "Verify first" and "Two views" where they apply.
 
-The `details` tag of a finding carries five more labels. The script draws
+The `details` tag of a finding carries six more labels. The script draws
 the pictures of the report from them: the fact strip of the finding, "At a
-glance" and "Where the problems are". The checker reports a label that is
-missing or wrong.
+glance" and "Where the problems are". It also writes `report.sarif` from
+them. The checker reports a label that is missing or wrong.
 
 | Label | Value |
 |---|---|
@@ -174,6 +174,7 @@ missing or wrong.
 | `data-reach-label` | The same in the app's own words, such as "One merchant API token". |
 | `data-fix-size` | `small` (a few lines in one place), `medium` (several places, or one new check), or `large` (a new flow, or a decision by the team). |
 | `data-found-by` | Who found it, separated by spaces: `finder-1`, `finder-2`, `writer`, `reviewer`, `scanner`. Use one more name for each extra finder. |
+| `data-cwe` | The CWE numbers of the finding, the main one first, separated by spaces, such as `639 640`. The first one names the rule in `report.sarif`. |
 
 A finding that is added after the review has started gets the next free
 number, and it stands at the place of its severity. So the numbers need not

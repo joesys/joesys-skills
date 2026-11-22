@@ -270,6 +270,11 @@ every link works, that every finding has every part, that every code quote
 matches the file it names, and that every diff with line numbers applies to
 the code. The checks change no file of the project.
 
+When the page has no problem, the script also writes `report.sarif` next to
+it: the findings in SARIF 2.1.0, the format that GitHub code scanning reads.
+It holds one result for each finding, with its places and labels, and no
+line of code. When the page has a problem, the script writes no SARIF file.
+
 ### Step 8: Review by the other frontier model, and consensus
 
 Read `references/consensus.md` and follow it. In short:
@@ -289,9 +294,21 @@ Read `references/consensus.md` and follow it. In short:
 3. Tell the user, in the conversation: the overall assessment in two
    sentences, the count for each severity, the top findings with one line
    each, where the two frontier models still differ, what was not checked,
-   and the path of the report.
+   and the paths of the report and of `report.sarif`.
 4. Remind the user that the run folder holds a map of the app's weak points.
    It must not be committed, and it should be shared with care.
+5. **The skill never uploads the SARIF file.** An upload to GitHub code
+   scanning shows the findings to everyone who can see the security alerts
+   of the repository. It is the user's decision each time. If the user asks
+   how, give this command, for the audited commit and its branch. It needs
+   GitHub code scanning on that repository; a private repository needs
+   GitHub Code Security.
+
+   ```bash
+   gh api --method POST "repos/<OWNER>/<REPO>/code-scanning/sarifs" \
+     -f commit_sha="<AUDITED_COMMIT>" -f ref="refs/heads/<BRANCH>" \
+     -f sarif="$(gzip -c "$RUN_DIR/report.sarif" | base64 -w0)"
+   ```
 
 Then stop. Do not start to fix. A fix is a new request.
 
