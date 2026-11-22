@@ -28,7 +28,7 @@ FINDING_PARTS = (
     "short", "context", "code", "explanation", "reproduce", "priority", "consequences", "fix", "prevent",
 )
 REPORT_SECTIONS = (
-    "read-first", "assessment", "themes", "today", "triage", "findings",
+    "read-first", "assessment", "themes", "today", "findings",
     "before-fix", "safe", "not-checked", "rejected", "method", "basics",
 )
 
@@ -510,3 +510,45 @@ def test_only_the_writer_reads_the_rules_for_steps_to_reproduce() -> None:
         assert "Use harmless test values that only show that the flaw exists" in compact(guide)
     for verify in both("references/verify.md"):
         assert "You write the steps to reproduce yourself, from the path that you walked" in compact(verify)
+
+
+def test_the_report_has_one_list_of_findings_and_closes_the_parts_at_the_end() -> None:
+    # joesys agreed on 2026-11-22: the list of all findings and the findings
+    # in detail showed the same 46 titles twice. Sections 7 to 10 are
+    # reference material, so they start closed.
+    for folder in (CANONICAL_DIR, CODEX_DIR):
+        template = read(folder / "references" / "report-template.html")
+        assert 'id="triage"' not in template
+        for section in ("safe", "not-checked", "rejected", "method"):
+            assert f'<details class="appendix" id="{section}">' in template, section
+        for slot in ("sevbar", "index", "jump", "pager"):
+            assert f'data-gen="{slot}"' in template, slot
+
+
+def test_severity_colours_are_not_reused_for_good_and_bad_boxes() -> None:
+    # The old "Low" colour was green, and the same green marked good advice.
+    # A severity now uses one ordered warm ramp. Boxes keep their own colours.
+    for folder in (CANONICAL_DIR, CODEX_DIR):
+        style = read(folder / "references" / "report-template.html").split("</style>", 1)[0]
+        for name in ("--crit", "--high:", "--med:", "--low:", "--info:"):
+            assert name not in style, name
+        for rule in (".rule {", ".warn {", ".changes {", ".tok-ok {", ".tok-problem {"):
+            line = next(line for line in style.splitlines() if line.startswith(rule))
+            assert "--s-" not in line, rule
+
+
+def test_the_report_draws_six_pictures_from_labels_that_the_writer_sets() -> None:
+    # joesys chose all six pictures of the mockup on 2026-11-22. The script
+    # draws them, so that every number in a picture matches the findings.
+    for folder in (CANONICAL_DIR, CODEX_DIR):
+        template = read(folder / "references" / "report-template.html")
+        for slot in ("glance", "areas", "chips", "facts"):
+            assert f'data-gen="{slot}"' in template, slot
+        assert 'data-part="path"' in template
+        for label in ("data-area=", "data-reach=", "data-reach-label=", "data-fix-size=", "data-found-by="):
+            assert label in template, label
+    for guide in both("references/report-guide.md"):
+        normalized = compact(guide)
+        assert "Required for a Critical or High finding" in normalized
+        for label in ("`data-areas`", "`data-reach`", "`data-fix-size`", "`data-found-by`", "`data-findings`"):
+            assert label in guide, label
