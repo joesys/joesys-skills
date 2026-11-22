@@ -150,20 +150,16 @@ write the value, a part of it, or its length when the length helps to guess
 it. To show that two values are the same, compare their hashes and say that
 they match. Never quote from a secret file.
 
-## Steps to reproduce
+## The test that proves it
 
-Write them as a check that a developer runs on a local or test copy. The
-steps show the flaw in the code as it is today. A check of the fixed code
-is a test idea, and it belongs under "how to avoid this next time".
+A finder describes one test in words: who calls which entry point, for
+whose record or account, with which harmless test value, and what a safe
+system does there. The test must fail on the code as it is today, and pass
+after the fix. A finder writes no request, no request body and no input
+that is made to get past a check. The proof is the code path.
 
-- Use test accounts and made-up data: `admin@a.test`, `victim@b.test`.
-- Use harmless test values that only show that the flaw exists: a bold tag
-  in a name field, the formula `=1+1` in a CSV cell, the id of a second test
-  record.
-- After a step that shows the flaw, say what the reader will see.
-- End with what a safe system would do at that step.
-- Never give a step against a live system, a real account, or another
-  company's server.
+The writer turns the path and the test into steps for the report, by the
+rules in `report-guide.md`.
 
 ## The fix
 

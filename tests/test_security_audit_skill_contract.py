@@ -296,13 +296,13 @@ def test_a_chain_of_flaws_is_one_finding_rated_as_a_whole() -> None:
         assert "Look for chains" in compact(verify)
 
 
-def test_steps_to_reproduce_show_the_flaw_in_the_present_code() -> None:
+def test_the_finder_test_fails_on_the_present_code() -> None:
     # One finder wrote steps that test the fixed code ("on the patched copy")
     # for every candidate. Such steps do not show the reader the flaw.
     for brief in both("references/finder-brief.md"):
         normalized = compact(brief)
-        assert "show the flaw in the code as it is today, before any fix" in normalized
-        assert "Steps that only test the fixed code do not belong here" in normalized
+        assert "It must fail on the code as it is today, before any fix" in normalized
+        assert "A test that only passes on the fixed code does not belong here" in normalized
 
 
 def test_a_finding_without_a_small_code_change_gets_no_invented_diff() -> None:
@@ -477,3 +477,36 @@ def test_every_prompt_says_that_the_code_is_ours_and_the_goal_is_a_patch() -> No
     for relative in ("references/finder-brief.md", "references/reviewer-brief.md", "references/method.md"):
         for text in both(relative):
             assert "Start the prompt of each helper with the purpose line" in compact(text), relative
+
+
+# --- Runs on two private codebases, 2026-11-21 ---------------------------------
+# Both Codex finder runs (gpt-6.2-sol) and one Codex review round were stopped
+# by the provider's safety filter, a few minutes into the run. None of these
+# prompts had the purpose line yet. joesys agreed on 2026-11-22 to change what
+# the finder is asked to write: a test in words, not request steps.
+
+
+def test_the_finder_writes_a_test_in_words_and_no_request() -> None:
+    for brief in both("references/finder-brief.md"):
+        normalized = compact(brief)
+        assert "### How to check it on a local copy" not in brief
+        assert "### What the attacker gains" not in brief
+        assert "**Write no request.**" in brief
+        assert "The proof is the code path" in normalized
+        # The fix comes first, then the test that fails today, then the severity.
+        order = ["### What is wrong", "### Suggested fix", "### Test that fails today", "### Why this severity"]
+        positions = [brief.index(heading) for heading in order]
+        assert positions == sorted(positions)
+
+
+def test_only_the_writer_reads_the_rules_for_steps_to_reproduce() -> None:
+    # finding-rules.md is appended to the finder prompt, so the rules for
+    # steps, with their sample values, live in the writer's guide.
+    for rules in both("references/finding-rules.md"):
+        assert "## Steps to reproduce" not in rules
+        assert "## The test that proves it" in rules
+    for guide in both("references/report-guide.md"):
+        assert "## Steps to reproduce" in guide
+        assert "Use harmless test values that only show that the flaw exists" in compact(guide)
+    for verify in both("references/verify.md"):
+        assert "You write the steps to reproduce yourself, from the path that you walked" in compact(verify)

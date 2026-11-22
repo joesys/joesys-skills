@@ -159,6 +159,23 @@ both labels, the higher one first, each with the name of its role, such as
 line at the foot of the finding, give the CWE number and name, and who
 found it.
 
+## Steps to reproduce
+
+You write the steps yourself. The finders give only a test in words. Write
+the steps as a check that a developer runs on a local or test copy, from
+the path that you walked in the code. The steps show the flaw in the code
+as it is today. A check of the fixed code is a test idea, and it belongs
+under "how to avoid this next time".
+
+- Use test accounts and made-up data: `admin@a.test`, `victim@b.test`.
+- Use harmless test values that only show that the flaw exists: a bold tag
+  in a name field, the formula `=1+1` in a CSV cell, the id of a second test
+  record.
+- After a step that shows the flaw, say what the reader will see.
+- End with what a safe system would do at that step.
+- Never give a step against a live system, a real account, or another
+  company's server.
+
 ## Before you run the script
 
 Read the page once as the reader would. Check three things that the script

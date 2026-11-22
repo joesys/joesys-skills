@@ -113,6 +113,9 @@ For the report you now have:
 
 - the findings, each with its verdict, labels, places, path, fix, and who
   found it;
+- the finder's test in words for each finding. You write the steps to
+  reproduce yourself, from the path that you walked, by the rules in
+  `report-guide.md`;
 - the rejected candidates, each with who reported it and why it fell;
 - what was checked and found safe, with the code that gives the protection;
 - what was not checked.

@@ -72,7 +72,9 @@ Write everything a person reads in plain English for a reader who uses English a
 6. **A candidate is not a finding** until you have checked it against the
    code. If you are not sure, say so in the report.
 7. **Steps to reproduce are checks, not attacks.** They are written for a
-   local or test copy, with test accounts and harmless test values.
+   local or test copy, with test accounts and harmless test values. Only
+   you write them, from the path that you checked. A finder describes a
+   test in words and writes no request.
 
 ## Workflow
 
