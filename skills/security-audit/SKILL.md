@@ -9,7 +9,9 @@ Find the security flaws of a codebase by reading its source, and teach the
 team how to stop making them. Four models take part. Two finders search
 alone. You, the running model, check every candidate against the code and
 write the report. The other frontier model reviews the report, and the two
-of you settle on a joint consensus.
+of you settle on a joint consensus. When the user asks, a third finder
+joins, and when a provider blocks a run, a manual run or fallback
+reviewers can take its place: see `references/extra-runs.md`.
 
 The result is one HTML file that works on a desktop and on a phone, with no
 script. Its reader is a beginner programmer who uses English as a second
@@ -89,7 +91,8 @@ Find out, without asking the user:
 - The files that git ignores, by name only:
   `git ls-files --others --ignored --exclude-standard --directory`.
 - Which model tools are installed: the two that
-  `shared/model-defaults.md` § Security Audit Roles names.
+  `shared/model-defaults.md` § Security Audit Roles names, and the tool of
+  each extra run that the user asked for.
 - Which scanner tools are installed. Read `references/tools.md`.
 
 **Files that git ignores.** Decide by what a file holds, not by whether git
@@ -112,10 +115,14 @@ Show one notice, then ask one question. The notice says:
 - what will be audited: the scope, the commit, and whether uncommitted
   changes are included;
 - which four models take part and in which role, and that **the source code
-  goes to both model providers**;
+  goes to both model providers**. A third finder or the fallback reviewers
+  send it to one more provider each; name them, and start them only when
+  the user agrees;
 - that the run has no time limit, and a rough time. In the first runs, a
   finder needed 6 to 8 minutes for a folder of 400 lines and about 20
-  minutes for a codebase of 38,000 lines. The reviewer needed 11 minutes
+  minutes for a codebase of 38,000 lines. For a codebase of 600,000 lines,
+  the Claude finder ran about 2 hours, and Grok about 20 minutes and one
+  resume. The reviewer needed 11 minutes
   for a report of six findings, and 4 more for the second round. Your own
   work takes the longest:
   checking every candidate and writing the report. Plan one to three hours
@@ -168,7 +175,8 @@ not type them out.
 
 The four files are `references/finder-brief.md`, `references/method.md`,
 `references/coverage.md` and `references/finding-rules.md`. Both finders get
-the same prompt.
+the same prompt. A third finder gets one more note, as
+`references/extra-runs.md` says.
 
 ### Step 4: Start the two finders
 
@@ -188,6 +196,9 @@ lands in `<RUN_DIR>/<name>.final.md`.
 
 Each finder may start helper agents of its own to split the work. The brief
 tells it so.
+
+When the user asked for a third finder, start it in the same response, as
+`references/extra-runs.md` says.
 
 If one of the two model tools is not installed, start the finder that you
 have, and say in the report which model did not run. Do not put another
@@ -211,7 +222,7 @@ call itself a limit a little above the timeout.
 | `running` | The run is alive and wrote output a short time ago. | Wait again. |
 | `idle` | The run is alive, but it wrote no output for 15 minutes. | Read the last lines of its log. A model that thinks for a long time looks like this. Wait again. After 30 minutes without output, tell the user and let the user decide. |
 | `finished` | The run ended and its answer has the end marker. | Read the answer. |
-| `unusable` | The run ended, but the answer has no end marker. It was cut short, or the model stopped. | Read the detail of the status line. If it names a safety filter or a refusal, see below. Otherwise resume the session once and ask for the whole answer again. |
+| `unusable` | The run ended, but the answer has no end marker. It was cut short, or the model stopped. | Read the detail of the status line. If it names a safety filter or a refusal, see below. Otherwise resume the session once and ask for the whole answer again. A `permission required:` line or the stop reason `cancelled` means that the run stopped at a step that needs approval: see `references/extra-runs.md`. |
 | `crashed` | The run ended with an error, or its process is gone. | Read the detail of the status line. If it names a safety filter or a refusal, see below. Otherwise start it once more under a new name. |
 
 The watch never stops a run. Only `finder_runs.py stop` does, and you use it
@@ -225,12 +236,20 @@ for word, and continue with the runs that you have. A provider may offer an
 access program for authorized security work. Whether to apply for it, or to
 send the same prompt once more, is the user's decision.
 
-**One more try.** For any other `unusable` or `crashed` run, try once more. The
-status line gives the session id. Resume with the commands of
+Expect this for the Codex finder and the Codex reviewer: in a live run on
+2026-11-22, the filter stopped the Codex finder twice, although the prompt
+started with the purpose line. Then offer the user the manual run of
+`references/extra-runs.md`, in the interactive Codex program. The user
+decides, and the user runs it.
+
+**One more try.** For any other `unusable` or `crashed` run, try once more.
+The status line gives the session id. Resume with the commands of
 `shared/model-defaults.md`, under a new run name such as `finder-1-b`, and
-with every read-only flag again. The resume message starts with the
-purpose line. If the second try fails too, continue with the finder that
-you have. Say in the report which model failed and why.
+with every read-only flag again. Every retry needs a new name, also a manual
+one: the launcher refuses a used name and names the next free one. The
+resume message starts with the purpose line. If the second try fails too,
+continue with the finder that you have. Say in the report which model failed
+and why.
 
 **While you wait**, do two things that do not need the finders:
 
@@ -286,6 +305,8 @@ Read `references/consensus.md` and follow it. In short:
 - It checks every finding against the code and answers finding by finding.
 - You and the reviewer exchange at most two rounds. What is still open after
   the second round stays open: the report prints both views.
+- If the Codex reviewer is blocked, the user chooses: the manual review, or
+  the fallback pair of reviewers. Both are in `references/extra-runs.md`.
 
 ### Step 9: Finish
 
@@ -319,7 +340,8 @@ Then stop. Do not start to fix. A fix is a new request.
 | One finder fails twice | Continue with one finder. Name the model that failed in the report header, under "What was not checked", and under "How this report was made". |
 | Both finders fail | Stop and tell the user. Do not write a report from your own search alone and call it an audit. |
 | The reviewer fails twice | Deliver the report with a clear line at the top: no second model reviewed it. |
-| A model refuses the task, or a provider's safety filter stops it | Show the message to the user, word for word. Do not retry by yourself, and do not reword the task to get around it. Continue with the other runs, and name the model in the report. |
+| A model refuses the task, or a provider's safety filter stops it | Show the message to the user, word for word. Do not retry by yourself, and do not reword the task to get around it. Continue with the other runs, and name the model in the report. For a Codex run, offer the manual run or the fallback reviewers of `references/extra-runs.md`. |
+| An answer lacks parts of the brief's structure | Use its candidates. Say which parts it lacks in "How this report was made", as `references/verify.md` says. |
 | The project is not a git repository | Run without the commit. Use the folder and the date in the report. |
 
 ## Credits

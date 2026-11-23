@@ -14,6 +14,26 @@ list and its not-checked list. Turn each scanner result into a candidate.
 Read only the place, the rule name and the commit of a secret scanner's
 result. Never read or copy the secret value.
 
+**An answer in another format.** A manual answer, or a model that wrote in
+its own way, may lack parts of the brief's structure: the code map, the
+"checked and found safe" list, the "not checked" list, or the end marker.
+Use its candidates as from any finder, and check each one the same way.
+Then:
+
+- Write down which parts are missing.
+- Without the end marker, you cannot tell whether the answer is complete.
+  Without the "not checked" list, you cannot tell what the finder skipped.
+  So do not count a class that it did not mention as covered. Compare its
+  candidates with the coverage list yourself, as part 7 says.
+- In "How this report was made", say how this answer was made (for
+  example, by the user in the interactive Codex program) and which parts it
+  lacked.
+
+**A finder's word on secrets does not replace a scan.** In the live run of
+2026-11-22, one finder wrote that the history held no secrets, and the
+secret scanner found a key pair in it. When the secret scanner is
+installed, run it, whatever the finders say.
+
 ## 2. Merge
 
 Two candidates are one flaw when they name the same place and the same

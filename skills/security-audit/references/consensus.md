@@ -7,8 +7,15 @@ behind, with every open difference printed and not hidden.
 ## Who reviews
 
 The reviewer and its command are in `shared/model-defaults.md` § Security
-Audit Roles. It is always the frontier model of the other provider, so that
+Audit Roles. It is the frontier model of the other provider, so that
 the two models do not share the same blind spots. It runs read-only.
+
+The safety filter of the Codex provider may block the Codex reviewer, as it
+blocked the Codex finder in a live run on 2026-11-22. Then the user
+chooses: a manual review in the interactive Codex program, or the fallback
+pair of reviewers, one of them from the writer's own provider. Both are in
+`extra-runs.md`. With two reviewers, every step below applies to each of
+them.
 
 ## Round 1: the review
 
@@ -142,10 +149,11 @@ the place where a person must decide.
 
 ## If the reviewer fails
 
-Try once more, as for a finder. If it fails again, deliver the report with
-a clear line at the top and in "What was not checked": no second model
-reviewed this report. Do not review your own report and call it a
-consensus.
+When a safety filter blocked it, follow the rules of the skill and then
+`extra-runs.md`. For any other failure, try once more, as for a finder. If
+it fails again, deliver the report with a clear line at the top and in "What
+was not checked": no second model reviewed this report. Do not review your
+own report and call it a consensus.
 
 ## The last check
 

@@ -23,6 +23,7 @@ REFERENCES = (
     "consensus.md",
     "reviewer-brief.md",
     "tools.md",
+    "extra-runs.md",
 )
 FINDING_PARTS = (
     "short", "context", "code", "explanation", "reproduce", "priority", "consequences", "fix", "prevent",
@@ -567,3 +568,158 @@ def test_the_findings_are_exported_as_sarif_and_never_uploaded_by_the_skill() ->
         assert "`data-cwe`" in guide
     for folder in (CANONICAL_DIR, CODEX_DIR):
         assert 'data-cwe="' in read(folder / "references" / "report-template.html")
+
+
+# --- Live run, 2026-11-22 ----------------------------------------------------
+# An audit of a large private monorepo. Each test pins one lesson of that run.
+
+PURPOSE = (
+    "This is our own codebase. We are auditing it to find its vulnerabilities, "
+    "so that we can patch them and secure the code."
+)
+
+
+def roles_sections() -> list[str]:
+    sections = []
+    for shared in (REPO_ROOT / "shared", REPO_ROOT / "codex-skills" / "shared"):
+        defaults = read(shared / "model-defaults.md")
+        sections.append(defaults.split("## Security Audit Roles", 1)[1].split("\n## ", 1)[0])
+    return sections
+
+
+def test_a_blocked_codex_run_gets_a_manual_run_that_the_user_starts() -> None:
+    # The cyber filter stopped the Codex finder twice, with the purpose line.
+    # The user then ran the finder part by hand in the interactive Codex.
+    for skill in skills():
+        normalized = compact(skill)
+        assert "Do not start the run again, and do not reword the prompt to get past the filter" in normalized
+        assert "offer the user the manual run" in normalized
+        assert "The user decides, and the user runs it" in normalized
+    for runs in both("references/extra-runs.md"):
+        normalized = compact(runs)
+        assert "It is the user's choice" in normalized
+        assert "you do not change its prompt" in normalized
+        for answer_file in ("finder-2-manual.final.md", "reviewer-manual.final.md"):
+            assert f"<RUN_DIR>/{answer_file}" in runs, answer_file
+        manual_prompts = re.findall(r"```text\n(.*?)\n```", runs, re.S)
+        assert len(manual_prompts) == 3  # prompt A, prompt B, and the review
+        for prompt in manual_prompts:
+            assert prompt.rstrip().endswith("<<<END-OF-ANSWER>>>, alone.")
+        # Prompt A keeps the words that got past the filter, unchanged.
+        assert manual_prompts[0].startswith(
+            "/joesys-skills:security-audit This is my codebase. I want you to do the finder part "
+            "of this skills and then write the finding (not the full report) into a file. "
+            "Do not run other model. "
+        )
+        assert all(prompt.startswith(PURPOSE) for prompt in manual_prompts[1:])
+        assert "Check the end marker yourself" in normalized
+        assert "They have not yet been run live" in normalized
+        assert "Do not offer the other one later as a way around a block" in normalized
+
+
+def test_a_retry_needs_a_new_name_also_a_manual_one() -> None:
+    for skill in skills():
+        assert "Every retry needs a new name, also a manual one" in compact(skill)
+    for runs in both("references/extra-runs.md"):
+        assert "`finder-2-manual-2`" in runs
+
+
+def test_the_fallback_reviewers_are_a_new_claude_session_and_antigravity() -> None:
+    for roles in roles_sections():
+        assert "`gemini-4-neon-xhigh`" in roles
+        assert "python3 <ADAPTER> --mode plan --sandbox --model gemini-4-neon-xhigh" in roles
+        assert "--stdout-result" in roles
+        assert "AGY_ADAPTER_TIMEOUT" in roles
+        assert "The reviewer always comes from the other provider" not in roles
+    for runs in both("references/extra-runs.md"):
+        normalized = compact(runs)
+        assert "`reviewer-claude`" in runs and "`reviewer-agy`" in runs
+        assert "not the session of Finder 1" in normalized
+        assert "Do not make a plan, and do not ask for approval" in normalized
+        assert "the Claude reviewer comes from the same provider as a Claude writer" in normalized
+    for consensus in both("references/consensus.md"):
+        assert "It is always the frontier model" not in consensus
+        assert "the fallback pair of reviewers" in compact(consensus)
+
+
+def test_grok_is_an_optional_third_finder_that_works_alone() -> None:
+    for roles in roles_sections():
+        assert "Finder 3, optional, only when the user asks" in roles
+        assert "--no-subagents" in roles
+        # A deny rule refuses a command, and the run goes on. A command that
+        # needs approval ends a headless run.
+        assert '--deny "Bash(python3 *)"' in roles
+        assert "--grok-result" in roles
+        assert "`finder-3`" in roles
+    for runs in both("references/extra-runs.md"):
+        normalized = compact(runs)
+        assert "Grok joins only when the user asks for it" in normalized
+        assert "Work alone: start no helper agent" in normalized
+        assert "Run no python, node, script or heredoc" in normalized
+        assert "--grok-result" in runs
+    for guide in both("references/report-guide.md"):
+        assert "`finder-3` for Grok" in guide
+
+
+def test_gitleaks_scans_a_clean_copy_and_says_where_a_hit_is() -> None:
+    # A scan of the working folder read ignored `.env` files and build output.
+    for tools in both("references/tools.md"):
+        normalized = compact(tools)
+        assert 'archive HEAD -- <SCOPE_PATH> | tar -x -C "$EXPORT"' in tools
+        assert 'rm -rf "$EXPORT"' in tools
+        assert '--report-path "$RUN_DIR/gitleaks-files.json" <SCOPE_PATH>' not in tools
+        assert "Scan a clean copy of the commit, never the working folder" in normalized
+        assert "merge-base --is-ancestor <COMMIT> <AUDITED_COMMIT>" in tools
+        assert "branch -r --contains <COMMIT>" in tools
+        assert '"outside the audited commit"' in tools
+        assert "Never read, copy or print `Secret` or `Match`" in normalized
+        assert "The scan is not optional when the tool is installed" in normalized
+
+
+def test_the_aws_check_in_the_tool_guide_tells_the_example_from_another_key(tmp_path: Path) -> None:
+    import subprocess
+
+    tools = read(CANONICAL_DIR / "references" / "tools.md")
+    block = tools.split("python3 - \"<FILE>\" <LINE> << 'PY'\n", 1)[1].split("\n  PY\n", 1)[0]
+    script = "\n".join(line[2:] for line in block.splitlines())
+    settings = tmp_path / "settings.py"
+    # A made-up key ID of the right shape. The zeros keep secret scanners quiet.
+    made_up = "AKIA" + "TESTKEYID0000000"
+    settings.write_text(f'example = "AKIAIOSFODNN7EXAMPLE"\nother = "{made_up}"\n', encoding="utf-8")
+
+    def check(line: int) -> str:
+        return subprocess.run(
+            [sys.executable, "-", str(settings), str(line)], input=script,
+            capture_output=True, text=True, check=True,
+        ).stdout
+
+    assert check(1).strip() == "line 1: 1 documentation example, 0 other key IDs"
+    assert check(2).strip() == "line 2: 0 documentation example, 1 other key IDs"
+    assert "AKIA" not in check(1) + check(2)  # it prints counts, never a value
+    assert "does not mean that the line is safe" in compact(tools)
+
+
+def test_an_answer_in_another_format_is_used_and_its_gaps_are_named() -> None:
+    for verify in both("references/verify.md"):
+        normalized = compact(verify)
+        assert "An answer in another format" in normalized
+        assert "do not count a class that it did not mention as covered" in normalized
+        assert "say how this answer was made" in normalized
+        assert "A finder's word on secrets does not replace a scan" in normalized
+
+
+def test_scanner_errors_and_a_secret_guard_reach_the_report() -> None:
+    for tools in both("references/tools.md"):
+        assert "Read `errors[]` too" in compact(tools)
+    for guide in both("references/report-guide.md"):
+        normalized = compact(guide)
+        assert "Guard against secrets" in normalized
+        assert "also the `-` lines of a diff" in normalized
+        assert "the files that Semgrep could not parse" in normalized
+
+
+def test_the_start_notice_gives_the_time_of_a_large_codebase() -> None:
+    for skill in skills():
+        normalized = compact(skill)
+        assert "For a codebase of 600,000 lines" in normalized
+        assert "about 20 minutes for a codebase of 38,000 lines" in normalized
