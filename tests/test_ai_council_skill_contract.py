@@ -138,4 +138,4 @@ def test_readme_interfaces_and_defaults_name_the_fourth_member() -> None:
     assert "Grok resume has no caller" not in interfaces
 
     defaults = read(REPO_ROOT / "shared" / "model-defaults.md")
-    assert "| xAI (Grok CLI) | *(managed by grok)* | `/grok`, `/ai-council` |" in defaults
+    assert "| xAI (Grok CLI) | *(managed by grok)* | `/grok`, `/ai-council`" in defaults

@@ -10,14 +10,14 @@ Single source of truth for default model identifiers and CLI flags used across s
 
 | Provider | Model ID | Used In |
 |---|---|---|
-| OpenAI (Codex CLI) | `gpt-6.2-sol` | `$codex`, `$ai-council`, `$codereview`, `$architect`, `$security-audit` (finder) |
-| OpenAI (Codex CLI) | `gpt-6.2-astra` | `$security-audit` (reviewer) |
-| Google (Antigravity CLI) | *(managed by agy)* | `$antigravity`, `$ai-council`, `$codereview`, `$architect` |
-| Google (Antigravity CLI) | `gemini-4-neon-xhigh` | `$security-audit` (fallback reviewer) |
-| Anthropic (Claude CLI) | `fable` | `$claude`, `$ai-council` (Claude leg), `$security-audit` (reviewer) |
-| xAI (Grok CLI) | *(managed by grok)* | `$grok`, `$ai-council` |
+| OpenAI (Codex CLI) | `gpt-6.2-astra` | `$codex`, `$ai-council`, `$codereview`, `$architect`, `$security-audit` (reviewer) |
+| OpenAI (Codex CLI) | `gpt-6.2-sol` | `$security-audit` (finder 2) |
+| Google (Antigravity CLI) | *(managed by agy; latest neon, currently `gemini-4-neon-xhigh`)* | `$antigravity`, `$ai-council`, `$codereview`, `$architect`, `$security-audit` (finder 4, fallback reviewer) |
+| Anthropic (Claude CLI) | `fable` | `$claude`, `$ai-council` (Claude leg), `$architect`, `$security-audit` (reviewer) |
+| Anthropic (Claude CLI) | `opus` | `$security-audit` (finder 1, fallback reviewer) |
+| xAI (Grok CLI) | *(managed by grok)* | `$grok`, `$ai-council`, `$security-audit` (finder 3) |
 
-`fable` is a name that the Claude CLI resolves to its newest model of that line. The Codex CLI has no such names, so its identifiers are updated here by hand. The Codex identifiers were checked against the model list of the Codex CLI and with a live call on 2026-11-21.
+`fable` and `opus` are names that the Claude CLI resolves to its newest model of each line. The Codex CLI has no such names, so its identifiers are updated here by hand. The Codex identifiers were checked against the model list of the Codex CLI and with a live call on 2026-11-21.
 
 ## Review Model Routing
 
@@ -26,7 +26,7 @@ this registry:
 
 | Model identifier | Provider | Command source |
 |---|---|---|
-| `gpt-6.2-sol` | Codex CLI | Codex template below |
+| `gpt-6.2-astra` | Codex CLI | Codex template below |
 | `fable` | Claude CLI | Claude template below |
 
 A known unique bare identifier routes to its registered provider. Custom or
@@ -40,13 +40,13 @@ unavailable.
 ### Codex
 
 ```bash
-codex exec --model gpt-6.2-sol -c model_reasoning_effort="xhigh" \
+codex exec --model gpt-6.2-astra -c model_reasoning_effort="xhigh" \
   --sandbox read-only --skip-git-repo-check 2>/dev/null
 ```
 
 | Flag | Purpose |
 |---|---|
-| `--model gpt-6.2-sol` | Model selection |
+| `--model gpt-6.2-astra` | Model selection |
 | `-c model_reasoning_effort="xhigh"` | Maximum reasoning depth |
 | `--sandbox read-only` | Safety: no file writes |
 | `--skip-git-repo-check` | Required for piped input |
@@ -56,10 +56,10 @@ codex exec --model gpt-6.2-sol -c model_reasoning_effort="xhigh" \
 
 ```bash
 # by session id (preferred)
-codex exec resume <SESSION_ID> --model gpt-6.2-sol -c model_reasoning_effort="xhigh" \
+codex exec resume <SESSION_ID> --model gpt-6.2-astra -c model_reasoning_effort="xhigh" \
   -c sandbox_mode="read-only" --skip-git-repo-check "<PROMPT>" 2>/dev/null
 # most recent session
-codex exec resume --last --model gpt-6.2-sol -c model_reasoning_effort="xhigh" \
+codex exec resume --last --model gpt-6.2-astra -c model_reasoning_effort="xhigh" \
   -c sandbox_mode="read-only" --skip-git-repo-check "<PROMPT>" 2>/dev/null
 ```
 
@@ -99,9 +99,9 @@ ask for approval" prevents this. In a live test on 2026-11-22 (agy 1.5.14), a
 short question without that sentence got a plan, and the same question with it
 got the answer.
 
-The template uses `agy`'s own default model. Add `--model <ID>` only when a
-skill or the user names a model; `agy models` lists the IDs. The adapter
-forwards the flag to `agy`.
+The template uses `agy`'s own default model (latest neon). Add `--model <ID>`
+only when a skill or the user names a specific model; `agy models` lists the
+IDs. The adapter forwards the flag to `agy`.
 
 The prompt is delivered on **stdin** — the adapter forwards its own args to `agy`
 and appends `--input-format stream-json --output-format stream-json`, so callers
@@ -206,23 +206,24 @@ Do not pin a same-platform subagent to `fable`, `opus`, a GPT model, or any othe
 
 ## Security Audit Roles
 
-`$security-audit` uses four models. The skill names the roles. This table names the models.
+`$security-audit` uses four finders, a host writer, and a reviewer across four providers. The skill names the roles. This table names the models.
 
 | Role | Tool | Identifier | Reasoning effort |
 |---|---|---|---|
 | Finder 1 | Claude CLI | `opus` | high |
 | Finder 2 | Codex CLI | `gpt-6.2-sol` | xhigh |
-| Finder 3, optional, only when the user asks | Grok CLI | the user's own Grok default | the user's own Grok default |
+| Finder 3 | Grok CLI | the user's own Grok default | the user's own Grok default |
+| Finder 4 | Antigravity CLI | `gemini-4-neon-xhigh` (or managed by `agy`) | xhigh (in identifier, or `agy` default) |
 | Writer | the host | the model that runs the skill, usually `fable` or `gpt-6.2-astra` | as the user set it |
 | Reviewer, when the writer is a Claude model | Codex CLI | `gpt-6.2-astra` | xhigh |
 | Reviewer, when the writer is a GPT model | Claude CLI | `fable` | high |
 | Fallback reviewers, when the Codex reviewer is blocked and the user chooses them | Claude CLI and Antigravity CLI | `opus` and `gemini-4-neon-xhigh` | high, and the level in the identifier |
 
-`opus` and `fable` are names that the Claude CLI resolves to its newest model of that line. Finder 1 and the fallback Claude reviewer are the only places in this collection that ask for `opus`: the default for delegation to Claude stays `fable`.
+`opus` and `fable` are names that the Claude CLI resolves to its newest model of each line. Finder 1 and the fallback Claude reviewer are the only places in this collection that ask for `opus`: the default for delegation to Claude stays `fable`.
 
-The reviewer comes from the other provider. When the writer is neither a Claude model nor a GPT model, use the Codex reviewer. The one exception is the fallback pair: when the Codex reviewer is blocked, a fresh Claude session reviews, and Antigravity, from a third provider, reviews beside it. The report says that the Claude reviewer shares a provider with a Claude writer. "Neon" was resolved to `gemini-4-neon-xhigh`, the highest level of that model in `agy models` on 2026-11-22. `gemini-pro-orchestrator-neon` is a different model.
+The reviewer comes from the other provider. When the writer is neither a Claude model nor a GPT model (for example, Antigravity), use the Codex reviewer (or the Claude reviewer if Codex is blocked). The one exception is the fallback pair: when the Codex reviewer is blocked, a fresh Claude session reviews, and Antigravity, from a third provider, reviews beside it. The report says that the Claude reviewer shares a provider with a Claude writer. "Neon" was resolved to `gemini-4-neon-xhigh`, the highest level of that model in `agy models` on 2026-11-22. `gemini-pro-orchestrator-neon` is a different model. For Finder 4, you may omit `--model` to let `agy` manage its latest neon default.
 
-In the report, `data-found-by` names each finder by its role: `finder-1`, `finder-2`, and `finder-3` for Grok. The run names follow the same pattern.
+In the report, `data-found-by` names each finder by its role: `finder-1` (Claude), `finder-2` (Codex), `finder-3` (Grok), and `finder-4` (Antigravity). The run names follow the same pattern.
 
 Every role runs as its own session of a command-line tool, read-only, through `../security-audit/helpers/finder_runs.py`. That launcher sends the prompt on stdin and has no time limit. So these commands have no prompt argument and no `2>/dev/null`: the launcher keeps stdout and stderr in files.
 
@@ -241,7 +242,8 @@ grok --permission-mode plan --no-subagents \
   --deny "Bash(python *)" --deny "Bash(python3 *)" --deny "Bash(node *)" \
   --output-format streaming-json --session-id <NEW_UUID> --prompt-file <PROMPT_FILE>
 
-# The fallback Antigravity reviewer. Start it with --stdout-result.
+# Finder 4 and the fallback Antigravity reviewer. Start it with --stdout-result.
+# Omit --model to let agy manage its latest neon default.
 python3 <ADAPTER> --mode plan --sandbox --model gemini-4-neon-xhigh
 ```
 

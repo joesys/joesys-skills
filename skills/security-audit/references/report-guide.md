@@ -202,7 +202,7 @@ them. The checker reports a label that is missing or wrong.
 | `data-reach` | The lowest access that is enough to reach the flaw: `anyone` (no login), `user` (a logged-in user), `partner` (a partner system or a token holder), `admin` (an admin of one tenant), or `insider` (access to servers, logs or the code). These are the attackers of the threat model in `method.md`. |
 | `data-reach-label` | The same in the app's own words, such as "One merchant API token". |
 | `data-fix-size` | `small` (a few lines in one place), `medium` (several places, or one new check), or `large` (a new flow, or a decision by the team). |
-| `data-found-by` | Who found it, separated by spaces: `finder-1`, `finder-2`, `writer`, `reviewer`, `scanner`. Use one more name for each extra finder: `finder-3` for Grok. |
+| `data-found-by` | Who found it, separated by spaces: `finder-1` (Claude), `finder-2` (Codex), `finder-3` (Grok), `finder-4` (Antigravity), `writer`, `reviewer`, `scanner`. |
 | `data-cwe` | The CWE numbers of the finding, the main one first, separated by spaces, such as `639 640`. The first one names the rule in `report.sarif`. |
 
 A finding that is added after the review has started gets the next free

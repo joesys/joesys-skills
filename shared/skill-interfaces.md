@@ -315,12 +315,13 @@ interfaces, update all callers listed below.
 - Audits a codebase for security flaws by reading its source. It sends no
   request to a running app, changes no file in the project, applies no fix,
   and never commits or pushes.
-- Uses four models in the roles of `shared/model-defaults.md` § Security
-  Audit Roles: two finders that work alone, the host as the writer that
-  checks every candidate against the code, and a reviewer from the other
-  provider. Writer and reviewer exchange at most two rounds. What is still
-  open is printed as two views. An optional third finder (Grok), a manual
-  run in the interactive Codex program, and two fallback reviewers are
+- Uses the roles of `shared/model-defaults.md` § Security Audit Roles across
+  four providers: four finders that work alone (Claude, Codex, Grok,
+  Antigravity), the host as the writer that checks every candidate against
+  the code, and a reviewer from the other provider. Writer and reviewer
+  exchange at most two rounds. What is still open is printed as two views.
+  Per-finder prompt rules for Finder 3 (Grok) and Finder 4 (Antigravity), a
+  manual run in the interactive Codex program, and two fallback reviewers are
   described in `skills/security-audit/references/extra-runs.md`.
 - Runs the other models in the background with no time limit, through
   `skills/security-audit/helpers/finder_runs.py`, which also reports

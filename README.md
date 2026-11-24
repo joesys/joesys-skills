@@ -70,7 +70,7 @@ codex plugin marketplace upgrade
 | Review | [`human-review-guide`](#human-review-guide) | Build a decision-focused human reading order |
 | Review | [`codebase-audit`](#codebase-audit) | Grade whole-codebase quality and velocity |
 | Review | [`blast-radius`](#blast-radius) | Find what a change could break elsewhere, and prove the one fact that makes it safe |
-| Review | [`security-audit`](#security-audit) | Find security flaws by reading the source, with four models, and teach the fix in one HTML report |
+| Review | [`security-audit`](#security-audit) | Find security flaws by reading the source, with four finders and a frontier reviewer, and teach the fix in one HTML report |
 | Verify | [`create-verification-skill`](#create-verification-skill) | Generate a project skill that proves features in the running app |
 | Verify | [`maintain-verification-skill`](#maintain-verification-skill) | Bring a `verify-<app>` skill and its feature map back in line with the app |
 | Verify | [`create-formal-verification-skill`](#create-formal-verification-skill) | Check one promise of the code for every case in a stated scope |
@@ -143,11 +143,11 @@ supports latest or named-session resume.
 Delegate code analysis, refactoring, or automated editing to OpenAI's Codex
 CLI. The skill captures the session identifier when available, evaluates the
 response, and supports reliable session resume. The current default model is
-`gpt-6.2-sol`.
+`gpt-6.2-astra`.
 
 ```text
 /codex "explain the auth flow in this repo"
-/codex --model gpt-6.2-sol "analyze this function"
+/codex --model gpt-6.2-astra "analyze this function"
 /codex --sandbox workspace-write "fix the lint errors"
 /codex resume "follow up on the latest session"
 /codex resume <SESSION_ID> "continue this specific session"
@@ -315,12 +315,12 @@ Adapted from pstack by Lauren Tan (MIT License).
 ### security-audit
 
 Find the security flaws of a codebase by reading its source, and teach the
-team how to stop making them. Four models take part. Two finders search
-alone, and each may start helper agents of its own. The running model
-checks every candidate against the code and writes the report. The other
-frontier model reviews the report, and the two settle on a joint consensus
-in at most two rounds. Where they still differ, the report prints both
-views.
+team how to stop making them. Four finders search alone (Claude, Codex, Grok,
+and Antigravity), and Finders 1, 2, and 4 may start helper agents of their
+own. The running model checks every candidate against the code and writes the
+report. The other frontier model reviews the report, and the two settle on a
+joint consensus in at most two rounds. Where they still differ, the report
+prints both views.
 
 ```text
 /security-audit                          # The whole repository
@@ -350,10 +350,9 @@ can refuse the task. The skill then shows the message and does not retry by
 itself. It continues with the other models, and the report names the model
 that is missing. When the filter blocks a Codex run, the user may run that
 part by hand in the interactive Codex program, or, for the review, choose
-two fallback reviewers (a new Claude session and Antigravity). When the user
-asks, Grok joins as a third finder. When both finders fail, the skill stops
-and writes no report. Three scanner tools (Semgrep, Gitleaks, OSV-Scanner) are
-used when they are installed. The skill shows how to install them and never
+two fallback reviewers (a new Claude session and Antigravity). When every
+finder fails, the skill stops and writes no report. Three scanner tools
+(Semgrep, Gitleaks, OSV-Scanner) are used when they are installed. The skill shows how to install them and never
 installs one. The report folder `.security-audit/` is kept out of git,
 because it shows where the app is weak.
 

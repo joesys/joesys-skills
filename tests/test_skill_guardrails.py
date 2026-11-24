@@ -242,16 +242,34 @@ def test_reviewers_read_the_reviewed_version_not_whatever_is_on_disk() -> None:
 
 
 def test_claude_delegation_defaults_to_fable() -> None:
-    # A Fable session that delegates to `opus` hands the work to a weaker
-    # model. One default serves `/claude`, the council's Claude leg and the
-    # review routing, so no skill has to swap the model in the template.
+    # General Claude delegation (`/claude`, `/ai-council`, `/architect`,
+    # `/security-audit` reviewer, and review routing) defaults to `fable`.
+    # `opus` is used only for `/security-audit` (finder 1, fallback reviewer).
     defaults = read("shared/model-defaults.md")
     assert "claude --model fable --effort high --permission-mode plan" in defaults
     assert "--model opus" not in defaults
-    assert "| Anthropic (Claude CLI) | `opus` |" not in defaults
+    assert (
+        "| Anthropic (Claude CLI) | `fable` | `/claude`, `/ai-council` (Claude leg), `/architect`, `/security-audit` (reviewer) |"
+        in defaults
+    )
+    assert (
+        "| Anthropic (Claude CLI) | `opus` | `/security-audit` (finder 1, fallback reviewer) |"
+        in defaults
+    )
 
     council = read("skills/ai-council/SKILL.md")
     assert "--model opus" not in council
+
+
+def test_codex_defaults_use_astra_for_general_skills_and_sol_for_security_audit_finder() -> None:
+    defaults = read("shared/model-defaults.md")
+    assert (
+        "| OpenAI (Codex CLI) | `gpt-6.2-astra` | `/codex`, `/ai-council`, `/codereview`, `/architect`, `/security-audit` (reviewer) |"
+        in defaults
+    )
+    assert "| OpenAI (Codex CLI) | `gpt-6.2-sol` | `/security-audit` (finder 2) |" in defaults
+    assert 'codex exec --model gpt-6.2-astra -c model_reasoning_effort="xhigh"' in defaults
+    assert "| `gpt-6.2-astra` | Codex CLI | Codex template below |" in defaults
 
 
 def grok_section_lines() -> list[str]:
