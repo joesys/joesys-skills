@@ -9,11 +9,13 @@ Early in the run, read these files if they exist and treat them as guidance, not
 - `.codex/skill-context/preferences.md` — shared preferences for every skill
 - `.codex/skill-context/<skill-name>.md` — preferences for one skill
 
+In Antigravity, check `.agents/skill-context/` first and fall back to the paths above if a project already keeps preferences there.
+
 If a file is missing, use sensible defaults and say nothing about it. Never interview the user about preferences. If the current task needs an answer only the user has (for example, which folder holds screenshots), ask that one question, and offer to save the answer to the skill's file so you do not ask again.
 
 Pass subagents only the preferences that matter to their job. A preference never removes a critical finding: "concise" does not mean "hide the security bug". If a preference clearly contradicts what you see (it says "solo", but git shows 12 contributors), mention it once.
 
-These files are personal. Suggest adding `.codex/skill-context/` to `.gitignore` unless the team wants shared preferences.
+These files are personal. Suggest adding `.codex/skill-context/` (or `.agents/skill-context/` in Antigravity) to `.gitignore` unless the team wants shared preferences.
 
 ## File format
 

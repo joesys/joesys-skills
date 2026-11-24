@@ -90,7 +90,7 @@ Phase 0 must produce:
    Engine: {if detected}
    ```
 
-   Infer the domain from the README, manifests, key imports, and directory names (WebSearch for comparable projects if available). State the inferred domain so the user can challenge it.
+   Infer the domain from the README, manifests, key imports, and directory names (search the web for comparable projects if available). State the inferred domain so the user can challenge it.
 4. **The tool classification.** Classify each static analysis tool as `available`, `configured-but-unavailable`, or `absent`, and build gap recommendations for absent tools. With `--static-only`, still detect and classify tools, but do not run them.
 5. **The tier.** Count source files. The repo is `large` tier above **1000 source files**, unless `.claude/skill-context/codebase-audit.md` sets `large_tier_threshold_files`. Large tier turns on § Large Repo Decomposition and § Heat-Map-Driven Deep Dive. Below the threshold, analyze the whole repo at once.
 6. **Python check.** The helper scripts need Python 3. If it is missing, warn and offer qualitative-only mode.
@@ -99,7 +99,7 @@ Phase 0 must produce:
 
 ## Phase 1 — Parallel Collection
 
-The collection agents are independent; run them in parallel via the Agent tool. Read `references/agent-prompts.md` for each prompt and apply its path-substitution rule before dispatch.
+The collection agents are independent; run them in parallel as subagents. Read `references/agent-prompts.md` for each prompt and apply its path-substitution rule before dispatch.
 
 For same-platform subagents, do not pass a model or reasoning-effort override. Let every subagent inherit the parent model and reasoning effort unless the user explicitly asks for an override.
 
@@ -314,7 +314,7 @@ When something fails, continue with what is left and label the gap with these ex
 | Tool configured but binary not found | Classify as `configured-but-unavailable` and grade as absent. Note the config in the analysis. |
 | Tool fails, times out, or gives unparseable output | Skip it, note the failure, and continue with the other tools. |
 | No static analysis tools detected | Include gap recommendations. Grade the criteria without tool input. |
-| No internet (WebSearch unavailable) | Use cached benchmarks. Note "cached benchmarks only" in the methodology. |
+| No internet (web search unavailable) | Use cached benchmarks. Note "cached benchmarks only" in the methodology. |
 | Unknown language | Use general benchmarks and the extension-count fallback. |
 | `.claude/audit.yaml` is malformed | Report the parse error and use auto-detection. |
 | No source files found | "No source files found in detected paths. Check project structure." |

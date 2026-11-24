@@ -67,9 +67,10 @@ pass that did not drive every feature cannot be `clean`.
 ### Step 1: Find the target
 
 Find the project-local skill whose body has launch and drive sections and a
-feature map. It is usually in `.agents/skills/verify-*/`. If there are
-several, ask which one. If there is none, stop and point to
-`$create-verification-skill`. Do not invent a target.
+feature map. It is usually in `.agents/skills/verify-*/` (or
+`.agents/skills/verify-*/` in Antigravity). If there are several, ask which one.
+If there is none, stop and point to `$create-verification-skill`. Do not invent
+a target.
 
 ### Step 2: Tidy the index
 

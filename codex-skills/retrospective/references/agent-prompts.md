@@ -54,7 +54,7 @@ You are reading AI coding-session transcripts to find moments of human correctio
 Find and read the session files for this project, using the section for your log host below. Each line is one JSON object. Read only the human and assistant messages; tool calls, tool output, reasoning, and bookkeeping lines are bulk data that hides the thinking.
 
 ## Log Host
-<SESSION_LOG_HOST: "Claude Code" or "Codex". Read that host's logs. Read both only if the host says so, and label each finding with its source.>
+<SESSION_LOG_HOST: "Claude Code", "Codex", or "Antigravity". Read that host's logs. Read multiple hosts only if the host says so, and label each finding with its source.>
 
 ## Claude Code Session Logs
 1. Location: `~/.claude/projects/<project-dir>/<sessionId>.jsonl`. `<project-dir>` is the current working directory with every non-alphanumeric character (the drive `:`, path separators `\` and `/`) replaced by a single `-` (`D:\joesys\Projects\my-project` → `D--joesys-Projects-my-project`; `/home/user/app` → `-home-user-app`). If unsure, list `~/.claude/projects/` and match against the transformed cwd.
@@ -68,6 +68,12 @@ Find and read the session files for this project, using the section for your log
 3. Read lines with `type: "response_item"` and `payload.type: "message"`. `payload.role` is `"user"` or `"assistant"`; the text is in `payload.content[].text`.
 4. Skip `payload.role: "developer"` messages and user messages whose text starts with `# AGENTS.md instructions` or `<environment_context>` (the host injects these). Skip `reasoning`, `function_call`, `function_call_output`, `custom_tool_call`, and `custom_tool_call_output` items, and all `event_msg`, `turn_context`, `token_usage_record`, and `compacted` lines.
 5. `~/.codex/history.jsonl` lists every user prompt across all projects (`session_id`, `ts` in Unix seconds, `text`). It has no folder field. Use it only as a quick prompt index, matched to this project's rollout files by `session_id`.
+
+## Antigravity Session Logs
+1. Location: `<appDataDir>/brain/<conversation-id>/.system_generated/logs/transcript.jsonl` (compact) alongside `transcript_full.jsonl`. On standalone installs, `<appDataDir>` is `~/.gemini/antigravity-cli` (CLI) or `~/.gemini/antigravity` (App/IDE); in embedded hosts, use the session's App Data Directory.
+2. Session start: `created_at` on the first line. Keep conversations inside the retro time boundary whose `USER_INPUT` or tool-call paths reference this project. Skip subagent conversations spawned via `invoke_subagent`.
+3. Read lines with `type: "USER_INPUT"` (text in `content`; ignore injected wrapper blocks such as `<t3_code_instructions>` and `<ADDITIONAL_METADATA>`) and `type: "PLANNER_RESPONSE"` (visible reply in `content` when present). If `truncated_fields` hides text you need, read that line's `step_index` in `transcript_full.jsonl`.
+4. Skip `thinking`, `tool_calls`, `type: "GENERIC"` (tool outputs), `type: "SYSTEM_MESSAGE"`, and `type: "CHECKPOINT"` lines.
 
 ## Time Boundary
 <START_DATE> to <END_DATE>

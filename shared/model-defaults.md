@@ -198,6 +198,7 @@ Skills that spawn subagents through the current host inherit the parent model an
 
 - **Claude Code:** omit the per-call `model` and `effort` fields. Claude Code treats an omitted model as `inherit`, so a Fable parent gets Fable subagents and an Opus parent gets Opus subagents.
 - **Codex:** omit per-call model and reasoning-effort overrides. The subagent then follows the parent Codex model and reasoning effort.
+- **Antigravity:** leave subagent `Model` at `inherit` (default). The subagent then follows the parent Antigravity model and reasoning effort.
 - **Explicit overrides:** honor a model or effort override when the user specifically asks for one. Host-level settings deliberately configured by the user also count as overrides.
 - **Cross-model work:** this rule does not apply when a skill intentionally calls another model or provider for independent evaluation or delegation. Those paths keep their explicit model selection. The finders and the reviewer of `/security-audit` are such paths: each one is a separate session of a command-line tool, with the model that § Security Audit Roles names.
 

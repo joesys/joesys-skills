@@ -9,7 +9,7 @@ Current model identifiers and CLI command templates are in `shared/model-default
 ## Rules
 
 - Run every cross-model dispatch in read-only or plan mode. Cross-model reviewers think; they never write.
-- Write each prompt to a temp file and pipe it on stdin, with a 10-minute (600000 ms) Bash timeout. The pattern is in `shared/delegation-common.md` § Prompt Delivery. Delete the temp files afterwards.
+- Write each prompt to a temp file and pipe it on stdin, with a 10-minute (600000 ms) shell timeout. The pattern is in `shared/delegation-common.md` § Prompt Delivery. Delete the temp files afterwards.
 - Run the dispatches in parallel with the host's own subagents, in a single response. Running them one after another loses the speedup.
 
 ---
@@ -22,7 +22,7 @@ Choose the cross-model CLI based on which host you are:
 |---|---|---|
 | Claude | Both Codex + Antigravity | Two parallel dispatches |
 | Codex | Antigravity | `python <ADAPTER> --mode plan --sandbox` (absolute path to `scripts/agy_adapter.py` under the plugin root — see `shared/model-defaults.md` § Antigravity) |
-| Antigravity | Codex | `codex exec` |
+| Antigravity | Both Claude + Codex | Two parallel dispatches |
 | Unknown | Both Codex + Claude | Two parallel dispatches |
 
 ---

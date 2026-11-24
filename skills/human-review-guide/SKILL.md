@@ -58,7 +58,7 @@ Preferences tune triage and depth. A beginner or a conservative skip tolerance s
 
 Read the reviewer profile from `.claude/skill-context/human-review-guide.md` if it exists. If it does not, use defaults and do not ask: role inferred from shared preferences (otherwise "developer"), review focus balanced, verbosity moderate, skip tolerance balanced.
 
-Only when the user passes `--calibrate`, ask these four questions (one `AskUserQuestion` call) and save the answers to `.claude/skill-context/human-review-guide.md`:
+Only when the user passes `--calibrate`, ask these four questions in one message and save the answers to `.claude/skill-context/human-review-guide.md`:
 
 1. **Role/expertise** — Backend, Frontend, Full-stack, DevOps/Infra, PM/Non-technical reviewer, Other
 2. **Review focus** — Correctness & edge cases, Architecture & design decisions, Security implications, Maintainability & tech debt

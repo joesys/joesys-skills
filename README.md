@@ -1,12 +1,13 @@
 # joesys-skills
 
-A collection of 29 agent skills for Claude Code and Codex: turn rough ideas
-into reusable prompts, consult other AI models, review code,
+A collection of 29 agent skills for Claude Code, Codex, and Antigravity: turn
+rough ideas into reusable prompts, consult other AI models, review code,
 understand projects, improve engineering workflows, and preserve or publish
 development work.
 
-The repository is both a Claude Code plugin and a Codex plugin marketplace.
-Canonical skills live under `skills/`; Codex-compatible copies are generated
+The repository is a Claude Code plugin, a Codex plugin marketplace, and a
+native Antigravity plugin. Canonical skills live under `skills/` (loaded
+directly by Claude Code and Antigravity); Codex-compatible copies are generated
 under `codex-skills/`.
 
 ## Quick Start
@@ -14,17 +15,30 @@ under `codex-skills/`.
 | Host | Invoke a skill | Example |
 |---|---|---|
 | Claude Code | `/skill-name` | `/codereview --file src/main.py` |
+| Antigravity | `/skill-name` | `/codereview --file src/main.py` |
 | Codex | `$skill-name` | `$codereview --file src/main.py` |
 
-The detailed examples below use Claude Code's `/skill-name` syntax. In Codex,
-replace the leading `/` with `$`. Both hosts can also select a skill
-automatically when the request matches its description.
+The detailed examples below use `/skill-name` syntax (Claude Code and
+Antigravity). In Codex, replace the leading `/` with `$`. All hosts can also
+select a skill automatically when the request matches its description.
 
 ### Claude Code
 
 ```text
 /plugin marketplace add joesys/joesys-skills
 /plugin install joesys-skills
+```
+
+### Antigravity
+
+```bash
+agy plugin install https://github.com/joesys/joesys-skills
+```
+
+Or from a local checkout:
+
+```bash
+agy plugin install /path/to/joesys-skills
 ```
 
 ### Codex
@@ -364,7 +378,7 @@ The skill runs the generated skill once before it reports. Without that run,
 it reports a draft. Every proof says `live` or `fake` for each outside
 service it touched. The skill never reads secrets, never changes product
 code, and never commits. In Claude Code the generated skill goes to
-`.claude/skills/`; in Codex it goes to `.agents/skills/`.
+`.claude/skills/`; in Codex and Antigravity it goes to `.agents/skills/`.
 
 Adapted from pstack by Lauren Tan (MIT License).
 
@@ -567,10 +581,10 @@ documents, and tests, then produces discussion topics, actions, and a narrative.
 
 ### interaction-review
 
-Analyze Claude Code or Codex conversation transcripts across prompt craft,
-workflow efficiency, agentic leverage, error recovery, and context management.
-The skill produces Markdown and HTML report cards with a prioritized coaching
-roadmap and trend history.
+Analyze Claude Code, Codex, or Antigravity conversation transcripts across
+prompt craft, workflow efficiency, agentic leverage, error recovery, and
+context management. The skill produces Markdown and HTML report cards with a
+prioritized coaching roadmap and trend history.
 
 ```text
 /interaction-review
@@ -580,7 +594,8 @@ roadmap and trend history.
 ```
 
 The skill reads the session logs of the host it runs in: Claude Code
-(`~/.claude/projects/`) or Codex (`~/.codex/sessions/`).
+(`~/.claude/projects/`), Codex (`~/.codex/sessions/`), or Antigravity
+(`<appDataDir>/brain/<conversation-id>/.system_generated/logs/transcript.jsonl`).
 
 ## Capture, Transfer, and Publish Work
 
@@ -636,9 +651,10 @@ automatically after significant commits, so ideas pile up for later posts.
 
 To see scraps from several projects in one list, add a `## Devlog repos`
 section with one repo path per line to `~/.claude/skill-context/devlog.md`
-(Codex: `~/.codex/skill-context/devlog.md`). `--from-scrap` with a path in
-another repo prints the command to run from that repo, because the post and
-its commit belong there.
+(Codex: `~/.codex/skill-context/devlog.md`; Antigravity:
+`.agents/skill-context/devlog.md` or `~/.claude/skill-context/devlog.md`).
+`--from-scrap` with a path in another repo prints the command to run from that
+repo, because the post and its commit belong there.
 
 ### commit
 

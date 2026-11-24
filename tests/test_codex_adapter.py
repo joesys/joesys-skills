@@ -357,6 +357,11 @@ def test_plugin_versions_are_synchronized():
     codex_plugin = json.loads(
         (REPO_ROOT / ".codex-plugin" / "plugin.json").read_text(encoding="utf-8")
     )
+    antigravity_plugin = json.loads(
+        (REPO_ROOT / ".antigravity-plugin" / "plugin.json").read_text(
+            encoding="utf-8"
+        )
+    )
     marketplace_version = next(
         plugin["version"]
         for plugin in claude_marketplace["plugins"]
@@ -365,6 +370,7 @@ def test_plugin_versions_are_synchronized():
 
     assert claude_plugin["version"] == "22.3.0"
     assert codex_plugin["version"] == claude_plugin["version"]
+    assert antigravity_plugin["version"] == claude_plugin["version"]
     assert marketplace_version == claude_plugin["version"]
 
 

@@ -47,7 +47,7 @@ Each leg gets a four-part prompt:
 3. **Refined question** (same for all legs): the user's question restated clearly, with the goals, constraints, and scope that the context implies. Clarify; do not change the user's intent. When in doubt, keep the original wording.
 4. **Original question** (same for all legs): "Original question from the user: [verbatim user input]"
 
-Write the prompts to files in a unique folder for this run. The Bash tool starts a new shell on every call, so a shell variable would be gone by the dispatch call. Create the folder in its own call, then copy the printed path literally into every later command (shown below as `<RUN_DIR>`). A unique folder keeps two councils running in parallel from overwriting each other's files.
+Write the prompts to files in a unique folder for this run. Each shell command starts a new shell, so a shell variable would be gone by the dispatch call. Create the folder in its own call, then copy the printed path literally into every later command (shown below as `<RUN_DIR>`). A unique folder keeps two councils running in parallel from overwriting each other's files.
 
 ```bash
 mktemp -d "${TMPDIR:-/tmp}/council-XXXXXX"
@@ -74,7 +74,7 @@ After all legs finish, delete the folder: `rm -rf <RUN_DIR>`.
 
 ## Phase 3: Parallel Dispatch
 
-Launch all four legs in a single response, as parallel tool calls. Use a 600000 ms timeout on each Bash call.
+Launch all four legs in a single response, as parallel tool calls. Use a 600000 ms timeout on each shell call.
 
 ### Codex Leg
 

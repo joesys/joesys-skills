@@ -4,7 +4,7 @@ Evaluate how well the user sets up and maintains the environment the agent works
 
 This lens is the only place that scores persistent context (instruction files, memory, cross-session continuity). Other lenses do not score it again.
 
-**Instruction files.** Claude Code reads `CLAUDE.md`. Codex reads `AGENTS.md`. Either file counts as the project instruction file. Do not mark a project down because it lacks the other host's file. The same rule applies to the global file (`~/.claude/CLAUDE.md` or `~/.codex/AGENTS.md`). Claude Code does not load `AGENTS.md` unless `CLAUDE.md` imports it (for example, with `@AGENTS.md`). If the reviewed host cannot see the file, you may report that as a finding.
+**Instruction files.** Claude Code reads `CLAUDE.md`. Codex reads `AGENTS.md`. Antigravity reads `GEMINI.md`, `AGENTS.md`, and `.agents/rules/*.md`. Any of these counts as the project instruction file. Do not mark a project down because it lacks another host's file. The same rule applies to the global file (`~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`, or `~/.gemini/config/`). Claude Code does not load `AGENTS.md` unless `CLAUDE.md` imports it (for example, with `@AGENTS.md`). If the reviewed host cannot see the file, you may report that as a finding.
 
 ## Quick Diagnostic Guide
 

@@ -91,7 +91,7 @@ Cover all five channels; run them in parallel. Read `references/agent-prompts.md
 
 For same-platform subagents, do not pass a model or reasoning-effort override. Let every subagent inherit the parent model and reasoning effort unless the user explicitly asks for an override.
 
-Tell Channel 2 which host you are running in (Claude Code or Codex), so it reads the matching session logs. Pass Channel 4 the plan folders from `retrospective.md`, if any.
+Tell Channel 2 which host you are running in (Claude Code, Codex, or Antigravity), so it reads the matching session logs. Pass Channel 4 the plan folders from `retrospective.md`, if any.
 
 | # | Channel | Data Source | Key Focus |
 |---|---|---|---|

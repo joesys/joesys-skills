@@ -1,11 +1,11 @@
 ---
 name: interaction-review
-description: "Use when the user invokes /interaction-review to grade the human-AI collaboration quality of past Claude Code or Codex sessions and produce a coaching report."
+description: "Use when the user invokes /interaction-review to grade the human-AI collaboration quality of past Claude Code, Codex, or Antigravity sessions and produce a coaching report."
 ---
 
 # Interaction Review Skill
 
-Grade how well the user collaborates with an AI coding agent, from past session logs (JSONL files from Claude Code or Codex). Five lens agents score one dimension each in parallel. You combine their scores into a weighted report, a coach agent re-reviews it, and you save it as markdown plus an HTML companion with a short, ranked list of next steps.
+Grade how well the user collaborates with an AI coding agent, from past session logs (JSONL files from Claude Code, Codex, or Antigravity). Five lens agents score one dimension each in parallel. You combine their scores into a weighted report, a coach agent re-reviews it, and you save it as markdown plus an HTML companion with a short, ranked list of next steps.
 
 The report is a self-improvement tool, not an audit. The tone is coaching, not punitive.
 
@@ -67,7 +67,7 @@ List `docs/interaction-review/*-interaction-review.md`, newest first. From the n
 
 ### 1.1 Find the Session Files
 
-Read the logs of the host you run in: Claude Code logs in Claude Code, Codex logs in Codex. If the user asks for both, review both and label every session with its host. For each session, record its absolute path, host, session ID, and start time; the agents need all four.
+Read the logs of the host you run in: Claude Code logs in Claude Code, Codex logs in Codex, Antigravity logs in Antigravity. If the user asks for multiple hosts, review them all and label every session with its host. For each session, record its absolute path, host, session ID, and start time; the agents need all four.
 
 **Claude Code**
 1. Project folder name: take the current working directory and replace every non-alphanumeric character (`:`, `\`, `/`) with a single `-`. For example, `C:\Users\joesy\Projects\my-project` becomes `C--Users-joesy-Projects-my-project` (the double dash is `:` and `\` each becoming one `-`).
@@ -79,6 +79,11 @@ Read the logs of the host you run in: Claude Code logs in Claude Code, Codex log
 2. The first line of each file has `type: "session_meta"`. Keep the file only if its `payload.cwd` equals the current working directory. Skip files whose `payload.source` is an object with a `subagent` key — those are subagent runs, not the user's sessions.
 3. The session ID is `payload.id` (also the UUID at the end of the filename). The session start is `payload.timestamp`.
 4. `~/.codex/history.jsonl` lists user prompts across all projects. The review does not need it; use the session files.
+
+**Antigravity**
+1. Session files: `<appDataDir>/brain/<conversation-id>/.system_generated/logs/transcript.jsonl` (compact) alongside `transcript_full.jsonl`. On standalone installs, `<appDataDir>` is `~/.gemini/antigravity-cli` (CLI) or `~/.gemini/antigravity` (App/IDE); in embedded hosts (such as T3 Code), use the App Data Directory from the session context.
+2. The session ID is the `<conversation-id>` folder name. The session start is `created_at` on the first line.
+3. Antigravity does not store the project folder in a separate index line; keep conversations whose `USER_INPUT` or tool-call paths reference the current working directory. Skip subagent conversations (sessions spawned via `invoke_subagent` from a parent conversation).
 
 ### 1.2 Filter and Confirm
 

@@ -416,3 +416,47 @@ def test_resume_commands_in_the_registry_carry_their_read_only_flags() -> None:
     for command in commands:
         flag = 'sandbox_mode="read-only"' if command.startswith("codex") else "--permission-mode plan"
         assert flag in command, command
+
+
+# --- Antigravity parity, 2026-11-24 -------------------------------------------
+
+
+def test_skills_do_not_name_claude_only_tools() -> None:
+    # Antigravity loads canonical skills/ directly, without an adapter rewrite.
+    # Naming Claude Code-only tools (AskUserQuestion, WebSearch, Agent tool,
+    # Task tool, Bash tool) leaks host assumptions into Antigravity sessions.
+    markdown_files = [*SKILLS.rglob("*.md"), *(REPO_ROOT / "shared").rglob("*.md")]
+    assert markdown_files
+    forbidden = re.compile(
+        r"\b(?:AskUserQuestion|WebSearch|Agent tool|Task tool|Bash tool)\b"
+    )
+    for path in markdown_files:
+        text = path.read_text(encoding="utf-8")
+        assert not forbidden.search(text), path
+
+
+def test_antigravity_cross_model_dispatch_uses_both_other_providers() -> None:
+    dispatch = read("shared/cross-model-dispatch.md")
+    assert "| Antigravity | Both Claude + Codex | Two parallel dispatches |" in dispatch
+
+
+def test_session_log_skills_document_antigravity_transcripts() -> None:
+    for relative in (
+        "skills/interaction-review/SKILL.md",
+        "skills/interaction-review/references/agent-prompts.md",
+        "skills/retrospective/references/agent-prompts.md",
+        "skills/devlog/references/write-mode.md",
+        "skills/devlog/references/agent-prompts.md",
+    ):
+        text = read(relative)
+        assert "transcript.jsonl" in text, relative
+
+    interaction_prompts = read("skills/interaction-review/references/agent-prompts.md")
+    assert "USER_INPUT" in interaction_prompts
+    assert "PLANNER_RESPONSE" in interaction_prompts
+    assert "tool_calls" in interaction_prompts
+
+    rubric = read("skills/interaction-review/principles/context-instruction.md")
+    assert "GEMINI.md" in rubric
+    assert ".agents/rules/*.md" in rubric
+

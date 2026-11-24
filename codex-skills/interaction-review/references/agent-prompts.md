@@ -68,6 +68,22 @@ Codex
   Skip the matching `function_call_output` and `custom_tool_call_output`
   lines, `reasoning` items, and all `event_msg`, `turn_context`,
   `token_usage_record`, and `compacted` lines.
+
+Antigravity
+- Start with `transcript.jsonl` (compact). If a line has `truncated_fields`
+  and you need the full text, read only that line's `step_index` in the
+  sibling `transcript_full.jsonl`.
+- Every line has `step_index`, `source`, `type`, `status`, and `created_at`.
+- User messages have `type: "USER_INPUT"` (with `source: "USER_EXPLICIT"`).
+  The text is in `content`; ignore injected wrapper blocks such as
+  `<t3_code_instructions>`, `<ADDITIONAL_METADATA>`, and
+  `<USER_SETTINGS_CHANGE>` to read what the person typed.
+- Assistant turns have `type: "PLANNER_RESPONSE"`. Visible reply text is in
+  `content` (when present). Tool calls are in `tool_calls[]`, where each call's
+  name is in `name` and its arguments are in `args`. Skip `thinking` and token
+  counters.
+- Skip `type: "GENERIC"` (tool outputs), `type: "SYSTEM_MESSAGE"`, and
+  `type: "CHECKPOINT"` lines.
 ```
 
 ---
@@ -81,7 +97,7 @@ Build each lens prompt from this template. Fill `<LENS_NAME>`, `<LENS_GOAL>`, `<
 
 <SESSION_LOGS>
 
-You are reviewing AI coding-session transcripts (Claude Code or Codex) to
+You are reviewing AI coding-session transcripts (Claude Code, Codex, or Antigravity) to
 score one lens of how well the user works with the agent: <LENS_NAME>.
 <LENS_GOAL>
 
@@ -152,7 +168,7 @@ one real issue, report one. Do not pad. Each finding:
 ### 3. Agentic Leverage
 
 - **Goal:** Judge whether the user uses the agent's own capabilities — skills, tools, batching, parallelism, delegation — or does by hand work the agent could do.
-- **Focus:** compare what the user did by hand with the skills and tools that were available in the session. Look for skill invocations (`/name` in Claude Code, `$name` in Codex), tool delegation, autonomy versus micro-management, and grouping of independent work.
+- **Focus:** compare what the user did by hand with the skills and tools that were available in the session. Look for skill invocations (`/name` in Claude Code and Antigravity, `$name` in Codex), tool delegation, autonomy versus micro-management, and grouping of independent work.
 - **Extra sections:**
 
   ```
@@ -176,15 +192,15 @@ one real issue, report one. Do not pad. Each finding:
 ### 5. Context & Instruction Quality
 
 - **Goal:** Judge how well the user sets up and maintains the context the agent works in.
-- **Focus:** instruction files, memory, session setup, references, and instruction coherence. Besides the transcripts, read and judge each item in the inventory below. Memory for Claude Code is the `memory/` folder beside the session files (`~/.claude/projects/<project-dir>/memory/`). Memory for Codex is `~/.codex/memories/`, shared by all projects; look only for entries about this project. Preferences are in `.codex/skill-context/`.
+- **Focus:** instruction files, memory, session setup, references, and instruction coherence. Besides the transcripts, read and judge each item in the inventory below. Memory for Claude Code is the `memory/` folder beside the session files (`~/.claude/projects/<project-dir>/memory/`). Memory for Codex is `~/.codex/memories/`, shared by all projects; look only for entries about this project. Memory/knowledge for Antigravity is `<appDataDir>/knowledge/` (for example `~/.gemini/antigravity/knowledge/` or `~/.gemini/antigravity-cli/knowledge/`). Preferences are in `.codex/skill-context/` (or `.agents/skill-context/` in Antigravity).
 - **Extra sections:**
 
   ```
   ### Infrastructure Inventory
   | Component | Status | Quality |
   |---|---|---|
-  | Project instruction file (`CLAUDE.md` / `AGENTS.md`) | Present/Missing | [Brief assessment] |
-  | Global instruction file (`~/.claude/CLAUDE.md` / `~/.codex/AGENTS.md`) | Present/Missing | [Brief assessment] |
+  | Project instruction file (`CLAUDE.md` / `AGENTS.md` / `GEMINI.md` / `.agents/rules/`) | Present/Missing | [Brief assessment] |
+  | Global instruction file (`~/.claude/CLAUDE.md` / `~/.codex/AGENTS.md` / `~/.gemini/config/`) | Present/Missing | [Brief assessment] |
   | Preferences | Present/Missing | [Brief assessment] |
   | Memory entries | N entries | [Brief assessment] |
   ```

@@ -79,7 +79,7 @@ interfaces, update all callers listed below.
 **Invocation:** `/interaction-review [session <id> | since YYYY-MM-DD | trend]`
 
 **Behavior contract:**
-- Analyzes JSONL session transcripts from `~/.claude/projects/<project-dir>/`
+- Analyzes JSONL session transcripts from the active host (`~/.claude/projects/<project-dir>/`, `~/.codex/sessions/`, or Antigravity `<appDataDir>/brain/<conversation-id>/.system_generated/logs/transcript.jsonl`)
 - Produces dual-format reports: `docs/interaction-review/YYYYMMDD-interaction-review.md` (and `.html`)
 - Reads previous reports from `docs/interaction-review/` for continuity tracking
 - Does NOT modify source code, CLAUDE.md, or memory — suggestions only

@@ -55,7 +55,7 @@ You are a senior analyst reading AI coding-session transcripts to find moments o
 3. Look for moments where the developer's thinking is visible: corrections, overrides, pivots, "aha" moments, disagreements with the AI.
 
 ## Session Files
-Log host: <SESSION_LOG_HOST: "Claude Code" or "Codex">
+Log host: <SESSION_LOG_HOST: "Claude Code", "Codex", or "Antigravity">
 <SESSION_FILE_PATHS>
 
 ## How to Read the Log Host's Format
@@ -70,6 +70,11 @@ Log host: <SESSION_LOG_HOST: "Claude Code" or "Codex">
 - Read lines with `type: "response_item"` and `payload.type: "message"`. `payload.role` is `"user"` or `"assistant"`. The text is in `payload.content[].text` (`input_text` items for the user, `output_text` items for the assistant).
 - Skip `payload.role: "developer"` messages, and user messages whose text starts with `# AGENTS.md instructions` or `<environment_context>`. The host injects these; the developer did not type them.
 - Skip `reasoning`, `function_call`, `function_call_output`, `custom_tool_call`, and `custom_tool_call_output` items, and all `event_msg`, `turn_context`, `token_usage_record`, and `compacted` lines.
+
+**Antigravity** (`<appDataDir>/brain/<conversation-id>/.system_generated/logs/transcript.jsonl`)
+- Start with `transcript.jsonl` (compact). If a line has `truncated_fields` and you need the full text, read only that line's `step_index` in the sibling `transcript_full.jsonl`.
+- Read lines with `type: "USER_INPUT"` (text in `content`; ignore injected wrapper blocks such as `<t3_code_instructions>` and `<ADDITIONAL_METADATA>`) and `type: "PLANNER_RESPONSE"` (visible reply in `content` when present).
+- Skip `thinking`, `tool_calls`, `type: "GENERIC"` (tool outputs), `type: "SYSTEM_MESSAGE"`, and `type: "CHECKPOINT"` lines.
 
 ## Topic Hint (if provided)
 <TOPIC_HINT or "None — scan broadly for interesting moments">
