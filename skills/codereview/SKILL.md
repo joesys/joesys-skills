@@ -97,7 +97,7 @@ Each cluster's reviewers receive only that cluster's file list, and a diff comma
 
 ## Phase 2: Parallel Analysis
 
-Run the seven domain reviews in parallel as subagents via the Agent tool, together with the two cross-model reviews below.
+Run the seven domain reviews in parallel as subagents, together with the two cross-model reviews below.
 
 For same-platform subagents, do not pass a model or reasoning-effort override. Let every subagent inherit the parent model and reasoning effort unless the user explicitly asks for an override.
 
@@ -176,7 +176,7 @@ Story readability findings usually fall at P2–P4. Narrative problems are maint
 
 ### Cross-Model Dispatch
 
-Also send the review to **Codex and Antigravity**, in the same parallel batch as the domain subagents. Read `shared/cross-model-dispatch.md` for host detection, temp files, CLI command templates, and failure handling. Read `shared/model-defaults.md` for model identifiers.
+Also send the review to the cross-model reviewers named in `shared/cross-model-dispatch.md` § Host Detection (**Codex and Antigravity** when running in Claude, **Claude and Codex** when running in Antigravity), in the same parallel batch as the domain subagents. Read `shared/cross-model-dispatch.md` for host detection, temp files, CLI command templates, and failure handling. Read `shared/model-defaults.md` for model identifiers.
 
 Both cross-model reviewers get the full files and the diff inside the prompt file, because their sandbox may not let them read the project or run git. Let the shell append that content, as in the commands below; do not type it out. When the change is split into clusters, each cluster gets its own cross-model pair.
 
@@ -375,7 +375,7 @@ After the report, offer to fix findings, starting with the most severe. Wait for
 
 ### Parallel Fix Strategy
 
-- Fixes in unrelated files can run in parallel as separate fix agents via the Agent tool.
+- Fixes in unrelated files can run in parallel as separate fix subagents.
 - Fixes in the **same file** run one after another, to avoid conflicts.
 - Each fix agent receives the finding (location, problem, **Suggested Fix**, Before/After) and applies it with the Edit tool.
 - When the tech lead rewrote a fix, apply the rewrite, not the domain agent's original.

@@ -1,12 +1,13 @@
 # joesys-skills
 
-A collection of 29 agent skills for Claude Code and Codex: turn rough ideas
-into reusable prompts, consult other AI models, review code,
+A collection of 29 agent skills for Claude Code, Codex, and Antigravity: turn
+rough ideas into reusable prompts, consult other AI models, review code,
 understand projects, improve engineering workflows, and preserve or publish
 development work.
 
-The repository is both a Claude Code plugin and a Codex plugin marketplace.
-Canonical skills live under `skills/`; Codex-compatible copies are generated
+The repository is a Claude Code plugin, a Codex plugin marketplace, and a
+native Antigravity plugin. Canonical skills live under `skills/` (loaded
+directly by Claude Code and Antigravity); Codex-compatible copies are generated
 under `codex-skills/`.
 
 ## Quick Start
@@ -14,17 +15,30 @@ under `codex-skills/`.
 | Host | Invoke a skill | Example |
 |---|---|---|
 | Claude Code | `/skill-name` | `/codereview --file src/main.py` |
+| Antigravity | `/skill-name` | `/codereview --file src/main.py` |
 | Codex | `$skill-name` | `$codereview --file src/main.py` |
 
-The detailed examples below use Claude Code's `/skill-name` syntax. In Codex,
-replace the leading `/` with `$`. Both hosts can also select a skill
-automatically when the request matches its description.
+The detailed examples below use `/skill-name` syntax (Claude Code and
+Antigravity). In Codex, replace the leading `/` with `$`. All hosts can also
+select a skill automatically when the request matches its description.
 
 ### Claude Code
 
 ```text
 /plugin marketplace add joesys/joesys-skills
 /plugin install joesys-skills
+```
+
+### Antigravity
+
+```bash
+agy plugin install https://github.com/joesys/joesys-skills
+```
+
+Or from a local checkout:
+
+```bash
+agy plugin install /path/to/joesys-skills
 ```
 
 ### Codex
@@ -56,7 +70,7 @@ codex plugin marketplace upgrade
 | Review | [`human-review-guide`](#human-review-guide) | Build a decision-focused human reading order |
 | Review | [`codebase-audit`](#codebase-audit) | Grade whole-codebase quality and velocity |
 | Review | [`blast-radius`](#blast-radius) | Find what a change could break elsewhere, and prove the one fact that makes it safe |
-| Review | [`security-audit`](#security-audit) | Find security flaws by reading the source, with four models, and teach the fix in one HTML report |
+| Review | [`security-audit`](#security-audit) | Find security flaws by reading the source, with four finders and a frontier reviewer, and teach the fix in one HTML report |
 | Verify | [`create-verification-skill`](#create-verification-skill) | Generate a project skill that proves features in the running app |
 | Verify | [`maintain-verification-skill`](#maintain-verification-skill) | Bring a `verify-<app>` skill and its feature map back in line with the app |
 | Verify | [`create-formal-verification-skill`](#create-formal-verification-skill) | Check one promise of the code for every case in a stated scope |
@@ -129,11 +143,11 @@ supports latest or named-session resume.
 Delegate code analysis, refactoring, or automated editing to OpenAI's Codex
 CLI. The skill captures the session identifier when available, evaluates the
 response, and supports reliable session resume. The current default model is
-`gpt-6.2-sol`.
+`gpt-6.2-astra`.
 
 ```text
 /codex "explain the auth flow in this repo"
-/codex --model gpt-6.2-sol "analyze this function"
+/codex --model gpt-6.2-astra "analyze this function"
 /codex --sandbox workspace-write "fix the lint errors"
 /codex resume "follow up on the latest session"
 /codex resume <SESSION_ID> "continue this specific session"
@@ -301,12 +315,12 @@ Adapted from pstack by Lauren Tan (MIT License).
 ### security-audit
 
 Find the security flaws of a codebase by reading its source, and teach the
-team how to stop making them. Four models take part. Two finders search
-alone, and each may start helper agents of its own. The running model
-checks every candidate against the code and writes the report. The other
-frontier model reviews the report, and the two settle on a joint consensus
-in at most two rounds. Where they still differ, the report prints both
-views.
+team how to stop making them. Four finders search alone (Claude, Codex, Grok,
+and Antigravity), and Finders 1, 2, and 4 may start helper agents of their
+own. The running model checks every candidate against the code and writes the
+report. The other frontier model reviews the report, and the two settle on a
+joint consensus in at most two rounds. Where they still differ, the report
+prints both views.
 
 ```text
 /security-audit                          # The whole repository
@@ -336,10 +350,9 @@ can refuse the task. The skill then shows the message and does not retry by
 itself. It continues with the other models, and the report names the model
 that is missing. When the filter blocks a Codex run, the user may run that
 part by hand in the interactive Codex program, or, for the review, choose
-two fallback reviewers (a new Claude session and Antigravity). When the user
-asks, Grok joins as a third finder. When both finders fail, the skill stops
-and writes no report. Three scanner tools (Semgrep, Gitleaks, OSV-Scanner) are
-used when they are installed. The skill shows how to install them and never
+two fallback reviewers (a new Claude session and Antigravity). When every
+finder fails, the skill stops and writes no report. Three scanner tools
+(Semgrep, Gitleaks, OSV-Scanner) are used when they are installed. The skill shows how to install them and never
 installs one. The report folder `.security-audit/` is kept out of git,
 because it shows where the app is weak.
 
@@ -364,7 +377,7 @@ The skill runs the generated skill once before it reports. Without that run,
 it reports a draft. Every proof says `live` or `fake` for each outside
 service it touched. The skill never reads secrets, never changes product
 code, and never commits. In Claude Code the generated skill goes to
-`.claude/skills/`; in Codex it goes to `.agents/skills/`.
+`.claude/skills/`; in Codex and Antigravity it goes to `.agents/skills/`.
 
 Adapted from pstack by Lauren Tan (MIT License).
 
@@ -567,10 +580,10 @@ documents, and tests, then produces discussion topics, actions, and a narrative.
 
 ### interaction-review
 
-Analyze Claude Code or Codex conversation transcripts across prompt craft,
-workflow efficiency, agentic leverage, error recovery, and context management.
-The skill produces Markdown and HTML report cards with a prioritized coaching
-roadmap and trend history.
+Analyze Claude Code, Codex, or Antigravity conversation transcripts across
+prompt craft, workflow efficiency, agentic leverage, error recovery, and
+context management. The skill produces Markdown and HTML report cards with a
+prioritized coaching roadmap and trend history.
 
 ```text
 /interaction-review
@@ -580,7 +593,8 @@ roadmap and trend history.
 ```
 
 The skill reads the session logs of the host it runs in: Claude Code
-(`~/.claude/projects/`) or Codex (`~/.codex/sessions/`).
+(`~/.claude/projects/`), Codex (`~/.codex/sessions/`), or Antigravity
+(`<appDataDir>/brain/<conversation-id>/.system_generated/logs/transcript.jsonl`).
 
 ## Capture, Transfer, and Publish Work
 
@@ -636,9 +650,10 @@ automatically after significant commits, so ideas pile up for later posts.
 
 To see scraps from several projects in one list, add a `## Devlog repos`
 section with one repo path per line to `~/.claude/skill-context/devlog.md`
-(Codex: `~/.codex/skill-context/devlog.md`). `--from-scrap` with a path in
-another repo prints the command to run from that repo, because the post and
-its commit belong there.
+(Codex: `~/.codex/skill-context/devlog.md`; Antigravity:
+`.agents/skill-context/devlog.md` or `~/.claude/skill-context/devlog.md`).
+`--from-scrap` with a path in another repo prints the command to run from that
+repo, because the post and its commit belong there.
 
 ### commit
 

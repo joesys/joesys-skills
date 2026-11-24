@@ -1,11 +1,11 @@
-# Extra runs: a third finder, a blocked run, and the fallback reviewers
+# Finder 3, Finder 4, blocked runs, and fallback reviewers
 
-This file covers the runs outside the usual four models: Grok as a third
-finder, a manual run when a provider's safety filter blocks a run, and the
-fallback reviewers. The commands are in `../shared/model-defaults.md`
-§ Security Audit Roles. Every rule of the skill still holds: read only, no
-live target, secret files stay closed, and every prompt starts with the
-purpose line.
+This file covers the special prompt and launcher rules for Finder 3 (Grok)
+and Finder 4 (Antigravity), a manual run when a provider's safety filter
+blocks a run, and the fallback reviewers. The commands are in
+`../shared/model-defaults.md` § Security Audit Roles. Every rule of the skill
+still holds: read only, no live target, secret files stay closed, and every
+prompt starts with the purpose line.
 
 ## Every retry gets a new name
 
@@ -15,11 +15,10 @@ one: `finder-1-b` for a resume, `finder-2-manual`, then
 `finder-2-manual-2`. A manual answer file must not take the name of an
 existing run either.
 
-## A third finder: Grok
+## Finder 3: Grok
 
-Grok joins only when the user asks for it. The source code then goes to a
-third provider, xAI. Say so in the start notice, and start Grok only after
-the user has agreed.
+Grok runs as Finder 3 alongside Finders 1, 2, and 4. The source code goes to
+xAI; say so in the start notice.
 
 Its run name is `finder-3`, and in the report its `data-found-by` value is
 `finder-3`.
@@ -60,6 +59,47 @@ run stopped before the answer was complete. Continue the audit, and give
 your whole answer again, in the structure of the brief, with the end
 marker." In the live run of 2026-11-22, the first run stopped at a `python3`
 heredoc, and such a resume worked.
+
+## Finder 4: Antigravity
+
+Antigravity runs as Finder 4 alongside Finders 1, 2, and 3. The source code
+goes to Google; say so in the start notice.
+
+Its run name is `finder-4`, and in the report its `data-found-by` value is
+`finder-4`.
+
+**Its prompt has one more note.** In plan mode, `agy` may answer with a plan
+and ask for approval instead of giving the audit answer. Build its prompt
+with the start note, this direct-answer line, and the same four parts as the
+other finders:
+
+```bash
+AGY_PROMPT="$RUN_DIR/finder-4-prompt.txt"
+cat > "$AGY_PROMPT" << 'PROMPT_EOF'
+<START_NOTE>
+
+You are Finder 4. Answer directly. Do not make a plan, and do not ask for
+approval.
+PROMPT_EOF
+for part in finder-brief method coverage finding-rules; do
+  cat "<SKILL_DIR>/references/$part.md" >> "$AGY_PROMPT"
+done
+AGY_ADAPTER_TIMEOUT=14400 python3 "<SKILL_DIR>/helpers/finder_runs.py" start --run-dir "$RUN_DIR" --name finder-4 \
+  --cwd "<REPO>" --prompt "$AGY_PROMPT" --stdout-result -- <FINDER_4_CMD>
+```
+
+`<FINDER_4_CMD>` is the Antigravity command of the registry (`--model` may be
+omitted to let `agy` manage its latest neon default). The same three
+Antigravity habits apply as for the fallback reviewer below:
+
+- Set `AGY_ADAPTER_TIMEOUT` before calling the launcher (for example
+  `AGY_ADAPTER_TIMEOUT=14400`), or the adapter ends the run after 600
+  seconds.
+- Keep the prompt file under 150,000 bytes (the adapter rejects larger
+  prompts).
+- The adapter prints nothing until the answer is complete, so the watch
+  shows `finder-4` as `idle` after 15 minutes; that is expected. It reports
+  no session id, so a retry starts fresh under `finder-4-b`.
 
 ## When the safety filter of the Codex provider stops a run
 

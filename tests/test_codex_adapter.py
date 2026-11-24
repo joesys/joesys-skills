@@ -357,14 +357,20 @@ def test_plugin_versions_are_synchronized():
     codex_plugin = json.loads(
         (REPO_ROOT / ".codex-plugin" / "plugin.json").read_text(encoding="utf-8")
     )
+    antigravity_plugin = json.loads(
+        (REPO_ROOT / ".antigravity-plugin" / "plugin.json").read_text(
+            encoding="utf-8"
+        )
+    )
     marketplace_version = next(
         plugin["version"]
         for plugin in claude_marketplace["plugins"]
         if plugin["name"] == "joesys-skills"
     )
 
-    assert claude_plugin["version"] == "22.3.0"
+    assert claude_plugin["version"] == "22.4.0"
     assert codex_plugin["version"] == claude_plugin["version"]
+    assert antigravity_plugin["version"] == claude_plugin["version"]
     assert marketplace_version == claude_plugin["version"]
 
 
@@ -393,11 +399,11 @@ def test_generated_docs_have_no_cross_host_path_contradictions(tmp_path):
     assert "`.claude/` directory doesn't exist" not in combined
 
 
-def test_generated_manifest_publishes_release_22_3_with_29_skills(tmp_path):
+def test_generated_manifest_publishes_release_22_4_with_29_skills(tmp_path):
     output = tmp_path / "joesys-skills"
     manifest = codex_adapter.build_collection(REPO_ROOT, output)
 
-    assert manifest["source_version"] == "22.3.0"
+    assert manifest["source_version"] == "22.4.0"
     assert len(manifest["installed_skills"]) == 29
     assert "prompt" in manifest["installed_skills"]
 

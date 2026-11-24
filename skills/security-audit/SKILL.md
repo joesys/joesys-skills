@@ -1,17 +1,17 @@
 ---
 name: security-audit
-description: "Use when the user invokes /security-audit to audit a codebase for security flaws by reading its source. Two finder models search alone, the running model checks every candidate against the code and writes one teaching report as a self-contained HTML page, and a second frontier model reviews it into a joint consensus. SKIP if the user wants only changed code reviewed — that's /quick-review or /codereview. SKIP if the user wants an attack on a running app — this skill only reads source."
+description: "Use when the user invokes /security-audit to audit a codebase for security flaws by reading its source. Four finder models (Claude, Codex, Grok, Antigravity) search alone, the running model checks every candidate against the code and writes one teaching report as a self-contained HTML page, and a second frontier model reviews it into a joint consensus. SKIP if the user wants only changed code reviewed — that's /quick-review or /codereview. SKIP if the user wants an attack on a running app — this skill only reads source."
 ---
 
 # Security Audit Skill
 
 Find the security flaws of a codebase by reading its source, and teach the
-team how to stop making them. Four models take part. Two finders search
-alone. You, the running model, check every candidate against the code and
-write the report. The other frontier model reviews the report, and the two
-of you settle on a joint consensus. When the user asks, a third finder
-joins, and when a provider blocks a run, a manual run or fallback
-reviewers can take its place: see `references/extra-runs.md`.
+team how to stop making them. Four finders search alone (Claude, Codex, Grok,
+and Antigravity). You, the running model, check every candidate against the
+code and write the report. The other frontier model reviews the report, and
+the two of you settle on a joint consensus. Per-finder prompt rules for Finder
+3 (Grok) and Finder 4 (Antigravity), plus manual runs and fallback reviewers
+when a provider blocks a run, live in `references/extra-runs.md`.
 
 The result is one HTML file that works on a desktop and on a phone, with no
 script. Its reader is a beginner programmer who uses English as a second
@@ -90,9 +90,8 @@ Find out, without asking the user:
 - The size, as a count of tracked files. It decides how long the run takes.
 - The files that git ignores, by name only:
   `git ls-files --others --ignored --exclude-standard --directory`.
-- Which model tools are installed: the two that
-  `shared/model-defaults.md` § Security Audit Roles names, and the tool of
-  each extra run that the user asked for.
+- Which model tools are installed: the four finder tools and the reviewer
+  tool that `shared/model-defaults.md` § Security Audit Roles names.
 - Which scanner tools are installed. Read `references/tools.md`.
 
 **Files that git ignores.** Decide by what a file holds, not by whether git
@@ -114,10 +113,11 @@ Show one notice, then ask one question. The notice says:
 
 - what will be audited: the scope, the commit, and whether uncommitted
   changes are included;
-- which four models take part and in which role, and that **the source code
-  goes to both model providers**. A third finder or the fallback reviewers
-  send it to one more provider each; name them, and start them only when
-  the user agrees;
+- which models take part and in which role (the four finders — Claude,
+  Codex, Grok, Antigravity — the host writer, and the reviewer), and that
+  **the source code goes to every enabled model provider**. Name any
+  missing CLI tool that will be skipped, and start only after the user
+  agrees;
 - that the run has no time limit, and a rough time. In the first runs, a
   finder needed 6 to 8 minutes for a folder of 400 lines and about 20
   minutes for a codebase of 38,000 lines. For a codebase of 600,000 lines,
@@ -174,35 +174,39 @@ every older audit report. Let the shell append the four reference files. Do
 not type them out.
 
 The four files are `references/finder-brief.md`, `references/method.md`,
-`references/coverage.md` and `references/finding-rules.md`. Both finders get
-the same prompt. A third finder gets one more note, as
-`references/extra-runs.md` says.
+`references/coverage.md` and `references/finding-rules.md`. Finders 1 and 2
+get `finder-prompt.txt`. Finder 3 (Grok) and Finder 4 (Antigravity) each get
+one extra note in their prompt file, as `references/extra-runs.md` says.
 
-### Step 4: Start the two finders
+### Step 4: Start the four finders
 
-Take the two commands from `shared/model-defaults.md` § Security Audit
-Roles. Start each one in the background with the launcher, in one response:
+Take the four finder commands from `shared/model-defaults.md` § Security Audit
+Roles, and build `finder-3-prompt.txt` and `finder-4-prompt.txt` as
+`references/extra-runs.md` says. Start all four in the background with the
+launcher, in one response:
 
 ```bash
 python3 "<SKILL_DIR>/helpers/finder_runs.py" start --run-dir "$RUN_DIR" --name finder-1 \
   --cwd "<REPO>" --prompt "$PROMPT" --stream-result -- <FINDER_1_CMD>
 python3 "<SKILL_DIR>/helpers/finder_runs.py" start --run-dir "$RUN_DIR" --name finder-2 \
   --cwd "<REPO>" --prompt "$PROMPT" -- <FINDER_2_CMD>
+python3 "<SKILL_DIR>/helpers/finder_runs.py" start --run-dir "$RUN_DIR" --name finder-3 \
+  --cwd "<REPO>" --prompt "$GROK_PROMPT" --grok-result -- <FINDER_3_CMD>
+AGY_ADAPTER_TIMEOUT=14400 python3 "<SKILL_DIR>/helpers/finder_runs.py" start --run-dir "$RUN_DIR" --name finder-4 \
+  --cwd "<REPO>" --prompt "$AGY_PROMPT" --stdout-result -- <FINDER_4_CMD>
 ```
 
 The launcher returns at once. Each run goes on by itself, outside your tool
 call, and writes its events to `<RUN_DIR>/<name>.log`. The final answer
 lands in `<RUN_DIR>/<name>.final.md`.
 
-Each finder may start helper agents of its own to split the work. The brief
-tells it so.
+Finders 1, 2, and 4 may start helper agents of their own to split the work.
+The brief tells them so. Finder 3 (Grok) works alone in plan mode, as
+`references/extra-runs.md` explains.
 
-When the user asked for a third finder, start it in the same response, as
-`references/extra-runs.md` says.
-
-If one of the two model tools is not installed, start the finder that you
-have, and say in the report which model did not run. Do not put another
-model in its place without telling the user.
+If one or more model tools are not installed, start the finders that you
+have, and say in the report which models did not run. Do not put another
+model in their place without telling the user.
 
 ### Step 5: Watch the runs
 
@@ -262,7 +266,7 @@ and why.
 
 Read `references/verify.md` and follow it. In short:
 
-- Read both answers from start to end. A scanner result is a candidate too.
+- Read every finder answer from start to end. A scanner result is a candidate too.
 - Merge the candidates that describe one flaw, and keep who found it.
 - Open the code of every candidate and try to prove it wrong. Then decide:
   confirmed, verify first, or rejected.
@@ -337,8 +341,8 @@ Then stop. Do not start to fix. A fix is a new request.
 
 | Problem | What to do |
 |---|---|
-| One finder fails twice | Continue with one finder. Name the model that failed in the report header, under "What was not checked", and under "How this report was made". |
-| Both finders fail | Stop and tell the user. Do not write a report from your own search alone and call it an audit. |
+| One or more finders fail twice | Continue with the finders that finished. Name each model that failed in the report header, under "What was not checked", and under "How this report was made". |
+| Every finder fails | Stop and tell the user. Do not write a report from your own search alone and call it an audit. |
 | The reviewer fails twice | Deliver the report with a clear line at the top: no second model reviewed it. |
 | A model refuses the task, or a provider's safety filter stops it | Show the message to the user, word for word. Do not retry by yourself, and do not reword the task to get around it. Continue with the other runs, and name the model in the report. For a Codex run, offer the manual run or the fallback reviewers of `references/extra-runs.md`. |
 | An answer lacks parts of the brief's structure | Use its candidates. Say which parts it lacks in "How this report was made", as `references/verify.md` says. |

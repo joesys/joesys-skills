@@ -18,7 +18,7 @@ If the path points into a different repo than the current working directory, sto
 
 ### 1.1 Session Log Sources
 
-Read the session logs of the host you are running in: Claude Code logs when you run in Claude Code, Codex logs when you run in Codex. If the user asks for both, read both and label each finding with its source.
+Read the session logs of the host you are running in: Claude Code logs when you run in Claude Code, Codex logs when you run in Codex, Antigravity logs when you run in Antigravity. If the user asks for multiple hosts, read them all and label each finding with its source.
 
 **Claude Code**
 - Location: `~/.claude/projects/<project-dir>/<sessionId>.jsonl`. `<project-dir>` is the working directory with every non-alphanumeric character (the drive `:`, path separators `\` and `/`) replaced by a single `-` (e.g., `D:\joesys\Projects\joesys-skills` becomes `D--joesys-Projects-joesys-skills`; on POSIX, `/home/user/app` becomes `-home-user-app`). If unsure, list `~/.claude/projects/` and match the entry against the transformed cwd.
@@ -32,13 +32,19 @@ Read the session logs of the host you are running in: Claude Code logs when you 
 - Current session: the newest rollout file whose `session_meta` `payload.cwd` matches the working directory and that is not a subagent session.
 - `~/.codex/history.jsonl` has one line per user prompt across all projects, with `session_id`, `ts` (Unix seconds), and `text`. It has no folder field, so match `session_id` to this project's rollout files. Use it only as a quick prompt index; the rollout files hold the full exchange.
 
+**Antigravity**
+- Location: `<appDataDir>/brain/<conversation-id>/.system_generated/logs/transcript.jsonl` (compact) alongside `transcript_full.jsonl`. On standalone installs, `<appDataDir>` is `~/.gemini/antigravity-cli` (CLI) or `~/.gemini/antigravity` (App/IDE); in embedded hosts, use the session's App Data Directory.
+- Session start time: `created_at` on the first line. The session ID is `<conversation-id>`.
+- Keep conversations whose `USER_INPUT` or tool-call paths reference the current working directory, and skip subagent conversations spawned via `invoke_subagent` unless subagent work matters for the topic.
+- Current session: the conversation matching the current `<conversation-id>` from session context (or the most recently modified transcript referencing the working directory).
+
 ### 1.2 Timeframe Computation
 
 - No `--since`: commits since the current session started, and the current session file only.
 - `--since <range>`: commits in that range, and sessions that started inside it.
 - `--since beginning`: full history and every session file for this project.
 
-Filter session files by their start time (see 1.1). Pass only the matching file paths to the Conversation Miner, and tell it which host wrote them (Claude Code or Codex).
+Filter session files by their start time (see 1.1). Pass only the matching file paths to the Conversation Miner, and tell it which host wrote them (Claude Code, Codex, or Antigravity).
 
 ---
 
@@ -53,7 +59,7 @@ Prompt templates are in `references/agent-prompts.md`. Give each agent the guidi
 | # | Agent | Data Source | Key Focus |
 |---|---|---|---|
 | 1 | Git Miner | git log, git diff | Pivots, surprises, churn, commit narrative |
-| 2 | Conversation Miner | Session JSONL files (Claude Code or Codex) | Corrections, overrides, "aha" moments |
+| 2 | Conversation Miner | Session JSONL files (Claude Code, Codex, or Antigravity) | Corrections, overrides, "aha" moments |
 | 3 | Scrap Scanner | docs/devlog/.scraps/ | Existing content, relevance ranking, gaps |
 
 ### Gathering Synthesis

@@ -107,8 +107,10 @@ for f in <FILE_LIST>; do printf '\n## File: %s\n' "$f"; cat "$f"; done >> "$PROM
 
 Keep the prompt file under 150,000 bytes, because one of the tools rejects a
 larger prompt. Send it with the commands in `shared/cross-model-dispatch.md`
-and delete the file afterwards. If a call fails, continue with the
-candidates that you have.
+and `shared/model-defaults.md` (`fable` for Claude CLI, `gpt-6.2-astra` at
+`xhigh` effort for Codex CLI, and `agy`'s latest neon default for
+Antigravity), and delete the file afterwards. If a call fails, continue with
+the candidates that you have.
 
 ### Step 3: Screen and compare
 

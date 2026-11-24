@@ -88,9 +88,10 @@ you cannot observe.
 
 ### Step 2: Write the skill
 
-Write the skill to `.claude/skills/verify-<app>/SKILL.md` in the project. If
-your host keeps project skills in a different folder, write it there instead
-and say which folder you used.
+Write the skill to `.claude/skills/verify-<app>/SKILL.md` in the project (in
+Antigravity, write to `.agents/skills/verify-<app>/SKILL.md`). If your host
+keeps project skills in a different folder, write it there instead and say which
+folder you used.
 
 Start the file with YAML frontmatter: `name: verify-<app>`, and a
 `description` that names the app, the surface, and when to use the skill.

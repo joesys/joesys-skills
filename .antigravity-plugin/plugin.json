@@ -1,0 +1,19 @@
+{
+  "$schema": "https://antigravity.google/schemas/v1/plugin.json",
+  "name": "joesys-skills",
+  "displayName": "joesys skills",
+  "version": "22.4.0",
+  "description": "Custom agent skills — prompt writing, plain-language answer re-explanation, multi-model AI delegation, structured git commits, cross-session handoffs, code review, quick review, readability review, human review guide, codebase explanation, codebase quality audit, devlog writing, retrospectives, interaction review, and screenshot analysis",
+  "author": {
+    "name": "joesys",
+    "url": "https://github.com/joesys"
+  },
+  "homepage": "https://github.com/joesys/joesys-skills",
+  "repository": "https://github.com/joesys/joesys-skills",
+  "license": "MIT",
+  "suggestedPrompts": [
+    "/codereview",
+    "/explain",
+    "/handoff"
+  ]
+}

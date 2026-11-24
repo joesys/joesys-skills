@@ -71,7 +71,7 @@ If the working tree does not hold the reviewed version (a pull request that is n
 
 ## Phase 1: Analysis
 
-Dispatch a **single subagent** via the Agent tool. Readability grading is one consistent judgment, so it is not split across domain subagents. No cross-model dispatch (the scoring is calibrated to the principle file and must be internally consistent). No static analysis tooling (this is a judgment-based review).
+Dispatch a **single subagent**. Readability grading is one consistent judgment, so it is not split across domain subagents. No cross-model dispatch (the scoring is calibrated to the principle file and must be internally consistent). No static analysis tooling (this is a judgment-based review).
 
 For same-platform subagents, do not pass a model or reasoning-effort override. Let every subagent inherit the parent model and reasoning effort unless the user explicitly asks for an override.
 

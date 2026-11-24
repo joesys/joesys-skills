@@ -130,11 +130,12 @@ A good verification has these seven qualities:
 
 ### Step 4: Write the skill
 
-Write the skill to `.claude/skills/formal-<area>/SKILL.md` in the project. If
-your host keeps project skills in a different folder, write it there instead
-and say which folder you used. Name the area after the code that the check
-guards, for example `formal-payment-retries`. Keep the model and the helper
-scripts in the same folder.
+Write the skill to `.claude/skills/formal-<area>/SKILL.md` in the project (in
+Antigravity, write to `.agents/skills/formal-<area>/SKILL.md`). If your host
+keeps project skills in a different folder, write it there instead and say which
+folder you used. Name the area after the code that the check guards, for example
+`formal-payment-retries`. Keep the model and the helper scripts in the same
+folder.
 
 Start the file with YAML frontmatter: the `name`, and a `description` that
 names the area and says when to use the skill. Without frontmatter, no host
