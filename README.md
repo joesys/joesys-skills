@@ -84,8 +84,8 @@ codex plugin marketplace upgrade
 | Improve | [`interaction-review`](#interaction-review) | Grade human-AI collaboration and coach improvements |
 | Preserve and publish | [`handoff`](#handoff) | Create or resume a drift-aware semantic checkpoint |
 | Preserve and publish | [`devlog`](#devlog) | Capture insights as scraps or development posts |
-| Preserve and publish | [`commit`](#commit) | Create structured Conventional Commits and OneFlow histories |
-| Preserve and publish | [`restructure-commit`](#restructure-commit) | Group related recent commits into one OneFlow merge bubble |
+| Preserve and publish | [`commit`](#commit) | Create atomic single-unit Conventional Commits and nested OneFlow Option 3 histories |
+| Preserve and publish | [`restructure-commit`](#restructure-commit) | Group recent commits into one bubble, or organize a branch into a 3-level Book Table of Contents |
 | Preserve and publish | [`ss`](#ss) | Turn recent screenshots into actionable context |
 
 ## Write Better Prompts
@@ -658,31 +658,49 @@ repo, because the post and its commit belong there.
 ### commit
 
 Create a Conventional Commit in plain language for a reader without current-task
-context. Every message retains an intent paragraph, meaningful change summary,
+context. Every atomic commit holds one single unit of work (never squashed to
+lower commit count) and retains an intent paragraph, meaningful change summary,
 and candid AI review. When a change splits into several logical commits, the
-skill puts them on a short-lived branch and merges it back with `--no-ff`
-(OneFlow Option 3), so the group shows as one merge bubble. A group of one
-commit is fast-forwarded instead. It also recovers from an unresponsive
+skill puts them on a short-lived branch, rebases onto the parent tip with
+`git rebase --rebase-merges` if the parent moved ahead, and merges back with
+`--no-ff` (OneFlow Option 3). Multi-level nested bubbles (Book on `main` ->
+Chapters -> Sub-Chapters -> Atomic commits) are encouraged, while a group of
+one entry is fast-forwarded instead. It also recovers from an unresponsive
 1Password signing agent by creating an explicitly reported unsigned commit.
 
 ```text
 /commit
 ```
 
-`/commit` never rewrites existing history. When recent commits look related,
-it suggests `/restructure-commit` in one line and carries on.
+`/commit` never rewrites commits already on the parent branch. When recent
+commits look related, it suggests `/restructure-commit` in one line and carries
+on.
 
 ### restructure-commit
 
-Restructure recent history: group related recent commits, plus any new
-uncommitted work, into one OneFlow Option 3 merge bubble. The skill shows the
-plan and waits for approval before it rewrites history. It uses the same
-message format as `commit`.
+Restructure existing local history using OneFlow Option 3 merge bubbles without
+ever squashing atomic single-unit commits. Two modes are supported:
+
+- **Tip regrouping (default):** group one continuous run of loose unmerged
+  commits at `HEAD`, plus any new uncommitted work, into one `--no-ff` merge
+  bubble.
+- **Branch Table of Contents (`--branch` / `--toc`):** rebuild a long-lived
+  feature or phase branch (`<base>..<branch>`) into a lossless 3-level Book
+  Table of Contents — Chapters (`--no-ff`) -> Semantic Sub-Chapters (`--no-ff`)
+  -> every original atomic commit preserved 1-to-1 verbatim via `git commit-tree`,
+  verified byte-identical on an isolated temp branch before moving the target
+  branch.
+
+Both modes show the full plan and wait for approval before rewriting history,
+keep a backup branch until you agree to delete it, and use the same message
+format as `commit`.
 
 ```text
 /restructure-commit
 /restructure-commit HEAD~4..HEAD
 /restructure-commit abc123 def456 789abc
+/restructure-commit --branch main
+/restructure-commit --toc
 ```
 
 Neither skill pushes without express push-specific authorization. A force push

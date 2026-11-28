@@ -52,6 +52,18 @@ interfaces, update all callers listed below.
 
 **Invocation:** `$commit`
 
+**Behavior contract:**
+- Keeps every atomic commit focused on one single unit of work — never squashes
+  or bundles distinct units into one commit to keep commit count low.
+- Uses OneFlow Option 3 multi-level nested merge bubbles (Book on `main` ->
+  Chapters -> Sub-Chapters -> Atomic commits; 3+ levels are desirable, minimum
+  bubble size is 2 entries at every level).
+- When merging a branch whose parent moved ahead, rebases onto the parent tip
+  first with `git rebase --rebase-merges <parent-branch>` (never plain
+  `git rebase`, which flattens inner bubbles) before `git merge --no-ff`.
+- Never rewrites commits already on the parent branch and never pushes without
+  express current-turn authorization.
+
 **Callers:**
 - `../retrospective/SKILL.md` — Final Steps, step 2 (for committing approved improvements)
 - `../devlog/references/write-mode.md` — publishing a post
@@ -61,13 +73,30 @@ interfaces, update all callers listed below.
 
 ## Restructure Commit Interface
 
-**Invocation:** `$restructure-commit [<commit-range or hashes>]`
+**Invocation:** `$restructure-commit [<commit-range or hashes> | --branch [<base>] | --toc [<base>]]`
 
 **Behavior contract:**
-- Groups recent related commits, plus any new uncommitted work, into one
-  OneFlow Option 3 merge bubble.
-- Uses the message format from `../commit/SKILL.md`.
-- Shows the plan and waits for approval before rewriting history.
+- **Mode A (Tip Regrouping):** groups one continuous run of loose unmerged
+  commits ending at `HEAD`, plus any new uncommitted work, into one OneFlow
+  Option 3 merge bubble via `git cherry-pick`. Never regroups merge commits or
+  commits already inside a bubble.
+- **Mode B (Branch Table of Contents, `--branch` / `--toc`):** rebuilds a
+  feature or phase branch (`<base>..<branch>`) into a uniform, lossless 3-level
+  Book Table of Contents (Chapters -> Semantic Sub-Chapters -> every original
+  atomic commit preserved 1-to-1 verbatim) using `git commit-tree` via
+  `../restructure-commit/helpers/dag_rewrap.py` (`inspect`, `validate`,
+  `build`) and the 4-layout guide in
+  `../restructure-commit/references/book-toc-examples.md`.
+- Never squashes or drops atomic single-unit commits (forbids Mistake 1
+  over-squashing and Mistake 2 raw dev-time wrapping without semantic
+  sub-chapters), audits merge triviality (`merge^{tree} == p2^{tree}`), builds
+  on an isolated temp branch, and passes 6 verification invariants (including
+  empty diff and lossless commit count) before moving the target branch.
+- Uses the message format and OneFlow Option 3 rules (including
+  `git rebase --rebase-merges` before `--no-ff`) from `../commit/SKILL.md`.
+- Shows the full plan (Level 1 Chapters, Level 2 Sub-Chapters with atomic
+  counts, and Level 3 atomic sample in Mode B) and waits for approval before
+  rewriting history.
 - Never pushes. A force push after the rewrite needs its own explicit approval.
 
 **Callers:**
