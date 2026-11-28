@@ -5,9 +5,9 @@ description: "Use when the user invokes $commit or any git commit is about to be
 
 # Commit Skill
 
-Create git commits with clear, structured messages (Conventional Commits plus a fixed body format). Group a change that needs several commits into one merge bubble (OneFlow Option 3).
+Create git commits with clear, structured messages (Conventional Commits plus a fixed body format). Keep every atomic commit focused on **one single unit of work**, and group multi-commit changes inside OneFlow Option 3 merge bubbles so git history reads like a book.
 
-This skill only adds new commits. It never rewrites existing history: no hard resets, no cherry-picking, no rebasing, and no `--amend` on commits already pushed. To group commits that already exist, use `$restructure-commit`.
+This skill only adds new commits on the current branch. It never rewrites commits already on the parent branch: no hard resets, no cherry-picking, no squashing, and no `--amend` on commits already pushed. To group or reorganize commits that already exist on a branch, use `$restructure-commit`.
 
 ## Collection Root
 
@@ -21,7 +21,7 @@ Write everything a person reads in plain English for a reader who uses English a
 
 This skill MUST NOT:
 - Commit secrets, credentials, API keys, or `.env` files. Check the staged files first. If a file looks suspicious, ask.
-- Bundle unrelated changes into one commit just to be quick. Propose a split instead.
+- Bundle or squash multiple distinct units of work into one commit just to be quick or keep the commit count low. Every atomic commit holds **one single unit of work** - propose a split (Path B) instead.
 - Add a `Co-Authored-By` trailer. The `[--- AI Review ---]` header already names the model.
 
 ## Preflight: Never `git push` Without Express Authorization
@@ -116,12 +116,21 @@ If a commit or merge fails with `error: 1Password: failed to fill whole buffer` 
 
 ## Branching Strategy (OneFlow Option 3)
 
-[OneFlow](https://www.endoflineblog.com/oneflow-a-git-branching-model-and-workflow) keeps one long-lived branch. Work happens on short-lived branches that merge back. **Option 3** merges with `--no-ff`, which wraps the branch's commits in a merge commit - a visible "bubble". The history still reads almost linearly, and the whole group can be reverted as one unit.
+[OneFlow](https://www.endoflineblog.com/oneflow-a-git-branching-model-and-workflow) keeps one long-lived branch. Work happens on short-lived branches that rebase onto the parent branch tip and merge back with `--no-ff`. **Option 3** wraps the branch's commits in a merge commit - a visible "bubble" - on a semi-linear history, so every group reads cleanly and can be reverted as one unit.
+
+**History reads like a book at every zoom level:**
+- **Book (`main` `--first-parent`):** one `--no-ff` bubble per phase or major feature.
+- **Chapters (a phase or feature branch `--first-parent`):** major milestone or theme `--no-ff` bubbles.
+- **Sub-chapters (inside a chapter):** focused feature or fix `--no-ff` sub-bubbles.
+- **Atomic commits (inside a sub-chapter):** small commits where each commit holds **one single unit of work**.
+
+**Multi-level nested bubbles (3+ levels) are desirable, not noise.** Never squash small single-unit commits into giant commits to make a branch look tidy - keep each commit atomic and organize layers with nested `--no-ff` bubbles. When a long-lived feature or phase branch finishes, `$restructure-commit --toc` can organize its history into clean Chapters and Sub-Chapters without squashing any atomic commit.
 
 Rules:
-- **Use a branch only when the change splits into 2 or more commits.** A single commit goes directly on the current branch.
-- **Minimum bubble size is 2 commits.** If the branch ends up with 1 commit, fast-forward merge instead of `--no-ff`. A bubble around one commit adds noise.
-- **Cascading merge rule:** always merge back into the branch you started from (the **parent branch**), even when that is itself a feature branch.
+- **One commit = one unit of work.** Use a branch only when the change splits into 2 or more logical commits. A single commit goes directly on the current branch.
+- **Minimum bubble size is 2 entries at every level.** If a branch ends up with 1 commit (or 1 sub-bubble), fast-forward merge instead of `--no-ff`. A bubble around one entry adds noise.
+- **Cascading merge rule:** always merge back into the branch you started from (the **parent branch**), even when that is itself a feature or phase branch - nested bubbles are expected.
+- **Rebase to the parent tip before `--no-ff` (OneFlow Option 3):** if `<parent-branch>` moved ahead while you worked on the branch being merged, rebase that branch onto `<parent-branch>` first using `git rebase --rebase-merges <parent-branch>` (without squashing commits), then merge with `git merge --no-ff`. Keep `--rebase-merges`: a plain `git rebase` flattens inner bubbles. If the branch being merged was already pushed, warn the user and wait for approval before rebasing; never push without express current-turn authorization.
 - **Branch name:** `<type>/<short-description>` in kebab-case, from the overall theme, for example `feat/jwt-refresh-rotation`.
 
 ## Workflow
@@ -132,7 +141,7 @@ Read the full uncommitted diff (staged and unstaged) and the recent log before d
 
 ### Step 2 - Decomposition analysis
 
-Decide whether the uncommitted work holds more than one logical unit. A unit is a set of changes that serves one purpose.
+Decide whether the uncommitted work holds more than one logical unit. A unit is a set of changes that serves one purpose. Keep each commit to one single unit of work - never squash separate units into one commit just to keep the commit count low, even when you are already working on a feature or phase branch.
 
 **Keep together (do not split):** code and its tests; a spec and its implementation plan.
 
@@ -153,7 +162,7 @@ Draft the message using the convention and body format above. Stage the relevant
 
 1. Note the parent branch, then create the temporary `<type>/<short-description>` branch.
 2. For each sub-commit in order, stage only its files and commit with the same message format as Path A.
-3. Return to the parent branch and count the branch's commits.
+3. If `<parent-branch>` moved ahead since you branched, rebase `<type>/<short-description>` onto `<parent-branch>` with `git rebase --rebase-merges <parent-branch>` (without squashing). Then return to `<parent-branch>` and count the branch's commits.
    - **2 or more commits:** `git merge --no-ff <type>/<short-description>` with this merge message:
 
      ```text
